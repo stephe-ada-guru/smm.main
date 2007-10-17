@@ -1,0 +1,73 @@
+#!/usr/bin/make -f
+
+# Uncomment this to turn on verbose mode.
+export DH_VERBOSE=0
+
+PREFIX       := /usr
+
+PACKAGE_DIR  := $(CURDIR)/debian/dvc
+DPREFIX      := $(PACKAGE_DIR)$(PREFIX)
+
+INSTALL_DIR  := install -d -m 755
+INSTALL_FILE := install -m 644
+
+DVCDIR       := $(DPREFIX)/share/emacs/site-lisp/dvc
+ELDIR        := $(DVCDIR)/lisp
+CONTRIBDIR   := $(ELDIR)/contrib
+
+configure: configure-stamp
+configure-stamp:
+	dh_testdir
+	autoconf
+	./configure --prefix $(PREFIX)
+	touch configure-stamp
+
+build: build-stamp
+build-stamp: configure-stamp
+	dh_testdir
+	$(MAKE) prefix=$(DPREFIX) generated-files
+	touch build-stamp
+
+clean:
+	dh_testdir
+	dh_testroot
+	rm -f build-stamp configure-stamp
+	rm -rf $(PACKAGE_DIR)
+	dh_clean
+
+install: build
+	dh_testdir
+	dh_testroot
+	dh_clean -k
+	dh_installdirs
+	$(MAKE) prefix=$(DPREFIX) info
+	$(INSTALL_DIR) $(ELDIR)
+	$(INSTALL_DIR) $(CONTRIBDIR)
+	$(INSTALL_FILE) config.status Makefile* $(DVCDIR)/
+	$(INSTALL_FILE) lisp/Makefile* $(ELDIR)/
+	$(INSTALL_FILE) lisp/Makefile* lisp/*.el $(ELDIR)/
+	$(INSTALL_FILE) lisp/contrib/*.el $(CONTRIBDIR)/
+
+# Build architecture-independent files here.
+binary-indep: build install
+	dh_testdir
+	dh_testroot
+	dh_installchangelogs
+	dh_installdocs
+	dh_installexamples
+	dh_installemacsen
+	dh_installinfo texinfo/*.info*
+	dh_link
+	dh_compress
+	dh_fixperms
+	dh_installdeb
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+# Build architecture-dependent files here.
+binary-arch: build install
+# We have nothing to do by default.
+
+binary: binary-indep binary-arch
+.PHONY: build clean binary-indep binary-arch binary install configure

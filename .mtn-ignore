@@ -1,0 +1,11 @@
+^\.bzrignore$
+\.elc$
+^lisp/tests/xmtn-tests-one\.el$
+^Makefile$
+^lisp/Makefile$
+^texinfo/Makefile$
+^lisp/dvc-autoloads\.el$
+^dvc-load\.el$
+^config\.status$
+^config\.log$
+^\.tmp-bzr-log-edit\.txt$
