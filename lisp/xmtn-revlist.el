@@ -365,15 +365,6 @@
          (let* ((branch (xmtn--tree-default-branch root))
                 (heads (xmtn--heads root branch)))
            (xmtn--revlist--missing-get-info root branch heads))))
-;;            (case (length heads)
-;;              (0 (assert nil))
-;;              (1 (xmtn--revlist--missing-get-info root branch heads))
-;;              (t
-;;               ;; Should probably prompt user to choose one head, but
-;;               ;; let's keep it simple for now.
-;;               (error "Branch %s is unmerged (%s heads)"
-;;                      branch
-;;                      (length heads)))))))
      ;; Passing nil as first-line-only-p, last-n is arbitrary here.
      nil nil))
   nil)

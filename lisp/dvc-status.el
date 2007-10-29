@@ -41,10 +41,6 @@
   :type 'boolean
   :group 'dvc)
 
-(defvar dvc-status-ewoc nil
-  "Buffer-local ewoc for displaying workspace file status.")
-(make-variable-buffer-local 'dvc-status-ewoc)
-
 ;; FIXME: this should be in dvc-ui or somewhere.
 ;; or use "keyboard menu"; see elisp info 22.17.3 Menus and the Keyboard
 (defun dvc-offer-choices (comment choices)
@@ -126,7 +122,7 @@ containing (symbol description)."
 (define-derived-mode dvc-status-mode dvc-fundamental-mode "dvc-status"
   "Major mode to display workspace status."
   (setq dvc-buffer-current-active-dvc (dvc-current-active-dvc))
-  (setq dvc-status-ewoc (ewoc-create 'dvc-fileinfo-printer))
+  (setq dvc-fileinfo-ewoc (ewoc-create 'dvc-fileinfo-printer))
   (set (make-local-variable 'dvc-get-file-info-at-point-function) 'dvc-fileinfo-current-file)
   (setq dvc-buffer-marked-file-list nil)
   (use-local-map dvc-status-mode-map)
@@ -160,10 +156,10 @@ REFRESH is a function that refreshes the status; see `dvc-buffer-refresh-functio
                       (if (functionp header-more) (princ (funcall header-more)))))
             (footer ""))
         (set (make-local-variable 'dvc-buffer-refresh-function) refresh)
-        (ewoc-filter dvc-status-ewoc (lambda (elem) nil))
-        (ewoc-set-hf dvc-status-ewoc header footer)
-        (ewoc-enter-last dvc-status-ewoc (make-dvc-fileinfo-message :text (format "Running %s..." dvc)))
-        (ewoc-refresh dvc-status-ewoc)))
+        (ewoc-filter dvc-fileinfo-ewoc (lambda (elem) nil))
+        (ewoc-set-hf dvc-fileinfo-ewoc header footer)
+        (ewoc-enter-last dvc-fileinfo-ewoc (make-dvc-fileinfo-message :text (format "Running %s..." dvc)))
+        (ewoc-refresh dvc-fileinfo-ewoc)))
     (dvc-switch-to-buffer-maybe status-buffer)))
 
 (defun dvc-status-dtrt ()
@@ -187,7 +183,7 @@ conflicts, and/or ediff current files."
                          (setq status (dvc-fileinfo-file-status fileinfo)))
                        ;; don't redisplay the element
                        nil)))
-                  dvc-status-ewoc)
+                  dvc-fileinfo-ewoc)
       (setq status (dvc-fileinfo-file-status (dvc-fileinfo-current-fileinfo))))
 
     (ecase status
@@ -225,8 +221,8 @@ conflicts, and/or ediff current files."
 
 (defun dvc-status-inventory-done (status-buffer)
   (with-current-buffer status-buffer
-    (ewoc-enter-last dvc-status-ewoc (make-dvc-fileinfo-message :text "Parsing inventory..."))
-    (ewoc-refresh dvc-status-ewoc)
+    (ewoc-enter-last dvc-fileinfo-ewoc (make-dvc-fileinfo-message :text "Parsing inventory..."))
+    (ewoc-refresh dvc-fileinfo-ewoc)
     (redisplay t)
     ;; delete "running", "parsing" from the ewoc now, but don't
     ;; refresh until the status is displayed
@@ -276,7 +272,7 @@ but not recursively."
       ;; no marked files
       (let ((fileinfo (dvc-fileinfo-current-fileinfo)))
         (setf (dvc-fileinfo-file-status fileinfo) 'added)
-        (ewoc-invalidate dvc-status-ewoc (ewoc-locate dvc-status-ewoc)))
+        (ewoc-invalidate dvc-fileinfo-ewoc (ewoc-locate dvc-fileinfo-ewoc)))
     ;; marked files
     (ewoc-map (lambda (fileinfo)
                 (etypecase fileinfo
@@ -285,7 +281,7 @@ but not recursively."
 
                   (dvc-fileinfo-file ; also matches dvc-fileinfo-dir
                    (if (dvc-fileinfo-file-mark fileinfo) (setf (dvc-fileinfo-file-status fileinfo) 'added)))))
-              dvc-status-ewoc)))
+              dvc-fileinfo-ewoc)))
 
 (defun dvc-status-ignore-files ()
   "Ignore current files."
@@ -299,11 +295,11 @@ but not recursively."
       (progn
         ;; binding inhibit-read-only doesn't seem to work here
         (toggle-read-only 0)
-        (ewoc-delete dvc-status-ewoc (ewoc-locate dvc-status-ewoc))
+        (ewoc-delete dvc-fileinfo-ewoc (ewoc-locate dvc-fileinfo-ewoc))
         (toggle-read-only 1))
     ;; marked files
     (setq dvc-buffer-marked-file-list nil)
-    (ewoc-filter dvc-status-ewoc
+    (ewoc-filter dvc-fileinfo-ewoc
                  (lambda (fileinfo)
                      (not (dvc-fileinfo-file-mark fileinfo)))
                  )))
@@ -318,10 +314,10 @@ but not recursively."
   (if (= 0 (length dvc-buffer-marked-file-list))
       ;; no marked files
       (let ((inhibit-read-only t))
-        (ewoc-delete dvc-status-ewoc (ewoc-locate dvc-status-ewoc)))
+        (ewoc-delete dvc-fileinfo-ewoc (ewoc-locate dvc-fileinfo-ewoc)))
     ;; marked files
     (setq dvc-buffer-marked-file-list nil)
-    (ewoc-filter dvc-status-ewoc
+    (ewoc-filter dvc-fileinfo-ewoc
                  (lambda (fileinfo)
                    (etypecase fileinfo
                      (dvc-fileinfo-message
@@ -341,10 +337,10 @@ but not recursively."
   (if (= 0 (length dvc-buffer-marked-file-list))
       ;; no marked files
       (let ((inhibit-read-only t))
-        (ewoc-delete dvc-status-ewoc (ewoc-locate dvc-status-ewoc)))
+        (ewoc-delete dvc-fileinfo-ewoc (ewoc-locate dvc-fileinfo-ewoc)))
     ;; marked files
     (setq dvc-buffer-marked-file-list nil)
-    (ewoc-filter dvc-status-ewoc
+    (ewoc-filter dvc-fileinfo-ewoc
                  (lambda (fileinfo)
                    (etypecase fileinfo
                      (dvc-fileinfo-message
