@@ -45,7 +45,8 @@
                                     (output error status arguments)
                                   (message "darcs initialize finished")))))
 
-(defun xdarcs-add-files (&rest files)
+;;;###autoload
+(defun xdarcs-dvc-add-files (&rest files)
   "Run darcs add."
   (dvc-trace "xdarcs-add-files: %s" files)
   (dvc-run-dvc-sync 'xdarcs (append '("add") files)
@@ -143,6 +144,43 @@
                                     "Error in diff process"
                                     output error))))))
 
+;;;###autoload
+(defun xdarcs-missing ()
+  "Run darcs pull --dry-run -s to see whats missing"
+  (interactive)
+  (let ((buffer (dvc-get-buffer-create 'xdarcs 'missing)))
+    (dvc-run-dvc-async
+     'xdarcs '("pull" "--dry-run" "-s")
+     :finished
+     (dvc-capturing-lambda (output error status arguments)
+       (progn
+         (with-current-buffer (capture buffer)
+           (let ((inhibit-read-only t))
+             (erase-buffer)
+             (insert-buffer-substring output)
+             (toggle-read-only 1)))
+         (goto-char (point-min))
+         (dvc-switch-to-buffer (capture buffer)))))))
+
+
+(defun xdarcs-pull-finish-function (output error status arguments)
+  (let ((buffer (dvc-get-buffer-create 'xdarcs 'pull)))
+    (with-current-buffer buffer
+      (let ((inhibit-read-only t))
+        (erase-buffer)
+        (insert-buffer-substring output)
+        (toggle-read-only 1)))
+    (let ((dvc-switch-to-buffer-mode 'show-in-other-window))
+      (dvc-switch-to-buffer buffer))))
+
+;;;###autoload
+(defun xdarcs-pull ()
+  "Run darcs pull --all"
+  (interactive)
+  (dvc-run-dvc-async 'xdarcs (list "pull" "--all")
+                     :error 'xdarcs-pull-finish-function
+                     :finished 'xdarcs-pull-finish-function))
+
 ;; --------------------------------------------------------------------------------
 ;; diff
 ;; --------------------------------------------------------------------------------
@@ -213,7 +251,8 @@ LAST-REVISION looks like
         ;; TODO: remove output-file
         ))))
 
-(defun xdarcs-revert-files (&rest files)
+;;;###autoload
+(defun xdarcs-dvc-revert-files (&rest files)
   "Run darcs revert."
   (dvc-trace "xdarcs-revert-files: %s" files)
   (let ((default-directory (xdarcs-tree-root)))
@@ -222,7 +261,8 @@ LAST-REVISION looks like
 				    (output error status arguments)
 				  (message "xdarcs revert finished")))))
 
-(defun xdarcs-remove-files (&rest files)
+;;;###autoload
+(defun xdarcs-dvc-remove-files (&rest files)
   "Run darcs remove."
   (dvc-trace "xdarcs-remove-files: %s" files)
   (dvc-run-dvc-sync 'xdarcs (append '("remove" "-a") files)

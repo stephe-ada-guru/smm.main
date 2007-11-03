@@ -239,18 +239,17 @@ The following functions are called:
              (renamed  (string= (match-string-no-properties 1) "renamed"))
              (added    (string= (match-string-no-properties 1) "added")))
         (with-current-buffer changes-buffer
-          (ewoc-enter-last dvc-diff-cookie
-                           (list 'file
-                                 newname
-                                 (cond (added   "A")
-                                       (renamed "R")
-                                       (t " "))
-                                 (cond (added " ")
-                                       (t "M"))
-                                 " "    ; dir
-                                 (when (and renamed
-                                            (not added))
-                                   origname))))))))
+          (ewoc-enter-last
+           dvc-fileinfo-ewoc (make-dvc-fileinfo-file
+                              :mark nil
+                              :dir ""
+                              :file newname
+                              :status (cond
+                                       (added   'added)
+                                       (renamed 'rename-source)
+                                       (t       'modified))
+                              :more-status (when (and renamed (not added))
+                                             origname))))))))
 
 (defun bzr-revisionspec-to-rev (string-revspec path)
   "Converts a bzr revision specifier (string) into a DVC revision.
@@ -408,32 +407,76 @@ of the commit. Additionally the destination email address can be specified."
 
 (defun bzr-parse-status (changes-buffer)
   (dvc-trace "bzr-parse-status (while)")
-  (while (> (point-max) (point))
-    (dvc-trace-current-line)
-    (cond ((looking-at "^\\([^ ][^\n]*:\\)")
-           (let ((msg (match-string-no-properties 1)))
+  (let (current-status)
+    (while (> (point-max) (point))
+      (dvc-trace-current-line)
+
+      ;; Typical output:
+      ;;
+      ;; modified:
+      ;;  lisp/bzr.el
+      ;;  lisp/dvc-diff.el
+      ;;  lisp/dvc-fileinfo.el
+      ;; conflict:
+      ;;  lisp/dvc-status.el
+      ;; unknown:
+      ;;  lisp/new-file.el
+      ;;
+      ;; So we need to save the status from the message line, and
+      ;; apply it to following file lines.
+
+      (cond ((looking-at "^\\([^ ][^\n]*:\\)")
+             ;; a file group message ('missing:' etc)
+             (let ((msg (match-string-no-properties 1)))
+               (with-current-buffer changes-buffer
+                 (ewoc-enter-last dvc-fileinfo-ewoc
+                                  (make-dvc-fileinfo-message :text msg)))
+               (cond
+                 ((string-equal msg "conflict:")
+                  (setq current-status 'conflict))
+                 ((string-equal msg "modified:")
+                  (setq current-status 'modified))
+                 ((string-equal msg "unknown:")
+                  (setq current-status 'unknown))
+                 (t
+                  (error "unrecognized label %s in bzr-parse-status" msg)))))
+
+            ((looking-at "^ +\\([^ ][^\n]*?\\)\\([/@]\\)? => \\([^\n]*?\\)\\([/@]\\)?$")
+             ;; a renamed file
+             (let ((oldname (match-string-no-properties 1))
+                   (dir (match-string-no-properties 2))
+                   (newname (match-string-no-properties 3)))
              (with-current-buffer changes-buffer
-               (ewoc-enter-last dvc-diff-cookie
-                                (list 'message msg)))))
-          ((looking-at "^ +\\([^ ][^\n]*?\\)\\([/@]\\)? => \\([^\n]*?\\)\\([/@]\\)?$")
-           (let ((oldname (match-string-no-properties 1))
-                 (dir (match-string-no-properties 2))
-                 (newname (match-string-no-properties 3)))
+               (ewoc-enter-last dvc-fileinfo-ewoc
+                                (make-dvc-fileinfo-file
+                                 :mark nil
+                                 :dir dir
+                                 :file newname
+                                 :status 'rename-target
+                                 :more-status oldname))
+               (ewoc-enter-last dvc-fileinfo-ewoc
+                                (make-dvc-fileinfo-file
+                                 :mark nil
+                                 :dir dir
+                                 :file oldname
+                                 :status 'rename-source
+                                 :more-status newname)))))
+
+            ((looking-at " +\\(?:Text conflict in \\)?\\([^\n]*?\\)\\([/@*]\\)?$")
+             ;; A typical file in a file group
+             (let ((file (match-string-no-properties 1))
+                   (dir (match-string-no-properties 2)))
              (with-current-buffer changes-buffer
-               (ewoc-enter-last dvc-diff-cookie
-                                (list 'file newname
-                                      " " " " dir
-                                      oldname)))))
-          ((looking-at " +\\(?:Text conflict in \\)?\\([^\n]*?\\)\\([/@*]\\)?$")
-           (let ((file (match-string-no-properties 1))
-                 (dir (match-string-no-properties 2)))
-             (with-current-buffer changes-buffer
-               (ewoc-enter-last dvc-diff-cookie
-                                (list 'file file
-                                      ;; TODO perhaps not only " ".
-                                      " " " " dir nil)))))
-          (t (error "unrecognized context in bzr-parse-status")))
-    (forward-line 1)))
+               (ewoc-enter-last dvc-fileinfo-ewoc
+                                (make-dvc-fileinfo-file
+                                 :mark nil
+                                 :dir dir
+                                 :file file
+                                 :status current-status
+                                 :more-status "")))))
+
+            (t (error "unrecognized context in bzr-parse-status")))
+      (forward-line 1))))
 
 ;;;###autoload
 (defun bzr-status (&optional path)
@@ -471,15 +514,19 @@ of the commit. Additionally the destination email address can be specified."
   ;;(dvc-trace "bzr-parse-inventory (while)")
   (while (> (point-max) (point))
     ;;(dvc-trace-current-line)
-    (cond ((looking-at "\\([^\n]*?\\)\\([/@]\\)?$")
-           (let ((file (match-string-no-properties 1))
-                 (dir (match-string-no-properties 2)))
-             (with-current-buffer changes-buffer
-               (ewoc-enter-last dvc-diff-cookie
-                                (list 'file file
-                                      ;; TODO perhaps not only " ".
-                                      " " " " dir nil)))))
-          (t (error "unrecognized context in bzr-parse-inventory")))
+    (cond
+     ((looking-at "\\([^\n]*?\\)\\([/@]\\)?$")
+      (let ((file (match-string-no-properties 1))
+            (dir (match-string-no-properties 2)))
+        (with-current-buffer changes-buffer
+          (ewoc-enter-last
+           dvc-fileinfo-ewoc (make-dvc-fileinfo-file
+                              :mark nil
+                              :dir dir
+                              :file file
+                              :status 'known
+                              :more-status "")))))
+     (t (error "unrecognized context in bzr-parse-inventory")))
     (forward-line 1)))
 
 ;;;###autoload
@@ -517,7 +564,8 @@ of the commit. Additionally the destination email address can be specified."
               'bzr (list "add" (file-relative-name file))
               :finished 'dvc-output-and-error-buffer-handler))))
 
-(defun bzr-add-files (&rest files)
+;;;###autoload
+(defun bzr-dvc-add-files (&rest files)
   "Run bzr add."
   (dvc-trace "bzr-add-files: %s" files)
   (let ((default-directory (bzr-tree-root)))
@@ -527,7 +575,8 @@ of the commit. Additionally the destination email address can be specified."
                                     (output error status arguments)
                                   (message "bzr add finished")))))
 
-(defun bzr-revert-files (&rest files)
+;;;###autoload
+(defun bzr-dvc-revert-files (&rest files)
   "Run bzr revert."
   (dvc-trace "bzr-revert-files: %s" files)
   (let ((default-directory (bzr-tree-root)))
@@ -536,7 +585,8 @@ of the commit. Additionally the destination email address can be specified."
                                   (output error status arguments)
                                 (message "bzr revert finished")))))
 
-(defun bzr-remove-files (&rest files)
+;;;###autoload
+(defun bzr-dvc-remove-files (&rest files)
   "Run bzr remove."
   (dvc-trace "bzr-remove-files: %s" files)
   (dvc-run-dvc-sync 'bzr (append '("remove") files)
@@ -845,14 +895,13 @@ REVISION is a back-end-revision, not a dvc revision-id. It looks like
   "Insert the content of FILE in LAST-REVISION, in current buffer.
 
 LAST-REVISION looks like
-\(\"path\" NUM)
+\(\"root\" NUM)
 "
   (let ((bzr-rev (concat "last:" (int-to-string
                                   (nth 1 last-revision))))
         (default-directory (car last-revision)))
     (insert
      (dvc-run-dvc-sync
-      ;; TODO what if I'm not at the tree root ?
       'bzr (list "cat" "--revision" bzr-rev file)
       :finished 'dvc-output-buffer-handler-withnewline))))
 

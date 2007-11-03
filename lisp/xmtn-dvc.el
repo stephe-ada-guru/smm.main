@@ -572,7 +572,7 @@ the file before saving."
   (xmtn-dvc-delta base-rev (list 'xmtn (list 'local-tree (xmtn-tree-root path))) dont-switch))
 
 ;;;###autoload
-(defun xmtn-dvc-delta (from-revision-id to-revision-id dont-switch)
+(defun xmtn-dvc-delta (from-revision-id to-revision-id &optional dont-switch)
   ;; See dvc-unified.el dvc-delta for doc string
   (let ((root (dvc-tree-root)))
     (lexical-let ((buffer (dvc-diff-prepare-buffer 'xmtn root from-revision-id to-revision-id))
@@ -1287,7 +1287,7 @@ finished."
   nil)
 
 ;;;###autoload
-(defun xmtn-dvc-merge (other)
+(defun xmtn-dvc-merge (&optional other)
   (if other
    (error "xmtn-dvc-merge does not support OTHER argument"))
 

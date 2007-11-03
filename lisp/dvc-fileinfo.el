@@ -65,6 +65,7 @@ The elements must all be of class dvc-fileinfo-root.")
   "String image of STATUS."
   (ecase status
     (added          "added        ")
+    (conflict       "conflict     ")
     (dropped        "dropped      ")
     (ignored        "ignored      ")
     (invalid        "invalid      ")
