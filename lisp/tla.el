@@ -642,42 +642,12 @@ empty."
      ""
      file)))
 
-
-(defun tla--read-project-tree-maybe (&optional prompt directory)
-  "Return a directory name which is the root of some project tree.
-Either prompt from the user or use the current directory.  The
-recommended usage is
-
- (defun tla-some-feature (...)
-   (let ((default-directory (tla--read-project-tree-maybe
-                             \"Run some feature in\")))
-      (code-for-some-feature))
-
-The behavior can be changed according to the value of
-`dvc-read-project-tree-mode'.
-
-PROMPT is used as a user prompt, and DIRECTORY is the default
-directory."
-  (let ((root (tla-tree-root (or directory default-directory) t))
-        (default-directory (or (tla-tree-root
-                                (or directory default-directory) t)
-                               directory
-                               default-directory))
-        (prompt (or prompt "Use directory: ")))
-    (case dvc-read-project-tree-mode
-      (always (tla-tree-root (dvc-read-directory-name prompt)))
-      (sometimes (or root
-                     (tla-tree-root (dvc-read-directory-name prompt))))
-      (never (or root
-                 (error "Not in a project tree")))
-      (t (error "Wrong value for tla-prompt-for-directory")))))
-
 (defun tla--read-directory-maybe (&optional prompt directory)
   "Read a directory name inside an arch managed tree.
 
 Return a directory name which is a subdirectory or the root of some
 project tree.  Works in a way similar to
-`tla--read-project-tree-maybe', but is customized with the variable
+`dvc-read-project-tree-maybe', but is customized with the variable
 `dvc-read-directory-mode'.
 
 PROMPT is the user prompt, and DIRECTORY is the default directory."
@@ -1298,7 +1268,7 @@ the list of marked files, and potentially run a selected file commit."
 (defun tla-changes-goto (&optional summary)
   "Go to the changes buffer, or run `tla-changes'."
   (interactive "P")
-  (let* ((root (tla--read-project-tree-maybe
+  (let* ((root (dvc-read-project-tree-maybe
                 (format "Run %s in: "
                         (tla--changes-command))))
          (default-directory root)
@@ -1319,7 +1289,7 @@ When called without a prefix argument: show the detailed diffs also.
 When called with a prefix argument SUMMARY: do not show detailed
 diffs. When AGAINST is non-nil, use it as comparison tree." command)
      (interactive "P")
-     (let* ((root (tla--read-project-tree-maybe
+     (let* ((root (dvc-read-project-tree-maybe
                    (format "Run %s in: "
                            ,command)))
             (default-directory root)
@@ -1508,7 +1478,7 @@ equivalent to running `tla-changes' just before the commit.
 
 SUMMARY is passed to `tla-changes'."
   (interactive "P")
-  (let ((default-directory (tla--read-project-tree-maybe
+  (let ((default-directory (dvc-read-project-tree-maybe
                             "Review last patch in directory: ")))
     (tla-changes summary `(,tla-arch-branch
                            (revision
@@ -2892,7 +2862,7 @@ as the place where changelog is got."
                  (list (tla--name-construct
                         (tla-name-read "ChangeLog of: "
                                        'prompt 'prompt 'prompt 'prompt)))))
-  (let ((default-directory (tla--read-project-tree-maybe))
+  (let ((default-directory (dvc-read-project-tree-maybe))
         arguments)
     (when name
       (setq arguments (cons name arguments)))
@@ -2906,7 +2876,7 @@ as the place where changelog is got."
 (defun tla-logs ()
   "Run tla logs."
   (interactive)
-  (let ((default-directory (tla--read-project-tree-maybe))
+  (let ((default-directory (dvc-read-project-tree-maybe))
 ;        (details (or dvc-revisions-shows-date
 ;                     dvc-revisions-shows-creator
 ;                     dvc-revisions-shows-summary))
@@ -5580,7 +5550,7 @@ Sets the archive location to LOCATION."
 ;;;###autoload
 (defun tla-tree-revisions-goto (root)
   "Goto tree revisions buffer or call `tla-tree-revisions'."
-  (interactive (list (tla--read-project-tree-maybe
+  (interactive (list (dvc-read-project-tree-maybe
                       "Revisions for tree: ")))
   (let* ((default-directory root)
          (buffer (dvc-get-buffer tla-arch-branch 'revisions
@@ -5592,7 +5562,7 @@ Sets the archive location to LOCATION."
 ;;;###autoload
 (defun tla-tree-revisions (root)
   "Call `tla-revisions' in the current tree."
-  (interactive (list (tla--read-project-tree-maybe
+  (interactive (list (dvc-read-project-tree-maybe
                       "Revisions for tree: ")))
   (let* ((default-directory root)
          (version (tla-tree-version-list default-directory)))
@@ -5801,7 +5771,7 @@ The string PROMPT-FILE will be used when prompting the user for a file."
 CONFIG-FILE is the relative path-name of the configuration.
 
 When called interactively, arguments are read with the function
-`tla--read-project-tree-maybe'."
+`dvc-read-project-tree-maybe'."
   (interactive (tla--read-config-file "Build configuration: "))
   (let ((default-directory tree-root))
     (tla--run-tla-async (list "build-config" config-file))))
@@ -5811,7 +5781,7 @@ When called interactively, arguments are read with the function
 If SNAP is non-nil, then the --snap option of tla is used.
 
 When called interactively, arguments TREE-ROOT and CONFIG-FILE are
-read with the function `tla--read-project-tree-maybe'."
+read with the function `dvc-read-project-tree-maybe'."
   (interactive (append (tla--read-config-file "Cat configuration: ")
                        (list (y-or-n-p "Include revision number? "))))
   (let ((default-directory tree-root))
@@ -9186,7 +9156,7 @@ been eliminated."
 (defun tla-tree-lint-goto (root)
   "Goto tree-lint buffer or run `tla-tree-lint'."
   (interactive
-   (list (tla--read-project-tree-maybe "Run tla tree-lint in: ")))
+   (list (dvc-read-project-tree-maybe "Run tla tree-lint in: ")))
   (let* ((default-directory root)
          (buffer (dvc-get-buffer tla-arch-branch 'tree-lint default-directory)))
     (if buffer
@@ -9197,7 +9167,7 @@ been eliminated."
 (defun tla-tree-lint (root)
   "Run tla tree-lint in directory ROOT."
   (interactive
-   (list (tla--read-project-tree-maybe "Run tla tree-lint in: ")))
+   (list (dvc-read-project-tree-maybe "Run tla tree-lint in: ")))
   (setq tla-pre-tree-lint-window-configuration (current-window-configuration))
   (let ((default-directory root)
         (buffer (tla--tree-lint-prepare-buffer root)))
