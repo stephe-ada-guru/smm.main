@@ -72,7 +72,7 @@
 
 (defvar dvc-bookmarks-file-name "dvc-bookmarks.el" "The file that holds the dvc bookmarks")
 
-(defvar dvc-bookmarks-show-partners nil)
+(defvar dvc-bookmarks-show-partners t)
 
 (defvar dvc-bookmarks-loaded nil "Whether `dvc-bookmark-alist' has been loaded from `dvc-bookmarks-file-name'.")
 (defvar dvc-bookmarks-cookie nil "The ewoc cookie for the *dvc-bookmarks* buffer.")
@@ -284,6 +284,7 @@ With prefix argument ARG, reload the bookmarks file from disk."
 
 (defvar dvc-bookmarks-merge-template "Merged from %s: ")
 (defun dvc-bookmarks-merge ()
+  "Merge from partner."
   (interactive)
   (let ((local-tree (dvc-bookmarks-current-value 'local-tree)))
     (if local-tree
