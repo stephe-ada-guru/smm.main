@@ -240,7 +240,7 @@ With prefix argument ARG, reload the bookmarks file from disk."
   (interactive)
   (let ((local-tree (dvc-bookmarks-current-value 'local-tree)))
     (if local-tree
-        (dvc-status local-tree))
+        (dvc-status local-tree)
       (message "No local-tree defined for this bookmark entry."))))
 
 (defun dvc-bookmarks-log-edit ()
