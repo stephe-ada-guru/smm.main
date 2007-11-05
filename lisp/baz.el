@@ -100,11 +100,11 @@ instead."
   (unless (tla-has-status-command)
     (error "status not available with this arch branch"))
   (let* ((root default-directory)
-         (buffer (dvc-diff-prepare-buffer
-                  'baz
-                  default-directory
+         (buffer (dvc-prepare-changes-buffer
                   (list 'last-revision root)
-                  (list 'local-tree root))))
+                  (list 'local-tree root)
+                  'status
+                  default-directory 'baz)))
     (when dvc-switch-to-buffer-first
       (dvc-switch-to-buffer buffer))
     (with-current-buffer buffer
@@ -174,8 +174,8 @@ instead."
           (tla--tree-lint-cursor-goto
            (ewoc-nth tla--tree-lint-cookie 0)))
         (switch-to-buffer buffer))
-    (dvc-diff-show-buffer output 'tla--parse-baz-status buffer
-                             nil "^[^*\\.]")
+    (dvc-show-changes-buffer output 'tla--parse-baz-status buffer
+                             master-buffer "^[^*\\.]")
     (with-current-buffer buffer
       (setq dvc-buffer-refresh-function 'baz-dvc-status))
     (when master-buffer
@@ -219,7 +219,7 @@ the root of the projects is displayed."
              (message "No changes in %s" root-lex))
            (with-current-buffer -current-buffer--lex
              (let ((inhibit-read-only t))
-               (dvc-fileinfo-delete-messages)
+               (dvc-diff-delete-messages)
                (ewoc-enter-last dvc-diff-cookie
                                 (list 'message (concat "* No changes in "
                                                        root-lex ".\n\n")))

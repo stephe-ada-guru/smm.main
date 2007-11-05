@@ -1,6 +1,6 @@
 ;;; bzr-submit.el --- Patch submission support for Bazaar 2 in DVC
 
-;; Copyright (C) 2006, 2007 by all contributors
+;; Copyright (C) 2006 by all contributors
 
 ;; Author: Michael Olson <mwolson@gnu.org>
 
@@ -117,14 +117,13 @@ If INCLUDE-ADDED is specified, include files that are newly-added."
 
 (defun bzr-show-diff-from-file (file)
   "Display the diff contained in FILE with DVC font-locking."
-  ;; FIXME: this probably doesn't work with the current dvc-diff code
   (with-temp-buffer
     (insert-file-contents-literally file)
-    (let ((buffer (dvc-diff-prepare-buffer 'bzr default-directory nil nil))
+    (let ((buffer (dvc-prepare-changes-buffer nil nil 'diff nil 'bzr))
           (output (current-buffer)))
       (when dvc-switch-to-buffer-first
         (dvc-switch-to-buffer buffer))
-      (dvc-diff-show-buffer output 'bzr-parse-diff buffer))))
+      (dvc-show-changes-buffer output 'bzr-parse-diff buffer))))
 
 (defun bzr-changes-save-as-patch (file-name
                                   &optional included-files prompt-files)

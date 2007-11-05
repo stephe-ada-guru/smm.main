@@ -239,17 +239,18 @@ The following functions are called:
              (renamed  (string= (match-string-no-properties 1) "renamed"))
              (added    (string= (match-string-no-properties 1) "added")))
         (with-current-buffer changes-buffer
-          (ewoc-enter-last
-           dvc-fileinfo-ewoc (make-dvc-fileinfo-file
-                              :mark nil
-                              :dir ""
-                              :file newname
-                              :status (cond
-                                       (added   'added)
-                                       (renamed 'rename-source)
-                                       (t       'modified))
-                              :more-status (when (and renamed (not added))
-                                             origname))))))))
+          (ewoc-enter-last dvc-diff-cookie
+                           (list 'file
+                                 newname
+                                 (cond (added   "A")
+                                       (renamed "R")
+                                       (t " "))
+                                 (cond (added " ")
+                                       (t "M"))
+                                 " "    ; dir
+                                 (when (and renamed
+                                            (not added))
+                                   origname))))))))
 
 (defun bzr-revisionspec-to-rev (string-revspec path)
   "Converts a bzr revision specifier (string) into a DVC revision.
@@ -295,7 +296,10 @@ TODO: DONT-SWITCH is currently ignored."
          (dir (or path default-directory))
          (root (bzr-tree-root dir))
          (against (or against `(bzr (last-revision ,root 1))))
-         (buffer (dvc-diff-prepare-buffer 'bzr root against `(bzr (local-tree ,root)))))
+         (buffer (dvc-prepare-changes-buffer
+                  against
+                  `(bzr (local-tree ,root))
+                  'diff root 'bzr)))
     (dvc-switch-to-buffer-maybe buffer)
     (dvc-buffer-push-previous-window-config window-conf)
     (dvc-save-some-buffers root)
@@ -314,18 +318,25 @@ TODO: DONT-SWITCH is currently ignored."
        (if (/= 1 status)
            (dvc-diff-error-in-process (capture buffer)
                                        "Error in diff process"
+                                       (capture root)
                                        output error)
-         (dvc-diff-show-buffer output 'bzr-parse-diff
+         (dvc-show-changes-buffer output 'bzr-parse-diff
                                   (capture buffer)))))))
 
-(defun bzr-delta (base modified dont-switch)
+(defun bzr-delta (base modified &optional dont-switch)
   "Run bzr diff -r BASE..MODIFIED.
 
 TODO: dont-switch is currently ignored."
   (dvc-trace "base, modified=%S, %S; dir=%S" base modified default-directory)
   (let ((base-str (bzr-revision-id-to-string base))
         (modified-str (bzr-revision-id-to-string modified))
-        (buffer (dvc-diff-prepare-buffer 'bzr (bzr-tree-root default-directory) base modified)))
+        (buffer (dvc-prepare-changes-buffer
+                 base modified
+                 'revision-diff
+                 (concat (bzr-revision-id-to-string base)
+                         ".."
+                         (bzr-revision-id-to-string modified))
+                 'bzr)))
     (when dvc-switch-to-buffer-first
       (dvc-switch-to-buffer buffer))
     (let ((default-directory
@@ -347,8 +358,9 @@ TODO: dont-switch is currently ignored."
          (if (/= 1 status)
              (dvc-diff-error-in-process (capture buffer)
                                         "Error in diff process"
+                                        ""
                                         output error)
-           (dvc-diff-show-buffer output 'bzr-parse-diff
+           (dvc-show-changes-buffer output 'bzr-parse-diff
                                     (capture buffer)))))
       ;; We must return the buffer (even in asynchronous mode)
       (with-current-buffer buffer (goto-char (point-min)))
@@ -407,85 +419,41 @@ of the commit. Additionally the destination email address can be specified."
 
 (defun bzr-parse-status (changes-buffer)
   (dvc-trace "bzr-parse-status (while)")
-  (let (current-status)
-    (while (> (point-max) (point))
-      (dvc-trace-current-line)
-
-      ;; Typical output:
-      ;;
-      ;; modified:
-      ;;  lisp/bzr.el
-      ;;  lisp/dvc-diff.el
-      ;;  lisp/dvc-fileinfo.el
-      ;; conflict:
-      ;;  lisp/dvc-status.el
-      ;; unknown:
-      ;;  lisp/new-file.el
-      ;;
-      ;; So we need to save the status from the message line, and
-      ;; apply it to following file lines.
-
-      (cond ((looking-at "^\\([^ ][^\n]*:\\)")
-             ;; a file group message ('missing:' etc)
-             (let ((msg (match-string-no-properties 1)))
-               (with-current-buffer changes-buffer
-                 (ewoc-enter-last dvc-fileinfo-ewoc
-                                  (make-dvc-fileinfo-message :text msg)))
-               (cond
-                 ((string-equal msg "conflict:")
-                  (setq current-status 'conflict))
-                 ((string-equal msg "modified:")
-                  (setq current-status 'modified))
-                 ((string-equal msg "unknown:")
-                  (setq current-status 'unknown))
-                 (t
-                  (error "unrecognized label %s in bzr-parse-status" msg)))))
-
-            ((looking-at "^ +\\([^ ][^\n]*?\\)\\([/@]\\)? => \\([^\n]*?\\)\\([/@]\\)?$")
-             ;; a renamed file
-             (let ((oldname (match-string-no-properties 1))
-                   (dir (match-string-no-properties 2))
-                   (newname (match-string-no-properties 3)))
+  (while (> (point-max) (point))
+    (dvc-trace-current-line)
+    (cond ((looking-at "^\\([^ ][^\n]*:\\)")
+           (let ((msg (match-string-no-properties 1)))
              (with-current-buffer changes-buffer
-               (ewoc-enter-last dvc-fileinfo-ewoc
-                                (make-dvc-fileinfo-file
-                                 :mark nil
-                                 :dir dir
-                                 :file newname
-                                 :status 'rename-target
-                                 :more-status oldname))
-               (ewoc-enter-last dvc-fileinfo-ewoc
-                                (make-dvc-fileinfo-file
-                                 :mark nil
-                                 :dir dir
-                                 :file oldname
-                                 :status 'rename-source
-                                 :more-status newname)))))
-
-            ((looking-at " +\\(?:Text conflict in \\)?\\([^\n]*?\\)\\([/@*]\\)?$")
-             ;; A typical file in a file group
-             (let ((file (match-string-no-properties 1))
-                   (dir (match-string-no-properties 2)))
+               (ewoc-enter-last dvc-diff-cookie
+                                (list 'message msg)))))
+          ((looking-at "^ +\\([^ ][^\n]*?\\)\\([/@]\\)? => \\([^\n]*?\\)\\([/@]\\)?$")
+           (let ((oldname (match-string-no-properties 1))
+                 (dir (match-string-no-properties 2))
+                 (newname (match-string-no-properties 3)))
              (with-current-buffer changes-buffer
-               (ewoc-enter-last dvc-fileinfo-ewoc
-                                (make-dvc-fileinfo-file
-                                 :mark nil
-                                 :dir dir
-                                 :file file
-                                 :status current-status
-                                 :more-status "")))))
-
-            (t (error "unrecognized context in bzr-parse-status")))
-      (forward-line 1))))
+               (ewoc-enter-last dvc-diff-cookie
+                                (list 'file newname
+                                      " " " " dir
+                                      oldname)))))
+          ((looking-at " +\\(?:Text conflict in \\)?\\([^\n]*?\\)\\([/@*]\\)?$")
+           (let ((file (match-string-no-properties 1))
+                 (dir (match-string-no-properties 2)))
+             (with-current-buffer changes-buffer
+               (ewoc-enter-last dvc-diff-cookie
+                                (list 'file file
+                                      ;; TODO perhaps not only " ".
+                                      " " " " dir nil)))))
+          (t (error "unrecognized context in bzr-parse-status")))
+    (forward-line 1)))
 
 (defun bzr-dvc-status ()
   "Run \"bzr status\" in `default-directory', which must be a tree root."
   (let* ((window-conf (current-window-configuration))
          (root default-directory)
-         ;; FIXME: this names the buffer "*bzr-diff*"; should be "*bzr-status*"
-         (buffer (dvc-diff-prepare-buffer 'bzr root
+         (buffer (dvc-prepare-changes-buffer
                   `(bzr (last-revision ,root 1))
-                  `(bzr (local-tree ,root)))))
+                  `(bzr (local-tree ,root))
+                  'status root 'bzr)))
     (dvc-switch-to-buffer-maybe buffer)
     (dvc-buffer-push-previous-window-config window-conf)
     (setq dvc-buffer-refresh-function 'bzr-dvc-status)
@@ -496,7 +464,7 @@ of the commit. Additionally the destination email address can be specified."
      (dvc-capturing-lambda (output error status arguments)
        (with-current-buffer (capture buffer)
          (if (> (point-max) (point-min))
-             (dvc-diff-show-buffer output 'bzr-parse-status
+             (dvc-show-changes-buffer output 'bzr-parse-status
                                       (capture buffer))
          (dvc-diff-no-changes (capture buffer)
                              "No changes in %s"
@@ -505,25 +473,22 @@ of the commit. Additionally the destination email address can be specified."
        (dvc-capturing-lambda (output error status arguments)
          (dvc-diff-error-in-process (capture buffer)
                                      "Error in diff process"
+                                     (capture root)
                                      output error))))))
 
 (defun bzr-parse-inventory (changes-buffer)
   ;;(dvc-trace "bzr-parse-inventory (while)")
   (while (> (point-max) (point))
     ;;(dvc-trace-current-line)
-    (cond
-     ((looking-at "\\([^\n]*?\\)\\([/@]\\)?$")
-      (let ((file (match-string-no-properties 1))
-            (dir (match-string-no-properties 2)))
-        (with-current-buffer changes-buffer
-          (ewoc-enter-last
-           dvc-fileinfo-ewoc (make-dvc-fileinfo-file
-                              :mark nil
-                              :dir dir
-                              :file file
-                              :status 'known
-                              :more-status "")))))
-     (t (error "unrecognized context in bzr-parse-inventory")))
+    (cond ((looking-at "\\([^\n]*?\\)\\([/@]\\)?$")
+           (let ((file (match-string-no-properties 1))
+                 (dir (match-string-no-properties 2)))
+             (with-current-buffer changes-buffer
+               (ewoc-enter-last dvc-diff-cookie
+                                (list 'file file
+                                      ;; TODO perhaps not only " ".
+                                      " " " " dir nil)))))
+          (t (error "unrecognized context in bzr-parse-inventory")))
     (forward-line 1)))
 
 ;;;###autoload
@@ -532,9 +497,10 @@ of the commit. Additionally the destination email address can be specified."
   (interactive)
   (let* ((dir default-directory)
          (root (bzr-tree-root dir))
-         (buffer (dvc-diff-prepare-buffer 'bzr root
+         (buffer (dvc-prepare-changes-buffer
                   `(bzr (last-revision ,root 1))
-                  `(bzr (local-tree ,root)))))
+                  `(bzr (local-tree ,root))
+                  'inventory root 'bzr)))
     (dvc-switch-to-buffer-maybe buffer)
     (setq dvc-buffer-refresh-function 'bzr-inventory)
     (dvc-save-some-buffers root)
@@ -543,12 +509,13 @@ of the commit. Additionally the destination email address can be specified."
      :finished
      (dvc-capturing-lambda (output error status arguments)
        (with-current-buffer (capture buffer)
-         (dvc-diff-show-buffer output 'bzr-parse-inventory
+         (dvc-show-changes-buffer output 'bzr-parse-inventory
                                   (capture buffer)))
        :error
        (dvc-capturing-lambda (output error status arguments)
          (dvc-diff-error-in-process (capture buffer)
                                      "Error in inventory process"
+                                     (capture root)
                                      output error))))))
 
 ;;;###autoload
