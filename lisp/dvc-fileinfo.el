@@ -225,8 +225,7 @@ point is not on a file element line."
          (if mark
              (add-to-list 'dvc-buffer-marked-file-list file)
            (setq dvc-buffer-marked-file-list (delete file dvc-buffer-marked-file-list)))
-         (ewoc-invalidate dvc-fileinfo-ewoc current)
-         (dvc-fileinfo-next)))
+         (ewoc-invalidate dvc-fileinfo-ewoc current)))
 
       (dvc-fileinfo-message
        (error "not on a file or directory")))))
