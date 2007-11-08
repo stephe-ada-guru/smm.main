@@ -417,10 +417,14 @@ of the commit. Additionally the destination email address can be specified."
       ;;  lisp/bzr.el
       ;;  lisp/dvc-diff.el
       ;;  lisp/dvc-fileinfo.el
-      ;; conflict:
-      ;;  lisp/dvc-status.el
       ;; unknown:
       ;;  lisp/new-file.el
+      ;; conflicts:
+      ;;  lisp/dvc-status.el
+      ;; pending merges:
+      ;;   Stefan Reichoer 2007-11-05 Set dvc-bookmarks-show-partners to t per default
+      ;;    Stefan Reichoer 2007-11-05 Implemented dvc-bookmarks-find-file-in-tree (...
+      ;;
       ;;
       ;; So we need to save the status from the message line, and
       ;; apply it to following file lines.
@@ -432,12 +436,14 @@ of the commit. Additionally the destination email address can be specified."
                  (ewoc-enter-last dvc-fileinfo-ewoc
                                   (make-dvc-fileinfo-message :text msg)))
                (cond
-                 ((string-equal msg "conflict:")
+                 ((string-equal msg "conflicts:")
                   (setq current-status 'conflict))
                  ((string-equal msg "modified:")
                   (setq current-status 'modified))
                  ((string-equal msg "unknown:")
                   (setq current-status 'unknown))
+                 ((string-equal msg "pending merges:")
+                  (setq current-status nil))
                  (t
                   (error "unrecognized label %s in bzr-parse-status" msg)))))
 
@@ -463,17 +469,24 @@ of the commit. Additionally the destination email address can be specified."
                                  :more-status newname)))))
 
             ((looking-at " +\\(?:Text conflict in \\)?\\([^\n]*?\\)\\([/@*]\\)?$")
-             ;; A typical file in a file group
-             (let ((file (match-string-no-properties 1))
-                   (dir (match-string-no-properties 2)))
-             (with-current-buffer changes-buffer
-               (ewoc-enter-last dvc-fileinfo-ewoc
-                                (make-dvc-fileinfo-file
-                                 :mark nil
-                                 :dir dir
-                                 :file file
-                                 :status current-status
-                                 :more-status "")))))
+             ;; A typical file in a file group, or a pending merge message
+             (if (not current-status)
+                 (let ((msg (buffer-substring-no-properties
+                             (line-beginning-position) (line-end-position))))
+                   (with-current-buffer changes-buffer
+                     (ewoc-enter-last dvc-fileinfo-ewoc
+                                      (make-dvc-fileinfo-message
+                                       :text msg))))
+               (let ((file (match-string-no-properties 1))
+                     (dir (match-string-no-properties 2)))
+                 (with-current-buffer changes-buffer
+                   (ewoc-enter-last dvc-fileinfo-ewoc
+                                    (make-dvc-fileinfo-file
+                                     :mark nil
+                                     :dir dir
+                                     :file file
+                                     :status current-status
+                                     :more-status ""))))))
 
             (t (error "unrecognized context in bzr-parse-status")))
       (forward-line 1))))

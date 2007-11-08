@@ -243,8 +243,8 @@ conflicts, and/or ediff current files."
   "Run ediff on the current workspace file, against the database version."
   (interactive)
   ;; FIXME: need user interface to specify other revision to diff against
-  ;; FIXME: dvc-file-ediff is in dvc-diff.el. promote to dvc-unified, default to (dvc-get-file-info-at-point)
-  (dvc-file-ediff (dvc-fileinfo-current-file)))
+  (let ((dvc-temp-current-active-dvc dvc-buffer-current-active-dvc))
+    (dvc-file-ediff (dvc-fileinfo-current-file))))
 
 ;; database operations
 (defun dvc-status-add-files ()

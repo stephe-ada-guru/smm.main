@@ -470,13 +470,14 @@ Usefull to clear diff buffers after a commit."
   (dolist (buffer (list (dvc-get-buffer dvc 'diff root)
                         (dvc-get-buffer dvc 'revision-diff root)
                         (dvc-get-buffer dvc 'status root)))
-    (dvc-trace "buffer=%S" buffer)
-    (with-current-buffer buffer
-      (let ((inhibit-read-only t))
-        (ewoc-filter dvc-fileinfo-ewoc (lambda (x) nil))
-        (ewoc-set-hf dvc-fileinfo-ewoc "" "")
-        (ewoc-enter-first dvc-fileinfo-ewoc (make-dvc-fileinfo-message :text msg))
-        (ewoc-refresh dvc-fileinfo-ewoc)))))
+    (when buffer
+      (dvc-trace "buffer=%S" buffer)
+      (with-current-buffer buffer
+        (let ((inhibit-read-only t))
+          (ewoc-filter dvc-fileinfo-ewoc (lambda (x) nil))
+          (ewoc-set-hf dvc-fileinfo-ewoc "" "")
+          (ewoc-enter-first dvc-fileinfo-ewoc (make-dvc-fileinfo-message :text msg))
+          (ewoc-refresh dvc-fileinfo-ewoc))))))
 
 ;;;###autoload
 (defun dvc-file-ediff (file)

@@ -707,32 +707,29 @@ the file before saving."
 (defun xmtn--status-process-entry (ewoc path status changes old-path-or-null
                                         old-type new-type fs-type)
   "Create a file entry in ewoc."
-  ;; Don't display root directory ("."); if requested, don't
+  ;; Don't display root directory (""); if requested, don't
   ;; display known or ignored files.
   (if (and (or (not (equal '(known) status))
                (member 'content changes)
                dvc-status-display-known)
            (or (not (equal '(ignored) status))
                dvc-status-display-ignored)
-           (or (not (equal path "")) ; FIXME: published version
-               (not (equal path ".")) ; my version
-               ))
+           (not (equal path "")))
       (let ((main-status
              (or
-              ;;  special case
-              (if (and (member 'known status)
-                       (member 'content changes))
-                  'modified)
-
               (if (member 'added status) 'added)
               (if (member 'dropped status) 'dropped)
               (if (member 'ignored status) 'ignored)
               (if (member 'invalid status) 'invalid)
-              (if (member 'known status) 'known)
               (if (member 'missing status) 'missing)
               (if (member 'rename-source status) 'rename-source)
               (if (member 'rename-target status) 'rename-target)
-              (if (member 'unknown status) 'unknown)))
+              (if (member 'unknown status) 'unknown)
+              ;; check for known last; almost everything is known
+              (if (member 'known status)
+                  (if (member 'content changes)
+                      'modified
+                    'known))))
 
             more-status
             need-more-status)
@@ -743,7 +740,10 @@ the file before saving."
                 ;; else
                 (case main-status
                   (modified
-                   (and (eq status '(known)) (eq changes '(content))))
+                   (not (and (equal status '(known)) (equal changes '(content)))))
+
+                  (added
+                   (not (and (equal status '(added known)) (equal changes '(content)))))
 
                   (otherwise t))))
 
