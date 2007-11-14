@@ -831,9 +831,8 @@ the file before saving."
   ;; We don't run automate inventory through xmtn-automate here as
   ;; that would block.  xmtn-automate doesn't support asynchronous
   ;; command execution yet.
-  (lexical-let*
-      ((root root)
-       (base-revision (xmtn--get-base-revision-hash-id-or-null root))
+  (let*
+      ((base-revision (xmtn--get-base-revision-hash-id-or-null root))
        (branch (xmtn--tree-default-branch root))
        (heads (length (xmtn--heads root branch)))
        (status-buffer
@@ -859,35 +858,35 @@ the file before saving."
                     "  base revision is not a head revision\n"
                   "  base revision is a head revision\n")))))
          ;; refresh
-         'xmtn-dvc-status))
-       (ewoc dvc-fileinfo-ewoc))
-    (xmtn--run-command-async
-     root `("automate" "inventory")
-     :finished (lambda (output error status arguments)
-                 (dvc-status-inventory-done status-buffer)
-                 (with-current-buffer status-buffer
-                   (xmtn-basic-io-with-stanza-parser
-                    (parser output)
-                    (xmtn--parse-inventory
-                     parser
-                     (lambda (path status changes old-path-or-null old-type new-type fs-type)
-                       (xmtn--status-process-entry ewoc path status changes old-path-or-null
-                                                   old-type new-type fs-type))))))
-     :error (lambda (output error status arguments)
-              ;; FIXME: need `dvc-status-error-in-process', or change name.
-              (dvc-diff-error-in-process
-               status-buffer
-               (format "Error running mtn with arguments %S" arguments)
-               output error))
-     :killed (lambda (output error status arguments)
-               ;; Create an empty buffer as a fake output buffer to
-               ;; avoid printing all the output so far.
-               (with-temp-buffer
-                 (dvc-diff-error-in-process
-                  status-buffer
-                  (format "Received signal running mtn with arguments %S"
-                          arguments)
-                  (current-buffer) error))))))
+         'xmtn-dvc-status)))
+    (lexical-let* ((status-buffer status-buffer))
+      (xmtn--run-command-async
+       root `("automate" "inventory")
+       :finished (lambda (output error status arguments)
+                   (dvc-status-inventory-done status-buffer)
+                   (with-current-buffer status-buffer
+                     (xmtn-basic-io-with-stanza-parser
+                      (parser output)
+                      (xmtn--parse-inventory
+                       parser
+                       (lambda (path status changes old-path-or-null old-type new-type fs-type)
+                         (xmtn--status-process-entry dvc-fileinfo-ewoc path status changes old-path-or-null
+                                                     old-type new-type fs-type))))))
+       :error (lambda (output error status arguments)
+                ;; FIXME: need `dvc-status-error-in-process', or change name.
+                (dvc-diff-error-in-process
+                 status-buffer
+                 (format "Error running mtn with arguments %S" arguments)
+                 output error))
+       :killed (lambda (output error status arguments)
+                 ;; Create an empty buffer as a fake output buffer to
+                 ;; avoid printing all the output so far.
+                 (with-temp-buffer
+                   (dvc-diff-error-in-process
+                    status-buffer
+                    (format "Received signal running mtn with arguments %S"
+                            arguments)
+                    (current-buffer) error)))))))
 
 (defun xmtn--mtn-has-basic-io-inventory ()
   ;;  FIXME: unnecessary if require mtn 0.37 or greater
