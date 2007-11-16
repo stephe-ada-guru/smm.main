@@ -77,7 +77,6 @@ to (dvc-current-file-list)."
                                                        singleprompt nil))
       (dvc-apply "dvc-remove-files" files))))
 
-;;;###autoload
 (defun dvc-remove-optional-args (spec &rest args)
   "Process ARGS, removing those that come after the &optional keyword
 in SPEC if they are nil, returning the result."
