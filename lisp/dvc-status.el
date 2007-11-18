@@ -62,9 +62,11 @@ containing (symbol description)."
     ;; workspace operations
     (define-key map dvc-keyvec-add      'dvc-status-add-files)
     (define-key map dvc-keyvec-commit   'dvc-log-edit)
+    (define-key map [?=]                'dvc-diff-diff)
     (define-key map dvc-keyvec-ediff    'dvc-status-ediff)
     (define-key map dvc-keyvec-help     'describe-mode)
     (define-key map dvc-keyvec-logs     'dvc-log)
+    (define-key map "l"                 'dvc-diff-log)
     (define-key map dvc-keyvec-mark     'dvc-fileinfo-mark-file)
     (define-key map dvc-keyvec-mark-all 'dvc-fileinfo-mark-all)
     (define-key map dvc-keyvec-next     'dvc-fileinfo-next)
@@ -100,41 +102,44 @@ containing (symbol description)."
   "`dvc-status' menu"
   ;; FIXME: add all keymap operations to menu
   `("DVC"
-    ["Refresh Buffer"          dvc-generic-refresh        t]
-    ["Edit log before commit"  dvc-status-edit-log        t]
+    ["Refresh Buffer"              dvc-generic-refresh               t]
+    ["Edit log before commit"      dvc-status-edit-log               t]
     ("Merge"
-     ["Update"                 dvc-update                 t]
-     ;; ["Sync"                   dvc-sync                   t] FIXME: need dvc-sync
-     ["Show missing"           dvc-missing                t]
-     ["Merge"                  dvc-merge                  t]
+     ["Update"                     dvc-update                        t]
+     ;; FIXME: ["Sync"             dvc-sync                          t]
+     ["Show missing"               dvc-missing                       t]
+     ["Merge"                      dvc-merge                         t]
      )
     ("Ignore"
-     ["Ignore Files"           dvc-status-ignore-files    t]
-     ["Ignore Extensions in dir" dvc-ignore-file-extensions-in-dir t]
-     ["Ignore Extensions globally" dvc-ignore-file-extensions t]
-     ["Edit Ignore File"       dvc-edit-ignore-files      t]
+     ["Ignore Files"               dvc-status-ignore-files           t]
+     ["Ignore Extensions in dir"   dvc-ignore-file-extensions-in-dir t]
+     ["Ignore Extensions globally" dvc-ignore-file-extensions        t]
+     ["Edit Ignore File"           dvc-edit-ignore-files             t]
      )
-    ["Ediff File"              dvc-status-ediff           t]
-    ["Delete File"             dvc-status-remove-files    t]
-    ["Revert File"             dvc-status-revert-files    t]
+    ["Ediff File"                  dvc-status-ediff                  t]
+    ["diff File"                   dvc-file-diff                     t]
+    ["Delete File"                 dvc-status-remove-files           t]
+    ["Revert File"                 dvc-status-revert-files           t]
+    ["Log (single file)"           dvc-diff-log                      t]
+    ["Log (full tree)"             dvc-log                           t]
     ))
 
-(define-derived-mode dvc-status-mode dvc-fundamental-mode "dvc-status"
+(define-derived-mode dvc-status-mode dvc-fundamental-mode "                 dvc-status"
   "Major mode to display workspace status."
   (setq dvc-buffer-current-active-dvc (dvc-current-active-dvc))
   (setq dvc-fileinfo-ewoc (ewoc-create 'dvc-fileinfo-printer))
   (set (make-local-variable 'dvc-get-file-info-at-point-function) 'dvc-fileinfo-current-file)
-  (setq dvc-buffer-marked-file-list nil)
-  (use-local-map dvc-status-mode-map)
-  (easy-menu-add dvc-status-mode-menu)
-  (dvc-install-buffer-menu)
+  (setq                            dvc-buffer-marked-file-list nil)
+  (use-local-map                   dvc-status-mode-map)
+  (easy-menu-add                   dvc-status-mode-menu)
+  (                                dvc-install-buffer-menu)
   (setq buffer-read-only t)
   (buffer-disable-undo)
   (set-buffer-modified-p nil))
 
 (add-to-list 'uniquify-list-buffers-directory-modes 'dvc-status-mode)
 
-(defun dvc-status-prepare-buffer (dvc root base-revision branch header-more refresh)
+(defun                             dvc-status-prepare-buffer (dvc root base-revision branch header-more refresh)
   "Prepare and return a status buffer. Should be called by <back-end>-dvc-status.
 DVC is back-end.
 ROOT is absolute path to workspace.
