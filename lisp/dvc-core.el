@@ -180,6 +180,9 @@ Otherwise return the buffer file name."
          (dired-get-filename))
         (t (buffer-file-name))))
 
+(defvar dvc-current-file-list nil
+  "A buffer specific list of files for a dvc operation.")
+
 ;;;###autoload
 (defun dvc-current-file-list (&optional selection-mode)
   "Return a list of currently active files.
@@ -187,6 +190,7 @@ Otherwise return the buffer file name."
 The following sources are tried (in that order) and used if they are non nil:
 
 * `dvc-buffer-marked-file-list'
+* `dvc-current-file-list'
 * When in dired mode, return the marked files or the file where point is
 * SELECTION-MODE provides a way to select the file list that should be returned.
   - When SELECTION-MODE is 'nil-if-none-marked, return nil, if no files are explicitely marked.
@@ -194,6 +198,8 @@ The following sources are tried (in that order) and used if they are non nil:
 * Otherwise call the function `dvc-get-file-info-at-point'."
   (cond (dvc-buffer-marked-file-list ;; dvc-diff, etc.
          dvc-buffer-marked-file-list)
+        (dvc-current-file-list ;; only used in dvc-status: todo: change dvc-status to use dvc-buffer-marked-file-list
+         dvc-current-file-list)
         ((eq major-mode 'dired-mode)
          (dired-get-marked-files))
         ((eq selection-mode 'nil-if-none-marked)
@@ -782,6 +788,20 @@ When INFO-STRING is given, insert it at the buffer beginning."
                  (insert-buffer-substring error))
                (toggle-read-only 1)))
            (dvc-switch-to-buffer (capture buffer)))))))
+
+(defvar dvc-fundamental-mode-map (make-sparse-keymap))
+
+(defun dvc-fundamental-mode ()
+  "Fundamental mode that does absolutely nothing but run
+  `after-change-major-mode-hook', for use with `define-derived-mode'.
+
+Emacs `fundamental-mode' runs `kill-all-local-variables', which
+defeats uniquefy and other things. It also defines a keymap with
+lots of self-insert keys, which we typically don't want."
+  (use-local-map dvc-fundamental-mode-map)
+  (set-syntax-table (standard-syntax-table))
+  (unless delay-mode-hooks
+    (run-hooks 'after-change-major-mode-hook)))
 
 (defvar dvc-info-buffer-mode-map
   (let ((map (make-sparse-keymap)))
