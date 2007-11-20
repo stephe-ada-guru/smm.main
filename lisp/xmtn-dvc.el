@@ -673,7 +673,7 @@ the file before saving."
       (let ((main-status
              (or
               (if (member 'added status) 'added)
-              (if (member 'dropped status) 'dropped)
+              (if (member 'deleted status) 'deleted)
               (if (member 'ignored status) 'ignored)
               (if (member 'invalid status) 'invalid)
               (if (member 'missing status) 'missing)
@@ -723,7 +723,7 @@ the file before saving."
                              :status main-status
                              :more-status more-status)))
           ((file none)
-           ;; 'none' indicates a dropped file
+           ;; 'none' indicates a dropped (deleted) file
            (ewoc-enter-last ewoc
                             (make-dvc-fileinfo-file
                              :mark nil
@@ -745,7 +745,7 @@ the file before saving."
                                 collect
                                 (xmtn-match entry
                                   ((string "added") 'added)
-                                  ((string "dropped") 'dropped)
+                                  ((string "dropped") 'deleted)
                                   ((string "invalid") 'invalid)
                                   ((string "known") 'known)
                                   ((string "missing") 'missing)
@@ -1082,9 +1082,15 @@ the file before saving."
          (goto-char (point-max))
          (xmtn--insert-hint-into-process-buffer
           "[process terminated with an error]\n")))))
-  ;; Show process buffer.  Monotone might spawn an external merger and
-  ;; ask the user to hit enter when finished.
+  ;; Show process buffer. Monotone might spawn an external merger and
+  ;; ask the user to hit enter when finished. Also show the error
+  ;; buffer; mtn sends info about what file is being manually merged
+  ;; to stderr. We tried to redirect that to the process buffer above,
+  ;; but the error messages showed up after the merge was done :(.
+  ;; Need mtn automate merge
   (dvc-show-process-buffer)
+  (let ((dvc-switch-to-buffer-mode 'show-in-other-window))
+    (dvc-show-error-buffer dvc-last-error-buffer))
   (goto-char (point-min))
   (xmtn--insert-hint-into-process-buffer
    (substitute-command-keys
