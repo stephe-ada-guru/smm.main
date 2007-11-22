@@ -197,7 +197,7 @@ The following sources are tried (in that order) and used if they are non nil:
   - When SELECTION-MODE is 'all-if-none-marked, return all files from that buffer. That is not yet implemented. Just returns nil at the moment..
 * Otherwise call the function `dvc-get-file-info-at-point'."
   (cond (dvc-buffer-marked-file-list ;; dvc-diff, etc.
-         dvc-buffer-marked-file-list)
+         (remove nil dvc-buffer-marked-file-list))
         (dvc-current-file-list ;; only used in dvc-status: todo: change dvc-status to use dvc-buffer-marked-file-list
          dvc-current-file-list)
         ((eq major-mode 'dired-mode)

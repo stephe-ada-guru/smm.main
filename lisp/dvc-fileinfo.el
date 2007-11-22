@@ -178,7 +178,7 @@ point is not on a file element line."
 
 (defun dvc-fileinfo-mark-dir-1 (fileinfo mark)
   (if (string-equal dir-compare (dvc-fileinfo-file-dir fileinfo))
-      (let (file (dvc-fileinfo-path fileinfo))
+      (let ((file (dvc-fileinfo-path fileinfo)))
         (setf (dvc-fileinfo-file-mark fileinfo) mark)
         (if mark
             (progn

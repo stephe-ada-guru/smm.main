@@ -476,12 +476,11 @@ diff parser."
 
 (defun dvc-diff-clear-buffers (dvc root msg)
   "Clears all DVC diff buffers with root ROOT, insert message MSG.
-
-Usefull to clear diff buffers after a commit."
+Useful to clear diff buffers after a commit."
   (dvc-trace "dvc-diff-clear-buffers (%S %S)"
               root msg)
+  ;; Don't need to clear 'revision-diff; that is not changed by a commit
   (dolist (buffer (list (dvc-get-buffer dvc 'diff root)
-                        (dvc-get-buffer dvc 'revision-diff root)
                         (dvc-get-buffer dvc 'status root)))
     (when buffer
       (dvc-trace "buffer=%S" buffer)
