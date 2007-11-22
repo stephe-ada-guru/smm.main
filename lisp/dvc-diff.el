@@ -44,7 +44,7 @@
 (make-variable-buffer-local 'dvc-diff-modified)
 
 (defun dvc-dvc-search-file-in-diff (file)
-  "Default for back-end-specific regexp maching diff beginning."
+  "Default for \"dvc-search-file-in-diff\". Place point on diff hunk for FILE."
   (re-search-forward (concat "^\\+\\+\\+ \\(b\\|mod\\)/" file "\\(.+[0-9][0-9][0-9][0-9]\\)?$")))
 
 (defun dvc-diff-prepare-buffer (dvc root base modified)
@@ -59,7 +59,7 @@ ROOT must be root of workspace for DVC."
     (let ((inhibit-read-only t)) (erase-buffer))
     (let ((dvc-temp-current-active-dvc dvc))
       (funcall (dvc-function dvc "diff-mode")))
-    (setq dvc-diff-base     base)
+    (setq dvc-diff-base base)
     (setq dvc-diff-modified modified)
     (current-buffer)))
 
@@ -84,6 +84,7 @@ ROOT must be root of workspace for DVC."
     (define-key map dvc-keyvec-ediff   'dvc-diff-ediff)
     (define-key map dvc-keyvec-refresh 'dvc-generic-refresh)
     (define-key map dvc-keyvec-commit  'dvc-log-edit)
+    (define-key map "t"                'dvc-add-log-entry)
     ;; TODO move this somewhere else.
     (define-key map [?I] 'tla-inventory)
     (define-key map dvc-keyvec-inventory 'dvc-pop-to-inventory)
@@ -149,6 +150,7 @@ ROOT must be root of workspace for DVC."
 (defconst dvc-diff-mode-menu-list
   `(["Refresh Buffer" dvc-generic-refresh t]
     ["Edit log before commit" dvc-log-edit t]
+    ["Add log entry" dvc-add-log-entry t]
     ["View other revisions" tla-tree-revisions t]
     ("Merge"
      ["Update" dvc-update t]
@@ -297,14 +299,14 @@ diff. When on a diff, jump to the corresponding entry in the ewoc."
       (error "Not on a modified file"))))
 
 (defun dvc-diff-next ()
-  "Move to the next ewoc line or diff hunk."
+  "Move to the next status line or diff hunk."
   (interactive)
   (if (dvc-diff-in-ewoc-p)
       (dvc-fileinfo-next)
     (diff-hunk-next)))
 
 (defun dvc-diff-prev ()
-  "Move to the previous ewoc line or diff hunk."
+  "Move to the previous status line or diff hunk."
   (interactive)
   (if (dvc-diff-in-ewoc-p)
       (dvc-fileinfo-prev)
