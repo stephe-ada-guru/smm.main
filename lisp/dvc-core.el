@@ -783,6 +783,20 @@ When INFO-STRING is given, insert it at the buffer beginning."
                (toggle-read-only 1)))
            (dvc-switch-to-buffer (capture buffer)))))))
 
+(defvar dvc-fundamental-mode-map (make-sparse-keymap))
+
+(defun dvc-fundamental-mode ()
+  "Fundamental mode that does absolutely nothing but run
+  `after-change-major-mode-hook', for use with `define-derived-mode'.
+
+Emacs `fundamental-mode' runs `kill-all-local-variables', which
+defeats uniquefy and other things. It also defines a keymap with
+lots of self-insert keys, which we typically don't want."
+  (use-local-map dvc-fundamental-mode-map)
+  (set-syntax-table (standard-syntax-table))
+  (unless delay-mode-hooks
+    (run-hooks 'after-change-major-mode-hook)))
+
 (defvar dvc-info-buffer-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (dvc-prefix-buffer ?L) 'dvc-open-internal-log-buffer)
