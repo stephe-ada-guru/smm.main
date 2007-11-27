@@ -133,13 +133,17 @@ The elements must all be of class dvc-fileinfo-root.")
 (defun dvc-fileinfo-current-fileinfo ()
   "Return the fileinfo for the ewoc element at point. Throws an
 error if point is on a message."
-  (let ((fileinfo (ewoc-data (ewoc-locate dvc-fileinfo-ewoc))))
-    (etypecase fileinfo
-      (dvc-fileinfo-file ; also matches dvc-fileinfo-dir
-       fileinfo)
+  (let ((ewoc-entry (ewoc-locate dvc-fileinfo-ewoc)))
+    (if (not ewoc-entry)
+        ;; ewoc is empty
+        (error "not on a file or directory"))
+    (let ((fileinfo (ewoc-data ewoc-entry)))
+      (etypecase fileinfo
+        (dvc-fileinfo-file ; also matches dvc-fileinfo-dir
+         fileinfo)
 
-      (dvc-fileinfo-message
-       (error "not on a file or directory")))))
+        (dvc-fileinfo-message
+         (error "not on a file or directory"))))))
 
 (defun dvc-fileinfo-path (fileinfo)
   "Return directory and file from fileinfo, as a string."
