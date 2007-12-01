@@ -104,7 +104,7 @@ PATH defaults to `default-directory'.
 The new buffer is always displayed; if DONT-SWITCH is nil, select it."
   (interactive)
   (let ((default-directory
-          (dvc-read-project-tree-maybe "DVC status (directory): "
+          (dvc-read-project-tree-maybe "DVC diff (directory): "
                                        (when path (expand-file-name path)))))
     (setq base-rev (or base-rev
                        ;; Allow back-ends to override this for e.g. git,

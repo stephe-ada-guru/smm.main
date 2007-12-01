@@ -196,14 +196,14 @@ The following sources are tried (in that order) and used if they are non nil:
    ((eq major-mode 'dired-mode)
     (dired-get-marked-files))
 
-   ((eq major-mode 'dvc-diff-mode)
+   ((memq major-mode '(dvc-diff-mode dvc-status-mode))
     (cond
      ((eq selection-mode 'nil-if-none-marked)
       (remove nil dvc-buffer-marked-file-list))
 
      ((eq selection-mode 'all-if-none-marked)
       (or dvc-buffer-marked-file-list
-          (dvc-diff-all-files)))
+          (dvc-fileinfo-all-files)))
 
      (t (list (dvc-get-file-info-at-point)))))
 

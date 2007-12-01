@@ -156,6 +156,18 @@ point is not on a file element line."
   (let ((fileinfo (dvc-fileinfo-current-fileinfo)))
     (dvc-fileinfo-path fileinfo)))
 
+(defun dvc-fileinfo-all-files ()
+  "Return list of all files in the ewoc"
+  (let (result)
+    (ewoc-map
+     (lambda (fileinfo)
+       (when (typep fileinfo 'dvc-fileinfo-file)
+         ;; we use 'add-to-list', because some back-ends put files in the ewoc more than once
+         (add-to-list 'result (dvc-fileinfo-path fileinfo)))
+       nil)
+     dvc-fileinfo-ewoc)
+    result))
+
 (defun dvc-fileinfo-delete-messages ()
   "Remove all message elements from the ewoc."
   (ewoc-filter dvc-fileinfo-ewoc
