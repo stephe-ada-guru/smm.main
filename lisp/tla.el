@@ -3411,9 +3411,8 @@ If REVERSE is non-nil, reverse the requested revision."
                                      (message "tla sync-tree finished")
                                      (dvc-revert-some-buffers (capture to-tree)))
                         :error (lambda (output error status arguments)
-                                 ;; FIXME: need to create diff-buffer
                                  (dvc-diff-show-buffer output 'tla--parse-other
-                                  (dvc-prepare-changes-buffer  tla-arch-branch default-directory nil nil))))))
+                                  (dvc-diff-prepare-buffer tla-arch-branch default-directory nil nil))))))
 
 ;;;###autoload
 (defun tla-switch (tree version &optional handle)
