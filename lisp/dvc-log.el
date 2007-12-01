@@ -109,7 +109,8 @@ NO-INIT if non-nil suppresses initialization of the buffer if one
 is reused."
   (setq dvc-pre-commit-window-configuration
         (current-window-configuration))
-  (let ((start-buffer (current-buffer)))
+  (let ((root default-directory)
+        (start-buffer (current-buffer)))
     (dvc-switch-to-buffer
      (dvc-get-buffer-create (dvc-current-active-dvc) 'log-edit)
      other-frame)
@@ -119,7 +120,9 @@ is reused."
         (set-visited-file-name file-name t t)
         (when (and (= (point-min) (point-max)) (file-readable-p file-name))
           (insert-file-contents file-name)
-          (set-buffer-modified-p nil))
+          (set-buffer-modified-p nil)
+          ;; `insert-file-contents' modifies default-directory
+          (setq default-directory root))
         (rename-buffer buffer-name))
       (dvc-log-edit-mode)
       (set (make-local-variable 'dvc-partner-buffer) start-buffer))))
