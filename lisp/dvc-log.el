@@ -101,16 +101,15 @@ Commands:
 (defvar dvc-pre-commit-window-configuration nil)
 
 ;;;###autoload
-(defun dvc-dvc-log-edit (other-frame no-init)
-  "Edit the log file before a commit.
+(defun dvc-dvc-log-edit (root other-frame no-init)
+  "Edit the log file for tree ROOT before a commit.
 
 OTHER_FRAME if non-nil puts log edit buffer in a separate frame.
 NO-INIT if non-nil suppresses initialization of the buffer if one
 is reused."
   (setq dvc-pre-commit-window-configuration
         (current-window-configuration))
-  (let ((root default-directory)
-        (start-buffer (current-buffer)))
+  (let ((start-buffer (current-buffer)))
     (dvc-switch-to-buffer
      (dvc-get-buffer-create (dvc-current-active-dvc) 'log-edit)
      other-frame)
