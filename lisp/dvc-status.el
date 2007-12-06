@@ -312,25 +312,24 @@ but not recursively."
 (defun dvc-status-remove-files ()
   "Remove current files."
   (interactive)
-  (apply 'dvc-remove-files (dvc-current-file-list))
+  (if (apply 'dvc-remove-files (dvc-current-file-list))
+      ;; Kill the files from the ewoc, since we are removing them;
+      ;; this avoids the need to run the backend again.
+      (if (= 0 (length dvc-buffer-marked-file-list))
+          ;; no marked files
+          (let ((inhibit-read-only t))
+            (ewoc-delete dvc-fileinfo-ewoc (ewoc-locate dvc-fileinfo-ewoc)))
+        ;; marked files
+        (setq dvc-buffer-marked-file-list nil)
+        (ewoc-filter dvc-fileinfo-ewoc
+                     (lambda (fileinfo)
+                       (etypecase fileinfo
+                         (dvc-fileinfo-message
+                          nil)
 
-  ;; kill the files from the ewoc, since we are removing them; this
-  ;; avoids the need to run the backend again.
-  (if (= 0 (length dvc-buffer-marked-file-list))
-      ;; no marked files
-      (let ((inhibit-read-only t))
-        (ewoc-delete dvc-fileinfo-ewoc (ewoc-locate dvc-fileinfo-ewoc)))
-    ;; marked files
-    (setq dvc-buffer-marked-file-list nil)
-    (ewoc-filter dvc-fileinfo-ewoc
-                 (lambda (fileinfo)
-                   (etypecase fileinfo
-                     (dvc-fileinfo-message
-                      nil)
-
-                     (dvc-fileinfo-file ; also matches dvc-fileinfo-dir
-                      (not (dvc-fileinfo-file-mark fileinfo)))))
-                 )))
+                         (dvc-fileinfo-file ; also matches dvc-fileinfo-dir
+                          (not (dvc-fileinfo-file-mark fileinfo)))))
+                     ))))
 
 (defun dvc-status-revert-files ()
   "Revert current files."

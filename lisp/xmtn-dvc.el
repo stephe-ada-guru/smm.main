@@ -331,7 +331,6 @@ the file before saving."
       (dvc-dvc-log-edit other-frame no-init)
     (progn
       (dvc-dvc-log-edit other-frame nil)
-      (dvc-log-flush-commit-file-list)
       (setq buffer-file-coding-system 'xmtn--monotone-normal-form) ;; FIXME: move this into dvc-get-buffer-create?
       (add-to-list 'buffer-file-format 'xmtn--log-file) ;; FIXME: generalize to dvc--log-file
       )))
@@ -969,7 +968,8 @@ the file before saving."
    root `("drop"
           ,@(if do-not-execute `("--bookkeep-only") `())
           "--" ,@(xmtn--normalize-file-names root file-names)))
-  nil)
+  ;; return t to indicate we succeeded
+  t)
 
 ;;;###autoload
 (defun xmtn-dvc-remove-files (&rest files)
@@ -981,9 +981,6 @@ the file before saving."
    root `("rename"
           ,@(if do-not-execute `("--bookkeep-only") `())
           "--" ,from-normalized-name ,to-normalized-name))
-  ;; FIXME: We should do something analogous to
-  ;; `dvc-revert-some-buffers' (but for renaming) here.  But DVC
-  ;; doesn't provide a function for that.
   nil)
 
 ;;;###autoload
