@@ -801,8 +801,9 @@ defeats uniquefy and other things. It also defines a keymap with
 lots of self-insert keys, which we typically don't want."
   (use-local-map dvc-fundamental-mode-map)
   (set-syntax-table (standard-syntax-table))
-  (unless delay-mode-hooks
-    (run-hooks 'after-change-major-mode-hook)))
+  (if (boundp 'delay-mode-hooks) ; Emacs 22
+      (unless delay-mode-hooks
+        (run-hooks 'after-change-major-mode-hook))))
 
 (defvar dvc-info-buffer-mode-map
   (let ((map (make-sparse-keymap)))
