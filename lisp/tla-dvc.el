@@ -49,10 +49,10 @@
   (tla-changes nil))
 
 (defun tla-dvc-file-diff (file &optional base modified dont-switch)
-  ;; FIXIME
-  ;; tla-file-diff expects BASE is a string.
+  ;; FIXME: tla-file-diff expects BASE is a string.
   ;; However, tla-dvc-file-diff receives BASE in a list revision form.
   ;; To fill the gap, nil is passed to. -- Masatake.
+  ;; FIXME: only tla overrides dvc-dvc-file-diff; perhaps it doesn't need to?
   (tla-file-diff file nil modified dont-switch))
 
 (defun tla-dvc-status ()

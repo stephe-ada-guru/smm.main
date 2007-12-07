@@ -219,10 +219,9 @@ If DONT-SWITCH, don't switch to the diff buffer"
          (cur-dir (or path default-directory))
          (orig-buffer (current-buffer))
          (root (xhg-tree-root cur-dir))
-         (buffer (dvc-prepare-changes-buffer
+         (buffer (dvc-diff-prepare-buffer 'xhg root
                   `(xhg (last-revision ,root 1))
-                  `(xhg (local-tree ,root))
-                  'diff root 'xhg))
+                  `(xhg (local-tree ,root))))
          (command-list '("diff")))
     (dvc-switch-to-buffer-maybe buffer)
     (dvc-buffer-push-previous-window-config window-conf)
@@ -235,7 +234,7 @@ If DONT-SWITCH, don't switch to the diff buffer"
     (dvc-run-dvc-sync 'xhg command-list
                        :finished
                        (dvc-capturing-lambda (output error status arguments)
-                         (dvc-show-changes-buffer output 'xhg-parse-diff
+                         (dvc-diff-show-buffer output 'xhg-parse-diff
                                                   (capture buffer))))))
 
 ;;;###autoload
@@ -256,10 +255,9 @@ If DONT-SWITCH, don't switch to the diff buffer"
   "Run hg status."
   (let* ((window-conf (current-window-configuration))
          (root (xhg-tree-root))
-         (buffer (dvc-prepare-changes-buffer
+         (buffer (dvc-diff-prepare-buffer 'xhg root
                   `(xhg (last-revision ,root 1))
-                  `(xhg (local-tree ,root))
-                  'status root 'xhg)))
+                  `(xhg (local-tree ,root)))))
     (dvc-switch-to-buffer-maybe buffer)
     (dvc-buffer-push-previous-window-config window-conf)
     (dvc-save-some-buffers root)
@@ -269,7 +267,7 @@ If DONT-SWITCH, don't switch to the diff buffer"
          (with-current-buffer (capture buffer)
            (xhg-status-extra-mode-setup)
            (if (> (point-max) (point-min))
-               (dvc-show-changes-buffer output 'xhg-parse-status
+               (dvc-diff-show-buffer output 'xhg-parse-status
                                         (capture buffer))
              (dvc-diff-no-changes (capture buffer)
                                   "No changes in %s"

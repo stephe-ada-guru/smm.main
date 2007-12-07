@@ -220,12 +220,22 @@ by calling `dvc-log-flush-commit-file-list'."
   (save-restriction
     (dvc-add-log-entry-internal other-frame)))
 
+(defun dvc-add-log-file-name (buffer-file)
+  "Return a file name for a log entry for BUFFER-FILE; including path from tree root.
+For use as add-log-file-name-function."
+  (if (string-match
+       (concat "^" (regexp-quote (dvc-tree-root)))
+       buffer-file)
+      (substring buffer-file (match-end 0))
+    (file-name-nondirectory buffer-file)))
+
 (defun dvc-ediff-add-log-entry (&optional other-frame)
   "Add new DVC log ChangeLog style entry; intended to be invoked
 from the ediff control buffer."
   (interactive "P")
   (set-buffer ediff-buffer-B) ; DVC puts workspace version here
-  (dvc-add-log-entry-internal other-frame))
+  (let ((add-log-file-name-function 'dvc-add-log-file-name))
+    (dvc-add-log-entry-internal other-frame)))
 
 (defun dvc-add-log-entry-internal (other-frame)
   "Similar to `add-change-log-entry'.
