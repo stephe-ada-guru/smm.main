@@ -1040,15 +1040,9 @@ the file before saving."
          (goto-char (point-max))
          (xmtn--insert-hint-into-process-buffer
           "[process terminated with an error]\n")))))
-  ;; Show process buffer. Monotone might spawn an external merger and
-  ;; ask the user to hit enter when finished. Also show the error
-  ;; buffer; mtn sends info about what file is being manually merged
-  ;; to stderr. We tried to redirect that to the process buffer above,
-  ;; but the error messages showed up after the merge was done :(.
-  ;; Need mtn automate merge
+  ;; Show process buffer.  Monotone might spawn an external merger and
+  ;; ask the user to hit enter when finished.
   (dvc-show-process-buffer)
-  (let ((dvc-switch-to-buffer-mode 'show-in-other-window))
-    (dvc-show-error-buffer dvc-last-error-buffer))
   (goto-char (point-min))
   (xmtn--insert-hint-into-process-buffer
    (substitute-command-keys
@@ -1166,9 +1160,7 @@ finished."
            ;; keep it simple for now.
            (error (substitute-command-keys
                    (concat "Branch %s is unmerged (%s heads)."
-                           "  Try \\[xmtn-view-heads-revlist] and"
-                           " \\[xmtn-revlist-update] or"
-                           " \\[xmtn-revlist-explicit-merge]"))
+                           "  Try \\[dvc-log] and \\[dvc-merge]"))
                   branch (length heads)))))))
   nil)
 
