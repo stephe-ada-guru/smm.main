@@ -349,5 +349,42 @@ in that directory. Then move to previous ewoc entry."
         elem
       (error "Can't find file %s in ewoc" file))))
 
+(defun dvc-fileinfo-marked-files ()
+  "Return list of fileinfo structs that are marked files."
+  (let ((elem (ewoc-nth dvc-fileinfo-ewoc 0))
+        result)
+    (while elem
+      (let ((fi (ewoc-data elem)))
+        (if (and (dvc-fileinfo-file-p fi)
+               (dvc-fileinfo-file-mark fi))
+          (setq result (append result (list fi))))
+        (setq elem (ewoc-next dvc-fileinfo-ewoc elem))))
+    result))
+
+;;; actions
+(defun dvc-fileinfo-rename ()
+  "Record a rename for two currently marked files.
+One file must have status `missing', the other `unknown'."
+  (interactive)
+  (if (not (= 2 (length dvc-buffer-marked-file-list)))
+      (error "rename requires exactly 2 marked files"))
+
+  (let* ((fis (dvc-fileinfo-marked-files))
+         (stati (mapcar 'dvc-fileinfo-file-status fis)))
+
+    (cond
+     ((and (eq 'missing (nth 0 stati))
+           (eq 'unknown (nth 1 stati)))
+      (dvc-rename (dvc-fileinfo-path (nth 0 fis))
+                  (dvc-fileinfo-path (nth 1 fis))))
+
+     ((and (eq 'missing (nth 1 stati))
+           (eq 'unknown (nth 0 stati)))
+      (dvc-rename (dvc-fileinfo-path (nth 1 fis))
+                  (dvc-fileinfo-path (nth 0 fis))))
+
+     (t
+      (error "must rename from a file with status `missing' to a file with status `unknown'")))))
+
 (provide 'dvc-fileinfo)
 ;;; end of file

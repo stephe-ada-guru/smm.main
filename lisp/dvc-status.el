@@ -67,6 +67,7 @@ containing (symbol description)."
     (define-key map dvc-keyvec-help     'describe-mode)
     (define-key map dvc-keyvec-logs     'dvc-log)
     (define-key map "l"                 'dvc-diff-log)
+    (define-key map "R"                 'dvc-fileinfo-rename)
     (define-key map dvc-keyvec-mark     'dvc-fileinfo-mark-file)
     (define-key map dvc-keyvec-mark-all 'dvc-fileinfo-mark-all)
     (define-key map dvc-keyvec-next     'dvc-fileinfo-next)
@@ -192,20 +193,17 @@ conflicts, and/or ediff current files."
       (setq status (dvc-fileinfo-file-status (dvc-fileinfo-current-fileinfo))))
 
     (ecase status
-      (added
-       ;; Don't offer Remove here; not a common action. Just start or
-       ;; continue a commit log entry.
-       (dvc-log-edit t t))
-
-      (deleted
-       (dvc-log-edit t t))
+      ((added deleted rename-source rename-target)
+       ;; typically nothing to do; just need commit
+       (ding))
 
       (missing
        ;; File is in database, but not in workspace
        (ding)
        (dvc-offer-choices (concat (dvc-fileinfo-current-file) " does not exist in working directory")
                           '((dvc-status-revert-files "revert")
-                            (dvc-status-remove-files "remove"))))
+                            (dvc-status-remove-files "remove")
+                            (dvc-fileinfo-rename "rename"))))
 
       (modified
        ;; Don't offer undo here; not a common action
@@ -214,14 +212,12 @@ conflicts, and/or ediff current files."
            (error "cannot diff more than one file"))
        (dvc-status-ediff))
 
-      ((or rename-source rename-target)
-       (dvc-log-edit t t))
-
       (unknown
        (dvc-offer-choices nil
                           '((dvc-add "add")
                             (dvc-status-ignore-files "ignore")
-                            (dvc-delete "delete"))))
+                            (dvc-delete "delete")
+                            (dvc-fileinfo-rename "rename"))))
       )))
 
 (defun dvc-status-inventory-done (status-buffer)
@@ -233,7 +229,7 @@ conflicts, and/or ediff current files."
     ;; refresh until the status is displayed
     (dvc-fileinfo-delete-messages)))
 
-;; diff operations
+;; diff operations. FIXME: move these to dvc-fileinfo
 (defun dvc-status-diff ()
   "Run diff of the current workspace file against the database version."
   (interactive)
@@ -251,7 +247,7 @@ conflicts, and/or ediff current files."
   (let ((dvc-temp-current-active-dvc dvc-buffer-current-active-dvc))
     (dvc-file-ediff (dvc-fileinfo-current-file))))
 
-;; database operations
+;; database operations. FIXME: move these to dvc-fileinfo
 (defun dvc-status-add-files ()
   "Add current files to the database. Directories are also added,
 but not recursively."
