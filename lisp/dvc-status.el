@@ -68,6 +68,7 @@ containing (symbol description)."
     (define-key map dvc-keyvec-logs     'dvc-log)
     (define-key map "l"                 'dvc-diff-log)
     (define-key map "R"                 'dvc-fileinfo-rename)
+    (define-key map "t"                 'dvc-fileinfo-add-log-entry)
     (define-key map dvc-keyvec-mark     'dvc-fileinfo-mark-file)
     (define-key map dvc-keyvec-mark-all 'dvc-fileinfo-mark-all)
     (define-key map dvc-keyvec-next     'dvc-fileinfo-next)
@@ -120,27 +121,28 @@ containing (symbol description)."
     ["Ediff File"                  dvc-status-ediff                  t]
     ["diff File"                   dvc-file-diff                     t]
     ["Delete File"                 dvc-status-remove-files           t]
+    ["Rename File"                 dvc-fileinfo-rename               t]
     ["Revert File"                 dvc-status-revert-files           t]
     ["Log (single file)"           dvc-diff-log                      t]
     ["Log (full tree)"             dvc-log                           t]
     ))
 
-(define-derived-mode dvc-status-mode dvc-fundamental-mode "                 dvc-status"
+(define-derived-mode dvc-status-mode dvc-fundamental-mode "dvc-status"
   "Major mode to display workspace status."
   (setq dvc-buffer-current-active-dvc (dvc-current-active-dvc))
   (setq dvc-fileinfo-ewoc (ewoc-create 'dvc-fileinfo-printer))
   (set (make-local-variable 'dvc-get-file-info-at-point-function) 'dvc-fileinfo-current-file)
-  (setq                            dvc-buffer-marked-file-list nil)
-  (use-local-map                   dvc-status-mode-map)
-  (easy-menu-add                   dvc-status-mode-menu)
-  (                                dvc-install-buffer-menu)
+  (setq dvc-buffer-marked-file-list nil)
+  (use-local-map dvc-status-mode-map)
+  (easy-menu-add dvc-status-mode-menu)
+  (dvc-install-buffer-menu)
   (setq buffer-read-only t)
   (buffer-disable-undo)
   (set-buffer-modified-p nil))
 
 (add-to-list 'uniquify-list-buffers-directory-modes 'dvc-status-mode)
 
-(defun                             dvc-status-prepare-buffer (dvc root base-revision branch header-more refresh)
+(defun dvc-status-prepare-buffer (dvc root base-revision branch header-more refresh)
   "Prepare and return a status buffer. Should be called by <back-end>-dvc-status.
 DVC is back-end.
 ROOT is absolute path to workspace.
@@ -168,10 +170,10 @@ REFRESH is a function that refreshes the status; see `dvc-buffer-refresh-functio
         (ewoc-refresh dvc-fileinfo-ewoc)))
     (dvc-switch-to-buffer-maybe status-buffer)))
 
-(defun dvc-status-dtrt ()
+(defun dvc-status-dtrt (prefix)
   "Do The Right Thing in a status buffer; update, commit, resolve
 conflicts, and/or ediff current files."
-  (interactive)
+  (interactive "P")
 
   (let (status)
     ;; Note that message elements cannot be marked. Make sure all
@@ -193,9 +195,13 @@ conflicts, and/or ediff current files."
       (setq status (dvc-fileinfo-file-status (dvc-fileinfo-current-fileinfo))))
 
     (ecase status
-      ((added deleted rename-source rename-target)
+      (added
+       (dvc-fileinfo-add-log-entry (Xor prefix dvc-add-log-entry-other-frame)))
+
+      ((deleted rename-source rename-target)
        ;; typically nothing to do; just need commit
-       (ding))
+       (ding)
+       (dvc-fileinfo-next))
 
       (missing
        ;; File is in database, but not in workspace
@@ -214,9 +220,9 @@ conflicts, and/or ediff current files."
 
       (unknown
        (dvc-offer-choices nil
-                          '((dvc-add "add")
+                          '((dvc-status-add-files "add")
                             (dvc-status-ignore-files "ignore")
-                            (dvc-delete "delete")
+                            (dvc-status-remove-files "remove")
                             (dvc-fileinfo-rename "rename"))))
       )))
 
