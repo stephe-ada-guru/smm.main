@@ -69,60 +69,59 @@ ROOT must be root of workspace for DVC."
 
 (defvar dvc-diff-mode-map
   (let ((map (copy-keymap diff-mode-shared-map)))
-    (define-key map dvc-keyvec-help 'describe-mode)
-    (define-key map "\C-m"   'dvc-diff-jump-to-change)
-    (define-key map [return] 'dvc-diff-jump-to-change)
-    (define-key map [(control x) (control j)] 'dvc-dired-jump)
-    (define-key map "\M-="          'dvc-diff-scroll-up-or-diff)
-    (define-key map [(meta return)] 'dvc-diff-scroll-down-or-diff)
-    (define-key map "\M-\C-m"       'dvc-diff-scroll-down-or-diff)
-    (define-key map [?=] 'dvc-diff-diff)
-    (define-key map dvc-keyvec-add  'dvc-add-files)
-    (define-key map [?h] 'dvc-buffer-pop-to-partner-buffer)
-    (define-key map dvc-keyvec-logs    'dvc-log)
-    (define-key map "l"                'dvc-diff-log)
-    (define-key map dvc-keyvec-ediff   'dvc-diff-ediff)
-    (define-key map dvc-keyvec-refresh 'dvc-generic-refresh)
-    (define-key map dvc-keyvec-commit  'dvc-log-edit)
-    (define-key map "t"                'dvc-add-log-entry)
+    (define-key map dvc-keyvec-help                           'describe-mode)
+    (define-key map "\C-m"                                    'dvc-diff-jump-to-change)
+    (define-key map [return]                                  'dvc-diff-jump-to-change)
+    (define-key map [(control x) (control j)]                 'dvc-dired-jump)
+    (define-key map "\M-="                                    'dvc-diff-scroll-up-or-diff)
+    (define-key map [(meta return)]                           'dvc-diff-scroll-down-or-diff)
+    (define-key map "\M-\C-m"                                 'dvc-diff-scroll-down-or-diff)
+    (define-key map [?=]                                      'dvc-diff-diff)
+    (define-key map dvc-keyvec-add                            'dvc-add-files)
+    (define-key map [?h]                                      'dvc-buffer-pop-to-partner-buffer)
+    (define-key map dvc-keyvec-logs                           'dvc-log)
+    (define-key map "l"                                       'dvc-diff-log)
+    (define-key map dvc-keyvec-ediff                          'dvc-diff-ediff)
+    (define-key map dvc-keyvec-refresh                        'dvc-generic-refresh)
+    (define-key map dvc-keyvec-commit                         'dvc-log-edit)
+    (define-key map "t"                                       'dvc-add-log-entry)
     ;; TODO move this somewhere else.
-    (define-key map [?I] 'tla-inventory)
-    (define-key map dvc-keyvec-inventory 'dvc-pop-to-inventory)
+    (define-key map [?I]                                      'tla-inventory)
+    (define-key map dvc-keyvec-inventory                      'dvc-pop-to-inventory)
 
-    (define-key map dvc-keyvec-next      'dvc-diff-next)
-    (define-key map dvc-keyvec-previous  'dvc-diff-prev)
-    (define-key map dvc-keyvec-revert    'dvc-revert-files)
-    (define-key map dvc-keyvec-quit      'dvc-buffer-quit)
-    (define-key map dvc-keyvec-remove    'dvc-remove-files)
-    (define-key map [?d]                 'dvc-remove-files); as in dired
-    (define-key map dvc-keyvec-mark      'dvc-fileinfo-mark-file)
-    (define-key map dvc-keyvec-unmark    'dvc-fileinfo-unmark-file)
-    (define-key map [backspace]          'dvc-fileinfo-unmark-file-up)
-    (define-key map [?v]                 'dvc-diff-view-source)
-    (define-key map dvc-keyvec-parent    'dvc-diff-master-buffer)
-    (define-key map [?j]                 'dvc-diff-diff-or-list)
-    (define-key map (dvc-prefix-kill-ring ?d) 'dvc-diff-save-current-defun-as-kill)
+    (define-key map dvc-keyvec-next                           'dvc-diff-next)
+    (define-key map dvc-keyvec-previous                       'dvc-diff-prev)
+    (define-key map dvc-keyvec-revert                         'dvc-revert-files)
+    (define-key map dvc-keyvec-quit                           'dvc-buffer-quit)
+    (define-key map dvc-keyvec-remove                         'dvc-remove-files)
+    (define-key map [?d]                                      'dvc-remove-files); as in dired
+    (define-key map dvc-keyvec-mark                           'dvc-fileinfo-mark-file)
+    (define-key map dvc-keyvec-unmark                         'dvc-fileinfo-unmark-file)
+    (define-key map [backspace]                               'dvc-fileinfo-unmark-file-up)
+    (define-key map [?v]                                      'dvc-diff-view-source)
+    (define-key map dvc-keyvec-parent                         'dvc-diff-master-buffer)
+    (define-key map [?j]                                      'dvc-diff-diff-or-list)
+    (define-key map (dvc-prefix-kill-ring ?d)                 'dvc-diff-save-current-defun-as-kill)
 
     ;; Buffers group
-    (define-key map (dvc-prefix-buffer ?p) 'dvc-show-process-buffer)
-    (define-key map (dvc-prefix-buffer ?L) 'dvc-open-internal-log-buffer)
-    (define-key map (dvc-prefix-buffer dvc-key-show-bookmark) 'tla-bookmarks)
+    (define-key map (dvc-prefix-buffer ?p)                    'dvc-show-process-buffer)
+    (define-key map (dvc-prefix-buffer ?L)                    'dvc-open-internal-log-buffer)
+    (define-key map (dvc-prefix-buffer dvc-key-show-bookmark) 'dvc-bookmarks)
 
     ;; Ignore file handling
-    (define-key map (dvc-prefix-tagging-method ?i) 'dvc-ignore-files)
-    (define-key map (dvc-prefix-tagging-method ?I) 'dvc-ignore-file-extensions)
-    ;; C-i is not a good choice since it's TAB in emacs -nw
-    (define-key map (dvc-prefix-tagging-method ?e) 'dvc-edit-ignore-files)
+    (define-key map (dvc-prefix-tagging-method ?i)            'dvc-ignore-files)
+    (define-key map (dvc-prefix-tagging-method ?I)            'dvc-ignore-file-extensions)
+    (define-key map (dvc-prefix-tagging-method ?e)            'dvc-edit-ignore-files)
 
     ;; working copy bindings
     (define-key map (vector dvc-key-working-copy) nil) ;; unbind ?W, before it can be used
-    (define-key map (dvc-prefix-working-copy ?s) 'dvc-save-diff)
+    (define-key map (dvc-prefix-working-copy ?s)              'dvc-save-diff)
 
     ;; the merge group
-    (define-key map (dvc-prefix-merge ?u) 'dvc-update)
-    (define-key map (dvc-prefix-merge ?f) 'dvc-pull) ;; hint: fetch, p is reserved for push
-    (define-key map (dvc-prefix-merge ?m) 'dvc-missing)
-    (define-key map (dvc-prefix-merge ?M) 'dvc-merge)
+    (define-key map (dvc-prefix-merge ?u)                     'dvc-update)
+    (define-key map (dvc-prefix-merge ?f)                     'dvc-pull) ;; hint: fetch, p is reserved for push
+    (define-key map (dvc-prefix-merge ?m)                     'dvc-missing)
+    (define-key map (dvc-prefix-merge ?M)                     'dvc-merge)
     map)
   "Keymap used in `dvc-diff-mode'.")
 
@@ -222,13 +221,14 @@ Commands:
     (>= (ewoc-location elem) (line-beginning-position))))
 
 (defun dvc-diff-jump-to-change (&optional other-file)
-  "Jump to the corresponding file and location of the change.
+  "Jump to the corresponding file and location of the change at point.
 OTHER-FILE (default prefix) if non-nil means visit the original
 file; otherwise visit the modified file."
   (interactive "P")
-  (if (dvc-diff-in-ewoc-p)
-      (find-file (dvc-fileinfo-current-file))
-    (dvc-diff-diff-goto-source other-file)))
+  (let ((dvc-temp-current-active-dvc (dvc-current-active-dvc)))
+    (if (dvc-diff-in-ewoc-p)
+        (find-file (dvc-fileinfo-current-file))
+      (dvc-diff-diff-goto-source other-file))))
 
 (defun dvc-diff-scroll-or-diff (up-or-down)
   "If file-diff buffer is visible, scroll. Otherwise, show it."
@@ -277,8 +277,8 @@ file; otherwise visit the modified file."
 
 (defun dvc-diff-diff-or-list ()
   "Jump between list entry and corresponding diff hunk.
-When in the ewoc, jump to the corresponding
-diff. When on a diff, jump to the corresponding entry in the ewoc."
+When in the list, jump to the corresponding
+diff. When on a diff, jump to the corresponding entry in the list."
   (interactive)
   (if (dvc-diff-in-ewoc-p)
       (progn
@@ -442,7 +442,7 @@ CMD, if non-nil, is appended to dvc-header."
 Inserts a message in the changes buffer, and in the minibuffer.
 
 DIFF-BUFFER is the buffer prepared by dvc-diff-prepare-buffer.
-MSG is the format string for the message to the user.
+MSG is a format string for a message to the user.
 DIR is a string, passed to `format' with MSG."
 ;; FIXME: should standardize message, using back-end user display of
 ;; dvc-diff-base and dvc-diff-modified.

@@ -337,7 +337,7 @@ in that directory. Then move to previous ewoc entry."
       nil))))
 
 (defun dvc-fileinfo-find-file (file)
-  "Return ewoc element for file (full path)."
+  "Return ewoc element for FILE (full path)."
   (let ((elem (ewoc-nth dvc-fileinfo-ewoc 0)))
     (while (and elem
                 (or (not (dvc-fileinfo-file-p (ewoc-data elem)))
@@ -356,7 +356,7 @@ in that directory. Then move to previous ewoc entry."
     (while elem
       (let ((fi (ewoc-data elem)))
         (if (and (dvc-fileinfo-file-p fi)
-               (dvc-fileinfo-file-mark fi))
+                 (dvc-fileinfo-file-mark fi))
           (setq result (append result (list fi))))
         (setq elem (ewoc-next dvc-fileinfo-ewoc elem))))
     result))
