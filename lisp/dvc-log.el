@@ -220,7 +220,9 @@ by calling `dvc-log-flush-commit-file-list'."
 
 ;;;###autoload
 (defun dvc-add-log-entry (&optional other-frame)
-  "Add new DVC log ChangeLog style entry."
+  "Add new ChangeLog style entry to the current DVC log-edit buffer.
+If OTHER-FRAME xor `dvc-add-log-entry-other-frame' is non-nil,
+show log-edit buffer in other frame."
   (interactive "P")
   (save-restriction
     (dvc-add-log-entry-internal (Xor other-frame dvc-add-log-entry-other-frame))))
@@ -242,6 +244,9 @@ For use as add-log-file-name-function."
 from the ediff control buffer."
   (interactive "P")
   (set-buffer ediff-buffer-B) ; DVC puts workspace version here
+
+  ;; We don't set add-log-file-name-function globally because
+  ;; dvc-diff-mode needs a different one.
   (let ((add-log-file-name-function 'dvc-add-log-file-name))
     (dvc-add-log-entry-internal other-frame)))
 

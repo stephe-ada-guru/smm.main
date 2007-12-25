@@ -121,10 +121,9 @@
   (interactive (list default-directory))
   (let* ((dir (or path default-directory))
          (root (xdarcs-tree-root dir))
-         (buffer (dvc-prepare-changes-buffer
+         (buffer (dvc-diff-prepare-buffer 'xdarcs root
                   `(xdarcs (last-revision ,root 1))
-                  `(xdarcs (local-tree ,root))
-                  'status root 'xdarcs)))
+                  `(xdarcs (local-tree ,root)))))
     (dvc-switch-to-buffer-maybe buffer)
     (setq dvc-buffer-refresh-function 'xdarcs-whatsnew)
     (dvc-save-some-buffers root)
@@ -134,7 +133,7 @@
      (dvc-capturing-lambda (output error status arguments)
        (with-current-buffer (capture buffer)
          (if (> (point-max) (point-min))
-             (dvc-show-changes-buffer output 'xdarcs-parse-whatsnew
+             (dvc-diff-show-buffer output 'xdarcs-parse-whatsnew
                                       (capture buffer))
            (dvc-diff-no-changes (capture buffer)
                                 "No changes in %s"
@@ -194,10 +193,7 @@
   (let* ((cur-dir (or path default-directory))
          (orig-buffer (current-buffer))
          (root (dvc-tree-root cur-dir))
-         (buffer (dvc-prepare-changes-buffer
-                  `(xdarcs (last-revision ,root 1))
-                  `(xdarcs (local-tree ,root))
-                  'diff root 'xdarcs))
+         (buffer (dvc-diff-prepare-buffer 'xdarcs root against '(xdarcs (local-tree ,root))))
          (command-list '("diff" "--unified")))
     (dvc-switch-to-buffer-maybe buffer)
     (when dont-switch (pop-to-buffer orig-buffer))
@@ -205,7 +201,7 @@
     (dvc-run-dvc-sync 'xdarcs command-list
                        :finished
                        (dvc-capturing-lambda (output error status arguments)
-                         (dvc-show-changes-buffer output 'xdarcs-parse-diff
+                         (dvc-diff-show-buffer output 'xdarcs-parse-diff
                                                   (capture buffer))))))
 ;; --------------------------------------------------------------------------------
 ;; dvc revision support

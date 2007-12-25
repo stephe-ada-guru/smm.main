@@ -1343,13 +1343,10 @@ diffs. When AGAINST is non-nil, use it as comparison tree." command)
 
 (tla-recursive-command tla-changes-rec (&optional summary against)
                        (tla--changes-command)
-                       (dvc-prepare-changes-buffer
+                       (dvc-diff-prepare-buffer tla-arch-branch root
                         (or against
                             `(,tla-arch-branch (last-revision ,root 1)))
-                        `(tla (local-tree ,root))
-                        'diff
-                        default-directory
-                        tla-arch-branch)
+                        `(tla (local-tree ,root)))
                        tla-changes-recursive
                        (progn
                          (setq tla--changes-summary summary)
@@ -1429,7 +1426,7 @@ Value is chosen depending on user configuration and arch branch."
                                ;; (ewoc-refresh dvc-diff-cookie)))
                                dvc-diff-cookie)
                      ))
-                 (dvc-show-changes-buffer
+                 (dvc-diff-show-buffer
                   output 'tla--parse-other (capture buffer))
                  (message "`%s update' finished" (tla--executable))
                  (dvc-revert-some-buffers (capture root))
@@ -1442,12 +1439,9 @@ Value is chosen depending on user configuration and arch branch."
 
 (tla-recursive-command tla-update-rec (tree &optional handle recursive)
                        (tla--update-command)
-                       (dvc-prepare-changes-buffer
+                       (dvc-diff-prepare-buffer tla-arch-branch default-directory
                         `(,tla-arch-branch (last-revision ,default-directory))
-                        `(,tla-arch-branch (local-tree ,default-directory))
-                        'diff
-                        default-directory
-                        tla-arch-branch)
+                        `(,tla-arch-branch (local-tree ,default-directory)))
                        tla-update-recursive
                        (tla--update-internal root buffer nil handle)
                        (tla--update-internal subtree buffer-sub (capture buffer)
@@ -1532,7 +1526,7 @@ the root of the projects is displayed."
           (message "No changes in %s" (capture root)))
         (with-current-buffer (capture buffer)
           (let ((inhibit-read-only t))
-            (dvc-diff-delete-messages)
+            (dvc-fileinfo-delete-messages)
             (ewoc-enter-last dvc-diff-cookie
                              (list 'message (concat "* No changes in "
                                                     (capture root) ".\n\n")))
@@ -1579,7 +1573,7 @@ the root of the projects is displayed."
                                   tla-arch-branch 'diff
                                   ,(capture root))))))))
                 (with-current-buffer (capture buffer)
-                  (dvc-diff-delete-messages)
+                  (dvc-fileinfo-delete-messages)
                   (ewoc-enter-last
                    dvc-diff-cookie
                    (list 'message
@@ -1588,12 +1582,13 @@ the root of the projects is displayed."
                                  (dvc-buffer-content error))))
                   (ewoc-refresh dvc-diff-cookie)
                   (message "Error in diff process"))))
-          (dvc-show-changes-buffer output
+          (dvc-diff-show-buffer output
                                    (if (eq tla-arch-branch 'tla)
                                        'tla--parse-other 'tla--parse-baz-diff)
                                    (capture buffer)
-                                   (capture master-buffer)
+                                   nil
                                    "^[^*\\.]")
+          ;; FIXME: DVC does not currently support nested trees
           (when (capture master-buffer)
             (with-current-buffer (capture master-buffer)
               (ewoc-map (lambda (x)
@@ -1881,14 +1876,11 @@ If DIRECTORY is nil or an empty string, just show the delta using --diffs."
              (list "delta" base modified directory)
            (list "delta" "--diffs" base modified)))
         (run-dired-p (when directory 'ask))
-        (buffer (dvc-prepare-changes-buffer
+        (buffer (dvc-diff-prepare-buffer tla-arch-branch (tla-tree-root default-directory)
                  `(,tla-arch-branch
                    (revision ,(tla--name-split base)))
                  `(,tla-arch-branch
-                   (revision ,(tla--name-split modified)))
-                 'changeset
-                 modified
-                 tla-arch-branch)))
+                   (revision ,(tla--name-split modified))))))
     (if dvc-switch-to-buffer-first
         (dvc-switch-to-buffer buffer))
     (tla--run-tla-async args
@@ -1922,7 +1914,7 @@ MODIFIED)."
           (message
            (concat "tla delta finished: "
                    "No changes in this arch working copy"))
-        (dvc-show-changes-buffer output 'tla--parse-other buffer)
+        (dvc-diff-show-buffer output 'tla--parse-other buffer)
         (unless dont-switch
           (dvc-switch-to-buffer buffer))
         (message "tla delta finished")))))
@@ -1977,15 +1969,15 @@ changeset."
              (revision (if (stringp revision) revision
                          (tla--name-construct revision)))
              (buffer (and justshow
-                          (dvc-prepare-changes-buffer
+                          (dvc-diff-prepare-buffer
+                           tla-arch-branch
+                           (tla-tree-root default-directory)
                            `(,tla-arch-branch
                              (previous-revision (,tla-arch-branch
                                                  (revision ,rev-list))
                                                 1))
                            `(,tla-arch-branch
-                             (revision ,rev-list))
-                           'changeset revision
-                           tla-arch-branch)))
+                             (revision ,rev-list)))))
              (dvc-switch-to-buffer-mode
               (if tla-switch-to-changes-buffer
                   dvc-switch-to-buffer-mode 'show-in-other-window)))
@@ -2019,10 +2011,9 @@ will be used for the variables `dvc-diff-base' and
                         (dvc-read-directory-name
                          "Changeset directory to view: "  changeset-dir changeset-dir)))))
   (unless buffer
-    (setq buffer (dvc-prepare-changes-buffer
+    (setq buffer (dvc-diff-prepare-buffer tla-arch-branch (tla-tree-root default-directory)
                   base modified ;; TODO don't seem to be set.
-                  'changeset directory
-                  tla-arch-branch))
+                  ))
     (if dvc-switch-to-buffer-first
         (dvc-switch-to-buffer buffer)))
   (tla--run-tla-sync (list "show-changeset"
@@ -2031,7 +2022,7 @@ will be used for the variables `dvc-diff-base' and
                            directory)
                      :finished
                      (dvc-capturing-lambda (output error status arguments)
-                        (dvc-show-changes-buffer output
+                        (dvc-diff-show-buffer output
                                                  (if (capture without-diff)
                                                      'tla--parse-other
                                                    'tla--parse-show-changeset)
@@ -2086,16 +2077,16 @@ reverse."
   "Actually call \"tla apply-changeset CHANGESET TARGET\".
 
 If REVERSE is non-nil, use --reverse too."
-  (let ((buffer (dvc-prepare-changes-buffer nil nil 'diff default-directory tla-arch-branch)))
-    (tla--run-tla-sync (list "apply-changeset"
-                             (when reverse "--reverse")
-                             ;; (when tla-use-forward-option "--forward")
-                             changeset target)
-                       :finished (dvc-capturing-lambda (output error status arguments)
-                                   ;; (tla--show-last--process-buffer)
-                                   (dvc-show-changes-buffer output 'tla--parse-other (capture buffer))
-                                   (message "tla apply-changeset finished")
-                                  (dvc-revert-some-buffers (capture target))))))
+  (let ((buffer (dvc-diff-prepare-buffer tla-arch-branch default-directory nil nil)))
+  (tla--run-tla-sync
+   (list "apply-changeset"
+         (when reverse "--reverse")
+         changeset target)
+   :finished (dvc-capturing-lambda
+              (output error status arguments)
+              (dvc-diff-show-buffer output 'tla--parse-other buffer)
+              (message "tla apply-changeset finished")
+              (dvc-revert-some-buffers (capture target))))))
 
 (defun tla-apply-changeset-from-tgz (file tree show-changeset)
   "Apply changeset in FILE to TREE.
@@ -3308,7 +3299,9 @@ i.e. the destination mirror."
          "Star-merge may delete unsaved changes.  Continue anyway? ")
         (error "Not running star-merge"))
     (let* ((default-directory (or to-tree default-directory))
-           (buffer (dvc-prepare-changes-buffer
+           (buffer (dvc-diff-prepare-buffer
+                    tla-arch-branch
+                    default-directory
                     `(,tla-arch-branch
                       (last-revision ,default-directory))
                     `(,tla-arch-branch
@@ -3317,8 +3310,7 @@ i.e. the destination mirror."
                     ;; The user can just type `g' and get the real
                     ;; changes. Maybe a 'star-merge would be better
                     ;; here ...
-                    'diff default-directory
-                    tla-arch-branch)))
+                    )))
       (when dvc-switch-to-buffer-first
         (dvc-switch-to-buffer buffer))
       (tla--run-tla-async (list (if (tla-has-merge-command) "merge" "star-merge")
@@ -3327,7 +3319,7 @@ i.e. the destination mirror."
                                 from)
                           :finished (dvc-capturing-lambda (output error status arguments)
                                        ;; (tla--show-last--process-buffer)
-                                       (dvc-show-changes-buffer
+                                       (dvc-diff-show-buffer
                                         output 'tla--parse-other (capture buffer))
                                        (message "merge command finished")
                                        (dvc-revert-some-buffers (capture to-tree)))
@@ -3337,8 +3329,8 @@ i.e. the destination mirror."
                                       (2 (dvc-default-error-function
                                           output error status arguments))
                                       ;; How about other status?
-                                      (otherwise (dvc-show-changes-buffer output 'tla--parse-other)
-                                                 output nil (capture buffer))))))))
+                                      (otherwise (dvc-diff-show-buffer output 'tla--parse-other
+                                                 (capture buffer)))))))))
 
 (defun tla--replay-arguments ()
   "Build an argument list for the replay command.
@@ -3374,13 +3366,13 @@ If REVERSE is non-nil, reverse the requested revision."
          "Replay may delete unsaved changes.  Continue anyway? ")
         (error "Not replaying"))
     (dvc-show-last-process-buffer)
-    (let ((buffer (dvc-prepare-changes-buffer
+    (let ((buffer (dvc-diff-prepare-buffer
+                   tla-arch-branch
+                   default-directory
                    `(,tla-arch-branch
                      (last-revision ,default-directory))
                    `(,tla-arch-branch
-                     (local-tree ,default-directory))
-                   'diff default-directory
-                   tla-arch-branch)))
+                     (local-tree ,default-directory)))))
       (when dvc-switch-to-buffer-first
         (dvc-switch-to-buffer buffer))
       (tla--run-tla-async `("replay"
@@ -3391,7 +3383,7 @@ If REVERSE is non-nil, reverse the requested revision."
                                   from
                                 (list from)))
                           :finished (dvc-capturing-lambda (output error status arguments)
-                                       (dvc-show-changes-buffer output
+                                       (dvc-diff-show-buffer output
                                                                 'tla--parse-other
                                                                 (capture buffer))
                                        (message "tla replay finished")
@@ -3419,9 +3411,8 @@ If REVERSE is non-nil, reverse the requested revision."
                                      (message "tla sync-tree finished")
                                      (dvc-revert-some-buffers (capture to-tree)))
                         :error (lambda (output error status arguments)
-                                 (dvc-show-changes-buffer
-                                  output 'tla--parse-other
-                                  (dvc-prepare-changes-buffer nil nil 'diff default-directory tla-arch-branch))))))
+                                 (dvc-diff-show-buffer output 'tla--parse-other
+                                  (dvc-diff-prepare-buffer tla-arch-branch default-directory nil nil))))))
 
 ;;;###autoload
 (defun tla-switch (tree version &optional handle)
@@ -3440,10 +3431,9 @@ After running update, execute HANDLE (function taking no argument)."
        "Update may delete unsaved changes.  Continue anyway? ")
       (error "Not updating"))
   (let* ((default-directory (or tree default-directory))
-         (buffer (dvc-prepare-changes-buffer
+         (buffer (dvc-diff-prepare-buffer 'tla default-directory
                   (list 'last-revision default-directory)
-                  (list 'local-tree default-directory)
-                  'status default-directory 'tla)))
+                  (list 'local-tree default-directory))))
     (when dvc-switch-to-buffer-first
       (dvc-switch-to-buffer buffer))
     (tla--run-tla-async `("switch"
@@ -3455,7 +3445,7 @@ After running update, execute HANDLE (function taking no argument)."
                         :finished (lexical-let ((buffer-lex buffer) (tree-lex tree) (handle-lex handle))
                                     (lambda (output error status arguments)
                                       ;; (tla--show-last--process-buffer)
-                                      (dvc-show-changes-buffer
+                                      (dvc-diff-show-buffer
                                        output 'tla--parse-other buffer-lex)
                                       (message "`%s switch' finished" (tla--executable))
                                       (dvc-revert-some-buffers tree-lex)
