@@ -298,7 +298,10 @@ TODO: DONT-SWITCH is currently ignored."
          (dir (or path default-directory))
          (root (bzr-tree-root dir))
          (against (or against `(bzr (last-revision ,root 1))))
-         (buffer (dvc-diff-prepare-buffer 'bzr root against `(bzr (local-tree ,root)))))
+         (buffer (dvc-prepare-changes-buffer
+                  against
+                  `(bzr (local-tree ,root))
+                  'diff root 'bzr)))
     (dvc-switch-to-buffer-maybe buffer)
     (dvc-buffer-push-previous-window-config window-conf)
     (dvc-save-some-buffers root)
@@ -318,7 +321,7 @@ TODO: DONT-SWITCH is currently ignored."
            (dvc-diff-error-in-process (capture buffer)
                                       "Error in diff process"
                                       output error)
-         (dvc-diff-show-buffer output 'bzr-parse-diff
+         (dvc-show-changes-buffer output 'bzr-parse-diff
                                   (capture buffer)))))))
 
 (defun bzr-delta (base modified &optional dont-switch)
@@ -328,7 +331,13 @@ TODO: dont-switch is currently ignored."
   (dvc-trace "base, modified=%S, %S; dir=%S" base modified default-directory)
   (let ((base-str (bzr-revision-id-to-string base))
         (modified-str (bzr-revision-id-to-string modified))
-        (buffer (dvc-diff-prepare-buffer 'bzr (bzr-tree-root default-directory) base modified)))
+        (buffer (dvc-prepare-changes-buffer
+                 base modified
+                 'revision-diff
+                 (concat (bzr-revision-id-to-string base)
+                         ".."
+                         (bzr-revision-id-to-string modified))
+                 'bzr)))
     (when dvc-switch-to-buffer-first
       (dvc-switch-to-buffer buffer))
     (let ((default-directory
@@ -351,7 +360,7 @@ TODO: dont-switch is currently ignored."
              (dvc-diff-error-in-process (capture buffer)
                                         "Error in diff process"
                                         output error)
-           (dvc-diff-show-buffer output 'bzr-parse-diff
+           (dvc-show-changes-buffer output 'bzr-parse-diff
                                     (capture buffer)))))
       ;; We must return the buffer (even in asynchronous mode)
       (with-current-buffer buffer (goto-char (point-min)))
@@ -498,10 +507,10 @@ of the commit. Additionally the destination email address can be specified."
   "Run \"bzr status\" in `default-directory', which must be a tree root."
   (let* ((window-conf (current-window-configuration))
          (root default-directory)
-         ;; FIXME: this names the buffer "*bzr-diff*"; should be "*bzr-status*"
-         (buffer (dvc-diff-prepare-buffer 'bzr root
+         (buffer (dvc-prepare-changes-buffer
                   `(bzr (last-revision ,root 1))
-                  `(bzr (local-tree ,root)))))
+                  `(bzr (local-tree ,root))
+                  'status root 'bzr)))
     (dvc-switch-to-buffer-maybe buffer)
     (dvc-buffer-push-previous-window-config window-conf)
     (setq dvc-buffer-refresh-function 'bzr-dvc-status)
@@ -511,7 +520,7 @@ of the commit. Additionally the destination email address can be specified."
      (dvc-capturing-lambda (output error status arguments)
        (with-current-buffer (capture buffer)
          (if (> (point-max) (point-min))
-             (dvc-diff-show-buffer output 'bzr-parse-status
+             (dvc-show-changes-buffer output 'bzr-parse-status
                                       (capture buffer))
          (dvc-diff-no-changes (capture buffer)
                              "No changes in %s"
@@ -547,9 +556,10 @@ of the commit. Additionally the destination email address can be specified."
   (interactive)
   (let* ((dir default-directory)
          (root (bzr-tree-root dir))
-         (buffer (dvc-diff-prepare-buffer 'bzr root
+         (buffer (dvc-prepare-changes-buffer
                   `(bzr (last-revision ,root 1))
-                  `(bzr (local-tree ,root)))))
+                  `(bzr (local-tree ,root))
+                  'inventory root 'bzr)))
     (dvc-switch-to-buffer-maybe buffer)
     (setq dvc-buffer-refresh-function 'bzr-inventory)
     (dvc-save-some-buffers root)
@@ -558,7 +568,7 @@ of the commit. Additionally the destination email address can be specified."
      :finished
      (dvc-capturing-lambda (output error status arguments)
        (with-current-buffer (capture buffer)
-         (dvc-diff-show-buffer output 'bzr-parse-inventory
+         (dvc-show-changes-buffer output 'bzr-parse-inventory
                                   (capture buffer)))
        :error
        (dvc-capturing-lambda (output error status arguments)
@@ -785,7 +795,7 @@ non-interactive versions."
 (defun bzr-resolved (file)
   "Command to delete .rej file after conflicts resolution.
 Asks confirmation if the file still has diff3 markers.
-Then, run \"bzr revolve\".
+Then, run \"bzr resolve\".
 
 TODO: should share some code with `tla-resolved'."
   (interactive

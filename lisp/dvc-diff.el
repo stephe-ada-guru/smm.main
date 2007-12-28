@@ -47,15 +47,19 @@
   "Default for \"dvc-search-file-in-diff\". Place point on diff hunk for FILE."
   (re-search-forward (concat "^\\+\\+\\+ \\(b\\|mod\\)/" file "\\(.+[0-9][0-9][0-9][0-9]\\)?$")))
 
-(defun dvc-diff-prepare-buffer (dvc root base modified)
+(defun dvc-prepare-changes-buffer (base modified type path dvc)
   "Create and return a buffer to run command showing diffs.
 
 Sets `dvc-diff-base' and `dvc-diff-modified' to BASE and
 MODIFIED.
 
-ROOT must be root of workspace for DVC."
+TYPE must be found in `dvc-buffer-type-alist'.
+
+PATH must match mode in `dvc-buffer-type-alist' for TYPE.
+
+TYPE and PATH are passed to `dvc-get-buffer-create'."
   (with-current-buffer
-      (dvc-get-buffer-create dvc (if (eq (dvc-revision-get-type modified) 'local-tree) 'diff 'revision-diff) root)
+      (dvc-get-buffer-create dvc type path)
     (let ((inhibit-read-only t)) (erase-buffer))
     (let ((dvc-temp-current-active-dvc dvc))
       (funcall (dvc-function dvc "diff-mode")))
@@ -63,9 +67,70 @@ ROOT must be root of workspace for DVC."
     (setq dvc-diff-modified modified)
     (current-buffer)))
 
+(defun dvc-diff-chose-face (status modif)
+  "Return a face appropriate for STATUS or MODIF."
+  (cond
+   ((string= "A" status) 'dvc-added)
+   ((string= "?" status) 'dvc-unknown)
+   ((string= "M" modif) 'dvc-modified)
+   ((string= "M" status) 'dvc-modified)
+   ((string= "-" modif)  'dvc-modified)
+   ((string= "P" status) 'dvc-modified)
+   ((string= "C" status) 'dvc-conflict)
+   ((string= "D" status) 'dvc-conflict)
+   ((string= "R" status) 'dvc-move)
+   ((string= " " status) 'default)
+   (t
+    (dvc-trace "unknown status=%S or modif=%S" status modif)
+    'default)))
+
 ;; ----------------------------------------------------------------------------
 ;; dvc-diff-mode
 ;; ----------------------------------------------------------------------------
+
+(defun dvc-diff-printer (elem)
+  "Ewoc pretty-printer for `dvc-diff-cookie'.
+
+Pretty-print ELEM."
+  (cond
+   ((eq (car elem) 'file)
+    (let* ((empty-mark " ")
+           (mark (when (member (cadr elem) dvc-buffer-marked-file-list)
+                   dvc-mark))
+           (file     (nth 1 elem))
+           (status   (nth 2 elem))
+           (modif    (nth 3 elem))
+           (dir      (nth 4 elem))
+           (origname (nth 5 elem))
+           (line (concat status modif " "
+                         (when origname (concat origname dir "\t => "))
+                         file dir))
+           (face (if mark
+                     'dvc-marked
+                   (dvc-diff-chose-face status modif))))
+      (if mark
+          (insert mark)
+        (insert empty-mark))
+      (insert (dvc-face-add line
+                             face
+                             'dvc-diff-file-map
+                             dvc-diff-file-menu))))
+   ((eq (car elem) 'subtree)
+    (insert (dvc-face-add
+             (concat " T" (cond ((not (cadddr elem)) "?")
+                                ((eq  (cadddr elem) 'changes) "M")
+                                ((eq  (cadddr elem) 'updated) "U")
+                                ((eq  (cadddr elem) 'no-changes) "-"))
+                     " " (car (cddr elem)))
+             'dvc-nested-tree)))
+
+   ((eq (car elem) 'message)
+    (insert (cadr elem)))
+
+   ((eq (car elem) 'searching-subtrees)
+    (insert (dvc-face-add " T  Searching for subtrees ..."
+                           'dvc-nested-tree))))
+  )
 
 (defvar dvc-diff-mode-map
   (let ((map (copy-keymap diff-mode-shared-map)))
@@ -84,7 +149,7 @@ ROOT must be root of workspace for DVC."
     (define-key map dvc-keyvec-ediff                          'dvc-diff-ediff)
     (define-key map dvc-keyvec-refresh                        'dvc-generic-refresh)
     (define-key map dvc-keyvec-commit                         'dvc-log-edit)
-    (define-key map "t"                                       'dvc-add-log-entry)
+    (define-key map "t"                                       'dvc-diff-add-log-entry)
     ;; TODO move this somewhere else.
     (define-key map [?I]                                      'tla-inventory)
     (define-key map dvc-keyvec-inventory                      'dvc-pop-to-inventory)
@@ -95,9 +160,9 @@ ROOT must be root of workspace for DVC."
     (define-key map dvc-keyvec-quit                           'dvc-buffer-quit)
     (define-key map dvc-keyvec-remove                         'dvc-remove-files)
     (define-key map [?d]                                      'dvc-remove-files); as in dired
-    (define-key map dvc-keyvec-mark                           'dvc-fileinfo-mark-file)
-    (define-key map dvc-keyvec-unmark                         'dvc-fileinfo-unmark-file)
-    (define-key map [backspace]                               'dvc-fileinfo-unmark-file-up)
+    (define-key map dvc-keyvec-mark                           'dvc-diff-mark-file)
+    (define-key map dvc-keyvec-unmark                         'dvc-diff-unmark-file)
+    (define-key map [backspace]                               'dvc-diff-unmark-file-up)
     (define-key map [?v]                                      'dvc-diff-view-source)
     (define-key map dvc-keyvec-parent                         'dvc-diff-master-buffer)
     (define-key map [?j]                                      'dvc-diff-diff-or-list)
@@ -227,7 +292,24 @@ file; otherwise visit the modified file."
   (interactive "P")
   (let ((dvc-temp-current-active-dvc (dvc-current-active-dvc)))
     (if (dvc-diff-in-ewoc-p)
-        (find-file (dvc-fileinfo-current-file))
+        (let ((fileinfo (dvc-fileinfo-current-fileinfo)))
+          (etypecase fileinfo
+            (dvc-fileinfo-file ; also matches dvc-fileinfo-dir
+             ;; FIXME: support OTHER-FILE here
+             (find-file (dvc-fileinfo-current-file)))
+
+            (dvc-fileinfo-legacy
+             (let ((data (dvc-fileinfo-legacy-data fileinfo)))
+               (cond
+                ((eq (car data) 'file)
+                 (find-file (cadr data)))
+
+                ((eq (car data) 'subtree)
+                 (dvc-switch-to-buffer (cadr data)))
+
+                (t (error "Not on a recognized location")))))))
+
+      ;; not in the ewoc part
       (dvc-diff-diff-goto-source other-file))))
 
 (defun dvc-diff-scroll-or-diff (up-or-down)
@@ -235,7 +317,6 @@ file; otherwise visit the modified file."
   (let ((file (dvc-get-file-info-at-point)))
     (unless file
       (error "No file at point."))
-    ;; TODO
     (let ((buffer (dvc-get-buffer dvc-buffer-current-active-dvc 'file-diff file)))
       (unless (dvc-scroll-maybe buffer up-or-down)
         (dvc-file-diff file dvc-diff-base dvc-diff-modified t)))))
@@ -262,7 +343,7 @@ file; otherwise visit the modified file."
                           (unless (string= "/dev/null" file)
                             (funcall
                              dvc-original-file-exists-p
-                             ;; TODO make this generic.
+                             ;; FIXME: make this generic.
                              ;; <DVC>-diff-get-filename
                              (tla--changes-what-changed-original-file file))))
            (find-file-noselect (file &optional nowarn rawfile wildcards)
@@ -280,11 +361,121 @@ file; otherwise visit the modified file."
 When in the list, jump to the corresponding
 diff. When on a diff, jump to the corresponding entry in the list."
   (interactive)
-  (if (dvc-diff-in-ewoc-p)
-      (progn
-        (dvc-call "dvc-search-file-in-diff" (dvc-fileinfo-current-file))
-        (diff-hunk-next))
+    (if (dvc-diff-in-ewoc-p)
+        (let ((fileinfo (dvc-fileinfo-current-fileinfo)))
+          (etypecase fileinfo
+            (dvc-fileinfo-file
+             (dvc-call "dvc-search-file-in-diff" (dvc-fileinfo-current-file))
+             (diff-hunk-next))
+
+            (dvc-fileinfo-legacy
+             (let ((data (dvc-fileinfo-legacy-data fileinfo)))
+               (cond
+                ((eq (car data) 'file)
+                 (dvc-call "dvc-search-file-in-diff" (cadr data))
+                 (diff-hunk-next))
+
+                ((eq (car data) 'subtree)
+                 (dvc-switch-to-buffer (cadr data)))
+
+                (t (error "Not on a recognized location")))))))
+
+    ;; not in list
     (goto-char (ewoc-location (dvc-fileinfo-find-file (dvc-diff-get-file-at-point))))))
+
+(defun dvc-diff-mark-file ()
+  "Mark the file under point, and move to next file.
+If on a message, mark the group to the next message."
+  (interactive)
+  (if (not (dvc-diff-in-ewoc-p))
+      (error "not in file list"))
+
+  (let ((fileinfo (dvc-fileinfo-current-fileinfo)))
+    (etypecase fileinfo
+      (dvc-fileinfo-file
+       (dvc-fileinfo-mark-file))
+
+      (dvc-fileinfo-message
+       (dvc-diff-mark-group))
+
+      (dvc-fileinfo-legacy
+       (let ((current (ewoc-locate dvc-fileinfo-ewoc))
+             (file (dvc-get-file-info-at-point)))
+         (add-to-list 'dvc-buffer-marked-file-list file)
+         (ewoc-invalidate dvc-fileinfo-ewoc current)
+         (dvc-fileinfo-next))))))
+
+(defun dvc-diff-mark-group (&optional unmark)
+  "Mark a group of files.
+
+Must be called with the cursor on a 'message ewoc entry. Marks all
+files until the end of the ewoc, or the next ewoc entry which is not
+a 'file."
+  (if (not (dvc-diff-in-ewoc-p))
+      (error "not in file list"))
+
+  (if (not (dvc-fileinfo-message-p (dvc-fileinfo-current-fileinfo)))
+      (error "not on a message"))
+
+  (dvc-fileinfo-next)
+
+  (if (not (dvc-fileinfo-file-or-legacy-file-p (dvc-fileinfo-current-fileinfo)))
+      (error "next in list is not on a file"))
+
+  (let ((ewoc-elem (ewoc-locate dvc-fileinfo-ewoc)))
+    (while (and ewoc-elem
+                (ewoc-data ewoc-elem)
+                (dvc-fileinfo-file-or-legacy-file-p (ewoc-data ewoc-elem)))
+      (let* ((fileinfo (ewoc-data ewoc-elem))
+             (file (dvc-fileinfo-path fileinfo)))
+        (dvc-trace "mark/unmark %S" file)
+        (if (dvc-fileinfo-file-p fileinfo)
+            (if unmark
+                (dvc-fileinfo-unmark-file)
+              (dvc-fileinfo-mark-file))
+          ;; legacy
+          (if unmark
+            (setq dvc-buffer-marked-file-list
+                  (delete file dvc-buffer-marked-file-list))
+          (add-to-list 'dvc-buffer-marked-file-list file))))
+      (setq ewoc-elem (ewoc-next dvc-diff-cookie ewoc-elem)))
+
+    (ewoc-refresh dvc-fileinfo-ewoc)
+    (if ewoc-elem
+        (goto-char (ewoc-location ewoc-elem))
+      (goto-char (point-max)))))
+
+(defun dvc-diff-unmark-file (&optional up)
+  "Unmark the file under point.
+If on a message, unmark the group to the next message. If
+optional UP, move to previous file first; otherwise move to next
+file after."
+  (interactive)
+  (if (not (dvc-diff-in-ewoc-p))
+      (error "not in file list"))
+
+  (if up (dvc-fileinfo-prev))
+
+  (let ((fileinfo (dvc-fileinfo-current-fileinfo)))
+    (etypecase fileinfo
+      (dvc-fileinfo-file
+       (dvc-fileinfo-mark-file-1 t))
+
+      (dvc-fileinfo-message
+       (dvc-diff-mark-group t))
+
+      (dvc-fileinfo-legacy
+       (let ((current (ewoc-locate dvc-fileinfo-ewoc))
+             (file (dvc-get-file-info-at-point)))
+         (setq dvc-buffer-marked-file-list (delete file dvc-buffer-marked-file-list))
+         (ewoc-invalidate dvc-fileinfo-ewoc current)))))
+
+  (unless up (dvc-fileinfo-next)))
+
+(defun dvc-diff-unmark-file-up ()
+  "Unmark the file under point and move up."
+  (interactive)
+  (dvc-diff-unmark-file t))
 
 (defun dvc-diff-diff ()
   "Show diff for file at point."
@@ -369,21 +560,29 @@ Throw an error when not on a file."
                                  default-directory)
                                 (dvc-diff-find-file-name))))))
 
+(defun dvc-diff-add-log-entry (&optional other-frame)
+  "Add a log entry for file or diff hunk at point."
+  (interactive "P")
+  (if (dvc-diff-in-ewoc-p)
+      (dvc-fileinfo-add-log-entry other-frame)
+    (dvc-add-log-entry other-frame)))
+
 (defvar dvc-header nil
   "Free variable used to pass info from the parser to
-`dvc-diff-show-buffer' (defined with a (let ...) in
-dvc-diff-show-buffer, and altered by called functions).
+`dvc-show-changes-buffer' (defined with a (let ...) in
+dvc-show-changes-buffer, and altered by called functions).
 
 This is just a lint trap.")
 
-(defun dvc-diff-show-buffer (process-buffer parser &optional
-                                 diff-buffer no-switch
-                                 header-end-regexp cmd)
-  "Show the diff buffer built from the process buffer PROCESS-BUFFER.
+(defun dvc-show-changes-buffer (buffer parser &optional
+                                       output-buffer no-switch
+                                       header-end-regexp cmd)
+  "Show the *{dvc}-changes* buffer built from the *{dvc}-process* BUFFER.
+default-directory of process buffer must be a tree root.
 
 PARSER is a function that parses the diff and fills in the ewoc list.
 
-DIFF-BUFFER must have been created by dvc-diff-prepare-buffer.
+OUTPUT-BUFFER must have been created by dvc-diff-prepare-buffer.
 
 If NO-SWITCH is nil, don't switch to the created buffer.
 
@@ -391,14 +590,21 @@ If non-nil, HEADER-END-REGEXP is a regexp matching the first line
 which is not part of the diff header.
 
 CMD, if non-nil, is appended to dvc-header."
-  (let* ((root (with-current-buffer diff-buffer default-directory))
+  ;; We assume default-directory is correct, rather than calling
+  ;; dvc-tree-root, because dvc-tree-root might prompt if there is
+  ;; more than one back-end present. Similarly, we assume
+  ;; output-buffer is created, to avoid calling dvc-current-active-dvc
+  ;; for dvc-get-buffer-create.
+  (let* ((root (with-current-buffer buffer default-directory))
+         (dvc (dvc-current-active-dvc))
+         (changes-buffer output-buffer)
          (dvc-header ""))
     (if (or no-switch dvc-switch-to-buffer-first)
-        (set-buffer diff-buffer)
-      (dvc-switch-to-buffer diff-buffer))
+        (set-buffer changes-buffer)
+      (dvc-switch-to-buffer changes-buffer))
     (let (buffer-read-only)
       (dvc-fileinfo-delete-messages)
-      (with-current-buffer process-buffer
+      (with-current-buffer buffer
         (goto-char (point-min))
         (when cmd
           (setq dvc-header
@@ -414,14 +620,15 @@ CMD, if non-nil, is appended to dvc-header."
                                 (beginning-of-line)
                                 (point))))))
         (beginning-of-line)
-        (funcall parser diff-buffer)
+        (funcall parser changes-buffer)
         (let ((footer (concat
                        (dvc-face-add (make-string  72 ?\ ) 'dvc-separator)
                        "\n\n"
                        (buffer-substring-no-properties
                         (point) (point-max)))))
-          (with-current-buffer diff-buffer
-            (ewoc-set-hf dvc-fileinfo-ewoc dvc-header footer))))))
+          (with-current-buffer changes-buffer
+            (ewoc-set-hf dvc-fileinfo-ewoc dvc-header footer)
+            (if root (cd root)))))))
   (toggle-read-only 1)
   (if (progn (goto-char (point-min))
              (re-search-forward "^---" nil t))
@@ -441,6 +648,7 @@ CMD, if non-nil, is appended to dvc-header."
 
 Inserts a message in the changes buffer, and in the minibuffer.
 
+DIFF-BUFFER is the buffer prepared by dvc-prepare-changes-buffer.
 DIFF-BUFFER is the buffer prepared by dvc-diff-prepare-buffer.
 MSG is a format string for a message to the user.
 DIR is a string, passed to `format' with MSG."
@@ -458,7 +666,7 @@ DIR is a string, passed to `format' with MSG."
 
 (defun dvc-diff-error-in-process (diff-buffer msg output error)
   "Enter a message in DIFF-BUFFER (created by
-dvc-diff-prepare-buffer), consisting of MSG and the contents of
+dvc-prepare-changes-buffer), consisting of MSG and the contents of
 OUTPUT and ERROR. Should be called by the error handler in the
 diff parser."
   (with-current-buffer diff-buffer
@@ -484,7 +692,11 @@ Useful to clear diff buffers after a commit."
       (dvc-trace "buffer=%S" buffer)
       (with-current-buffer buffer
         (let ((inhibit-read-only t))
-          (ewoc-filter dvc-fileinfo-ewoc (lambda (x) nil))
+          (ewoc-filter
+           dvc-fileinfo-ewoc
+           (lambda (fileinfo)
+             (and (dvc-fileinfo-legacy-p fileinfo)
+                  (eq (car (dvc-fileinfo-legacy-data fileinfo)) 'subtree))))
           (ewoc-set-hf dvc-fileinfo-ewoc "" "")
           (ewoc-enter-first dvc-fileinfo-ewoc (make-dvc-fileinfo-message :text msg))
           (ewoc-refresh dvc-fileinfo-ewoc))))))
@@ -569,7 +781,12 @@ quitting."
   (add-hook 'ediff-after-quit-hook-internal
             (dvc-capturing-lambda ()
               (set-window-configuration (capture dvc-window-config)))
-            nil 'local))
+            nil 'local)
+
+  ;; Set dvc-buffer-current-active-dvc for dvc-ediff-add-log-entry.
+  ;; When this hook is called, current buffer is the ediff control
+  ;; buffer, default-directory is the tree root.
+  (setq dvc-buffer-current-active-dvc (dvc-current-active-dvc)))
 
 (defvar dvc-window-config nil
   "Keep byte-compiler happy; declare let-bound variable used by dvc-ediff-startup-hook.")

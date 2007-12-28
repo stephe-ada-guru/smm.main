@@ -534,7 +534,10 @@ the file before saving."
 (defun xmtn-dvc-delta (from-revision-id to-revision-id &optional dont-switch)
   ;; See dvc-unified.el dvc-delta for doc string
   (let ((root (dvc-tree-root)))
-    (lexical-let ((buffer (dvc-diff-prepare-buffer 'xmtn root from-revision-id to-revision-id))
+    ;; FIXME: should specify 'revision-diff for type if to-revision-id is local-tree.
+    ;; Then need to bind default-directory (see bzr-delta; dvc-prepare-changes-buffer should do that).
+    (lexical-let ((buffer (dvc-prepare-changes-buffer from-revision-id to-revision-id
+                                                      'diff root 'xmtn))
                   (dont-switch dont-switch))
       (buffer-disable-undo buffer)
       (dvc-save-some-buffers root)
@@ -572,7 +575,7 @@ the file before saving."
            (lambda (output error status arguments)
              (with-current-buffer output
                (xmtn--remove-content-hashes-from-diff))
-             (dvc-diff-show-buffer output 'xmtn--parse-diff-for-dvc
+             (dvc-show-changes-buffer output 'xmtn--parse-diff-for-dvc
                                       buffer dont-switch "^=")))))
 
       (xmtn--display-buffer-maybe buffer dont-switch)
