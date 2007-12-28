@@ -379,15 +379,31 @@ show log-edit buffer in other frame."
        (insert ": New file.")
        (newline))
 
+      ((deleted modified)
+       (dvc-log-edit (Xor other-frame dvc-add-log-entry-other-frame) t)
+       (undo-boundary)
+       (goto-char (point-max))
+       (newline)
+       (insert "* ")
+       (insert (dvc-fileinfo-path fi))
+       (insert ": ")
+       (newline))
+
+      ((rename-source rename-target)
+       (dvc-log-edit (Xor other-frame dvc-add-log-entry-other-frame) t)
+       (undo-boundary)
+       (goto-char (point-max))
+       (newline)
+       (insert "* ")
+       (insert (dvc-fileinfo-path fi))
+       (insert ": renamed")
+       (newline))
+
       ((conflict
-        deleted
         ignored
         invalid
         known
         missing
-        modified
-        rename
-        rename
         unknown)
        (ding)))))
 
