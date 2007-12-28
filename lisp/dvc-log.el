@@ -373,7 +373,7 @@ Inserts the entry in the dvc log-edit buffer instead of the ChangeLog."
           ;; implemented in all variants of (X)Emacs.  We could create
           ;; a compatibility function for it, but nobody else seems to
           ;; use it yet, so there is no point.
-          (when (re-search-backward (concat defun ",\\s *\\=") nil t)
+          (when (re-search-backward (concat (regexp-quote defun) ",\\s *\\=") nil t)
             (replace-match ""))
           (insert defun "): "))
       ;; No function name, so put in a colon unless we have just a star.

@@ -429,7 +429,7 @@ show log-edit buffer in other frame."
     (insert (dvc-fileinfo-path fi))
     (insert ": ")
 
-    (if (typep fi dvc-fileinfo-file)
+    (if (typep fi 'dvc-fileinfo-file)
         (ecase (dvc-fileinfo-file-status fi)
           (added
            (insert "New file.")
