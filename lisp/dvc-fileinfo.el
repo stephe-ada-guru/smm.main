@@ -435,6 +435,10 @@ show log-edit buffer in other frame."
            (insert "New file.")
            (newline))
 
+          ((rename-source rename-target)
+           (insert "renamed")
+           (newline))
+
           ((conflict
             deleted
             ignored
@@ -442,8 +446,6 @@ show log-edit buffer in other frame."
             known
             missing
             modified
-            rename
-            rename
             unknown)
            nil)))))
 
