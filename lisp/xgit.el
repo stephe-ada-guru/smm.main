@@ -234,9 +234,10 @@ new file.")
 (defun xgit-dvc-status (&optional verbose)
   "Run git status."
   (let* ((root default-directory)
-         (buffer (dvc-diff-prepare-buffer 'xgit root
+         (buffer (dvc-prepare-changes-buffer
                   `(xgit (last-revision ,root 1))
-                  `(git (local-tree ,root)))))
+                  `(git (local-tree ,root))
+                  'status root 'xgit)))
     (dvc-switch-to-buffer-maybe buffer)
     (setq dvc-buffer-refresh-function 'xgit-dvc-status)
     (dvc-save-some-buffers root)
@@ -244,7 +245,7 @@ new file.")
            (dvc-capturing-lambda (output error status arguments)
              (with-current-buffer (capture buffer)
                (if (> (point-max) (point-min))
-                   (dvc-diff-show-buffer output 'xgit-parse-status
+                   (dvc-show-changes-buffer output 'xgit-parse-status
                                             (capture buffer))
                  (dvc-diff-no-changes (capture buffer)
                                       "No changes in %s"
@@ -344,8 +345,9 @@ This reset the index to HEAD, but doesn't touch files."
                  nil))
          (local-tree `(xgit (local-tree ,root)))
          (base-rev (or base-rev local-tree))
-         (buffer (dvc-diff-prepare-buffer 'xgit root
-                  against-rev base-rev))
+         (buffer (dvc-prepare-changes-buffer
+                  against-rev base-rev
+                  'diff root 'xgit))
          (command-list (if (equal against-rev '(xgit (index)))
                            (if (equal base-rev local-tree)
                              '("diff" "-M")
@@ -358,7 +360,7 @@ This reset the index to HEAD, but doesn't touch files."
     (dvc-run-dvc-sync 'xgit command-list
                        :finished
                        (dvc-capturing-lambda (output error status arguments)
-                         (dvc-diff-show-buffer output
+                         (dvc-show-changes-buffer output
                                                   'xgit-parse-diff
                                                   (capture buffer)
                                                   nil nil
@@ -411,9 +413,10 @@ many generations back we want to go from the given commit ID.")
 (defun xgit-delta (base-rev against &optional dont-switch)
   (interactive (list nil nil current-prefix-arg))
   (let* ((root (xgit-tree-root))
-         (buffer (dvc-diff-prepare-buffer 'xgit root
+         (buffer (dvc-prepare-changes-buffer
                   `(xgit (last-revision ,root 1))
-                  `(xgit (local-tree ,root)))))
+                  `(xgit (local-tree ,root))
+                  'diff root 'xgit)))
     (xgit-diff-1 against root dont-switch base-rev)
     (with-current-buffer buffer (goto-char (point-min)))
     buffer))

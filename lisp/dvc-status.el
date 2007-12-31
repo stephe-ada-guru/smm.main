@@ -239,8 +239,8 @@ conflicts, and/or ediff current files."
 (defun dvc-status-diff ()
   "Run diff of the current workspace file against the database version."
   (interactive)
-  (let ((fileinfo (dvc-fileinfo-current-fileinfo))
-        (file (concat (dvc-fileinfo-file-dir fileinfo) (dvc-fileinfo-file-file fileinfo))))
+  (let* ((fileinfo (dvc-fileinfo-current-fileinfo))
+         (file (concat (dvc-fileinfo-file-dir fileinfo) (dvc-fileinfo-file-file fileinfo))))
     ;; FIXME: need user interface to specify other revision to diff against
     ;; FIXME: dvc-file-diff defaults to buffer-file; change to default to (dvc-get-file-info-at-point)
     ;; default dvc-get-file-info-at-point to (buffer-file-name) for non-dvc buffers
