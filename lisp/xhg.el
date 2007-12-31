@@ -188,7 +188,7 @@ negative : Don't show patches, limit to n revisions."
                              (looking-at "^\\+\\+\\+ /dev/null"))))
         (with-current-buffer changes-buffer
           (ewoc-enter-last
-           dvc-diff-cookie
+           dvc-fileinfo-ewoc
            (make-dvc-fileinfo-legacy
             :data (list 'file
                         name
@@ -201,7 +201,7 @@ negative : Don't show patches, limit to n revisions."
                         nil))))))))
 
 (defun xhg-parse-status (changes-buffer)
-  (let ((status-list (split-string (dvc-buffer-content output) "\n")))
+  (let ((status-list (split-string (dvc-buffer-content (current-buffer)) "\n")))
     (let ((inhibit-read-only t)
           (modif)
           (modif-char))
@@ -212,7 +212,7 @@ negative : Don't show patches, limit to n revisions."
           (setq modif-char (substring elem 0 1))
           (with-current-buffer changes-buffer
             (ewoc-enter-last
-             dvc-diff-cookie
+             dvc-fileinfo-ewoc
              (make-dvc-fileinfo-legacy
               :data (list 'file (substring elem 2) modif-char)))))))))
 
