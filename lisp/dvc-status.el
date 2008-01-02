@@ -1,6 +1,6 @@
 ;;; dvc-status.el --- A generic status mode for DVC
 
-;; Copyright (C) 2007 by all contributors
+;; Copyright (C) 2007, 2008 by all contributors
 
 ;; Author: Stephen Leake, <stephen_leake@stephe-leake.org>
 
@@ -40,21 +40,6 @@
   "If non-nil, display files with 'ignored' status in xmtn-status buffer."
   :type 'boolean
   :group 'dvc)
-
-;; FIXME: this should be in dvc-ui or somewhere.
-;; or use "keyboard menu"; see elisp info 22.17.3 Menus and the Keyboard
-(defun dvc-offer-choices (comment choices)
-  "Present user with a choice of actions, labeled by COMMENT. CHOICES is a list of pairs
-containing (symbol description)."
-  (let ((msg "use ")
-        choice)
-    (dolist (choice choices)
-      (setq msg (concat msg
-                        (key-description (car (where-is-internal (car choice))))
-                        " (" (cadr choice) ") ")))
-    (error (if comment
-               (concat comment "; " msg)
-             msg))))
 
 (defvar dvc-status-mode-map
   (let ((map (make-sparse-keymap)))
@@ -196,7 +181,7 @@ conflicts, and/or ediff current files."
 
     (ecase status
       (added
-       (dvc-fileinfo-add-log-entry (Xor prefix dvc-add-log-entry-other-frame)))
+       (dvc-fileinfo-add-log-entry prefix))
 
       ((deleted rename-source rename-target)
        ;; typically nothing to do; just need commit
