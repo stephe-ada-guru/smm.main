@@ -1601,6 +1601,7 @@ the root of the projects is displayed."
                                    (capture buffer)
                                    (capture master-buffer)
                                    "^[^*\\.]")
+          ;; FIXME: DVC does not currently support nested trees
           (when (capture master-buffer)
             (with-current-buffer (capture master-buffer)
               (ewoc-map (lambda (fi)
