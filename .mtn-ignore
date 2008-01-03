@@ -10,3 +10,4 @@
 ^lisp/dvc-site\.el$
 ^lisp/tests/xmtn-tests-one\.el$
 ^texinfo/Makefile$
+^lisp/tests/bzr-tests-one\.el$
