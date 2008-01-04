@@ -63,7 +63,7 @@
     (define-key map dvc-keyvec-revert   'dvc-status-revert-files)
     (define-key map dvc-keyvec-unmark   'dvc-fileinfo-unmark-file)
     (define-key map dvc-keyvec-unmark-all   'dvc-fileinfo-unmark-all)
-    (define-key map [?i]                'dvc-status-ignore-files) ; FIXME: ?i collides with dvc-key-inventory
+    (define-key map [?i]                'dvc-status-ignore-files)
     (define-key map [?I]                'dvc-ignore-file-extensions-in-dir)
     (define-key map "\M-I"              'dvc-ignore-file-extensions)
     (define-key map [?k]                'dvc-fileinfo-kill)
