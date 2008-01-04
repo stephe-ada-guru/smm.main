@@ -353,7 +353,7 @@ the file before saving."
                (xmtn--normalize-file-names root files)))))
          (excluded-files
           (with-current-buffer dvc-partner-buffer
-            (xmtn--normalize-file-names root (dvc-excluded-files))))
+            (xmtn--normalize-file-names root (dvc-fileinfo-excluded-files))))
          (branch (xmtn--tree-default-branch root)))
     ;; Saving the buffer will automatically delete any log edit hints.
     (save-buffer)
@@ -447,66 +447,70 @@ the file before saving."
   nil)
 
 (defun xmtn--parse-diff-for-dvc (changes-buffer)
-  (flet ((add-entry (path status dir &optional orig-path)
-           (with-current-buffer changes-buffer
-             (ewoc-enter-last
-              dvc-fileinfo-ewoc
-              (if dir
-                  (make-dvc-fileinfo-dir
-                   :mark nil
-                   :dir (file-name-directory path)
-                   :file (file-name-nondirectory path)
-                   :status status
-                   :more-status "")
-                (make-dvc-fileinfo-file
-                 :mark nil
-                 :dir (file-name-directory path)
-                 :file (file-name-nondirectory path)
-                 :status status
-                 :more-status (if orig-path
-                                  (concat "from " orig-path)
-                                ""))))))
-         (likely-dir-p (path) (string-match "/\\'" path)))
-    ;; First parse the basic_io contained in dvc-header, if any.
-    (let ((revision
-           (with-temp-buffer
-             (insert dvc-header)
-             (goto-char (point-min))
-             (while (re-search-forward "^# ?" nil t)
-               (replace-match ""))
-             (goto-char (point-min))
-             (xmtn-basic-io-skip-blank-lines)
-             (delete-region (point-min) (point))
-             (xmtn-basic-io-with-stanza-parser
-              (parser (current-buffer))
-              (xmtn--parse-partial-revision parser)))))
-      (loop
-       for (path) in (xmtn--revision-delete revision)
-       do (add-entry path 'deleted (likely-dir-p path)))
-      (loop
-       for (from to) in (xmtn--revision-rename revision)
-       do (assert (eql (not (likely-dir-p from))
-                       (not (likely-dir-p to))))
-       do (add-entry to 'renamed (likely-dir-p to) from))
-      (loop
-       for (path) in (xmtn--revision-add-dir revision)
-       do (add-entry path 'added t))
-      (loop
-       for (path contents)
-       in (xmtn--revision-add-file revision)
-       do (add-entry path 'added nil))
-      (loop
-       for (path from-contents to-contents)
-       in (xmtn--revision-patch-file revision)
-       do (add-entry path 'modified nil))
-      ;; Do nothing about clear-attr and set-attr.
-      ))
-  ;; This would suppress mtn's revision basic_io junk at the top.  Not
-  ;; sure if anyone needs it.  But since we also delete the file
-  ;; content ids from the diff headings, I'd rather at least keep them
-  ;; there.
-  ;;(setq dvc-header "")
-  nil)
+  (let ((excluded-files (dvc-default-excluded-files)))
+    (flet ((add-entry
+            (path status dir &optional orig-path)
+            (with-current-buffer changes-buffer
+              (ewoc-enter-last
+               dvc-fileinfo-ewoc
+               (if dir
+                   (make-dvc-fileinfo-dir
+                    :mark nil
+                    :exclude (not (null (member path excluded-files)))
+                    :dir (file-name-directory path)
+                    :file (file-name-nondirectory path)
+                    :status status
+                    :more-status "")
+                 (make-dvc-fileinfo-file
+                  :mark nil
+                  :exclude (not (null (member path excluded-files)))
+                  :dir (file-name-directory path)
+                  :file (file-name-nondirectory path)
+                  :status status
+                  :more-status (if orig-path
+                                   (concat "from " orig-path)
+                                 ""))))))
+           (likely-dir-p (path) (string-match "/\\'" path)))
+      ;; First parse the basic_io contained in dvc-header, if any.
+      (let ((revision
+             (with-temp-buffer
+               (insert dvc-header)
+               (goto-char (point-min))
+               (while (re-search-forward "^# ?" nil t)
+                 (replace-match ""))
+               (goto-char (point-min))
+               (xmtn-basic-io-skip-blank-lines)
+               (delete-region (point-min) (point))
+               (xmtn-basic-io-with-stanza-parser
+                (parser (current-buffer))
+                (xmtn--parse-partial-revision parser)))))
+        (loop
+         for (path) in (xmtn--revision-delete revision)
+         do (add-entry path 'deleted (likely-dir-p path)))
+        (loop
+         for (from to) in (xmtn--revision-rename revision)
+         do (assert (eql (not (likely-dir-p from))
+                         (not (likely-dir-p to))))
+         do (add-entry to 'renamed (likely-dir-p to) from))
+        (loop
+         for (path) in (xmtn--revision-add-dir revision)
+         do (add-entry path 'added t))
+        (loop
+         for (path contents)
+         in (xmtn--revision-add-file revision)
+         do (add-entry path 'added nil))
+        (loop
+         for (path from-contents to-contents)
+         in (xmtn--revision-patch-file revision)
+         do (add-entry path 'modified nil))
+        ;; Do nothing about clear-attr and set-attr.
+        ))
+    ;; This would suppress mtn's revision basic_io junk at the top.  Not
+    ;; sure if anyone needs it.  But since we also delete the file
+    ;; content ids from the diff headings, I'd rather at least keep them
+    ;; there.
+    ;;(setq dvc-header "")
+    nil))
 
 ;;;###autoload
 (defun xmtn-show-base-revision ()
@@ -630,7 +634,8 @@ the file before saving."
     (attrs   "attrs  ")))
 
 (defun xmtn--status-process-entry (ewoc path status changes old-path-or-null
-                                        old-type new-type fs-type)
+                                        old-type new-type fs-type
+                                        excluded-files)
   "Create a file entry in ewoc."
   ;; Don't display root directory (""); if requested, don't
   ;; display known or ignored files.
@@ -688,6 +693,7 @@ the file before saving."
            (ewoc-enter-last ewoc
                             (make-dvc-fileinfo-dir
                              :mark nil
+                             :exclude (not (null (member path excluded-files)))
                              :dir (file-name-directory path)
                              :file (file-name-nondirectory path)
                              :status main-status
@@ -697,6 +703,7 @@ the file before saving."
            (ewoc-enter-last ewoc
                             (make-dvc-fileinfo-file
                              :mark nil
+                             :exclude (not (null (member path excluded-files)))
                              :dir (file-name-directory path)
                              :file (file-name-nondirectory path)
                              :status main-status
@@ -781,7 +788,8 @@ the file before saving."
               "  base revision is not a head revision\n")))
          ;; refresh
          'xmtn-dvc-status)))
-    (lexical-let* ((status-buffer status-buffer))
+    (lexical-let* ((excluded-files (dvc-default-excluded-files))
+                   (status-buffer status-buffer))
       (xmtn--run-command-async
        root `("automate" "inventory")
        :finished (lambda (output error status arguments)
@@ -793,7 +801,7 @@ the file before saving."
                        parser
                        (lambda (path status changes old-path-or-null old-type new-type fs-type)
                          (xmtn--status-process-entry dvc-fileinfo-ewoc path status changes old-path-or-null
-                                                     old-type new-type fs-type))))))
+                                                     old-type new-type fs-type excluded-files))))))
        :error (lambda (output error status arguments)
                 ;; FIXME: need `dvc-status-error-in-process', or change name.
                 (dvc-diff-error-in-process
