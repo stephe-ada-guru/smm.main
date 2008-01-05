@@ -588,13 +588,14 @@ PARSER is a function to parse the diff and fill in the ewoc list;
 it will be called with one arg, the changes buffer. Data to be
 parsed will be in current buffer.
 
-Display changes in OUTPUT-BUFFER (must be non-nil; create with
-dvc-prepare-changes-buffer).
+OUTPUT-BUFFER must have been created by dvc-prepare-changes-buffer.
 
 If NO-SWITCH is nil, don't switch to the created buffer.
 
 If non-nil, HEADER-END-REGEXP is a regexp matching the first line
-which is not part of the diff header."
+which is not part of the diff header.
+
+CMD, if non-nil, is appended to dvc-header."
   ;; We assume default-directory is correct, rather than calling
   ;; dvc-tree-root, because dvc-tree-root might prompt if there is
   ;; more than one back-end present. Similarly, we assume
@@ -656,6 +657,8 @@ Inserts a message in the changes buffer, and in the minibuffer.
 DIFF-BUFFER is the buffer prepared by dvc-prepare-changes-buffer.
 MSG is a format string for a message to the user.
 DIR is a string, passed to `format' with MSG."
+;; FIXME: should standardize message, using back-end user display of
+;; dvc-diff-base and dvc-diff-modified.
   (with-current-buffer diff-buffer
     (let ((inhibit-read-only t))
       (dvc-fileinfo-delete-messages)

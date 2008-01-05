@@ -1,6 +1,6 @@
 ;;; dvc-emacs.el --- Compatibility stuff for stable version of GNU Emacs
 
-;; Copyright (C) 2004, 2007 by all contributors
+;; Copyright (C) 2004, 2008 by all contributors
 
 ;; This file is part of DVC.
 ;;
@@ -53,6 +53,12 @@
 
 ;; Provide compatibility code for Emacs 21
 ;; from CVS Emacs
+(if (not (boundp 'delay-mode-hooks))
+    (defvar delay-mode-hooks nil))
+
+(if (not (fboundp 'redisplay))
+    (defun redisplay (foo) nil))
+
 (if (fboundp 'line-number-at-pos)
     (defalias 'dvc-line-number-at-pos 'line-number-at-pos)
   (defun dvc-line-number-at-pos (&optional pos)
