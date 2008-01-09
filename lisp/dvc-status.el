@@ -68,7 +68,7 @@
     (define-key map "\M-I"              'dvc-ignore-file-extensions)
     (define-key map (dvc-prefix-tagging-method ?e) 'dvc-edit-ignore-files)
     (define-key map [?k]                'dvc-fileinfo-kill)
-    (define-key map dvc-keyvec-remove   'dvc-status-remove-files)
+    (define-key map dvc-keyvec-remove   'dvc-fileinfo-remove-files)
     (define-key map "\r"                'dvc-find-file-other-window)
     (define-key map "\M-d"              'dvc-status-dtrt)
 
@@ -107,7 +107,7 @@
     ["Add File"                    dvc-status-add-files              t]
     ["Ediff File"                  dvc-status-ediff                  t]
     ["diff File"                   dvc-diff-diff                     t]
-    ["Delete File"                 dvc-status-remove-files           t]
+    ["Delete File"                 dvc-fileinfo-remove-files         t]
     ["Kill File"                   dvc-fileinfo-kill                 t]
     ["Rename File"                 dvc-fileinfo-rename               t]
     ["Revert File"                 dvc-status-revert-files           t]
@@ -205,7 +205,7 @@ conflicts, and/or ediff current files."
        (ding)
        (dvc-offer-choices (concat (dvc-fileinfo-current-file) " does not exist in working directory")
                           '((dvc-status-revert-files "revert")
-                            (dvc-status-remove-files "remove")
+                            (dvc-fileinfo-remove-files "remove")
                             (dvc-fileinfo-rename "rename"))))
 
       (modified
@@ -219,7 +219,7 @@ conflicts, and/or ediff current files."
        (dvc-offer-choices nil
                           '((dvc-status-add-files "add")
                             (dvc-status-ignore-files "ignore")
-                            (dvc-status-remove-files "remove")
+                            (dvc-fileinfo-remove-files "remove")
                             (dvc-fileinfo-rename "rename"))))
       )))
 
@@ -308,28 +308,6 @@ but not recursively."
                  (lambda (fileinfo)
                      (not (dvc-fileinfo-file-mark fileinfo)))
                  )))
-
-(defun dvc-status-remove-files ()
-  "Remove current files."
-  (interactive)
-  (if (apply 'dvc-remove-files (dvc-current-file-list))
-      ;; Kill the files from the ewoc, since we are removing them;
-      ;; this avoids the need to run the backend again.
-      (if (= 0 (length dvc-buffer-marked-file-list))
-          ;; no marked files
-          (let ((inhibit-read-only t))
-            (ewoc-delete dvc-fileinfo-ewoc (ewoc-locate dvc-fileinfo-ewoc)))
-        ;; marked files
-        (setq dvc-buffer-marked-file-list nil)
-        (ewoc-filter dvc-fileinfo-ewoc
-                     (lambda (fileinfo)
-                       (etypecase fileinfo
-                         (dvc-fileinfo-message
-                          nil)
-
-                         (dvc-fileinfo-file ; also matches dvc-fileinfo-dir
-                          (not (dvc-fileinfo-file-mark fileinfo)))))
-                     ))))
 
 (defun dvc-status-revert-files ()
   "Revert current files."
