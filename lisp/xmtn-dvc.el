@@ -363,7 +363,7 @@ the file before saving."
     ;; Due the possibility of race conditions, this check doesn't
     ;; guarantee the operation will succeed.
     (unless (funcall (xmtn--tree-consistent-p-future root))
-      (error "Tree inconsistent, unable to commit"))
+      (error "There are missing files, unable to commit"))
     ;; mtn ls changed doesn't work while the tree is inconsistent, so
     ;; we can't run the two futures in parallel.  (Or maybe we could,
     ;; if a future that is never forced would never report errors in
@@ -593,6 +593,21 @@ the file before saving."
 
       ;; The call site in `dvc-revlist-diff' needs this return value.
       buffer)))
+
+(defvar xmtn-status-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map [?P] 'xmtn-propagate-from)
+    (define-key map [?H] 'xmtn-view-heads-revlist)
+    map))
+
+(easy-menu-define xmtn-status-mode-menu xmtn-status-mode-map
+  `("DVC-Mtn"
+    ["Propagate branch" xmtn-propagate-from t]
+    ["View Heads" xmtn-view-heads-revlist t]
+    ))
+
+(define-derived-mode xmtn-status-mode dvc-status-mode "xmtn-status"
+  "Add back-end-specific commands for dvc-status.")
 
 (defun xmtn--remove-content-hashes-from-diff ()
   ;; Hack: Remove mtn's file content hashes from diff headings since

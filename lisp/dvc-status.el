@@ -66,6 +66,7 @@
     (define-key map [?i]                'dvc-status-ignore-files)
     (define-key map [?I]                'dvc-ignore-file-extensions-in-dir)
     (define-key map "\M-I"              'dvc-ignore-file-extensions)
+    (define-key map (dvc-prefix-tagging-method ?e) 'dvc-edit-ignore-files)
     (define-key map [?k]                'dvc-fileinfo-kill)
     (define-key map dvc-keyvec-remove   'dvc-status-remove-files)
     (define-key map "\r"                'dvc-find-file-other-window)
@@ -73,29 +74,28 @@
 
     ;; database operations
     (define-key map (dvc-prefix-merge ?u) 'dvc-update)
-    ;; (define-key map (dvc-prefix-merge ?s) 'dvc-sync) FIXME: need dvc-sync
     (define-key map (dvc-prefix-merge ?m) 'dvc-missing)
     (define-key map (dvc-prefix-merge ?M) 'dvc-merge)
-
-    ;; advanced
-    (define-key map (dvc-prefix-tagging-method ?e) 'dvc-edit-ignore-files)
-    (define-key map (dvc-prefix-buffer ?p) 'dvc-show-process-buffer)
-    (define-key map (dvc-prefix-buffer ?L) 'dvc-open-internal-log-buffer)
 
     map)
   "Keymap used in `dvc-status-mode'.")
 
 (easy-menu-define dvc-status-mode-menu dvc-status-mode-map
   "`dvc-status' menu"
-  ;; FIXME: add all keymap operations to menu
   `("DVC"
     ["Refresh Buffer"              dvc-generic-refresh               t]
-    ["Edit log before commit"      dvc-status-edit-log               t]
-    ("Merge"
+    ["Edit log before commit"      dvc-log-edit                      t]
+    ["Quit"                        dvc-buffer-quit                   t]
+    ("Merge/Update"
      ["Update"                     dvc-update                        t]
-     ;; FIXME: ["Sync"             dvc-sync                          t]
      ["Show missing"               dvc-missing                       t]
      ["Merge"                      dvc-merge                         t]
+     )
+    ("Mark"
+     ["Mark File"                  dvc-fileinfo-mark-file            t]
+     ["Mark all"                   dvc-fileinfo-mark-all             t]
+     ["Unmark File"                dvc-fileinfo-unmark-file          t]
+     ["Unmark all"                 dvc-fileinfo-unmark-all           t]
      )
     ("Ignore"
      ["Ignore Files"               dvc-status-ignore-files           t]
@@ -103,15 +103,25 @@
      ["Ignore Extensions globally" dvc-ignore-file-extensions        t]
      ["Edit Ignore File"           dvc-edit-ignore-files             t]
      )
+    ["Do the Right Thing"          dvc-status-dtrt                   t]
+    ["Add File"                    dvc-status-add-files              t]
     ["Ediff File"                  dvc-status-ediff                  t]
-    ["diff File"                   dvc-file-diff                     t]
+    ["diff File"                   dvc-diff-diff                     t]
     ["Delete File"                 dvc-status-remove-files           t]
+    ["Kill File"                   dvc-fileinfo-kill                 t]
     ["Rename File"                 dvc-fileinfo-rename               t]
     ["Revert File"                 dvc-status-revert-files           t]
+    ["Edit File"                   dvc-find-file-other-window        t]
+    ["Add log entry"               dvc-fileinfo-add-log-entry        t]
     ["Log (single file)"           dvc-diff-log                      t]
     ["Log (full tree)"             dvc-log                           t]
     ))
 
+;; "<back-end>-status-mode", if defined, will be used instead of this
+;; one. If so, it should be derived from dvc-status-mode (via
+;; `define-derived-mode'), and rely on it for as many features as
+;; possible (one can, for example, extend the menu and keymap). See
+;; `xmtn-status-mode' in xmtn-dvc.el for a good example.
 (define-derived-mode dvc-status-mode dvc-fundamental-mode "dvc-status"
   "Major mode to display workspace status."
   (setq dvc-buffer-current-active-dvc (dvc-current-active-dvc))
@@ -129,6 +139,7 @@
 
 (defun dvc-status-prepare-buffer (dvc root base-revision branch header-more refresh)
   "Prepare and return a status buffer. Should be called by <back-end>-dvc-status.
+Calls <back-end>-status-mode.
 DVC is back-end.
 ROOT is absolute path to workspace.
 BASE-REVISION is a string identifying the workspace's base revision.
@@ -141,7 +152,8 @@ REFRESH is a function that refreshes the status; see `dvc-buffer-refresh-functio
     (dvc-kill-process-maybe status-buffer)
     (with-current-buffer status-buffer
       (let ((inhibit-read-only t)) (erase-buffer))
-      (dvc-status-mode)
+      (let ((dvc-temp-current-active-dvc dvc))
+        (funcall (dvc-function dvc "status-mode")))
       (let ((header (with-output-to-string
                       (princ (format "Status for %s:\n" root))
                       (princ (format "  base revision : %s\n" base-revision))
@@ -234,7 +246,8 @@ conflicts, and/or ediff current files."
 (defun dvc-status-ediff ()
   "Run ediff on the current workspace file, against the database version."
   (interactive)
-  ;; FIXME: need user interface to specify other revision to diff against
+  ;; FIXME: need user interface to specify other revision to diff
+  ;; against. At least BASE and HEAD.
   (let ((dvc-temp-current-active-dvc dvc-buffer-current-active-dvc))
     (dvc-file-ediff (dvc-fileinfo-current-file))))
 
