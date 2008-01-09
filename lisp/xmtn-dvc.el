@@ -601,6 +601,7 @@ the file before saving."
     map))
 
 (easy-menu-define xmtn-status-mode-menu xmtn-status-mode-map
+  "Mtn specific status menu."
   `("DVC-Mtn"
     ["Propagate branch" xmtn-propagate-from t]
     ["View Heads" xmtn-view-heads-revlist t]
