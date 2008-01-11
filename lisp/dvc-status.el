@@ -122,7 +122,7 @@
 ;; `define-derived-mode'), and rely on it for as many features as
 ;; possible (one can, for example, extend the menu and keymap). See
 ;; `xmtn-status-mode' in xmtn-dvc.el for a good example.
-(define-derived-mode dvc-status-mode dvc-fundamental-mode "dvc-status"
+(define-derived-mode dvc-status-mode fundamental-mode "dvc-status"
   "Major mode to display workspace status."
   (setq dvc-buffer-current-active-dvc (dvc-current-active-dvc))
   (setq dvc-fileinfo-ewoc (ewoc-create 'dvc-fileinfo-printer))
@@ -134,6 +134,13 @@
   (setq buffer-read-only t)
   (buffer-disable-undo)
   (set-buffer-modified-p nil))
+
+;; list-buffers-directory is used by uniquefy to get the
+;; directory for the buffer when buffer-file-name is nil, as it
+;; is for many dvc buffers. It needs to survive
+;; kill-all-local-variables, so we declare it permanent.
+(put 'list-buffers-directory 'permanent-local t)
+(make-variable-buffer-local 'list-buffers-directory)
 
 (add-to-list 'uniquify-list-buffers-directory-modes 'dvc-status-mode)
 

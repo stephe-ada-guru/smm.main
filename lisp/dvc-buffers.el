@@ -1,6 +1,6 @@
 ;;; dvc-buffers.el --- Buffer management for DVC
 
-;; Copyright (C) 2005-2007 by all contributors
+;; Copyright (C) 2005-2008 by all contributors
 
 ;; Author: Matthieu Moy <Matthieu.Moy@imag.fr>
 ;; Contributions from:
@@ -141,14 +141,7 @@ BUFFER should be the buffer to add."
 `create-file-buffer' is used to allow uniquify to modify the name."
   (let ((name (concat path base-name)))
     (with-current-buffer (create-file-buffer base-name)
-      ;; FIXME: this local variable, as well as the ones set by
-      ;; uniquify, will be killed by the dvc mode function, which will
-      ;; run kill-all-local-variables. Sigh. ada-mode etc work because
-      ;; they are set in hooks run by create-buffer, _before_ the
-      ;; uniquify advice. cvs-mode works because it never runs
-      ;; kill-all-local-variables. Solution; derive from a mode
-      ;; that doesn't kill-all-local-variables.
-      (set (make-local-variable 'list-buffers-directory) base-name)
+      (setq list-buffers-directory base-name)
       (current-buffer))))
 
 (defun dvc-get-buffer-create (dvc type &optional path)
