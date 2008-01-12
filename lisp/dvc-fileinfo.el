@@ -59,6 +59,9 @@ The elements must all be of class dvc-fileinfo-root.")
   file	     	;; File name sans directory.
                 ;; (concat dir file) gives a valid path.
   status	;; Symbol; see dvc-fileinfo-status-image for list
+  (indexed t)   ;; Whether changes made to the file have been recorded
+                ;; in the index.  Use t if the back-end does not
+                ;; support an index.
   more-status   ;; String; whatever else the backend has to say
   )
 
@@ -73,6 +76,8 @@ The elements must all be of class dvc-fileinfo-root.")
     (known          "known        ")
     (missing        "missing      ")
     (modified       "modified     ")
+    (copy-source    "copy-source  ")
+    (copy-target    "copy-target  ")
     (rename-source  "rename-source")
     (rename-target  "rename-target")
     (unknown        "unknown      ")))
@@ -88,6 +93,8 @@ The elements must all be of class dvc-fileinfo-root.")
     (known         'dvc-source)
     (missing       'dvc-move)
     (modified      'dvc-modified)
+    (copy-source   'dvc-copy)
+    (copy-target   'dvc-copy)
     (rename-source 'dvc-move)
     (rename-target 'dvc-move)
     (unknown       'dvc-unknown)))
@@ -485,6 +492,10 @@ non-nil, show log-edit buffer in other frame."
       (ecase (dvc-fileinfo-file-status fileinfo)
         (added
          (insert "New file.")
+         (newline))
+
+        ((copy-source copy-target)
+         (insert "copied")
          (newline))
 
         ((rename-source rename-target)
