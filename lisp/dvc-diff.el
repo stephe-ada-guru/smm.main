@@ -231,6 +231,10 @@ Pretty-print ELEM."
      ["Ignore File Extensions" dvc-ignore-file-extensions t]
      ["Edit Ignore File" dvc-edit-ignore-files t]
      )
+    ("Exclude"
+     ["Exclude File" dvc-fileinfo-toggle-exclude t]
+     ["Edit Exclude File" dvc-edit-exclude t]
+     )
     ,dvc-diff-file-menu-list
     ))
 
