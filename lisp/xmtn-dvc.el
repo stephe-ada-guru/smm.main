@@ -45,7 +45,8 @@
   (require 'dvc-diff)
   (require 'dvc-status)
   (require 'dvc-core)
-  (require 'ewoc))
+  (require 'ewoc)
+  (require 'uniquify))
 
 ;; For debugging.
 (defun xmtn--load ()
@@ -611,6 +612,8 @@ the file before saving."
 (define-derived-mode xmtn-status-mode dvc-status-mode "xmtn-status"
   "Add back-end-specific commands for dvc-status.")
 
+(add-to-list 'uniquify-list-buffers-directory-modes 'xmtn-status-mode)
+
 (defun xmtn--remove-content-hashes-from-diff ()
   ;; Hack: Remove mtn's file content hashes from diff headings since
   ;; `dvc-diff-diff-or-list' and `dvc-diff-find-file-name' gets
@@ -815,6 +818,7 @@ the file before saving."
               "  base revision is not a head revision\n")))
          ;; refresh
          'xmtn-dvc-status)))
+    (dvc-save-some-buffers root)
     (lexical-let* ((excluded-files (dvc-default-excluded-files))
                    (status-buffer status-buffer))
       (xmtn--run-command-async

@@ -250,6 +250,7 @@ Pretty-print ELEM."
 ;; `define-derived-mode'), and rely on it for as many features as
 ;; possible (one can, for example, extend the menu and keymap). See
 ;; `xgit-diff-mode' in xgit.el for a good example.
+;; Remember to add the new mode to uniquify-list-buffers-directory-modes
 (define-derived-mode dvc-diff-mode fundamental-mode "dvc-diff"
   "Major mode to display changesets. Derives from `diff-mode'.
 
