@@ -142,13 +142,6 @@
   (buffer-disable-undo)
   (set-buffer-modified-p nil))
 
-;; list-buffers-directory is used by uniquefy to get the
-;; directory for the buffer when buffer-file-name is nil, as it
-;; is for many dvc buffers. It needs to survive
-;; kill-all-local-variables, so we declare it permanent.
-(make-variable-buffer-local 'list-buffers-directory)
-(put 'list-buffers-directory 'permanent-local t)
-
 (add-to-list 'uniquify-list-buffers-directory-modes 'dvc-status-mode)
 
 (defun dvc-status-prepare-buffer (dvc root base-revision branch header-more refresh)

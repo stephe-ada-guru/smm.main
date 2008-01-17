@@ -1,6 +1,6 @@
 ;;; bzr-submit.el --- Patch submission support for Bazaar 2 in DVC
 
-;; Copyright (C) 2006, 2007 by all contributors
+;; Copyright (C) 2006 by all contributors
 
 ;; Author: Michael Olson <mwolson@gnu.org>
 
