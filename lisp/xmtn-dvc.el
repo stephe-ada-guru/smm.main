@@ -43,8 +43,10 @@
   (require 'xmtn-match)
   (require 'dvc-log)
   (require 'dvc-diff)
+  (require 'dvc-status)
   (require 'dvc-core)
-  (require 'ewoc))
+  (require 'ewoc)
+  (require 'uniquify))
 
 ;; For debugging.
 (defun xmtn--load ()
@@ -609,6 +611,24 @@ the file before saving."
       ;; The call site in `dvc-revlist-diff' needs this return value.
       buffer)))
 
+(defvar xmtn-status-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map [?P] 'xmtn-propagate-from)
+    (define-key map [?H] 'xmtn-view-heads-revlist)
+    map))
+
+(easy-menu-define xmtn-status-mode-menu xmtn-status-mode-map
+  "Mtn specific status menu."
+  `("DVC-Mtn"
+    ["Propagate branch" xmtn-propagate-from t]
+    ["View Heads" xmtn-view-heads-revlist t]
+    ))
+
+(define-derived-mode xmtn-status-mode dvc-status-mode "xmtn-status"
+  "Add back-end-specific commands for dvc-status.")
+
+(add-to-list 'uniquify-list-buffers-directory-modes 'xmtn-status-mode)
+
 (defun xmtn--remove-content-hashes-from-diff ()
   ;; Hack: Remove mtn's file content hashes from diff headings since
   ;; `dvc-diff-diff-or-list' and `dvc-diff-find-file-name' gets
@@ -794,104 +814,61 @@ the file before saving."
        (head-revisions (xmtn--heads root branch))
        (head-count (length head-revisions))
        (status-buffer
-        (dvc-prepare-changes-buffer
-         `(xmtn (revision ,base-revision))
-         `(xmtn (local-tree ,root))
-         'status
+        (dvc-status-prepare-buffer
+         'xmtn
          root
-         'xmtn)))
+         ;; base-revision
+         (if base-revision (format "%s" base-revision) "none")
+         ;; branch
+         (format "%s" branch)
+         ;; header-more
+         (lambda ()
+           (concat
+            (case head-count
+              (0 "  branch is empty\n")
+              (1 "  branch is merged\n")
+              (t (format "  branch has %s heads\n" head-count)))
+            (if (member base-revision head-revisions)
+                "  base revision is a head revision\n"
+              "  base revision is not a head revision\n")))
+         ;; refresh
+         'xmtn-dvc-status)))
     (dvc-save-some-buffers root)
-    (dvc-switch-to-buffer-maybe status-buffer)
-    (dvc-kill-process-maybe status-buffer)
-    ;; Attempt to make sure the sentinels have a chance to run.
-    (accept-process-output)
-    (let ((processes (dvc-processes-related-to-buffer status-buffer)))
-      (when processes
-        (error "Process still running in buffer %s" status-buffer)))
-    (let ((header (with-output-to-string
-                    (princ (format "Status for %s:\n" root))
-                    (princ (if base-revision
-                               (format "  base revision %s\n"
-                                       base-revision)
-                             "  tree has no base revision\n"))
-                    (princ (format "  branch %s\n" branch))
-                    (princ
-                     (case head-count
-                       (0 "  branch is empty\n")
-                       (1 "  branch is merged\n")
-                       (t (format "  branch has %s heads\n"
-                                  head-count))))
-                    (princ
-                     (if (member base-revision head-revisions)
-                         "  base revision is a head revision\n"
-                       "  base revision is not a head revision\n"))))
-          (footer ""))
-      (with-current-buffer status-buffer
-        (setq buffer-read-only t)
-        (buffer-disable-undo)
-        (setq dvc-buffer-refresh-function 'xmtn-dvc-status)
-        (ewoc-set-hf dvc-fileinfo-ewoc header footer)
-        (ewoc-enter-last dvc-fileinfo-ewoc (make-dvc-fileinfo-message :text "Running monotone..."))
-        (ewoc-refresh dvc-fileinfo-ewoc))
-      (lexical-let*
-          ((status-buffer status-buffer)
-           (root root))
-        (xmtn--run-command-async
-         root `("automate" "inventory"
-                ,@(and (xmtn--have-no-ignore)
-                       (not dvc-status-display-known)
-                       '("--no-unchanged"))
-                ,@(and (xmtn--have-no-ignore)
-                       (not dvc-status-display-ignored)
-                       '("--no-ignored")))
-         :finished (lambda (output error status arguments)
-                     ;; Don't use `dvc-show-changes-buffer' here because
-                     ;; it attempts to do some regexp stuff for us that we
-                     ;; don't need to be done.
-                     (with-current-buffer status-buffer
-                       (ewoc-enter-last dvc-fileinfo-ewoc (make-dvc-fileinfo-message :text "Parsing inventory..."))
-                       (ewoc-refresh dvc-fileinfo-ewoc)
-                       (dvc-redisplay t)
-                       (dvc-fileinfo-delete-messages)
-                       (lexical-let ((excluded-files (dvc-default-excluded-files))
-                                     (changesp nil))
-                         (xmtn-basic-io-with-stanza-parser
-                          (parser output)
-                          (xmtn--parse-inventory
-                           parser
-                           (lambda (path status changes old-path-or-null
-                                         old-type new-type fs-type)
-                             (when
-                                 (xmtn--status-process-entry dvc-fileinfo-ewoc
-                                                             path status
-                                                             changes
-                                                             old-path-or-null
-                                                             old-type new-type
-                                                             fs-type
-                                                             excluded-files)
-                               (setq changesp t)))))
-                         (when (not changesp)
-                           ;; Calling `dvc-diff-no-changes' here is part
-                           ;; of the protocol, so we do it, even though
-                           ;; its output is not very pretty (printing an
-                           ;; asterisk, repeating the root directory and
-                           ;; adding two newlines to the end of the
-                           ;; buffer is redundant in our layout).
-                           (dvc-diff-no-changes status-buffer "No changes in %s" root)))))
-         :error (lambda (output error status arguments)
-                  (dvc-diff-error-in-process
-                   status-buffer
-                   (format "Error running mtn with arguments %S" arguments)
-                   output error))
-         :killed (lambda (output error status arguments)
-                   ;; Create an empty buffer as a fake output buffer to
-                   ;; avoid printing all the output so far.
-                   (with-temp-buffer
-                     (dvc-diff-error-in-process
-                      status-buffer
-                      (format "Received signal running mtn with arguments %S"
-                              arguments)
-                      (current-buffer) error))))))))
+    (lexical-let* ((excluded-files (dvc-default-excluded-files))
+                   (status-buffer status-buffer))
+      (xmtn--run-command-async
+       root `("automate" "inventory"
+              ,@(and (xmtn--have-no-ignore)
+                     (not dvc-status-display-known)
+                     '("--no-unchanged"))
+              ,@(and (xmtn--have-no-ignore)
+                     (not dvc-status-display-ignored)
+                     '("--no-ignored")))
+       :finished (lambda (output error status arguments)
+                   (dvc-status-inventory-done status-buffer)
+                   (with-current-buffer status-buffer
+                     (xmtn-basic-io-with-stanza-parser
+                      (parser output)
+                      (xmtn--parse-inventory
+                       parser
+                       (lambda (path status changes old-path-or-null old-type new-type fs-type)
+                         (xmtn--status-process-entry dvc-fileinfo-ewoc path status changes old-path-or-null
+                                                     old-type new-type fs-type excluded-files))))))
+       :error (lambda (output error status arguments)
+                ;; FIXME: need `dvc-status-error-in-process', or change name.
+                (dvc-diff-error-in-process
+                 status-buffer
+                 (format "Error running mtn with arguments %S" arguments)
+                 output error))
+       :killed (lambda (output error status arguments)
+                 ;; Create an empty buffer as a fake output buffer to
+                 ;; avoid printing all the output so far.
+                 (with-temp-buffer
+                   (dvc-diff-error-in-process
+                    status-buffer
+                    (format "Received signal running mtn with arguments %S"
+                            arguments)
+                    (current-buffer) error)))))))
 
 ;;;###autoload
 (defun xmtn-dvc-status ()
@@ -1064,7 +1041,8 @@ the file before saving."
    root `("drop"
           ,@(if do-not-execute `("--bookkeep-only") `())
           "--" ,@(xmtn--normalize-file-names root file-names)))
-  nil)
+  ;; return t to indicate we succeeded
+  t)
 
 ;;;###autoload
 (defun xmtn-dvc-remove-files (&rest files)
