@@ -234,7 +234,7 @@ conflicts, and/or ediff current files."
   (with-current-buffer status-buffer
     (ewoc-enter-last dvc-fileinfo-ewoc (make-dvc-fileinfo-message :text "Parsing inventory..."))
     (ewoc-refresh dvc-fileinfo-ewoc)
-    (if (boundp 'redisplay) (redisplay t)); Emacs 21
+    (dvc-redisplay)
     ;; delete "running", "parsing" from the ewoc now, but don't
     ;; refresh until the status is displayed
     (dvc-fileinfo-delete-messages)))
