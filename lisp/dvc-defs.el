@@ -35,6 +35,8 @@
 (eval-and-compile
   (require 'font-lock))
 
+(require 'dvc-site)
+
 (defmacro dvc-first-set (arg1 arg2)
   "Returns ARG1 if set, non-nil, and not the empty string.
 Otherwise, return ARG2. ARG1 must be a variable."
@@ -70,8 +72,10 @@ Possible values include: 'tla, 'baz, 'xhg, 'xgit, 'bzr, 'xmtn"
 (defcustom dvc-prompt-active-dvc nil
   "If non-nil, prompt for the active dvc when more than one is
 found for the current directory. The back-ends considered are
-given in dvc-select-priority (it must be non-nil). Otherwise, use
-the first one found; dvc-select-priority sets the search order."
+given in dvc-select-priority (it must be non-nil - it should be
+restricted it to only those back-ends actually used). Otherwise,
+use the first one found; dvc-select-priority sets the search
+order."
   :type 'boolean
   :group 'dvc)
 
@@ -108,6 +112,17 @@ the first one found; dvc-select-priority sets the search order."
 (defcustom dvc-status-display-ignored nil
   "If non-nil, display files with 'ignored' status in dvc-status buffer."
   :type 'boolean
+  :group 'dvc)
+
+(defcustom dvc-completing-read-function (if (and (boundp 'ido-mode)
+                                                 ido-mode)
+                                            'ido-completing-read
+                                          'completing-read)
+  "Function to call when prompting user to choose between a list of options.
+This should take the same arguments as `completing-read'.
+Possible values are `completing-read' and `ido-completing-read'.
+Note that you must set `ido-mode' if using`ido-completing-read'."
+  :type 'function
   :group 'dvc)
 
 ;; --------------------------------------------------------------------------------

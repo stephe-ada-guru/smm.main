@@ -289,6 +289,12 @@ slash.  If PATH is nil, then nil is returned."
              (replace-regexp-in-string "/+$" "/" expanded)
            expanded))))
 
+(defun dvc-add-uniquify-directory-mode (mode)
+  "Add MODE to `uniquify-list-buffers-directory-modes'."
+  (require 'uniquify)
+  (when (boundp 'uniquify-list-buffers-directory-modes)
+    (add-to-list 'uniquify-list-buffers-directory-modes mode)))
+
 (defvar dvc-temp-directory "/tmp"
   "Temporary directory for some DVC operations.")
 
@@ -648,6 +654,13 @@ containing (symbol description)."
     (error (if comment
                (concat comment "; " msg)
              msg))))
+
+(defun dvc-completing-read (&rest args)
+  "Read a string in the minibuffer, with completion.
+Set `dvc-completing-read-function' to determine which function to use.
+
+See `completing-read' for a description of ARGS."
+  (apply dvc-completing-read-function args))
 
 (defun dvc-default-excluded-files ()
   "Return a list of strings (normally file names relative to tree
