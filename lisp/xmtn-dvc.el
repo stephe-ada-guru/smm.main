@@ -853,7 +853,12 @@ the file before saving."
                        parser
                        (lambda (path status changes old-path-or-null old-type new-type fs-type)
                          (xmtn--status-process-entry dvc-fileinfo-ewoc path status changes old-path-or-null
-                                                     old-type new-type fs-type excluded-files))))))
+                                                     old-type new-type fs-type excluded-files))))
+                     (if (not (ewoc-locate dvc-fileinfo-ewoc))
+                         (ewoc-enter-last dvc-fileinfo-ewoc
+                                          (make-dvc-fileinfo-message
+                                           :text (concat " no changes")))
+                       (ewoc-refresh dvc-fileinfo-ewoc))))
        :error (lambda (output error status arguments)
                 ;; FIXME: need `dvc-status-error-in-process', or change name.
                 (dvc-diff-error-in-process
