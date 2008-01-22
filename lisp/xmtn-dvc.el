@@ -836,9 +836,6 @@ the file before saving."
   ;; command execution yet.
   (let*
       ((base-revision (xmtn--get-base-revision-hash-id-or-null root))
-       (branch (xmtn--tree-default-branch root))
-       (head-revisions (xmtn--heads root branch))
-       (head-count (length head-revisions))
        (status-buffer
         (dvc-status-prepare-buffer
          'xmtn
