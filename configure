@@ -631,6 +631,7 @@ EMACS_PROG
 lispdir
 EMACS_FLAVOR
 EMACS_VERSION
+SITEFLAG
 FLAGS
 info_dir
 TLA
@@ -2058,17 +2059,22 @@ echo "$as_me: error: *** No Emacs program found." >&2;}
    { (exit 1); exit 1; }; }
     fi
     # EMACS TYPE ##################################################
-    { echo "$as_me:$LINENO: checking checking emacs-type of ${EMACS_PROG}" >&5
-echo $ECHO_N "checking checking emacs-type of ${EMACS_PROG}... $ECHO_C" >&6; }
+    { echo "$as_me:$LINENO: checking emacs-type of ${EMACS_PROG}" >&5
+echo $ECHO_N "checking emacs-type of ${EMACS_PROG}... $ECHO_C" >&6; }
     cat > conftest.el <<TEST
 (princ (format "%s" (if (featurep 'xemacs ) 'xemacs 'emacs)))
 TEST
     EMACS_FLAVOR=`${EMACS_PROG} --no-site-file --batch -l conftest.el | ${GREP} .`
+    if test "x${EMACS_FLAVOR}" = "xxemacs"; then
+        SITEFLAG=-no-site-file
+    else
+        SITEFLAG=--no-site-file
+    fi
     { echo "$as_me:$LINENO: result: ${EMACS_FLAVOR}" >&5
 echo "${ECHO_T}${EMACS_FLAVOR}" >&6; }
     # EMACS VERSION ###############################################
-    { echo "$as_me:$LINENO: checking checking emacs-version of ${EMACS_PROG}" >&5
-echo $ECHO_N "checking checking emacs-version of ${EMACS_PROG}... $ECHO_C" >&6; }
+    { echo "$as_me:$LINENO: checking emacs-version of ${EMACS_PROG}" >&5
+echo $ECHO_N "checking emacs-version of ${EMACS_PROG}... $ECHO_C" >&6; }
     cat > conftest.el <<TEST
 (if (featurep 'xemacs )
      (princ (format "%d.%d%s"
@@ -2078,7 +2084,7 @@ echo $ECHO_N "checking checking emacs-version of ${EMACS_PROG}... $ECHO_C" >&6; 
                    "")))
   (princ (format "%s" emacs-version)))
 TEST
-    EMACS_VERSION=`${EMACS_PROG} --no-site-file --batch -l conftest.el | ${GREP} .`
+    EMACS_VERSION=`${EMACS_PROG} ${SITEFLAG} --batch -l conftest.el | ${GREP} .`
     # EMACS DEPENDENT SETTINGS ####################################
     # We may add a version check here ...
     { echo "$as_me:$LINENO: result: ${EMACS_VERSION}" >&5
@@ -2126,13 +2132,14 @@ echo "${ECHO_T}$lispdir" >&6; }
 
 
 
-  { echo "$as_me:$LINENO: checking wich options to pass on to (X)Emacs" >&5
-echo $ECHO_N "checking wich options to pass on to (X)Emacs... $ECHO_C" >&6; }
+
+  { echo "$as_me:$LINENO: checking which options to pass on to (X)Emacs" >&5
+echo $ECHO_N "checking which options to pass on to (X)Emacs... $ECHO_C" >&6; }
   if test "x$FLAGS" = "x"; then
     if test "x$EMACS_FLAVOR" = "xxemacs"; then
-      FLAGS="-batch -no-autoloads -l \$(srcdir)/dvc-build.el"
+      FLAGS="-batch ${SITEFLAG} -no-autoloads -l \$(srcdir)/dvc-build.el"
     else
-      FLAGS="-batch -q -no-site-file -no-init-file -l \$(srcdir)/dvc-build.el"
+      FLAGS="-batch -q ${SITEFLAG} -no-init-file -l \$(srcdir)/dvc-build.el"
     fi
   else
     FLAGS=$FLAGS
@@ -2700,8 +2707,8 @@ if test "${with_other_dirs+set}" = set; then
 fi
 
 
- { echo "$as_me:$LINENO: checking checking wether tree-widget is in the load-path" >&5
-echo $ECHO_N "checking checking wether tree-widget is in the load-path... $ECHO_C" >&6; }
+ { echo "$as_me:$LINENO: checking whether tree-widget is in the load-path" >&5
+echo $ECHO_N "checking whether tree-widget is in the load-path... $ECHO_C" >&6; }
     OTHERDIRS_LIST='"'`echo ${OTHERDIRS} | sed 's/ /" "/g'`'"'
     cat > conftest.el << TEST
 (mapcar (lambda (x) (add-to-list 'load-path x))
@@ -2710,7 +2717,7 @@ echo $ECHO_N "checking checking wether tree-widget is in the load-path... $ECHO_
     (princ "yes")
     (princ "no"))
 TEST
-    HAS_TREE_WIDGET=`${EMACS_PROG} --no-site-file --batch -l conftest.el | ${GREP} .`
+    HAS_TREE_WIDGET=`${EMACS_PROG} ${SITEFLAG} --batch -l conftest.el | ${GREP} .`
     { echo "$as_me:$LINENO: result: ${HAS_TREE_WIDGET}" >&5
 echo "${ECHO_T}${HAS_TREE_WIDGET}" >&6; }
     if test "x${HAS_TREE_WIDGET}" = "xno" ; then
@@ -3454,6 +3461,7 @@ EMACS_PROG!$EMACS_PROG$ac_delim
 lispdir!$lispdir$ac_delim
 EMACS_FLAVOR!$EMACS_FLAVOR$ac_delim
 EMACS_VERSION!$EMACS_VERSION$ac_delim
+SITEFLAG!$SITEFLAG$ac_delim
 FLAGS!$FLAGS$ac_delim
 info_dir!$info_dir$ac_delim
 TLA!$TLA$ac_delim
@@ -3477,7 +3485,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 71; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 72; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
