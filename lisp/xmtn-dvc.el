@@ -406,7 +406,7 @@ the file before saving."
                  (dvc-default-killed-function output error
                                               status arguments))
        :finished (lambda (output error status arguments)
-                   (message "%s...done" progress-message)
+                   (message "%s... done" progress-message)
                    ;; Monotone creates an empty log file when the
                    ;; commit was successful.  Let's not interfere with
                    ;; that.  (Calling `dvc-log-close' would.)
@@ -420,7 +420,7 @@ the file before saving."
                                             (xmtn--get-base-revision-hash-id-or-null default-directory)))))
       ;; Show message _after_ spawning command to override DVC's
       ;; debugging message.
-      (message "%s..." progress-message))
+      (message "%s... " progress-message))
     (set-window-configuration dvc-pre-commit-window-configuration)))
 
 ;; The term "normalization" here has nothing to do with Unicode
@@ -461,6 +461,13 @@ the file before saving."
     (princ (if (member base-revision head-revisions)
                "  base revision is a head revision\n"
              "  base revision is not a head revision\n")))))
+
+(defun xmtn--refresh-status-header (status-buffer)
+  (with-current-buffer status-buffer
+    (ewoc-set-hf
+     dvc-fileinfo-ewoc
+     (xmtn--status-header default-directory (xmtn--get-base-revision-hash-id-or-null default-directory))
+     "")))
 
 (defun xmtn--parse-diff-for-dvc (changes-buffer)
   (let ((excluded-files (dvc-default-excluded-files))
@@ -561,8 +568,8 @@ the file before saving."
 
 (defvar xmtn-diff-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map [?P] 'xmtn-propagate-from)
-    (define-key map [?H] 'xmtn-view-heads-revlist)
+    (define-key map "MP" 'xmtn-propagate-from)
+    (define-key map "MH" 'xmtn-view-heads-revlist)
     map))
 
 (easy-menu-define xmtn-diff-mode-menu xmtn-diff-mode-map
@@ -732,8 +739,15 @@ the file before saving."
                       'modified
                     'known))))
 
+            indexed                   ; used by terse status interface
             more-status
             need-more-status)
+
+        (setq indexed
+              (if (eq status 'missing)
+                  ;; in terse mode, missing is represented as "D?"
+                  nil
+                t))
 
         (setq need-more-status
               (if (and (eq status (list main-status)) (eq changes nil))
@@ -768,6 +782,7 @@ the file before saving."
                              :dir (file-name-directory path)
                              :file (file-name-nondirectory path)
                              :status main-status
+                             :indexed indexed
                              :more-status more-status)))
           ((file none)
            ;; 'none' indicates a dropped (deleted) file
@@ -778,6 +793,7 @@ the file before saving."
                              :dir (file-name-directory path)
                              :file (file-name-nondirectory path)
                              :status main-status
+                             :indexed indexed
                              :more-status more-status)))
           (t
            (error "path %s fs-type %s old-type %s new-type %s" path fs-type old-type new-type))
@@ -1114,26 +1130,29 @@ the file before saving."
         (let ((end (1- (point))))
           (add-text-properties start end '(face (:slant italic))))))))
 
-(defun xmtn--run-command-that-might-invoke-merger (root command)
+(defun xmtn--run-command-that-might-invoke-merger (root command post-process)
   ;; Run async, not sync; it might recursively invoke emacsclient for
   ;; merging; and we might need to send an enter keystroke when
   ;; finished.
-  (xmtn--run-command-async
-   root command
-   :finished
-   (lambda (output error status arguments)
-     (with-current-buffer output
-       (save-excursion
-         (goto-char (point-max))
-         (xmtn--insert-hint-into-process-buffer "[process finished]\n")))
-     (message "... done"))
-   :error
-   (lambda (output error status arguments)
-     (with-current-buffer output
-       (save-excursion
-         (goto-char (point-max))
-         (xmtn--insert-hint-into-process-buffer
-          "[process terminated with an error]\n")))))
+  (lexical-let ((post-process post-process))
+    (xmtn--run-command-async
+     root command
+     :finished
+     (lambda (output error status arguments)
+       (with-current-buffer output
+         (save-excursion
+           (goto-char (point-max))
+           (xmtn--insert-hint-into-process-buffer "[process finished]\n")))
+       (if post-process
+           (funcall post-process)))
+     :error
+     (lambda (output error status arguments)
+       (with-current-buffer output
+         (save-excursion
+           (goto-char (point-max))
+           (xmtn--insert-hint-into-process-buffer
+            "[process terminated with an error]\n")
+           (dvc-show-error-buffer error))))))
   ;; Show process buffer.  Monotone might spawn an external merger and
   ;; ask the user to hit enter when finished.
   (dvc-show-process-buffer)
@@ -1188,7 +1207,8 @@ finished."
                                                 "--"
                                                 ,left-revision-hash-id
                                                 ,right-revision-hash-id
-                                                ,destination-branch-name))
+                                                ,destination-branch-name)
+                                              nil)
   nil)
 
 (defun xmtn--do-disapprove-future (root revision-hash-id)
@@ -1201,17 +1221,27 @@ finished."
 (defun xmtn--do-update (root target-revision-hash-id changes-p)
   (check-type root string)
   (check-type target-revision-hash-id xmtn--hash-id)
-  (let ((progress-message (format "Updating tree %s to revision %s"
-                                  root target-revision-hash-id))
-        (command `("update" ,(concat "--revision=" target-revision-hash-id))))
-    (if changes-p
-        (progn (message "%s" progress-message)
-               (xmtn--run-command-that-might-invoke-merger root command))
+  (lexical-let ((progress-message (format "Updating tree %s to revision %s"
+                                  root target-revision-hash-id)))
+    (let ((command `("update" ,(concat "--revision=" target-revision-hash-id)))
+          (post-process
+           (lambda ()
+             (message "%s... done" progress-message)
+             (dvc-revert-some-buffers default-directory)
+             (dvc-diff-clear-buffers 'xmtn
+                                     default-directory
+                                     "* Just updated; please refresh buffer"
+                                     (xmtn--status-header
+                                      default-directory
+                                      (xmtn--get-base-revision-hash-id-or-null default-directory)))))
+          )
+
       (message "%s..." progress-message)
-      (xmtn--run-command-sync root command)
-      (message "%s...done" progress-message)))
-  (dvc-revert-some-buffers root)
-  nil)
+      (if changes-p
+          (xmtn--run-command-that-might-invoke-merger root command post-process)
+        (xmtn--run-command-sync root command)
+        (funcall post-process)))
+    nil))
 
 (defun xmtn--update-after-confirmation (root target-revision-hash-id)
   ;; mtn will just give an innocuous message if already updated, which
@@ -1271,13 +1301,16 @@ finished."
 (defun xmtn-propagate-from (other)
   "Propagate from OTHER branch to local tree branch."
   (interactive "MPropagate from branch: ")
-  (lexical-let*
+  (let*
       ((root (dvc-tree-root))
        (local-branch (xmtn--tree-default-branch root))
        (cmd (concat "propagate " other " " local-branch)))
-    (message "%s..." cmd)
-  (xmtn--run-command-that-might-invoke-merger
-   root (list "propagate" other local-branch))))
+    (lexical-let
+        (display-buffer (current-buffer))
+      (message "%s..." cmd)
+      (xmtn--run-command-that-might-invoke-merger
+       root (list "propagate" other local-branch)
+       (lambda () (xmtn--refresh-status-header display-buffer))))))
 
 ;;;###autoload
 (defun xmtn-dvc-merge (&optional other)
@@ -1285,16 +1318,21 @@ finished."
       (xmtn-propagate-from other)
     ;; else merge heads
     (let ((root (dvc-tree-root)))
-      (xmtn-automate-with-session
-       (nil root)
-       (let* ((branch (xmtn--tree-default-branch root))
-              (heads (xmtn--heads root branch)))
-         (case (length heads)
-           (0 (assert nil))
-           (1
-            (message "already merged"))
-           (t
-            (xmtn--run-command-that-might-invoke-merger root '("merge"))))))))
+      (lexical-let
+          ((display-buffer (current-buffer)))
+        (xmtn-automate-with-session
+         (nil root)
+         (let* ((branch (xmtn--tree-default-branch root))
+                (heads (xmtn--heads root branch)))
+           (case (length heads)
+             (0 (assert nil))
+             (1
+              (message "already merged"))
+             (t
+              (xmtn--run-command-that-might-invoke-merger
+               root
+               '("merge")
+               (lambda () (xmtn--refresh-status-header display-buffer))))))))))
     nil)
 
 ;;;###autoload
@@ -1314,7 +1352,7 @@ finished."
                              :finished
                              (lambda (output error status arguments)
                                (pop-to-buffer output)
-                               (message "%s...done" name)))))
+                               (message "%s... done" name)))))
 
 ;;;###autoload
 (defun xmtn-dvc-revert-files (&rest file-names)
@@ -1334,7 +1372,7 @@ finished."
                                        ,@normalized-file-names)
                                 :finished
                                 (lambda (output error status arguments)
-                                  (message "%s...done" progress-message)))
+                                  (message "%s... done" progress-message)))
         (dvc-revert-some-buffers root))))
   nil)
 
