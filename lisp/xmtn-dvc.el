@@ -861,51 +861,7 @@ the file before saving."
          ;; refresh
          'xmtn-dvc-status)))
     (dvc-save-some-buffers root)
-<<<<<<< variant A
-    (dvc-switch-to-buffer-maybe status-buffer)
-    (dvc-kill-process-maybe status-buffer)
-    ;; Attempt to make sure the sentinels have a chance to run.
-    (accept-process-output)
-    (let ((processes (dvc-processes-related-to-buffer status-buffer)))
-      (when processes
-        (error "Process still running in buffer %s" status-buffer)))
-
-    (with-current-buffer status-buffer
-      (setq buffer-read-only t)
-      (buffer-disable-undo)
-      (setq dvc-buffer-refresh-function 'xmtn-dvc-status)
-      (ewoc-set-hf dvc-fileinfo-ewoc
-                   (xmtn--status-header root base-revision)
-                   "")
-      (ewoc-enter-last dvc-fileinfo-ewoc (make-dvc-fileinfo-message :text "Running monotone..."))
-      (ewoc-refresh dvc-fileinfo-ewoc))
-
     (lexical-let* ((status-buffer status-buffer))
->>>>>>> variant B
-    (lexical-let* ((status-buffer status-buffer))
-####### Ancestor
-    (dvc-switch-to-buffer-maybe status-buffer)
-    (dvc-kill-process-maybe status-buffer)
-    ;; Attempt to make sure the sentinels have a chance to run.
-    (accept-process-output)
-    (let ((processes (dvc-processes-related-to-buffer status-buffer)))
-      (when processes
-        (error "Process still running in buffer %s" status-buffer)))
-
-    (with-current-buffer status-buffer
-      (setq buffer-read-only t)
-      (buffer-disable-undo)
-      (setq dvc-buffer-refresh-function 'xmtn-dvc-status)
-      (ewoc-set-hf dvc-fileinfo-ewoc
-                   (xmtn--status-header root base-revision)
-                   "")
-      (ewoc-enter-last dvc-fileinfo-ewoc (make-dvc-fileinfo-message :text "Running monotone..."))
-      (ewoc-refresh dvc-fileinfo-ewoc))
-
-    (lexical-let*
-        ((status-buffer status-buffer)
-         (root root))
-======= end
       (xmtn--run-command-async
        root `("automate" "inventory"
               ,@(and (xmtn--have-no-ignore)
