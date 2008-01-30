@@ -263,23 +263,10 @@ conflicts, and/or ediff current files."
   "Add current files to the database. Directories are also added,
 but not recursively."
   (interactive)
-  (let* ((files (dvc-current-file-list))
-         (filtered files))
-    (dolist (file files)
-      ;; FIXME: xmtn-dvc.el xmtn--add-files says on directories, "mtn
-      ;; add" will recurse, which isn't what we want. but that's not
-      ;; true for current monotone. bzr also does not recurse.
-      ;;
-      ;; Note that there is no "add recursive" DVC command. Selecting
-      ;; all the files in a directory is the prefered approach.
-      (if (file-directory-p file)
-          (setq filtered (delete file filtered))))
-    (apply 'dvc-add-files filtered))
+  (apply 'dvc-add-files (dvc-current-file-list))
 
   ;; Update the ewoc status of each added file to 'added'; this avoids
-  ;; the need to run the backend again. Assume any directories that
-  ;; were filtered out above were added because there were files in
-  ;; them. FIXME: should verify that here.
+  ;; the need to run the backend again.
   (if (= 0 (length dvc-buffer-marked-file-list))
       ;; no marked files
       (let ((fileinfo (dvc-fileinfo-current-fileinfo)))
