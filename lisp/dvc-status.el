@@ -189,10 +189,11 @@ conflicts, and/or ediff current files."
                        nil)
 
                       (dvc-fileinfo-file ; also matches dvc-fileinfo-dir
-                       (if status
-                           (if (not (equal status (dvc-fileinfo-file-status fileinfo)))
-                               (error "cannot Do The Right Thing on files with different status"))
-                         (setq status (dvc-fileinfo-file-status fileinfo)))
+                       (if (dvc-fileinfo-file-mark fileinfo)
+                           (if status
+                               (if (not (equal status (dvc-fileinfo-file-status fileinfo)))
+                                   (error "cannot Do The Right Thing on files with different status"))
+                             (setq status (dvc-fileinfo-file-status fileinfo))))
                        ;; don't redisplay the element
                        nil)))
                   dvc-fileinfo-ewoc)
