@@ -295,7 +295,7 @@ but not recursively."
       (progn
         ;; binding inhibit-read-only doesn't seem to work here
         (toggle-read-only 0)
-        (ewoc-delete dvc-fileinfo-ewoc (ewoc-locate dvc-fileinfo-ewoc))
+        (dvc-ewoc-delete dvc-fileinfo-ewoc (ewoc-locate dvc-fileinfo-ewoc))
         (toggle-read-only 1))
     ;; marked files
     (setq dvc-buffer-marked-file-list nil)
@@ -314,7 +314,7 @@ but not recursively."
   (if (= 0 (length dvc-buffer-marked-file-list))
       ;; no marked files
       (let ((inhibit-read-only t))
-        (ewoc-delete dvc-fileinfo-ewoc (ewoc-locate dvc-fileinfo-ewoc)))
+        (dvc-ewoc-delete dvc-fileinfo-ewoc (ewoc-locate dvc-fileinfo-ewoc)))
     ;; marked files
     (setq dvc-buffer-marked-file-list nil)
     (ewoc-filter dvc-fileinfo-ewoc
