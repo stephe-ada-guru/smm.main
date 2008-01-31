@@ -203,7 +203,7 @@ otherwise the result depends on SELECTION-MODE:
    ((eq major-mode 'dired-mode)
     (dired-get-marked-files))
 
-   ((dvc-derived-mode-p 'dvc-diff-mode)
+   ((dvc-derived-mode-p 'dvc-diff-mode 'dvc-status-mode)
     (or (remove nil dvc-buffer-marked-file-list)
         (cond
          ((eq selection-mode 'nil-if-none-marked)
