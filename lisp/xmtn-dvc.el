@@ -41,6 +41,7 @@
   (require 'xmtn-automate)
   (require 'xmtn-ids)
   (require 'xmtn-match)
+  (require 'xmtn-minimal)
   (require 'dvc-log)
   (require 'dvc-diff)
   (require 'dvc-status)
