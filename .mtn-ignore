@@ -10,3 +10,7 @@
 ^lisp/dvc-site\.el$
 ^lisp/tests/xmtn-tests-one\.el$
 ^texinfo/Makefile$
+^texinfo/dvc-version\.texinfo$
+^texinfo/dvc-version\.info$
+^lisp/dvc-version\.el$
+^dvc-load-install\.el$
