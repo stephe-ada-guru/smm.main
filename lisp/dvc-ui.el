@@ -310,6 +310,7 @@
     ;; dvc: l runs changelog, M-l runs tree-lint for Arch
     (define-key map [?l] 'dvc-changelog)
     (define-key map [(meta ?l)] 'tla-tree-lint)
+    (define-key map [?I]                     'dvc-init)
     (define-key map [?C]                     'dvc-clone)
     (define-key map [?F]                     'dvc-pull)
     (define-key map [?P]                     'dvc-push)
@@ -402,7 +403,6 @@ If you wish to disable the prefix key, set this variable to nil."
  (dvc-do-in-xemacs '("Tools"))
  '("DVC"
    ["Show Bookmarks" dvc-bookmarks t]
-   ["Start New Project" dvc-init t]
    "---"
    "Tree Commands:"
    ["View Diff" dvc-diff t]
@@ -411,6 +411,8 @@ If you wish to disable the prefix key, set this variable to nil."
    "---"
    "File Commands:"
    ["Add Log Entry"  dvc-add-log-entry t]
+   "---"
+   ["Initialize repository" dvc-init t]
    )
  "PCL-CVS")
 

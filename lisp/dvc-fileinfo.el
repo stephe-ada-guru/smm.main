@@ -59,7 +59,7 @@ The elements must all be of class dvc-fileinfo-root.")
   dir           ;; Directory the file resides in, relative to dvc-root.
   file          ;; File name sans directory.
                 ;; (concat dir file) gives a valid path.
-  status        ;; Symbol; see dvc-fileinfo-status-image for list
+  status        ;; Symbol; see dvc-fileinfo-status-image-full for list
   (indexed t)   ;; Whether changes made to the file have been recorded
                 ;; in the index.  Use t if the back-end does not
                 ;; support an index.
@@ -80,8 +80,8 @@ This is used by `dvc-fileinfo-printer-full'."
     (modified       "modified     ")
     (copy-source    "copy         ")
     (copy-target    "         ==> ")
-    (rename-source  "rename       ")
-    (rename-target  "         ==> ")
+    (rename-source  "rename-source")
+    (rename-target  "rename-target")
     (unknown        "unknown      ")))
 
 (defun dvc-fileinfo-status-image-terse (status)
