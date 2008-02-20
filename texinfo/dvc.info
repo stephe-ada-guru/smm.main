@@ -48,7 +48,9 @@ really updated for DVC, but should still apply for Xtla.
 
    This file documents DVC, version
 
-   Unknown version Backends supported:
+ stephen_leake@stephe-leake.org-20080202091602-4pdmn17m3vdyyi9d
+
+   Backends supported:
 "Bazaar (bzr)"
      `http://bazaar-vcs.org/'
 
@@ -964,48 +966,48 @@ File: dvc.info,  Node: Variable Index,  Prev: Concept Index,  Up: Top
 
 Tag Table:
 Node: Top248
-Node: Installation1842
-Node: Dependencies2240
-Node: MS Windows3644
-Node: Hooking into GNU Emacs5889
-Node: DVC Tour6785
-Node: A tutorial guide to DVC7363
-Node: Register an archive8148
-Node: Bookmarking a project8766
-Node: Creating a branch of a project and getting a project tree9844
-Node: Finding and merging missing patches11323
-Node: Reviewing and committing your changes12575
-Node: First contact13647
-Node: Archive Browsing14814
-Node: Editing Files15287
-Node: Committing Files15890
-Node: Using Bookmarks17297
-Node: Bookmarks basics17559
-Node: Using bookmarks for distributed development18389
-Node: Bookmarks groups20604
-Node: Transmit patches via email21416
-Node: Send patches via Gnus21816
-Node: Receive/Apply patches via Gnus22891
-Node: Use cases24150
-Node: Anarchic development24386
-Node: Star-shaped development24592
-Node: Maintainer25269
-Node: Missing patches25793
-Node: Reviewing patches27264
-Node: Patch-log Generation28208
-Node: Contributor29306
-Node: Trouble Shooting29518
-Node: Customization30633
-Node: Internals30873
-Node: Mailing Lists31086
-Node: Wiki31530
-Node: Changes31807
-Node: The Latest Version32186
-Node: The Future33210
-Node: Known Bugs33502
-Node: TODO List34164
-Node: Thanks34410
-Node: Concept Index34519
-Node: Variable Index35098
+Node: Installation1891
+Node: Dependencies2289
+Node: MS Windows3693
+Node: Hooking into GNU Emacs5938
+Node: DVC Tour6834
+Node: A tutorial guide to DVC7412
+Node: Register an archive8197
+Node: Bookmarking a project8815
+Node: Creating a branch of a project and getting a project tree9893
+Node: Finding and merging missing patches11372
+Node: Reviewing and committing your changes12624
+Node: First contact13696
+Node: Archive Browsing14863
+Node: Editing Files15336
+Node: Committing Files15939
+Node: Using Bookmarks17346
+Node: Bookmarks basics17608
+Node: Using bookmarks for distributed development18438
+Node: Bookmarks groups20653
+Node: Transmit patches via email21465
+Node: Send patches via Gnus21865
+Node: Receive/Apply patches via Gnus22940
+Node: Use cases24199
+Node: Anarchic development24435
+Node: Star-shaped development24641
+Node: Maintainer25318
+Node: Missing patches25842
+Node: Reviewing patches27313
+Node: Patch-log Generation28257
+Node: Contributor29355
+Node: Trouble Shooting29567
+Node: Customization30682
+Node: Internals30922
+Node: Mailing Lists31135
+Node: Wiki31579
+Node: Changes31856
+Node: The Latest Version32235
+Node: The Future33259
+Node: Known Bugs33551
+Node: TODO List34213
+Node: Thanks34459
+Node: Concept Index34568
+Node: Variable Index35147
 
 End Tag Table
