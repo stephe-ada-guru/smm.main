@@ -1,3 +1,0 @@
-@verbatim stephen_leake@stephe-leake.org-20080202091602-4pdmn17m3vdyyi9d
-
-@end verbatim
