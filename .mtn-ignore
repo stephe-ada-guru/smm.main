@@ -15,3 +15,4 @@
 ^texinfo/dvc-version\.info$
 ^lisp/dvc-version\.el$
 ^dvc-load-install\.el$
+^texinfo/dvc\.info$
