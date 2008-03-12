@@ -34,6 +34,7 @@
 (require 'dvc-core)
 (require 'dvc-defs)
 (require 'dvc-tips)
+(require 'ediff-init) ; for Xor
 
 ;; --------------------------------------------------------------------------------
 ;; unified functions
@@ -129,12 +130,16 @@ not &rest."
              ))
            (url-at-point (ffap-url-at-point))
            (all-candidates (map t 'symbol-name dvc-registered-backends))
-           (git-is-candidate (looking-back "git clone .+")))
+           (git-is-candidate (re-search-backward "git clone .+" (line-beginning-position) t))
+           (hg-is-candidate (re-search-backward "hg clone .+" (line-beginning-position) t))
+           (bzr-is-candidate (re-search-backward "bzr get .+" (line-beginning-position) t)))
       (setq dvc (intern (dvc-completing-read
                          "Clone, using dvc: "
                          all-candidates
                          nil t
                          (cond (git-is-candidate "xgit")
+                               (bzr-is-candidate "bzr")
+                               (hg-is-candidate "xhg")
                                (t nil)))))
       (setq source-path (read-string (format "%S-clone from path: " dvc) url-at-point))
       (setq dest-path (expand-file-name (dvc-read-directory-name
@@ -317,10 +322,10 @@ the current active back-end."
 ;;;###autoload
 (defun dvc-log-edit (&optional other-frame no-init)
   "Edit the log before commiting. Optional OTHER_FRAME (default
-user prefix) puts log edit buffer in a separate frame. Optional
+user prefix) puts log edit buffer in a separate frame (or in the
+same frame if `dvc-log-edit-other-frame' is non-nil). Optional
 NO-INIT if non-nil suppresses initialization of buffer if one is
-reused.
-`default-directory' must be the tree root."
+reused. `default-directory' must be the tree root."
   (interactive "P")
   (setq other-frame (Xor other-frame dvc-log-edit-other-frame))
   ;; Reuse an existing log-edit buffer if possible.
