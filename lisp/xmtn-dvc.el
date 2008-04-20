@@ -154,6 +154,8 @@
                         xmtn--trusted))))))))
 
 (defun xmtn--list-parsed-certs (root revision-hash-id)
+  "Return a list of the contents of each cert attached to REVISION-HASH-ID.
+Each element of the list is a list; key, signature, name, value, trust."
   (lexical-let ((accu '()))
     (xmtn--map-parsed-certs root revision-hash-id
                             (lambda (key signature name value trusted)
