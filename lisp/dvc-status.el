@@ -53,7 +53,7 @@
     (define-key map dvc-keyvec-ediff                'dvc-status-ediff)
     (define-key map dvc-keyvec-help                 'describe-mode)
     (define-key map dvc-keyvec-logs                 'dvc-log)
-    (define-key map "l"                             'dvc-diff-log)
+    (define-key map "l"                             'dvc-diff-log-single)
     (define-key map "R"                             'dvc-fileinfo-rename)
     (define-key map "t"                             'dvc-fileinfo-add-log-entry)
     (define-key map dvc-keyvec-mark                 'dvc-fileinfo-mark-file)
@@ -119,7 +119,7 @@
     ["Revert File"                 dvc-status-revert-files           t]
     ["Edit File"                   dvc-find-file-other-window        t]
     ["Add log entry"               dvc-fileinfo-add-log-entry        t]
-    ["Log (single file)"           dvc-diff-log                      t]
+    ["Log (single file)"           dvc-diff-log-single               t]
     ["Log (full tree)"             dvc-log                           t]
     ))
 

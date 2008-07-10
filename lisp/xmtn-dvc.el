@@ -1019,9 +1019,10 @@ the file before saving."
            (file-name-extension file-name))))
 
 (defun xmtn--add-patterns-to-mtnignore (root patterns interactive-p)
-  (let ((mtnignore-file-name (xmtn--mtnignore-file-name root)))
     (save-window-excursion
-      (find-file-other-window mtnignore-file-name)
+      ;; use 'find-file-other-window' to preserve current state if
+      ;; user is already visiting the ignore file.
+      (find-file-other-window (xmtn--mtnignore-file-name root))
       (save-excursion
         (let ((modified-p nil))
           (loop for pattern in patterns
@@ -1035,13 +1036,15 @@ the file before saving."
                   (insert pattern "\n")
                   (setq modified-p t)))
           (when modified-p
+            ;; 'sort-lines' moves all markers, which defeats save-excursion. Oh well!
+            (sort-lines nil (point-min) (point-max))
             (if (and interactive-p
-                    dvc-confirm-ignore)
+                     dvc-confirm-ignore)
                 (lexical-let ((buffer (current-buffer)))
                   (save-some-buffers nil (lambda ()
                                            (eql (current-buffer) buffer))))
-              (save-buffer)))))))
-  nil)
+              (save-buffer))))))
+    nil)
 
 ;;;###autoload
 (defun xmtn-dvc-ignore-files (file-names)
@@ -1338,18 +1341,22 @@ finished."
   (interactive '(nil))
   (let*
       ((root (dvc-tree-root))
-       (local-branch (xmtn--tree-default-branch root))
-       (cmd (concat "propagate " other " " local-branch)))
+       (local-branch (xmtn--tree-default-branch root)))
 
     (if (not other)
-        (setq other (read-from-minibuffer "Propagate from branch: ")))
+;;         (progn
+;;           (setq other (xmtn-get-option 'propagate-from))
+;;           (if (not other)
+              (setq other (read-from-minibuffer "Propagate from branch: ")))
+;;    ))
 
     (if (not (yes-or-no-p (concat "Propagate from " other " to " local-branch "? ")))
         (error "user abort"))
 
+;;    (xmtn-set-option 'propagate-from other)
+
     (lexical-let
         ((display-buffer (current-buffer)))
-      (message "%s..." cmd)
       (xmtn--run-command-that-might-invoke-merger
        root (list "propagate" other local-branch)
        (lambda () (xmtn--refresh-status-header display-buffer))))))
@@ -1853,6 +1860,45 @@ finished."
   (apply #'dvc-dvc-revision-nth-ancestor args))
 
 (defalias 'xmtn-dvc-revlist 'xmtn-view-heads-revlist)
+
+;;; per-workspace options
+(defvar xmtn-dvc-options-file "_MTN/dvc-options.el")
+
+(defvar xmtn-dvc-options-alist nil
+  "alist of workspace options.")
+
+;; FIXME: needs to be per-workspace
+(defun xmtn-get-option (option)
+  "Get value for OPTION from `xmtn-dvc-options-alist`; load that from `xmtn-dvc-options-file` if necessary."
+  (if (not xmtn-dvc-options-alist)
+      (dvc-load-state (expand-file-name xmtn-dvc-options-file)))
+
+  (let ((a (assoc option xmtn-dvc-options-alist)))
+    (if a
+        (cadr a))))
+
+(defun xmtn-set-option (option value)
+  "Set value for OPTION in `xmtn-dvc-options-alist`; save that to `xmtn-dvc-options-file` if necessary."
+  (if (not xmtn-dvc-options-alist)
+      (dvc-load-state (expand-file-name xmtn-dvc-options-file)))
+
+  (let ((a (assq option xmtn-dvc-options-alist))
+        (need-save nil))
+    (if a
+        (if (equal value (cadr a))
+            ; not changed
+            nil
+          ; changed
+          (setq xmtn-dvc-options-alist (assq-delete-all option xmtn-dvc-options-alist))
+          (add-to-list xmtn-dvc-options-alist (list option value))
+          (setq need-save t))
+      ; new value
+      (add-to-list 'xmtn-dvc-options-alist (list option value))
+      (setq need-save t))
+
+    (if need-save
+        (dvc-save-state '(xmtn-dvc-options-alist) (expand-file-name xmtn-dvc-options-file)))
+    ))
 
 (provide 'xmtn-dvc)
 
