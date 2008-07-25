@@ -1,11 +1,13 @@
 @SET_MAKE@
 
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+PACKAGE_VERSION = @PACKAGE_VERSION@
+
 ##############################################################################
 # location of required programms
 RM   = @RM@
-XARGS = @XARGS@
 ETAGS = @ETAGS@
-BZR = @BZR@
 INSTALL = @INSTALL@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -34,7 +36,7 @@ pdf: dvc.pdf
 
 html: dvc.html
 
-Makefile: @srcdir@/Makefile.in ../config.status
+Makefile: $(srcdir)/Makefile.in ../config.status
 	cd ..; ./config.status
 
 install: uninstall info
@@ -60,71 +62,51 @@ install: uninstall info
 	@echo DVC INFO files successfully installed\!
 
 uninstall:
-	-$(RM) -f $(info_dir)/dvc.info*
+	$(RM) -f $(info_dir)/dvc.info*
 
 info: dvc.info
 
-dvc.info: @srcdir@/dvc.texinfo @builddir@/dvc-version.texinfo
+alldeps = $(srcdir)/dvc.texinfo dvc-version.texinfo
+
+dvc.info: $(alldeps)
 	@if test "x$(MAKEINFO)" = "x" ; then                  \
-           $(EMACSINFO) @srcdir@/dvc.texinfo -o $@ ;          \
+           echo "Sorry, no \`makeinfo' program available." ;   \
          else                                                 \
-           $(MAKEINFO) @srcdir@/dvc.texinfo -o $@ ;           \
+           $(MAKEINFO) $(srcdir)/dvc.texinfo -o $@ ;           \
          fi
 
-dvc.html: @srcdir@/dvc.texinfo @builddir@/dvc-version.texinfo
+dvc.html: $(alldeps)
 	@if test "x$(MAKEINFO)" = "x" ; then                    \
-           $(EMACSINFO) @srcdir@/dvc.texinfo ;                  \
+           echo "Sorry, no \`makeinfo' program available." ;     \
          else                                                   \
-           $(MAKEINFO) --html --no-split @srcdir@/dvc.texinfo ; \
+           $(MAKEINFO) --html --no-split $(srcdir)/dvc.texinfo ; \
          fi
 
-dvc.dvi: @srcdir@/dvc.texinfo @builddir@/dvc-version.texinfo
+dvc.dvi: $(alldeps)
 	@if test "x$(TEXI2DVI)" = "x" ; then                 \
            echo "Sorry, no \`texi2dvi' program available." ; \
          else                                                \
-           $(TEXI2DVI) @srcdir@/dvc.texinfo -o $@ ;          \
+           $(TEXI2DVI) $(srcdir)/dvc.texinfo -o $@ ;          \
          fi
 
-dvc.pdf: @srcdir@/dvc.texinfo @builddir@/dvc-version.texinfo
+dvc.pdf: $(alldeps)
 	@if test "x$(TEXI2DVI)" = "x" ; then                 \
            echo "Sorry, no \`texi2dvi' program available." ; \
          else                                                \
-           $(TEXI2DVI) -p @srcdir@/dvc.texinfo -o $@;        \
+           $(TEXI2DVI) -p $(srcdir)/dvc.texinfo -o $@;        \
          fi
 
 clean:
-	-$(RM) -f *.aux *.cp *.cps *.dvi *.pdf *.fn *.fns *.ky *.log *.pg \
+	$(RM) -f *.aux *.cp *.cps *.dvi *.pdf *.fn *.fns *.ky *.log *.pg \
 	  *.toc *.tp *.vr *.vrs *.html *.info dvc-version.texinfo
 
 distclean: clean
-	-$(RM) -f Makefile
+	$(RM) -f Makefile
 
 .PHONY: pdf dvi html info clean distclean install-pkg uninstall-pkg all
 
-BZR_DIR_EXISTS=${shell if [ -r '@top_srcdir@/.bzr' ]; then printf "%s" yes; else printf "%s" no; fi }
-BZR_REVISION_CMD=cd @top_srcdir@ && $(BZR) version-info | sed -ne 's/^revision-id: //p'
-
-ifeq ($(BZR_DIR_EXISTS),yes)
-dvc-version.texinfo: @top_srcdir@/.bzr
-	$(RM) -f $@
-	printf "%s" "@verbatim " >> $@
-	if [ "x$(RELEASE_ID)" != "x" ]; then                         \
-		printf "%s (%s)" $(RELEASE_ID)                       \
-		`$(BZR_REVISION_CMD)` >> $@;                         \
-	else                                                         \
-		($(BZR_REVISION_CMD)) >> $@;                         \
-	fi
-	@echo >> $@
-	@echo "@end verbatim" >> $@
-	chmod -w $@
-else
-dvc-version.texinfo:
-	$(RM) -f $@
-	@echo "*** Warning: Unknown DVC arch release"
-	if [ "x$(RELEASE_ID)" != "x" ]; then         \
-		printf "%s" "$(RELEASE_ID)" >> $@;   \
-	else                                         \
-		printf "%s" "Unknown version" >> $@; \
-	fi
-	chmod -w $@
-endif
+dvc-version.texinfo: $(top_srcdir)/configure
+	@echo Creating $@
+	@( echo @set VERSION $(PACKAGE_VERSION) ; \
+	   date +'@set UPDATED %F' -r $< ) > $@-t
+	@$(top_srcdir)/move-if-change $@-t $@ >/dev/null
