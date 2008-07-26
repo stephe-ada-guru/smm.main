@@ -44,6 +44,7 @@
   (require 'xmtn-minimal)
   (require 'dvc-log)
   (require 'dvc-diff)
+  (require 'dvc-status)
   (require 'dvc-core)
   (require 'ewoc))
 
@@ -649,6 +650,24 @@ the file before saving."
       ;; The call site in `dvc-revlist-diff' needs this return value.
       buffer)))
 
+(defvar xmtn-status-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map "MP" 'xmtn-propagate-from)
+    (define-key map "MH" 'xmtn-view-heads-revlist)
+    map))
+
+(easy-menu-define xmtn-status-mode-menu xmtn-status-mode-map
+  "Mtn specific status menu."
+  `("DVC-Mtn"
+    ["Propagate branch" xmtn-propagate-from t]
+    ["View Heads" xmtn-view-heads-revlist t]
+    ))
+
+(define-derived-mode xmtn-status-mode dvc-status-mode "xmtn-status"
+  "Add back-end-specific commands for dvc-status.")
+
+(add-to-list 'uniquify-list-buffers-directory-modes 'xmtn-status-mode)
+
 (defun xmtn--remove-content-hashes-from-diff ()
   ;; Hack: Remove mtn's file content hashes from diff headings since
   ;; `dvc-diff-diff-or-list' and `dvc-diff-find-file-name' gets
@@ -866,32 +885,31 @@ the file before saving."
   ;; command execution yet.
   (let*
       ((base-revision (xmtn--get-base-revision-hash-id-or-null root))
+       (branch (xmtn--tree-default-branch root))
+       (head-revisions (xmtn--heads root branch))
+       (head-count (length head-revisions))
        (status-buffer
-        (dvc-prepare-changes-buffer
-         `(xmtn (revision ,base-revision))
-         `(xmtn (local-tree ,root))
-         'status
+        (dvc-status-prepare-buffer
+         'xmtn
          root
-         'xmtn)))
+         ;; FIXME: just pass header
+         ;; base-revision
+         (if base-revision (format "%s" base-revision) "none")
+         ;; branch
+         (format "%s" branch)
+         ;; header-more
+         (lambda ()
+           (concat
+            (case head-count
+              (0 "  branch is empty\n")
+              (1 "  branch is merged\n")
+              (t (format "  branch has %s heads\n" head-count)))
+            (if (member base-revision head-revisions)
+                "  base revision is a head revision\n"
+              "  base revision is not a head revision\n")))
+         ;; refresh
+         'xmtn-dvc-status)))
     (dvc-save-some-buffers root)
-    (dvc-switch-to-buffer-maybe status-buffer)
-    (dvc-kill-process-maybe status-buffer)
-    ;; Attempt to make sure the sentinels have a chance to run.
-    (accept-process-output)
-    (let ((processes (dvc-processes-related-to-buffer status-buffer)))
-      (when processes
-        (error "Process still running in buffer %s" status-buffer)))
-
-    (with-current-buffer status-buffer
-      (setq buffer-read-only t)
-      (buffer-disable-undo)
-      (setq dvc-buffer-refresh-function 'xmtn-dvc-status)
-      (ewoc-set-hf dvc-fileinfo-ewoc
-                   (xmtn--status-header root base-revision)
-                   "")
-      (ewoc-enter-last dvc-fileinfo-ewoc (make-dvc-fileinfo-message :text "Running monotone..."))
-      (ewoc-refresh dvc-fileinfo-ewoc))
-
     (lexical-let* ((status-buffer status-buffer))
       (xmtn--run-command-async
        root `("automate" "inventory"
@@ -902,14 +920,8 @@ the file before saving."
                      (not dvc-status-display-ignored)
                      '("--no-ignored")))
        :finished (lambda (output error status arguments)
-                   ;; Don't use `dvc-show-changes-buffer' here because
-                   ;; it attempts to do some regexp stuff for us that we
-                   ;; don't need to be done.
+                   (dvc-status-inventory-done status-buffer)
                    (with-current-buffer status-buffer
-                     (ewoc-enter-last dvc-fileinfo-ewoc (make-dvc-fileinfo-message :text "Parsing inventory..."))
-                     (ewoc-refresh dvc-fileinfo-ewoc)
-                     (dvc-redisplay t)
-                     (dvc-fileinfo-delete-messages)
                      (let ((excluded-files (dvc-default-excluded-files)))
                        (xmtn-basic-io-with-stanza-parser
                            (parser output)
@@ -930,6 +942,7 @@ the file before saving."
                                            :text (concat " no changes")))
                          (ewoc-refresh dvc-fileinfo-ewoc)))))
        :error (lambda (output error status arguments)
+                ;; FIXME: need `dvc-status-error-in-process', or change name.
                 (dvc-diff-error-in-process
                  status-buffer
                  (format "Error running mtn with arguments %S" arguments)
@@ -1007,9 +1020,10 @@ the file before saving."
            (file-name-extension file-name))))
 
 (defun xmtn--add-patterns-to-mtnignore (root patterns interactive-p)
-  (let ((mtnignore-file-name (xmtn--mtnignore-file-name root)))
     (save-window-excursion
-      (find-file-other-window mtnignore-file-name)
+      ;; use 'find-file-other-window' to preserve current state if
+      ;; user is already visiting the ignore file.
+      (find-file-other-window (xmtn--mtnignore-file-name root))
       (save-excursion
         (let ((modified-p nil))
           (loop for pattern in patterns
@@ -1023,13 +1037,15 @@ the file before saving."
                   (insert pattern "\n")
                   (setq modified-p t)))
           (when modified-p
+            ;; 'sort-lines' moves all markers, which defeats save-excursion. Oh well!
+            (sort-lines nil (point-min) (point-max))
             (if (and interactive-p
                      dvc-confirm-ignore)
                 (lexical-let ((buffer (current-buffer)))
                   (save-some-buffers nil (lambda ()
                                            (eql (current-buffer) buffer))))
-              (save-buffer)))))))
-  nil)
+              (save-buffer))))))
+    nil)
 
 ;;;###autoload
 (defun xmtn-dvc-ignore-files (file-names)
@@ -1116,7 +1132,8 @@ the file before saving."
    root `("drop"
           ,@(if do-not-execute `("--bookkeep-only") `())
           "--" ,@(xmtn--normalize-file-names root file-names)))
-  nil)
+  ;; return t to indicate we succeeded
+  t)
 
 ;;;###autoload
 (defun xmtn-dvc-remove-files (&rest files)
@@ -1325,18 +1342,22 @@ finished."
   (interactive '(nil))
   (let*
       ((root (dvc-tree-root))
-       (local-branch (xmtn--tree-default-branch root))
-       (cmd (concat "propagate " other " " local-branch)))
+       (local-branch (xmtn--tree-default-branch root)))
 
     (if (not other)
-        (setq other (read-from-minibuffer "Propagate from branch: ")))
+;;         (progn
+;;           (setq other (xmtn-get-option 'propagate-from))
+;;           (if (not other)
+              (setq other (read-from-minibuffer "Propagate from branch: ")))
+;;    ))
 
     (if (not (yes-or-no-p (concat "Propagate from " other " to " local-branch "? ")))
         (error "user abort"))
 
+;;    (xmtn-set-option 'propagate-from other)
+
     (lexical-let
         ((display-buffer (current-buffer)))
-      (message "%s..." cmd)
       (xmtn--run-command-that-might-invoke-merger
        root (list "propagate" other local-branch)
        (lambda () (xmtn--refresh-status-header display-buffer))))))
@@ -1840,6 +1861,45 @@ finished."
   (apply #'dvc-dvc-revision-nth-ancestor args))
 
 (defalias 'xmtn-dvc-revlist 'xmtn-view-heads-revlist)
+
+;;; per-workspace options
+(defvar xmtn-dvc-options-file "_MTN/dvc-options.el")
+
+(defvar xmtn-dvc-options-alist nil
+  "alist of workspace options.")
+
+;; FIXME: needs to be per-workspace
+(defun xmtn-get-option (option)
+  "Get value for OPTION from `xmtn-dvc-options-alist`; load that from `xmtn-dvc-options-file` if necessary."
+  (if (not xmtn-dvc-options-alist)
+      (dvc-load-state (expand-file-name xmtn-dvc-options-file)))
+
+  (let ((a (assoc option xmtn-dvc-options-alist)))
+    (if a
+        (cadr a))))
+
+(defun xmtn-set-option (option value)
+  "Set value for OPTION in `xmtn-dvc-options-alist`; save that to `xmtn-dvc-options-file` if necessary."
+  (if (not xmtn-dvc-options-alist)
+      (dvc-load-state (expand-file-name xmtn-dvc-options-file)))
+
+  (let ((a (assq option xmtn-dvc-options-alist))
+        (need-save nil))
+    (if a
+        (if (equal value (cadr a))
+            ; not changed
+            nil
+          ; changed
+          (setq xmtn-dvc-options-alist (assq-delete-all option xmtn-dvc-options-alist))
+          (add-to-list xmtn-dvc-options-alist (list option value))
+          (setq need-save t))
+      ; new value
+      (add-to-list 'xmtn-dvc-options-alist (list option value))
+      (setq need-save t))
+
+    (if need-save
+        (dvc-save-state '(xmtn-dvc-options-alist) (expand-file-name xmtn-dvc-options-file)))
+    ))
 
 (provide 'xmtn-dvc)
 
