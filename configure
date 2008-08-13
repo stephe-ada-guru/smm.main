@@ -624,7 +624,6 @@ INSTALL_SCRIPT
 INSTALL_DATA
 LN_S
 RM
-LS
 GREP
 TRUE_PROG
 EMACS_PROG
@@ -1679,7 +1678,7 @@ unset GREP_OPTIONS
 
 
 
-ac_config_files="$ac_config_files Makefile lisp/Makefile texinfo/Makefile dvc-load.el dvc-load-install.el lisp/dvc-site.el"
+ac_config_files="$ac_config_files Makefile lisp/Makefile texinfo/Makefile dvc-load.el lisp/dvc-site.el"
 
 
 # Common system utilities checking:
@@ -1824,6 +1823,48 @@ test -z "$INSTALL_SCRIPT" && INSTALL_SCRIPT='${INSTALL}'
 
 test -z "$INSTALL_DATA" && INSTALL_DATA='${INSTALL} -m 644'
 
+{ echo "$as_me:$LINENO: checking for a thread-safe mkdir -p" >&5
+echo $ECHO_N "checking for a thread-safe mkdir -p... $ECHO_C" >&6; }
+if test -z "$MKDIR_P"; then
+  if test "${ac_cv_path_mkdir+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH$PATH_SEPARATOR/opt/sfw/bin
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_prog in mkdir gmkdir; do
+	 for ac_exec_ext in '' $ac_executable_extensions; do
+	   { test -f "$as_dir/$ac_prog$ac_exec_ext" && $as_test_x "$as_dir/$ac_prog$ac_exec_ext"; } || continue
+	   case `"$as_dir/$ac_prog$ac_exec_ext" --version 2>&1` in #(
+	     'mkdir (GNU coreutils) '* | \
+	     'mkdir (coreutils) '* | \
+	     'mkdir (fileutils) '4.1*)
+	       ac_cv_path_mkdir=$as_dir/$ac_prog$ac_exec_ext
+	       break 3;;
+	   esac
+	 done
+       done
+done
+IFS=$as_save_IFS
+
+fi
+
+  if test "${ac_cv_path_mkdir+set}" = set; then
+    MKDIR_P="$ac_cv_path_mkdir -p"
+  else
+    # As a last resort, use the slow shell script.  Don't cache a
+    # value for MKDIR_P within a source directory, because that will
+    # break other packages using the cache if that directory is
+    # removed, or if the value is a relative name.
+    test -d ./--version && rmdir ./--version
+    MKDIR_P="$ac_install_sh -d"
+  fi
+fi
+{ echo "$as_me:$LINENO: result: $MKDIR_P" >&5
+echo "${ECHO_T}$MKDIR_P" >&6; }
+
 { echo "$as_me:$LINENO: checking whether ln -s works" >&5
 echo $ECHO_N "checking whether ln -s works... $ECHO_C" >&6; }
 LN_S=$as_ln_s
@@ -1870,47 +1911,6 @@ RM=$ac_cv_path_RM
 if test -n "$RM"; then
   { echo "$as_me:$LINENO: result: $RM" >&5
 echo "${ECHO_T}$RM" >&6; }
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
-
-# Extract the first word of "ls", so it can be a program name with args.
-set dummy ls; ac_word=$2
-{ echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
-if test "${ac_cv_path_LS+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  case $LS in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_LS="$LS" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_LS="$as_dir/$ac_word$ac_exec_ext"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-  test -z "$ac_cv_path_LS" && ac_cv_path_LS="/bin/ls"
-  ;;
-esac
-fi
-LS=$ac_cv_path_LS
-if test -n "$LS"; then
-  { echo "$as_me:$LINENO: result: $LS" >&5
-echo "${ECHO_T}$LS" >&6; }
 else
   { echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6; }
@@ -2130,17 +2130,10 @@ echo "${ECHO_T}$lispdir" >&6; }
 
 
 
-  { echo "$as_me:$LINENO: checking which options to pass on to (X)Emacs" >&5
-echo $ECHO_N "checking which options to pass on to (X)Emacs... $ECHO_C" >&6; }
-  if test "x$FLAGS" = "x"; then
-    if test "x$EMACS_FLAVOR" = "xxemacs"; then
-      FLAGS="-batch ${SITEFLAG} -no-autoloads -l \$(srcdir)/dvc-build.el"
-    else
-      FLAGS="-batch -q ${SITEFLAG} -no-init-file -l \$(srcdir)/dvc-build.el"
-    fi
-  else
-    FLAGS=$FLAGS
-  fi
+  { echo "$as_me:$LINENO: checking extra options for (X)Emacs batch mode" >&5
+echo $ECHO_N "checking extra options for (X)Emacs batch mode... $ECHO_C" >&6; }
+  FLAGS=$SITEFLAG
+  test "x$EMACS_FLAVOR" = "xxemacs" && FLAGS="$FLAGS -no-autoloads"
   { echo "$as_me:$LINENO: result: $FLAGS" >&5
 echo "${ECHO_T}$FLAGS" >&6; }
 
@@ -3160,6 +3153,7 @@ gives unlimited permission to copy, distribute and modify it."
 ac_pwd='$ac_pwd'
 srcdir='$srcdir'
 INSTALL='$INSTALL'
+MKDIR_P='$MKDIR_P'
 _ACEOF
 
 cat >>$CONFIG_STATUS <<\_ACEOF
@@ -3252,7 +3246,6 @@ do
     "lisp/Makefile") CONFIG_FILES="$CONFIG_FILES lisp/Makefile" ;;
     "texinfo/Makefile") CONFIG_FILES="$CONFIG_FILES texinfo/Makefile" ;;
     "dvc-load.el") CONFIG_FILES="$CONFIG_FILES dvc-load.el" ;;
-    "dvc-load-install.el") CONFIG_FILES="$CONFIG_FILES dvc-load-install.el" ;;
     "lisp/dvc-site.el") CONFIG_FILES="$CONFIG_FILES lisp/dvc-site.el" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
@@ -3357,7 +3350,6 @@ INSTALL_SCRIPT!$INSTALL_SCRIPT$ac_delim
 INSTALL_DATA!$INSTALL_DATA$ac_delim
 LN_S!$LN_S$ac_delim
 RM!$RM$ac_delim
-LS!$LS$ac_delim
 GREP!$GREP$ac_delim
 TRUE_PROG!$TRUE_PROG$ac_delim
 EMACS_PROG!$EMACS_PROG$ac_delim
@@ -3386,7 +3378,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 70; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 69; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -3613,6 +3605,11 @@ ac_abs_srcdir=$ac_abs_top_srcdir$ac_dir_suffix
   [\\/$]* | ?:[\\/]* ) ac_INSTALL=$INSTALL ;;
   *) ac_INSTALL=$ac_top_build_prefix$INSTALL ;;
   esac
+  ac_MKDIR_P=$MKDIR_P
+  case $MKDIR_P in
+  [\\/$]* | ?:[\\/]* ) ;;
+  */*) ac_MKDIR_P=$ac_top_build_prefix$MKDIR_P ;;
+  esac
 _ACEOF
 
 cat >>$CONFIG_STATUS <<\_ACEOF
@@ -3666,6 +3663,7 @@ s&@builddir@&$ac_builddir&;t t
 s&@abs_builddir@&$ac_abs_builddir&;t t
 s&@abs_top_builddir@&$ac_abs_top_builddir&;t t
 s&@INSTALL@&$ac_INSTALL&;t t
+s&@MKDIR_P@&$ac_MKDIR_P&;t t
 $ac_datarootdir_hack
 " $ac_file_inputs | sed -f "$tmp/subs-1.sed" >$tmp/out
 
