@@ -461,10 +461,10 @@ the file before saving."
       (princ (case head-count
                (0 "  branch is empty\n")
                (1 "  branch is merged\n")
-               (t (format "  branch has %s heads\n" head-count))))
+               (t (dvc-face-add (format "  branch has %s heads\n" head-count) 'dvc-conflict))))
       (princ (if (member base-revision head-revisions)
                  "  base revision is a head revision\n"
-               "  base revision is not a head revision\n")))))
+               (dvc-face-add "  base revision is not a head revision; need update\n" 'dvc-conflict))))))
 
 (defun xmtn--refresh-status-header (status-buffer)
   (with-current-buffer status-buffer
@@ -899,14 +899,15 @@ the file before saving."
          (format "%s" branch)
          ;; header-more
          (lambda ()
+           ;; FIXME: dvc-face-add doesn't work here; why?
            (concat
             (case head-count
               (0 "  branch is empty\n")
               (1 "  branch is merged\n")
-              (t (format "  branch has %s heads\n" head-count)))
+              (t (dvc-face-add (format "  branch has %s heads\n" head-count) 'dvc-conflict)))
             (if (member base-revision head-revisions)
                 "  base revision is a head revision\n"
-              "  base revision is not a head revision\n")))
+              (dvc-face-add "  base revision is not a head revision; need update\n" 'dvc-conflict))))
          ;; refresh
          'xmtn-dvc-status)))
     (dvc-save-some-buffers root)
@@ -939,7 +940,7 @@ the file before saving."
                        (when (not (ewoc-locate dvc-fileinfo-ewoc))
                          (ewoc-enter-last dvc-fileinfo-ewoc
                                           (make-dvc-fileinfo-message
-                                           :text (concat " no changes")))
+                                           :text (concat " no changes in workspace")))
                          (ewoc-refresh dvc-fileinfo-ewoc)))))
        :error (lambda (output error status arguments)
                 ;; FIXME: need `dvc-status-error-in-process', or change name.
@@ -1368,6 +1369,7 @@ finished."
       (xmtn-propagate-from other)
     ;; else merge heads
     (let ((root (dvc-tree-root)))
+;      (setq debug-on-error t) ; FIXME: getting a bug when this finishes, forgetting to trace it
       (lexical-let
           ((display-buffer (current-buffer)))
         (xmtn-automate-with-session
