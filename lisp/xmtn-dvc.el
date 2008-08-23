@@ -468,10 +468,14 @@ the file before saving."
 
 (defun xmtn--refresh-status-header (status-buffer)
   (with-current-buffer status-buffer
-    (ewoc-set-hf
-     dvc-fileinfo-ewoc
-     (xmtn--status-header default-directory (xmtn--get-base-revision-hash-id-or-null default-directory))
-     "")))
+    ;; different modes use different names for the ewoc
+    ;; FIXME: should have a separate function for each mode
+    (let ((ewoc (or dvc-fileinfo-ewoc
+                    dvc-revlist-cookie)))
+      (ewoc-set-hf
+       ewoc
+       (xmtn--status-header default-directory (xmtn--get-base-revision-hash-id-or-null default-directory))
+       ""))))
 
 (defun xmtn--parse-diff-for-dvc (changes-buffer)
   (let ((excluded-files (dvc-default-excluded-files))
@@ -1369,7 +1373,6 @@ finished."
       (xmtn-propagate-from other)
     ;; else merge heads
     (let ((root (dvc-tree-root)))
-;      (setq debug-on-error t) ; FIXME: getting a bug when this finishes, forgetting to trace it
       (lexical-let
           ((display-buffer (current-buffer)))
         (xmtn-automate-with-session
