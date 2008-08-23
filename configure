@@ -622,32 +622,16 @@ SET_MAKE
 INSTALL_PROGRAM
 INSTALL_SCRIPT
 INSTALL_DATA
-LN_S
-RM
-GREP
-TRUE_PROG
 EMACS_PROG
 lispdir
-EMACS_FLAVOR
-EMACS_VERSION
-SITEFLAG
 FLAGS
 info_dir
 TLA
 BAZ
 ARCH_BRANCH
-ARCH
 DIFF
 PATCH
-ETAGS
-TAR
-MAKEINFO
-TEXI2DVI
 OTHERDIRS
-HAS_TREE_WIDGET
-PACKAGEDIR
-SYMLINKS
-LINKPATH
 LIBOBJS
 LTLIBOBJS'
 ac_subst_files=''
@@ -1225,19 +1209,15 @@ Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-emacs=PROG       choose which flavor of Emacs to use
-  --with-lispdir=DIR      Where to install lisp files
+  --with-lispdir=DIR      where to install lisp files
   --with-tla=PROG         tla program to use
   --with-baz=PROG         baz program to use
-  --with-arch={baz|tla|none}
-        Whether to use tla or baz (or none of them) by default
-
+  --with-arch=BRANCH      which arch branch (one of: tla, baz, none) to use by
+                          default (default is none)
   --with-diff=PROG        diff program to use
   --with-patch=PROG       patch program to use
-  --with-other-dirs=DIRS  set other needed directories (a list of space or
-                          colon separated paths)
-  --with-package-dir=DIR  set the Emacs package directory to DIR
-  --with-symlinks         install DVC by linking instead of copying [no]
-  --with-linkpath=PATH    path to symlink from if `pwd' does not work
+  --with-other-dirs=DIRS  push DIRS (list of space- or colon-separated paths)
+                          onto `load-path' during build
 
 Report bugs to <dvc-dev@gna.org>.
 _ACEOF
@@ -1670,11 +1650,6 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-# It seems that the latest GNU Emacs sets --always-color to GREP_OPTIONS (for M-x grep?).
-# So configure will confuse if it is run from emacs's *shell*.
-# Clear the environment variable here.
-unset GREP_OPTIONS
-
 
 
 
@@ -1865,142 +1840,12 @@ fi
 { echo "$as_me:$LINENO: result: $MKDIR_P" >&5
 echo "${ECHO_T}$MKDIR_P" >&6; }
 
-{ echo "$as_me:$LINENO: checking whether ln -s works" >&5
-echo $ECHO_N "checking whether ln -s works... $ECHO_C" >&6; }
-LN_S=$as_ln_s
-if test "$LN_S" = "ln -s"; then
-  { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
-else
-  { echo "$as_me:$LINENO: result: no, using $LN_S" >&5
-echo "${ECHO_T}no, using $LN_S" >&6; }
-fi
-
-# Extract the first word of "rm", so it can be a program name with args.
-set dummy rm; ac_word=$2
-{ echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
-if test "${ac_cv_path_RM+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  case $RM in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_RM="$RM" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_RM="$as_dir/$ac_word$ac_exec_ext"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-  test -z "$ac_cv_path_RM" && ac_cv_path_RM="/bin/rm"
-  ;;
-esac
-fi
-RM=$ac_cv_path_RM
-if test -n "$RM"; then
-  { echo "$as_me:$LINENO: result: $RM" >&5
-echo "${ECHO_T}$RM" >&6; }
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
-
-# Extract the first word of "grep", so it can be a program name with args.
-set dummy grep; ac_word=$2
-{ echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
-if test "${ac_cv_path_GREP+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  case $GREP in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_GREP="$GREP" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_GREP="$as_dir/$ac_word$ac_exec_ext"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-  test -z "$ac_cv_path_GREP" && ac_cv_path_GREP="/bin/grep"
-  ;;
-esac
-fi
-GREP=$ac_cv_path_GREP
-if test -n "$GREP"; then
-  { echo "$as_me:$LINENO: result: $GREP" >&5
-echo "${ECHO_T}$GREP" >&6; }
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
-
-# Extract the first word of "true", so it can be a program name with args.
-set dummy true; ac_word=$2
-{ echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
-if test "${ac_cv_path_TRUE_PROG+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  case $TRUE_PROG in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_TRUE_PROG="$TRUE_PROG" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_TRUE_PROG="$as_dir/$ac_word$ac_exec_ext"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-  test -z "$ac_cv_path_TRUE_PROG" && ac_cv_path_TRUE_PROG="/bin/true"
-  ;;
-esac
-fi
-TRUE_PROG=$ac_cv_path_TRUE_PROG
-if test -n "$TRUE_PROG"; then
-  { echo "$as_me:$LINENO: result: $TRUE_PROG" >&5
-echo "${ECHO_T}$TRUE_PROG" >&6; }
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
-
 
 # External programs checking:
+
+# Choose an Emacs flavor according to the --with-emacs user option, or
+# try "emacs" and "xemacs".  We use EMACS_PROG instead of EMACS to
+# avoid colliding with Emacs' own internal environment.
 
 # Check whether --with-emacs was given.
 if test "${with_emacs+set}" = set; then
@@ -2050,110 +1895,70 @@ done
 
 fi
 
-    if test "x${EMACS_PROG}" = "x" ; then
-            { { echo "$as_me:$LINENO: error: *** No Emacs program found." >&5
+if test "x${EMACS_PROG}" = "x" ; then
+  { { echo "$as_me:$LINENO: error: *** No Emacs program found." >&5
 echo "$as_me: error: *** No Emacs program found." >&2;}
    { (exit 1); exit 1; }; }
-    fi
-    # EMACS TYPE ##################################################
-    { echo "$as_me:$LINENO: checking emacs-type of ${EMACS_PROG}" >&5
-echo $ECHO_N "checking emacs-type of ${EMACS_PROG}... $ECHO_C" >&6; }
-    cat > conftest.el <<TEST
-(princ (format "%s" (if (featurep 'xemacs ) 'xemacs 'emacs)))
-TEST
-    EMACS_FLAVOR=`${EMACS_PROG} --no-site-file --batch -l conftest.el | ${GREP} .`
-    if test "x${EMACS_FLAVOR}" = "xxemacs"; then
-        SITEFLAG=-no-site-file
-    else
-        SITEFLAG=--no-site-file
-    fi
-    { echo "$as_me:$LINENO: result: ${EMACS_FLAVOR}" >&5
-echo "${ECHO_T}${EMACS_FLAVOR}" >&6; }
-    # EMACS VERSION ###############################################
-    { echo "$as_me:$LINENO: checking emacs-version of ${EMACS_PROG}" >&5
-echo $ECHO_N "checking emacs-version of ${EMACS_PROG}... $ECHO_C" >&6; }
-    cat > conftest.el <<TEST
-(if (featurep 'xemacs )
-     (princ (format "%d.%d%s"
-                 emacs-major-version emacs-minor-version
-                 (if (numberp emacs-patch-level)
-                     (concat "." (number-to-string emacs-patch-level))
-                   "")))
-  (princ (format "%s" emacs-version)))
-TEST
-    EMACS_VERSION=`${EMACS_PROG} ${SITEFLAG} --batch -l conftest.el | ${GREP} .`
-    # EMACS DEPENDENT SETTINGS ####################################
-    # We may add a version check here ...
-    { echo "$as_me:$LINENO: result: ${EMACS_VERSION}" >&5
-echo "${ECHO_T}${EMACS_VERSION}" >&6; }
+fi
 
-    # Copied from gnus aclocal.m4
+{ echo "$as_me:$LINENO: checking emacs-type of ${EMACS_PROG}" >&5
+echo $ECHO_N "checking emacs-type of ${EMACS_PROG}... $ECHO_C" >&6; }
+if ${EMACS_PROG} --no-site-file --batch --eval \
+      '(kill-emacs (if (featurep (quote xemacs)) 0 1))'
+then EMACS_FLAVOR=xemacs ; FLAGS='-no-site-file -no-autoloads'
+else EMACS_FLAVOR=emacs  ; FLAGS=--no-site-file
+fi
+{ echo "$as_me:$LINENO: result: ${EMACS_FLAVOR}" >&5
+echo "${ECHO_T}${EMACS_FLAVOR}" >&6; }
+
+# Copied from gnus aclocal.m4
 
 # Check whether --with-lispdir was given.
 if test "${with_lispdir+set}" = set; then
   withval=$with_lispdir; lispdir=${withval}
 fi
 
-    { echo "$as_me:$LINENO: checking where .elc files should go" >&5
+{ echo "$as_me:$LINENO: checking where .elc files should go" >&5
 echo $ECHO_N "checking where .elc files should go... $ECHO_C" >&6; }
-    if test -z "$lispdir"; then
-            theprefix=$prefix
-      if test "x$theprefix" = "xNONE"; then
-  	theprefix=$ac_default_prefix
-      fi
-      datadir="\$(prefix)/share"
-      if test "$EMACS_FLAVOR" = "xemacs"; then
-          datadir="\$(prefix)/lib"
-          lispdir="${datadir}/${EMACS_FLAVOR}/site-packages/lisp/dvc"
-          if test ! -d "${lispdir}"; then
-             if test -d "${theprefix}/share/${EMACS_FLAVOR}/site-lisp"; then
-                lispdir="\$(prefix)/lib/${EMACS_FLAVOR}/site-packages/lisp/dvc"
-             fi
-          fi
-      else
-          lispdir="${datadir}/${EMACS_FLAVOR}/site-lisp/dvc"
+if test -z "$lispdir"; then
+  theprefix=$prefix
+  if test "x$theprefix" = "xNONE"; then
+    theprefix=$ac_default_prefix
+  fi
+  datadir="\$(prefix)/share"
+  if test "$EMACS_FLAVOR" = "xemacs"; then
+    datadir="\$(prefix)/lib"
+    lispdir="${datadir}/${EMACS_FLAVOR}/site-packages/lisp/dvc"
+    if test ! -d "${lispdir}"; then
+      if test -d "${theprefix}/share/${EMACS_FLAVOR}/site-lisp"; then
+        lispdir="\$(prefix)/lib/${EMACS_FLAVOR}/site-packages/lisp/dvc"
       fi
     fi
-    { echo "$as_me:$LINENO: result: $lispdir" >&5
+  else
+    lispdir="${datadir}/${EMACS_FLAVOR}/site-lisp/dvc"
+  fi
+fi
+{ echo "$as_me:$LINENO: result: $lispdir" >&5
 echo "${ECHO_T}$lispdir" >&6; }
 
 
-#    if test "x${EMACS_FLAVOR}" = "xemacs" ; then
-#      PACKAGEDIR="${prefix}/share/emacs/site-lisp"
-#    else
-#      PACKAGEDIR="${HOME}/.xemacs/xemacs-packages"
-#    fi
 
 
 
-
-
-
-
-  { echo "$as_me:$LINENO: checking extra options for (X)Emacs batch mode" >&5
-echo $ECHO_N "checking extra options for (X)Emacs batch mode... $ECHO_C" >&6; }
-  FLAGS=$SITEFLAG
-  test "x$EMACS_FLAVOR" = "xxemacs" && FLAGS="$FLAGS -no-autoloads"
-  { echo "$as_me:$LINENO: result: $FLAGS" >&5
-echo "${ECHO_T}$FLAGS" >&6; }
-
-
-
-  { echo "$as_me:$LINENO: checking where the TeXinfo docs should go" >&5
+# Copied from gnus aclocal.m4 (AC_PATH_INFO_DIR)
+{ echo "$as_me:$LINENO: checking where the TeXinfo docs should go" >&5
 echo $ECHO_N "checking where the TeXinfo docs should go... $ECHO_C" >&6; }
-    if test "$infodir" = "\${prefix}/info"; then
-    if test "$EMACS_FLAVOR" = "xemacs"; then
-      info_dir="\$(prefix)/${thedir}/${EMACS_FLAVOR}/site-packages/info"
-    else
-      info_dir="\$(prefix)/share/info"
-    fi
+if test "$infodir" = "\${prefix}/info"; then
+  if test "$EMACS_FLAVOR" = "xemacs"; then
+    info_dir="\$(prefix)/${thedir}/${EMACS_FLAVOR}/site-packages/info"
   else
-    info_dir=$infodir
+    info_dir="\$(prefix)/share/info"
   fi
-  { echo "$as_me:$LINENO: result: $info_dir" >&5
+else
+  info_dir=$infodir
+fi
+{ echo "$as_me:$LINENO: result: $info_dir" >&5
 echo "${ECHO_T}$info_dir" >&6; }
-
-
 
 
 
@@ -2252,48 +2057,24 @@ fi
 fi
 
 
- { echo "$as_me:$LINENO: checking arch branch to use" >&5
+
+{ echo "$as_me:$LINENO: checking arch branch to use" >&5
 echo $ECHO_N "checking arch branch to use... $ECHO_C" >&6; }
 
 # Check whether --with-arch was given.
 if test "${with_arch+set}" = set; then
-  withval=$with_arch;  ARCH_BRANCH=${withval}
-
+  withval=$with_arch; ARCH_BRANCH=$withval
+else
+  ARCH_BRANCH=none
 fi
 
-    if test "x${BAZ}" != "x"; then
-      if test "x${ARCH_BRANCH}" = "x"; then
-        ARCH_BRANCH=baz
-      fi
-      ARCH=${BAZ}
-    else
-      if test "x${ARCH_BRANCH}" = "x"; then
-        ARCH_BRANCH=tla
-      fi
-      ARCH=${TLA}
-    fi
-    if test "x${ARCH_BRANCH}" = "xnone"; then
-      ARCH="${TRUE_PROG}"
-    fi
-
-    if test "y${ARCH_BRANCH}" = "ytla" -a "y${TLA}" = "y"; then
-      ARCH="${TRUE_PROG}"
-      ARCH_BRANCH=none
-    fi
-    if test "y${ARCH_BRANCH}" = "ytla" -a "y${TLA}" = "y"; then
-      { { echo "$as_me:$LINENO: error: *** Can't use tla because tla isn't available" >&5
-echo "$as_me: error: *** Can't use tla because tla isn't available" >&2;}
-   { (exit 1); exit 1; }; }
-    fi
-    if test "x${ARCH_BRANCH}" = "xbaz" -a "x${BAZ}" = "x"; then
-      { { echo "$as_me:$LINENO: error: *** Can't use baz because baz isn't available" >&5
-echo "$as_me: error: *** Can't use baz because baz isn't available" >&2;}
-   { (exit 1); exit 1; }; }
-    fi
-    { echo "$as_me:$LINENO: result: ${ARCH_BRANCH}" >&5
-echo "${ECHO_T}${ARCH_BRANCH}" >&6; }
-
-
+case $ARCH_BRANCH in
+  tla|baz|none) blurb= ;;
+  *) blurb=" (ignored invalid --with-arch=$ARCH_BRANCH)"
+     ARCH_BRANCH=none ;;
+esac
+{ echo "$as_me:$LINENO: result: $ARCH_BRANCH$blurb" >&5
+echo "${ECHO_T}$ARCH_BRANCH$blurb" >&6; }
 
 
 
@@ -2400,278 +2181,41 @@ echo "$as_me: WARNING: *** No patch program found." >&2;}
 fi
 
 
- # Extract the first word of "etags", so it can be a program name with args.
-set dummy etags; ac_word=$2
-{ echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
-if test "${ac_cv_prog_ETAGS+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test -n "$ETAGS"; then
-  ac_cv_prog_ETAGS="$ETAGS" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_ETAGS="etags"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-fi
-fi
-ETAGS=$ac_cv_prog_ETAGS
-if test -n "$ETAGS"; then
-  { echo "$as_me:$LINENO: result: $ETAGS" >&5
-echo "${ECHO_T}$ETAGS" >&6; }
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
-
-    if test "x${ETAGS}" = "x" ; then
-      { echo "$as_me:$LINENO: WARNING: *** No etags program found." >&5
-echo "$as_me: WARNING: *** No etags program found." >&2;}
-      { echo "$as_me:$LINENO: WARNING: *** Tags file will not be built." >&5
-echo "$as_me: WARNING: *** Tags file will not be built." >&2;}
-    fi
- for ac_prog in gtar tar
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
-if test "${ac_cv_prog_TAR+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test -n "$TAR"; then
-  ac_cv_prog_TAR="$TAR" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_TAR="$ac_prog"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-fi
-fi
-TAR=$ac_cv_prog_TAR
-if test -n "$TAR"; then
-  { echo "$as_me:$LINENO: result: $TAR" >&5
-echo "${ECHO_T}$TAR" >&6; }
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
-
-  test -n "$TAR" && break
-done
-
-    if test "x${TAR}" = "xtar" ; then
-      { echo "$as_me:$LINENO: checking that tar is GNU tar" >&5
-echo $ECHO_N "checking that tar is GNU tar... $ECHO_C" >&6; }
-      ${TAR} --version > /dev/null 2>&1 || TAR=
-      if test "x${TAR}" = "x" ; then
-        { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-      else
-        { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
-      fi
-    fi
-    if test "x${TAR}" = "x" ; then
-      { echo "$as_me:$LINENO: WARNING: *** No GNU tar program found." >&5
-echo "$as_me: WARNING: *** No GNU tar program found." >&2;}
-      { echo "$as_me:$LINENO: WARNING: *** Some targets will be unavailable." >&5
-echo "$as_me: WARNING: *** Some targets will be unavailable." >&2;}
-    fi
- # Extract the first word of "makeinfo", so it can be a program name with args.
-set dummy makeinfo; ac_word=$2
-{ echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
-if test "${ac_cv_prog_MAKEINFO+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test -n "$MAKEINFO"; then
-  ac_cv_prog_MAKEINFO="$MAKEINFO" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_MAKEINFO="makeinfo"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-fi
-fi
-MAKEINFO=$ac_cv_prog_MAKEINFO
-if test -n "$MAKEINFO"; then
-  { echo "$as_me:$LINENO: result: $MAKEINFO" >&5
-echo "${ECHO_T}$MAKEINFO" >&6; }
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
-
-    if test "x${MAKEINFO}" = "x" ; then
-      { echo "$as_me:$LINENO: WARNING: *** No makeinfo program found." >&5
-echo "$as_me: WARNING: *** No makeinfo program found." >&2;}
-      { echo "$as_me:$LINENO: WARNING: *** Info files will not be built." >&5
-echo "$as_me: WARNING: *** Info files will not be built." >&2;}
-    fi
- # Extract the first word of "texi2dvi", so it can be a program name with args.
-set dummy texi2dvi; ac_word=$2
-{ echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
-if test "${ac_cv_prog_TEXI2DVI+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test -n "$TEXI2DVI"; then
-  ac_cv_prog_TEXI2DVI="$TEXI2DVI" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_TEXI2DVI="texi2dvi"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-fi
-fi
-TEXI2DVI=$ac_cv_prog_TEXI2DVI
-if test -n "$TEXI2DVI"; then
-  { echo "$as_me:$LINENO: result: $TEXI2DVI" >&5
-echo "${ECHO_T}$TEXI2DVI" >&6; }
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
-
-    if test "x${TEXI2DVI}" = "x" ; then
-      { echo "$as_me:$LINENO: WARNING: *** No texi2dvi program found." >&5
-echo "$as_me: WARNING: *** No texi2dvi program found." >&2;}
-      { echo "$as_me:$LINENO: WARNING: *** DVI and PDF files will not be built." >&5
-echo "$as_me: WARNING: *** DVI and PDF files will not be built." >&2;}
-    fi
-
 
 
 # Check whether --with-other-dirs was given.
 if test "${with_other_dirs+set}" = set; then
-  withval=$with_other_dirs;
-        case "$withval" in *:*)
-    withval="`echo $withval | sed -e 's/:/ /g'`";;
-  esac
-      OTHERDIRS="${withval}"
-
+  withval=$with_other_dirs; OTHERDIRS=`echo "$withval" | sed 'y/:/ /'`
 fi
 
 
- { echo "$as_me:$LINENO: checking whether tree-widget is in the load-path" >&5
+
+# tree widget
+{ echo "$as_me:$LINENO: checking whether tree-widget is in the load-path" >&5
 echo $ECHO_N "checking whether tree-widget is in the load-path... $ECHO_C" >&6; }
-    OTHERDIRS_LIST='"'`echo ${OTHERDIRS} | sed 's/ /" "/g'`'"'
-    cat > conftest.el << TEST
-(mapcar (lambda (x) (add-to-list 'load-path x))
-        '(${OTHERDIRS_LIST}))
-(if (locate-library "tree-widget")
-    (princ "yes")
-    (princ "no"))
-TEST
-    HAS_TREE_WIDGET=`${EMACS_PROG} ${SITEFLAG} --batch -l conftest.el | ${GREP} .`
-    { echo "$as_me:$LINENO: result: ${HAS_TREE_WIDGET}" >&5
+if ${EMACS_PROG} ${FLAGS} --batch --eval \
+      '(kill-emacs
+        (if (locate-library "tree-widget" nil
+              (append command-line-args-left load-path))
+            0 1))' \
+      $OTHERDIRS
+  then HAS_TREE_WIDGET=yes
+  else HAS_TREE_WIDGET=no
+fi
+{ echo "$as_me:$LINENO: result: ${HAS_TREE_WIDGET}" >&5
 echo "${ECHO_T}${HAS_TREE_WIDGET}" >&6; }
-    if test "x${HAS_TREE_WIDGET}" = "xno" ; then
-      { echo "$as_me:$LINENO: WARNING: *** tree-widget.el not found in 'load-path." >&5
+if test "x${HAS_TREE_WIDGET}" = "xno" ; then
+  { echo "$as_me:$LINENO: WARNING: *** tree-widget.el not found in 'load-path." >&5
 echo "$as_me: WARNING: *** tree-widget.el not found in 'load-path." >&2;}
-      { echo "$as_me:$LINENO: WARNING: *** tla-browse.el won't be available unless you install it." >&5
+  { echo "$as_me:$LINENO: WARNING: *** tla-browse.el won't be available unless you install it." >&5
 echo "$as_me: WARNING: *** tla-browse.el won't be available unless you install it." >&2;}
-      { echo "$as_me:$LINENO: WARNING: *** See http://sourceforge.net/projects/emhacks/" >&5
+  { echo "$as_me:$LINENO: WARNING: *** See http://sourceforge.net/projects/emhacks/" >&5
 echo "$as_me: WARNING: *** See http://sourceforge.net/projects/emhacks/" >&2;}
-      { echo "$as_me:$LINENO: WARNING: *** Provide the path to tree-widget with --with-other-dirs" >&5
+  { echo "$as_me:$LINENO: WARNING: *** Provide the path to tree-widget with --with-other-dirs" >&5
 echo "$as_me: WARNING: *** Provide the path to tree-widget with --with-other-dirs" >&2;}
-      { echo "$as_me:$LINENO: WARNING: *** if tree-widget.el is already present on your system" >&5
+  { echo "$as_me:$LINENO: WARNING: *** if tree-widget.el is already present on your system" >&5
 echo "$as_me: WARNING: *** if tree-widget.el is already present on your system" >&2;}
-    fi
-
-
-
-# is there a sane way to set this to a useful default?
-
-
-
-# Check whether --with-package-dir was given.
-if test "${with_package_dir+set}" = set; then
-  withval=$with_package_dir;
-
-      PACKAGEDIR="${withval}"
-
 fi
-
-
-
-
-
-
-# Check whether --with-symlinks was given.
-if test "${with_symlinks+set}" = set; then
-  withval=$with_symlinks;
-
-      SYMLINKS="${withval}"
-
-else
-  SYMLINKS="no"
-fi
-
-
-
-
-
-
-# Check whether --with-linkpath was given.
-if test "${with_linkpath+set}" = set; then
-  withval=$with_linkpath;
-
-      LINKPATH="${withval}"
-
-fi
-
-
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -3348,37 +2892,21 @@ SET_MAKE!$SET_MAKE$ac_delim
 INSTALL_PROGRAM!$INSTALL_PROGRAM$ac_delim
 INSTALL_SCRIPT!$INSTALL_SCRIPT$ac_delim
 INSTALL_DATA!$INSTALL_DATA$ac_delim
-LN_S!$LN_S$ac_delim
-RM!$RM$ac_delim
-GREP!$GREP$ac_delim
-TRUE_PROG!$TRUE_PROG$ac_delim
 EMACS_PROG!$EMACS_PROG$ac_delim
 lispdir!$lispdir$ac_delim
-EMACS_FLAVOR!$EMACS_FLAVOR$ac_delim
-EMACS_VERSION!$EMACS_VERSION$ac_delim
-SITEFLAG!$SITEFLAG$ac_delim
 FLAGS!$FLAGS$ac_delim
 info_dir!$info_dir$ac_delim
 TLA!$TLA$ac_delim
 BAZ!$BAZ$ac_delim
 ARCH_BRANCH!$ARCH_BRANCH$ac_delim
-ARCH!$ARCH$ac_delim
 DIFF!$DIFF$ac_delim
 PATCH!$PATCH$ac_delim
-ETAGS!$ETAGS$ac_delim
-TAR!$TAR$ac_delim
-MAKEINFO!$MAKEINFO$ac_delim
-TEXI2DVI!$TEXI2DVI$ac_delim
 OTHERDIRS!$OTHERDIRS$ac_delim
-HAS_TREE_WIDGET!$HAS_TREE_WIDGET$ac_delim
-PACKAGEDIR!$PACKAGEDIR$ac_delim
-SYMLINKS!$SYMLINKS$ac_delim
-LINKPATH!$LINKPATH$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 69; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 53; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
