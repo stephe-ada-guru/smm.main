@@ -1344,27 +1344,28 @@ finished."
 
 (defun xmtn-propagate-from (other)
   "Propagate from OTHER branch to local tree branch."
-  (interactive '(nil))
+  (interactive "MPropagate from branch: ")
   (let*
       ((root (dvc-tree-root))
-       (local-branch (xmtn--tree-default-branch root)))
+       (local-branch (xmtn--tree-default-branch root))
+       (resolve-conflicts
+        (if (file-exists-p (concat root "_MTN/conflicts"))
+            ;; just use relative path
+            (concat "--resolve-conflicts-file=_MTN/conflicts")))
+       (cmd (list "propagate" other local-branch resolve-conflicts))
+       (prompt
+        (if resolve-conflicts
+            (concat "Propagate from " other " to " local-branch " resolving conflicts? ")
+          (concat "Propagate from " other " to " local-branch "? "))))
 
-    (if (not other)
-;;         (progn
-;;           (setq other (xmtn-get-option 'propagate-from))
-;;           (if (not other)
-              (setq other (read-from-minibuffer "Propagate from branch: ")))
-;;    ))
-
-    (if (not (yes-or-no-p (concat "Propagate from " other " to " local-branch "? ")))
+    (if (not (yes-or-no-p prompt))
         (error "user abort"))
-
-;;    (xmtn-set-option 'propagate-from other)
 
     (lexical-let
         ((display-buffer (current-buffer)))
+      (message "%s..." (mapconcat (lambda (item) item) cmd " "))
       (xmtn--run-command-that-might-invoke-merger
-       root (list "propagate" other local-branch)
+       root cmd
        (lambda () (xmtn--refresh-status-header display-buffer))))))
 
 ;;;###autoload
@@ -1487,6 +1488,15 @@ finished."
                             (insert-buffer-substring input-buffer)))))))
               (when temp-dir
                 (dvc-delete-recursively temp-dir)))))))))
+
+(defun xmtn--get-file-by-id (root file-id save-as)
+  "Store contents of FILE-ID in file SAVE-AS."
+  (xmtn-automate-with-session
+   (nil root)
+   (with-temp-file save-as
+     (xmtn--set-buffer-multibyte nil)
+     (setq buffer-file-coding-system 'binary)
+     (xmtn--insert-file-contents root file-id (current-buffer)))))
 
 (defun xmtn--revision-parents (root revision-hash-id)
   (xmtn-automate-simple-command-output-lines root
