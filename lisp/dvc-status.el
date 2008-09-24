@@ -152,7 +152,7 @@ ROOT is absolute path to workspace.
 BASE-REVISION is a string identifying the workspace's base revision.
 BRANCH is a string identifying the workspace's branch.
 HEADER-MORE is a function called to add other text to the ewoc header;
-it should return a string, which is added to the header with princ.
+it should return a string.
 REFRESH is a function that refreshes the status; see `dvc-buffer-refresh-function'."
 
   (let ((status-buffer (dvc-get-buffer-create dvc 'status root)))
@@ -161,11 +161,11 @@ REFRESH is a function that refreshes the status; see `dvc-buffer-refresh-functio
       (let ((inhibit-read-only t)) (erase-buffer))
       (let ((dvc-temp-current-active-dvc dvc))
         (funcall (dvc-function dvc "status-mode")))
-      (let ((header (with-output-to-string
-                      (princ (format "Status for %s:\n" root))
-                      (princ (format "  base revision : %s\n" base-revision))
-                      (princ (format "  branch        : %s\n" branch))
-                      (if (functionp header-more) (princ (funcall header-more)))))
+      (let ((header (concat
+                      (format "Status for %s:\n" root)
+                      (format "  base revision : %s\n" base-revision)
+                      (format "  branch        : %s\n" branch)
+                      (if (functionp header-more) (funcall header-more))))
             (footer ""))
         (set (make-local-variable 'dvc-buffer-refresh-function) refresh)
         (ewoc-filter dvc-fileinfo-ewoc (lambda (elem) nil))

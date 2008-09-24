@@ -903,12 +903,11 @@ the file before saving."
          (format "%s" branch)
          ;; header-more
          (lambda ()
-           ;; FIXME: dvc-face-add doesn't work here; why?
            (concat
             (case head-count
               (0 "  branch is empty\n")
               (1 "  branch is merged\n")
-              (t (dvc-face-add (format "  branch has %s heads\n" head-count) 'dvc-conflict)))
+              (t (dvc-face-add (format "  branch has %s heads; need merge\n" head-count) 'dvc-conflict)))
             (if (member base-revision head-revisions)
                 "  base revision is a head revision\n"
               (dvc-face-add "  base revision is not a head revision; need update\n" 'dvc-conflict))))
