@@ -528,11 +528,12 @@ the file before saving."
 
 (defvar xmtn-diff-mode-map
   (let ((map (make-sparse-keymap)))
+    (define-key map "CM" 'xmtn-conflicts-merge)
+    (define-key map "CP" 'xmtn-conflicts-propagate)
+    (define-key map "CR" 'xmtn-conflicts-review)
+    (define-key map "CC" 'xmtn-conflicts-clean)
     (define-key map "MH" 'xmtn-view-heads-revlist)
-    (define-key map "MC" 'xmtn-conflicts-propagate)
-    (define-key map "MR" 'xmtn-conflicts-review)
     (define-key map "MP" 'xmtn-propagate-from)
-    (define-key map "Mx" 'xmtn-conflicts-clean)
     map))
 
 ;; items added here should probably also be added to xmtn-revlist-mode-menu, -map in xmtn-revlist.el
