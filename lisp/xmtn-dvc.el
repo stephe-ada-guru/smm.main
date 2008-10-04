@@ -1318,11 +1318,14 @@ finished."
         (error "user abort"))
 
     (lexical-let
-        ((display-buffer (current-buffer)))
-      (message "%s..." (mapconcat (lambda (item) item) cmd " "))
+        ((display-buffer (current-buffer))
+         (msg (mapconcat (lambda (item) item) cmd " ")))
+      (message "%s..." msg)
       (xmtn--run-command-that-might-invoke-merger
        root cmd
-       (lambda () (xmtn--refresh-status-header display-buffer))))))
+       (lambda ()
+         (xmtn--refresh-status-header display-buffer)
+         (message "%s... done" msg))))))
 
 ;;;###autoload
 (defun xmtn-dvc-merge (&optional other)
