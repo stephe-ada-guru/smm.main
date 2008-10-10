@@ -614,6 +614,10 @@ the file before saving."
 
 (defvar xmtn-status-mode-map
   (let ((map (make-sparse-keymap)))
+    (define-key map "CM" 'xmtn-conflicts-merge)
+    (define-key map "CP" 'xmtn-conflicts-propagate)
+    (define-key map "CR" 'xmtn-conflicts-review)
+    (define-key map "CC" 'xmtn-conflicts-clean)
     (define-key map "MP" 'xmtn-propagate-from)
     (define-key map "MH" 'xmtn-view-heads-revlist)
     map))
@@ -621,8 +625,12 @@ the file before saving."
 (easy-menu-define xmtn-status-mode-menu xmtn-status-mode-map
   "Mtn specific status menu."
   `("DVC-Mtn"
-    ["Propagate branch" xmtn-propagate-from t]
     ["View Heads" xmtn-view-heads-revlist t]
+    ["Show merge conflicts" xmtn-conflicts-merge t]
+    ["Show propagate conflicts" xmtn-conflicts-propagate t]
+    ["Review conflicts" xmtn-conflicts-review t]
+    ["Propagate branch" xmtn-propagate-from t]
+    ["Clean conflicts resolutions" xmtn-conflicts-clean t]
     ))
 
 (define-derived-mode xmtn-status-mode dvc-status-mode "xmtn-status"
