@@ -697,7 +697,7 @@ header."
 (defvar xmtn-conflicts-resolve-map
   (let ((map (make-sparse-keymap "resolution")))
     (define-key map [?8]  '(menu-item "8) clear resolution"
-                                      'xmtn-conflicts-clear-resolution))
+                                      xmtn-conflicts-clear-resolution))
 
     ;; duplicate_name resolutions
     (define-key map [?7]  '(menu-item "7) right file"
