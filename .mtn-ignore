@@ -1,0 +1,12 @@
+.*/\.#
+\.adt$
+\.ali$
+\.diff$
+\.exe$
+\.o$
+\.out$
+^build/x86_gnu_linux_debug/tmp$
+^build/x86_gnu_linux_release/tmp$
+^build/x86_gnu_windows_debug/\.gdbinit$
+^build/x86_gnu_windows_debug/tmp$
+^build/x86_gnu_windows_release/tmp$
