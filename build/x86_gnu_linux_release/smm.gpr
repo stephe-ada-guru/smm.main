@@ -1,0 +1,29 @@
+with "standard_common";
+with "aunit";
+with "sal";
+project Smm is
+  for Source_Dirs use
+    ("../../source",
+     "../../test");
+
+  for Main use ("smm-driver");
+
+  package Compiler is
+     for Default_Switches ("Ada") use
+       Standard_Common.Compiler'Default_Switches ("Ada") &
+       Standard_Common.Compiler.Release_Switches &
+       Standard_Common.Compiler.Style_Checks;
+  end Compiler;
+
+  package Binder is
+     for Default_Switches ("Ada") use Standard_Common.Binder'Default_Switches ("Ada");
+  end Binder;
+
+  package Builder is
+     for Switches ("smm-driver.adb") use ("-o", "smm.exe");
+
+     --  We use ".exe" extension even on non-Windows, to simplify the makefiles.
+     for Executable_Suffix use ".exe";
+  end Builder;
+
+end Smm;

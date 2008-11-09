@@ -22,5 +22,12 @@ package SMM is
 
    Verbosity : Integer;
 
-   function Relative_Name (Root : in String; Full_Name : in String) return String;
+   function Relative_Name_Sans_Extension (Root : in String; Full_Name : in String) return String;
+
+   --  database keys
+   Category_Key        : constant String := "Category";
+   File_Key            : constant String := "File";
+   Last_Downloaded_Key : constant String := "Last_Downloaded";
+   Songs_Key           : constant String := "Songs";
+   Root_Key            : constant String := "Root";
 end SMM;

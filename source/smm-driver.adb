@@ -18,11 +18,13 @@
 
 pragma License (GPL);
 
-with Ada.Exceptions;
 with Ada.Command_Line; use Ada.Command_Line;
+with Ada.Environment_Variables;
+with Ada.Exceptions;
 with Ada.Text_IO; use Ada.Text_IO;
 with SAL.Command_Line_IO;
 with SAL.Config_Files;
+with SMM.Download;
 with SMM.Import;
 procedure SMM.Driver
 is
@@ -59,7 +61,7 @@ begin
       Db_File_Name := new String'(Argument (Next_Arg)(6 .. Argument (Next_Arg)'Last));
       Next_Arg := Next_Arg + 1;
    else
-      Db_File_Name := new String'("~/.smm/smm.db");
+      Db_File_Name := new String'(Ada.Environment_Variables.Value ("HOME") & "/.smm/smm.db");
    end if;
 
    if Argument (Next_Arg)'Length > 12 and then
@@ -88,10 +90,26 @@ begin
 
    case Command is
    when Download =>
-      raise SAL.Not_Implemented;
+      declare
+         Destination : constant String := Argument (Next_Arg + 1);
+      begin
+         if Destination (Destination'Last) /= '/' then
+            SMM.Download (Db, Argument (Next_Arg), Destination & '/');
+         else
+            SMM.Download (Db, Argument (Next_Arg), Destination);
+         end if;
+      end;
 
    when Import =>
-      SMM.Import (Db, Argument (Next_Arg));
+      declare
+         Root : constant String := Argument (Next_Arg);
+      begin
+         if Root (Root'Last) /= '/' then
+            SMM.Import (Db, Root & '/');
+         else
+            SMM.Import (Db, Root);
+         end if;
+      end;
 
    when Set_Category =>
       raise SAL.Not_Implemented;
@@ -106,4 +124,5 @@ when E : others =>
    Put_Line
      ("exception: " & Ada.Exceptions.Exception_Name (E) & ": " &
         Ada.Exceptions.Exception_Message (E));
+   Put_Usage;
 end SMM.Driver;

@@ -20,13 +20,37 @@ pragma License (GPL);
 
 with Ada.Directories;
 with Ada.Text_IO;
+with Interfaces;
 with SAL.Config_Files;
 with SAL.Time_Conversions;
 procedure SMM.Import
-  (Db   : in out SAL.Config_Files.Configuration_Type;
-   Root : in     String)
+  (Db  : in out SAL.Config_Files.Configuration_Type;
+   Dir : in     String)
 is
-   procedure Import_Dir (Dir : in String)
+   Index : Interfaces.Unsigned_32;
+
+   procedure Get_Initial_Index
+   is
+      use SAL.Config_Files;
+      I : Iterator_Type;
+   begin
+      begin
+         I := First (Db, Songs_Key);
+      exception
+      when SAL.Config_File_Error =>
+         --  empty db
+         Index := 1;
+         return;
+      end;
+
+      loop
+         exit when Is_Null (I);
+         Index := Interfaces.Unsigned_32'Value (Current (I));
+         Next (I);
+      end loop;
+   end Get_Initial_Index;
+
+   procedure Import_Dir (Root : in String; Dir : in String)
    is
       use Ada.Directories;
       use SAL.Config_Files;
@@ -34,7 +58,9 @@ is
 
       procedure Process_Dir_Entry (Dir_Entry : in Directory_Entry_Type)
       is
-         Name : constant String := Relative_Name (Root, Full_Name (Dir_Entry));
+         use type Interfaces.Unsigned_32;
+         Name        : constant String := Relative_Name_Sans_Extension (Root, Full_Name (Dir_Entry));
+         Index_Image : constant String := Interfaces.Unsigned_32'Image (Index);
       begin
          case Kind (Dir_Entry) is
          when Directory =>
@@ -44,15 +70,17 @@ is
                return;
             end if;
 
-            Import_Dir (Name);
+            Import_Dir (Root, Name);
 
          when Ordinary_File =>
-            if not Is_Present (db, Name) then
-               if Verbosity > 0 then
-                  Ada.Text_IO.Put_Line ("adding file " & Name);
-               end if;
-               Write_String (Db,  Name & ".Last_Played", Time_Type'Image (0.0));
+            --  FIXME: read filenames into sorted tree for duplicate detection
+            if Verbosity > 0 then
+               Ada.Text_IO.Put_Line ("adding file " & Name);
             end if;
+            Write_String
+              (Db, Songs_Key & "." & Index_Image & "." & File_Key, Name & "." & Extension (Full_Name (Dir_Entry)));
+            Write_String (Db, Songs_Key & "." & Index_Image & "." & Last_Downloaded_Key, Time_Type'Image (0.0));
+            Index := Index + 1;
 
          when Special_File =>
             raise SAL.Programmer_Error with "found special file";
@@ -78,6 +106,11 @@ is
    end Import_Dir;
 
 begin
-   Ada.Directories.Set_Directory (Root);
-   Import_Dir (Root);
+   Get_Initial_Index;
+   if not SAL.Config_Files.Is_Present (Db, Root_Key) then
+      SAL.Config_Files.Write_String (Db, Root_Key, Dir);
+   end if;
+
+   Ada.Directories.Set_Directory (SAL.Config_Files.Read (Db, Root_Key));
+   Import_Dir (SAL.Config_Files.Read (Db, Root_Key), Dir);
 end SMM.Import;
