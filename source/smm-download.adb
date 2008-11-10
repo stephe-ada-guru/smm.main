@@ -18,6 +18,7 @@
 
 pragma License (GPL);
 
+with Ada.Real_Time;
 with Ada.Directories;
 with Ada.Text_IO;
 with SAL.Aux.Definite_Private_Items;
@@ -169,9 +170,12 @@ is
    procedure Download (Songs : in out Song_Lists.List_Type; Desired_Song_Count : in Integer)
    is
       use Song_Lists;
-      I     : Iterator_Type;
-      Count : Integer := 0;
+      I           : Iterator_Type;
+      Count       : Integer         := 0;
       Source_Root : constant String := SAL.Config_Files.Read (Db, Root_Key);
+
+      Download_Time : constant String := SAL.Time_Conversions.Time_Type'Image
+        (SAL.Time_Conversions.To_TAI_Time (Ada.Real_Time.Clock));
    begin
       Randomize (Songs);
       I := First (Songs);
@@ -184,11 +188,18 @@ is
             if Verbosity > 0 then
                Ada.Text_IO.Put_Line ("downloading " & Source);
                Ada.Text_IO.Put_Line ("to          " & Target);
+            else
+               if Count mod 10 = 0 then
+                  Ada.Text_IO.New_Line;
+               end if;
+               Ada.Text_IO.Put (".");
             end if;
 
             Ada.Directories.Copy_File
               (Source_Name => Source,
                Target_Name => Target);
+
+            SAL.Config_Files.Write (Db, Current (I), Last_Downloaded_Key, Download_Time);
 
             Next (I);
             Count := Count + 1;
