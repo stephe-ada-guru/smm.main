@@ -291,6 +291,7 @@ the file before saving."
   "Copy _MTN/log to temp file, return --message-file argument string."
   ;; Monotone's rule that _MTN/log must not exist when committing
   ;; non-interactively is really a pain to deal with.
+  ;; FIXME: now we are not cleaning up the temp files; fix mtn!
   (let
       ((log-edit-file (expand-file-name "./_MTN/log"))
        (commit-message-file
@@ -367,7 +368,6 @@ the file before saving."
                    ;; Monotone creates an empty log file when the
                    ;; commit was successful.  Let's not interfere with
                    ;; that.  (Calling `dvc-log-close' would.)
-                   (delete-file commit-message-file)
                    (kill-buffer log-edit-buffer)
                    (dvc-diff-clear-buffers 'xmtn
                                            default-directory
