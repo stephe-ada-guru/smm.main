@@ -364,7 +364,8 @@ reused. `default-directory' must be the tree root."
        ;; to find dired-mode buffers, so we ignore those.
        (let ((diff-status-buffers
               (append (dvc-get-matching-buffers dvc-buffer-current-active-dvc 'diff default-directory)
-                      (dvc-get-matching-buffers dvc-buffer-current-active-dvc 'status default-directory)))
+                      (dvc-get-matching-buffers dvc-buffer-current-active-dvc 'status default-directory)
+                      (dvc-get-matching-buffers dvc-buffer-current-active-dvc 'conflicts default-directory)))
              (activated-from-bookmark-buffer (eq major-mode 'dvc-bookmarks-mode)))
          (case (length diff-status-buffers)
            (0 (if (not activated-from-bookmark-buffer)
@@ -406,7 +407,7 @@ reused. `default-directory' must be the tree root."
                 default-directory))))))
 
 (defvar dvc-back-end-wrappers
-  '(("add-log-entry" ())
+  '(("add-log-entry" (&optional other-frame))
     ("add-files" (&rest files))
     ("diff" (&optional base-rev path dont-switch))
     ("ignore-file-extensions" (file-list))
@@ -559,6 +560,25 @@ specified by the VCS backend."
 (define-dvc-unified-command dvc-export-via-email ()
   "Send the changeset at point via email."
   (interactive))
+
+;;;###autoload
+(defun dvc-create-branch ()
+  "Create a new branch."
+  (interactive)
+  (call-interactively (dvc-function (dvc-current-active-dvc) "dvc-create-branch")))
+
+;;;###autoload
+(defun dvc-select-branch ()
+  "Select a branch."
+  (interactive)
+  (call-interactively (dvc-function (dvc-current-active-dvc) "dvc-select-branch")))
+
+;;;###autoload
+(defun dvc-list-branches ()
+  "List available branches."
+  (interactive)
+  (call-interactively (dvc-function (dvc-current-active-dvc) "dvc-list-branches")))
+
 
 (provide 'dvc-unified)
 

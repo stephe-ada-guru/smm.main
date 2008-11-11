@@ -288,6 +288,30 @@ the file before saving."
       (add-to-list 'buffer-file-format 'xmtn--log-file) ;; FIXME: generalize to dvc--log-file
       )))
 
+(defun xmtn-dvc-log-message ()
+  "Copy _MTN/log to temp file, return --message-file argument string."
+  ;; Monotone's rule that _MTN/log must not exist when committing
+  ;; non-interactively is really a pain to deal with.
+  (let
+      ((log-edit-file (expand-file-name "./_MTN/log"))
+       (commit-message-file
+        (xmtn--make-temp-file
+         (concat (expand-file-name "./_MTN/log") "-xmtn")
+         nil ".tmp")))
+    (if (file-exists-p log-edit-file)
+        (progn
+          (rename-file log-edit-file commit-message-file t)
+          (concat "--message-file=" commit-message-file))
+      ;; no message file
+      nil)))
+
+(defun xmtn-dvc-log-clean ()
+  "Delete main and temporary xmtn log files."
+  (let ((files (file-expand-wildcards "_MTN/log*")))
+    (while files
+      (delete-file (car files))
+      (setq files (cdr files)))))
+
 ;;;###autoload
 (defun xmtn-dvc-log-edit-done ()
   (let* ((root default-directory)
@@ -324,19 +348,10 @@ the file before saving."
                            (t
                             (format "Committing %s files in %s"
                                     (length normalized-files)
-                                    root))))))
-                   (log-edit-buffer (current-buffer))
-                   (log-edit-file (buffer-file-name))
-                   (commit-message-file
-                    (xmtn--make-temp-file
-                     (concat (expand-file-name log-edit-file) "-xmtn")
-                     nil ".tmp")))
-      ;; Monotone's rule that _MTN/log must not exist when committing
-      ;; non-interactively is really a pain to deal with.
-      (rename-file log-edit-file commit-message-file t)
+                                    root)))))))
       (xmtn--run-command-async
        root
-       `("commit" ,(concat "--message-file=" commit-message-file)
+       `("commit" ,(xmtn-dvc-log-message)
          ,(concat "--branch=" branch)
          ,@(case normalized-files
              (all
@@ -350,11 +365,11 @@ the file before saving."
                  "--depth=0"
                  "--" normalized-files))))
        :error (lambda (output error status arguments)
-                (rename-file commit-message-file log-edit-file)
+                (xmtn-dvc-log-clean)
                 (dvc-default-error-function output error
                                             status arguments))
        :killed (lambda (output error status arguments)
-                 (rename-file commit-message-file log-edit-file)
+                 (xmtn-dvc-log-clean)
                  (dvc-default-killed-function output error
                                               status arguments))
        :finished (lambda (output error status arguments)
@@ -362,17 +377,16 @@ the file before saving."
                    ;; Monotone creates an empty log file when the
                    ;; commit was successful.  Let's not interfere with
                    ;; that.  (Calling `dvc-log-close' would.)
-                   (delete-file commit-message-file)
-                   (kill-buffer log-edit-buffer)
+                   (xmtn-dvc-log-clean)
                    (dvc-diff-clear-buffers 'xmtn
                                            default-directory
                                            "* Just committed! Please refresh buffer"
                                            (xmtn--status-header
                                             default-directory
                                             (xmtn--get-base-revision-hash-id-or-null default-directory)))))
-      ;; Show message _after_ spawning command to override DVC's
-      ;; debugging message.
-      (message "%s... " progress-message))
+       ;; Show message _after_ spawning command to override DVC's
+       ;; debugging message.
+       (message "%s... " progress-message))
     (set-window-configuration dvc-pre-commit-window-configuration)))
 
 ;; The term "normalization" here has nothing to do with Unicode
@@ -1311,7 +1325,8 @@ finished."
             (progn
               (xmtn-conflicts-check-mtn-version)
               "--resolve-conflicts-file=_MTN/conflicts")))
-       (cmd (list "propagate" other local-branch resolve-conflicts))
+       (cmd (list "propagate" other local-branch resolve-conflicts
+                  (xmtn-dvc-log-message)))
        (prompt
         (if resolve-conflicts
             (concat "Propagate from " other " to " local-branch " resolving conflicts? ")
@@ -1356,7 +1371,7 @@ finished."
               (t
                (xmtn--run-command-that-might-invoke-merger
                 root
-                (list "merge" resolve-conflicts)
+                (list "merge" resolve-conflicts (xmtn-dvc-log-message))
                 (lambda () (xmtn--refresh-status-header display-buffer))))))))))
   nil)
 

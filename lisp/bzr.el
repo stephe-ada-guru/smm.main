@@ -1257,7 +1257,7 @@ File can be, i.e. bazaar.conf, ignore, locations.conf, ..."
          (file-name nil)
          (description nil)
          (destination-email "")
-         (extra-parameter-list nil))
+         (extra-export-parameter-list nil))
     (dolist (m bzr-export-via-email-parameters)
       (when (string= (dvc-uniquify-file-name (car m)) (dvc-uniquify-file-name (bzr-tree-root)))
         ;;(message "%S" (cadr m))
