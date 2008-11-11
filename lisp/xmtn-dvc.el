@@ -357,11 +357,9 @@ the file before saving."
                  "--depth=0"
                  "--" normalized-files))))
        :error (lambda (output error status arguments)
-                (rename-file commit-message-file log-edit-file)
                 (dvc-default-error-function output error
                                             status arguments))
        :killed (lambda (output error status arguments)
-                 (rename-file commit-message-file log-edit-file)
                  (dvc-default-killed-function output error
                                               status arguments))
        :finished (lambda (output error status arguments)
