@@ -1,6 +1,6 @@
 ;;; dvc-unified.el --- The unification layer for dvc
 
-;; Copyright (C) 2005-2008 by all contributors
+;; Copyright (C) 2005-2009 by all contributors
 
 ;; Author: Stefan Reichoer, <stefan@xsteve.at>
 
@@ -189,11 +189,14 @@ The new buffer is always displayed; if DONT-SWITCH is nil, select it."
 
 ;;;###autoload
 (define-dvc-unified-command dvc-delta (base modified &optional dont-switch)
-  "Display from revision BASE to MODIFIED.
+  "Display diff from revision BASE to MODIFIED.
 
-BASE and MODIFIED must be revision ID.
+BASE and MODIFIED must be full revision IDs, or strings. If
+strings, the meaning is back-end specific; it should be some sort
+of revision specifier.
 
-The new buffer is always displayed; if DONT-SWITCH is nil, select it.")
+The new buffer is always displayed; if DONT-SWITCH is nil, select it."
+  (interactive "Mbase revision: \nMmodified revision: "))
 
 ;;;###autoload
 (define-dvc-unified-command dvc-file-diff (file &optional base modified dont-switch)
@@ -363,7 +366,8 @@ reused. `default-directory' must be the tree root."
        ;; to find dired-mode buffers, so we ignore those.
        (let ((diff-status-buffers
               (append (dvc-get-matching-buffers dvc-buffer-current-active-dvc 'diff default-directory)
-                      (dvc-get-matching-buffers dvc-buffer-current-active-dvc 'status default-directory)))
+                      (dvc-get-matching-buffers dvc-buffer-current-active-dvc 'status default-directory)
+                      (dvc-get-matching-buffers dvc-buffer-current-active-dvc 'conflicts default-directory)))
              (activated-from-bookmark-buffer (eq major-mode 'dvc-bookmarks-mode)))
          (case (length diff-status-buffers)
            (0 (if (not activated-from-bookmark-buffer)
@@ -558,6 +562,25 @@ specified by the VCS backend."
 (define-dvc-unified-command dvc-export-via-email ()
   "Send the changeset at point via email."
   (interactive))
+
+;;;###autoload
+(defun dvc-create-branch ()
+  "Create a new branch."
+  (interactive)
+  (call-interactively (dvc-function (dvc-current-active-dvc) "dvc-create-branch")))
+
+;;;###autoload
+(defun dvc-select-branch ()
+  "Select a branch."
+  (interactive)
+  (call-interactively (dvc-function (dvc-current-active-dvc) "dvc-select-branch")))
+
+;;;###autoload
+(defun dvc-list-branches ()
+  "List available branches."
+  (interactive)
+  (call-interactively (dvc-function (dvc-current-active-dvc) "dvc-list-branches")))
+
 
 (provide 'dvc-unified)
 

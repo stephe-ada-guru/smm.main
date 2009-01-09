@@ -1,6 +1,6 @@
 ;;; xmtn-dvc.el --- DVC backend for monotone
 
-;; Copyright (C) 2008 Stephen Leake
+;; Copyright (C) 2008 - 2009 Stephen Leake
 ;; Copyright (C) 2006, 2007, 2008 Christian M. Ohler
 
 ;; Author: Christian M. Ohler
@@ -292,13 +292,24 @@ the file before saving."
   ;; Monotone's rule that _MTN/log must not exist when committing
   ;; non-interactively is really a pain to deal with.
   (let
-      ((log-edit-file )
+      ((log-edit-file (expand-file-name "./_MTN/log"))
        (commit-message-file
         (xmtn--make-temp-file
          (concat (expand-file-name "./_MTN/log") "-xmtn")
          nil ".tmp")))
-    (rename-file log-edit-file commit-message-file t)
-    (concat "--message-file=" commit-message-file)))
+    (if (file-exists-p log-edit-file)
+        (progn
+          (rename-file log-edit-file commit-message-file t)
+          (concat "--message-file=" commit-message-file))
+      ;; no message file
+      nil)))
+
+(defun xmtn-dvc-log-clean ()
+  "Delete main and temporary xmtn log files."
+  (let ((files (file-expand-wildcards "_MTN/log*")))
+    (while files
+      (delete-file (car files))
+      (setq files (cdr files)))))
 
 ;;;###autoload
 (defun xmtn-dvc-log-edit-done ()
@@ -353,11 +364,11 @@ the file before saving."
                  "--depth=0"
                  "--" normalized-files))))
        :error (lambda (output error status arguments)
-                (rename-file commit-message-file log-edit-file)
+                (xmtn-dvc-log-clean)
                 (dvc-default-error-function output error
                                             status arguments))
        :killed (lambda (output error status arguments)
-                 (rename-file commit-message-file log-edit-file)
+                 (xmtn-dvc-log-clean)
                  (dvc-default-killed-function output error
                                               status arguments))
        :finished (lambda (output error status arguments)
@@ -365,8 +376,7 @@ the file before saving."
                    ;; Monotone creates an empty log file when the
                    ;; commit was successful.  Let's not interfere with
                    ;; that.  (Calling `dvc-log-close' would.)
-                   (delete-file commit-message-file)
-                   (kill-buffer log-edit-buffer)
+                   (xmtn-dvc-log-clean)
                    (dvc-diff-clear-buffers 'xmtn
                                            default-directory
                                            "* Just committed! Please refresh buffer"
@@ -554,12 +564,18 @@ the file before saving."
 
 ;;;###autoload
 (defun xmtn-dvc-delta (from-revision-id to-revision-id &optional dont-switch)
-  ;; See dvc-unified.el dvc-delta for doc string. That says that
-  ;; neither id can be local-tree. However, we also use this as the
-  ;; implementation of xmtn-dvc-diff, so we need to handle local-tree.
+  ;; See dvc-unified.el dvc-delta for doc string. If strings, they must be mtn selectors.
   (let* ((root (dvc-tree-root))
-         (from-resolved (xmtn--resolve-revision-id root from-revision-id))
-         (to-resolved (xmtn--resolve-revision-id root to-revision-id)))
+         (from-resolved (if (listp from-revision-id)
+                            (xmtn--resolve-revision-id root from-revision-id)
+                          (xmtn--resolve-revision-id
+                           root
+                           (list 'xmtn (list 'revision (car (xmtn--expand-selector root from-revision-id)))))))
+         (to-resolved (if (listp to-revision-id)
+                          (xmtn--resolve-revision-id root to-revision-id)
+                        (xmtn--resolve-revision-id
+                         root
+                         (list 'xmtn (list 'revision (car (xmtn--expand-selector root to-revision-id))))))))
     (lexical-let ((buffer
                    (dvc-prepare-changes-buffer `(xmtn ,from-resolved) `(xmtn ,to-resolved) 'diff root 'xmtn))
                   (dont-switch dont-switch))
