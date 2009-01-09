@@ -1,6 +1,6 @@
 ;;; dvc-unified.el --- The unification layer for dvc
 
-;; Copyright (C) 2005-2008 by all contributors
+;; Copyright (C) 2005-2009 by all contributors
 
 ;; Author: Stefan Reichoer, <stefan@xsteve.at>
 
@@ -189,11 +189,14 @@ The new buffer is always displayed; if DONT-SWITCH is nil, select it."
 
 ;;;###autoload
 (define-dvc-unified-command dvc-delta (base modified &optional dont-switch)
-  "Display from revision BASE to MODIFIED.
+  "Display diff from revision BASE to MODIFIED.
 
-BASE and MODIFIED must be revision ID.
+BASE and MODIFIED must be full revision IDs, or strings. If
+strings, the meaning is back-end specific; it should be some sort
+of revision specifier.
 
-The new buffer is always displayed; if DONT-SWITCH is nil, select it.")
+The new buffer is always displayed; if DONT-SWITCH is nil, select it."
+  (interactive "Mbase revision: \nMmodified revision: "))
 
 ;;;###autoload
 (define-dvc-unified-command dvc-file-diff (file &optional base modified dont-switch)
