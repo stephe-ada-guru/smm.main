@@ -1,0 +1,224 @@
+--  Abstract :
+--
+--  See spec.
+--
+--  Copyright (C) 2002, 2004 Stephen Leake.  All Rights Reserved.
+--
+--  This program is free software; you can redistribute it and/or
+--  modify it under terms of the GNU General Public License as
+--  published by the Free Software Foundation; either version 2, or (at
+--  your option) any later version. This program is distributed in the
+--  hope that it will be useful, but WITHOUT ANY WARRANTY; without even
+--  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+--  PURPOSE. See the GNU General Public License for more details. You
+--  should have received a copy of the GNU General Public License
+--  distributed with this program; see file COPYING. If not, write to
+--  the Free Software Foundation, 59 Temple Place - Suite 330, Boston,
+--  MA 02111-1307, USA.
+--
+
+with Ada.Strings.Fixed;
+with GNU.DB.SQLCLI.Statement_Attribute;
+package body Books.Database.Data_Tables.Series is
+
+   --  Local declarations
+
+   procedure Copy
+     (T            : in out Table;
+      Title        : in     String;
+      Author       : in     ID_Type;
+      Author_Valid : in     Boolean);
+   --  Copy Data to Table fields.
+
+   ----------
+   --  Subprogram bodies (alphabetical order)
+
+   procedure Clear_Data (T : in out Table)
+   is begin
+      Copy (T, "", 0, False);
+   end Clear_Data;
+
+   procedure Copy
+     (T            : in out Table;
+      Title        : in     String;
+      Author       : in     ID_Type;
+      Author_Valid : in     Boolean)
+   is
+      use Ada.Strings;
+      use Ada.Strings.Fixed;
+   begin
+      Move (Source => Title, Target => T.Title.all, Drop => Right);
+      T.Title_Length := SQLINTEGER'Min (T.Title.all'Length, Title'Length);
+
+      if Author_Valid then
+         T.Author           := Author;
+         T.Author_Indicator := ID_Type'Size / 8;
+      else
+         T.Author_Indicator := SQL_NULL_DATA;
+      end if;
+
+   end Copy;
+
+   function Author (T : in Table) return ID_Type is
+   begin
+      if T.Author_Indicator = SQL_NULL_DATA then
+         return 0;
+      else
+         return ID_Type (T.Author);
+      end if;
+   end Author;
+
+   procedure Finalize (T : in out Table)
+   is begin
+      Books.Database.Data_Tables.Finalize (Books.Database.Data_Tables.Table (T));
+
+      if T.By_Author_Statement /= SQL_NULL_HANDLE then
+         SQLFreeHandle (SQL_HANDLE_STMT, T.By_Author_Statement);
+      end if;
+   end Finalize;
+
+   procedure Find_Author (T : in out Table; Author : in ID_Type)
+   is begin
+      T.Author           := Author;
+      T.Author_Indicator := ID_Type'Size / 8;
+      SQLCloseCursor (T.By_Author_Statement);
+      Checked_Execute (T.By_Author_Statement);
+      T.Find_Statement   := T.By_Author_Statement;
+      Next (T);
+   end Find_Author;
+
+   procedure Find_Title (T : in out Table; Item : in String)
+   is begin
+      T.Find_Pattern (1 .. Item'Length) := Item;
+      T.Find_Pattern (Item'Length + 1) := '%';
+      T.Find_Pattern_Length := Item'Length + 1;
+      SQLCloseCursor (T.By_Name_Statement);
+      Checked_Execute (T.By_Name_Statement);
+      SQLFetch (T.By_Name_Statement);
+
+      T.Find_Statement := T.By_Name_Statement;
+   exception
+   when GNU.DB.SQLCLI.No_Data =>
+      SQLCloseCursor (T.By_Name_Statement);
+      --  Just keep current data.
+   end Find_Title;
+
+   procedure Initialize (T : in out Table)
+   is
+      use Statement_Attribute;
+   begin
+      if T.Title = null then
+         T.Title        := new String'(1 .. Field_Length + 1 => ' ');
+         T.Find_Pattern := new String'(1 .. Field_Length + 1  => ' ');
+      end if;
+
+      --  All_By_ID_Statement
+      SQLAllocHandle (SQL_HANDLE_STMT, T.DB.Connection, T.All_By_ID_Statement);
+      SQLPrepare
+        (T.All_By_ID_Statement,
+         String'("SELECT Title, Author FROM Series ORDER BY ID"));
+
+      SQLBindCol            (T.All_By_ID_Statement, 1, T.Title, T.Title_Length'Access);
+      ID_Binding.SQLBindCol (T.All_By_ID_Statement, 2, T.Author'Access, T.Author_Indicator'Access);
+
+      --  By_ID_Statement
+      SQLAllocHandle (SQL_HANDLE_STMT, T.DB.Connection, T.By_ID_Statement);
+      SQLPrepare
+        (T.By_ID_Statement,
+         String'("SELECT ID, Title, Author FROM Series WHERE ID = ?"));
+
+      ID_Binding.SQLBindParameter (T.By_ID_Statement, 1, T.ID'Access, T.ID_Indicator'Access);
+
+      ID_Binding.SQLBindCol (T.By_ID_Statement, 1, T.ID'Access, T.ID_Indicator'Access);
+      SQLBindCol            (T.By_ID_Statement, 2, T.Title, T.Title_Length'Access);
+      ID_Binding.SQLBindCol (T.By_ID_Statement, 3, T.Author'Access, T.Author_Indicator'Access);
+
+      --  By_Name_Statement
+      SQLAllocHandle (SQL_HANDLE_STMT, T.DB.Connection, T.By_Name_Statement);
+      SQLPrepare
+        (T.By_Name_Statement,
+         String'("SELECT ID, Title, Author FROM Series WHERE Title LIKE ? ORDER BY Title"));
+
+      SQLSetStmtAttr (T.By_Name_Statement, SQL_BIND_BY_COLUMN);
+      SQLSetStmtAttr (T.By_Name_Statement, Statement_Attribute_Unsigned'(SQL_ROWSET_SIZE, 1));
+
+      SQLBindParameter (T.By_Name_Statement, 1, T.Find_Pattern, T.Find_Pattern_Length'Access);
+
+      ID_Binding.SQLBindCol (T.By_Name_Statement, 1, T.ID'Access, T.ID_Indicator'Access);
+      SQLBindCol            (T.By_Name_Statement, 2, T.Title, T.Title_Length'Access);
+      ID_Binding.SQLBindCol (T.By_Name_Statement, 3, T.Author'Access, T.Author_Indicator'Access);
+
+      T.Find_Pattern (1)    := '%';
+      T.Find_Pattern_Length := 1;
+      T.Find_Statement      := T.By_Name_Statement;
+
+      Checked_Execute (T.Find_Statement); --  So Next is valid.
+
+      --  Update statement
+      SQLAllocHandle (SQL_HANDLE_STMT, T.DB.Connection, T.Update_Statement);
+      SQLPrepare
+        (T.Update_Statement,
+         String'("UPDATE Series SET Title = ?, Author = ? WHERE ID = ?"));
+
+      SQLBindParameter            (T.Update_Statement, 1, T.Title, T.Title_Length'Access);
+      ID_Binding.SQLBindParameter (T.Update_Statement, 2, T.Author'Access, T.Author_Indicator'Access);
+      ID_Binding.SQLBindParameter (T.Update_Statement, 3, T.ID'Access, T.ID_Indicator'Access);
+
+      --  Insert statement
+      SQLAllocHandle (SQL_HANDLE_STMT, T.DB.Connection, T.Insert_Statement);
+      SQLPrepare
+        (T.Insert_Statement,
+         String'("INSERT INTO Series (Title, Author) VALUES (?, ?)"));
+
+      SQLBindParameter            (T.Insert_Statement, 1, T.Title, T.Title_Length'Access);
+      ID_Binding.SQLBindParameter (T.Insert_Statement, 2, T.Author'Access, T.Author_Indicator'Access);
+
+      --  Delete statement
+      SQLAllocHandle (SQL_HANDLE_STMT, T.DB.Connection, T.Delete_Statement);
+      SQLPrepare
+        (T.Delete_Statement,
+         String'("DELETE FROM Series WHERE ID = ?"));
+
+      ID_Binding.SQLBindParameter (T.Delete_Statement, 1, T.ID'Access, T.ID_Indicator'Access);
+
+      --  By_Author_Statement
+      SQLAllocHandle (SQL_HANDLE_STMT, T.DB.Connection, T.By_Author_Statement);
+      SQLPrepare
+        (T.By_Author_Statement,
+         String'("SELECT ID, Title, Author FROM Series WHERE Author = ?"));
+
+      ID_Binding.SQLBindParameter (T.By_Author_Statement, 1, T.Author'Access, T.Author_Indicator'Access);
+
+      ID_Binding.SQLBindCol          (T.By_Author_Statement, 1, T.ID'Access, T.ID_Indicator'Access);
+      SQLBindCol                     (T.By_Author_Statement, 2, T.Title, T.Title_Length'Access);
+      ID_Binding.SQLBindCol          (T.By_Author_Statement, 3, T.Author'Access, T.Author_Indicator'Access);
+
+   end Initialize;
+
+   procedure Insert
+     (T            : in out Table;
+      Title        : in     String;
+      Author       : in     ID_Type;
+      Author_Valid : in     Boolean)
+   is begin
+      Copy (T, Title, Author, Author_Valid);
+      Checked_Execute (T.Insert_Statement);
+      Find_Title (T, Title);
+   end Insert;
+
+   function Title (T : in Table) return String is
+   begin
+      return T.Title (1 .. Integer (T.Title_Length));
+   end Title;
+
+   procedure Update
+     (T            : in out Table;
+      Title        : in     String;
+      Author       : in     ID_Type;
+      Author_Valid : in     Boolean)
+   is begin
+      Copy (T, Title, Author, Author_Valid);
+      Checked_Execute (T.Update_Statement);
+   end Update;
+
+end Books.Database.Data_Tables.Series;

@@ -1,0 +1,692 @@
+--  Abstract :
+--
+--  See spec.
+--
+--  Copyright (C) 2002 - 2005 Stephen Leake.  All Rights Reserved.
+--
+--  This program is free software; you can redistribute it and/or
+--  modify it under terms of the GNU General Public License as
+--  published by the Free Software Foundation; either version 2, or (at
+--  your option) any later version. This program is distributed in the
+--  hope that it will be useful, but WITHOUT ANY WARRANTY; without even
+--  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+--  PURPOSE. See the GNU General Public License for more details. You
+--  should have received a copy of the GNU General Public License
+--  distributed with this program; see file COPYING. If not, write to
+--  the Free Software Foundation, 59 Temple Place - Suite 330, Boston,
+--  MA 02111-1307, USA.
+--
+
+with Ada.Exceptions;
+with Ada.Text_IO;
+with Ada.Unchecked_Deallocation;
+with Gdk.Event;
+with Gdk.Main;
+with Glib;
+with Gtk.Box;
+with Gtk.Button.Signal;
+with Gtk.Clist.Signal;
+with Gtk.Combo;
+with Gtk.Enums;
+with Gtk.GEntry.Signal;
+with Gtk.Label;
+with Gtk.List;
+with Gtk.List_Item;
+with Gtk.Object.Signal;
+with Gtk.Scrolled_Window;
+with Gtk.Widget;
+with Gtk.Window.Config;
+with Gtk.Window.Signal;
+with Interfaces.C.Strings;
+with SAL.Config_Files.Boolean;
+package body Books.Table_Views is
+
+   type Table_Array_Scroll_Type is array (Table_Name_Type) of Gtk.Scrolled_Window.Gtk_Scrolled_Window;
+
+   type Private_Stuff_Record is record
+      Button_Box    : Gtk.Box.Gtk_Box;
+      -- Main buttons
+      Add_Button    : Gtk.Button.Gtk_Button;
+      Edit_Button   : Gtk.Button.Gtk_Button;
+      Delete_Button : Gtk.Button.Gtk_Button;
+      Test_Button   : Gtk.Button.Gtk_Button;
+
+      Enable_Test_Button : Boolean;
+
+      -- Add buttons
+      Insert_Button   : Gtk.Button.Gtk_Button;
+      Cancel_Button   : Gtk.Button.Gtk_Button;
+
+      -- Edit buttons
+      Update_Button : Gtk.Button.Gtk_Button;
+
+      Search_Table : Gtk.Table.Gtk_Table;
+      --  Row 0:
+      Find_Label : Gtk.Label.Gtk_Label;
+      --  Find_Text is public
+      Find_Next  : Gtk.Button.Gtk_Button;
+
+      --  Row 1:
+      Index_Label : Gtk.Label.Gtk_Label;
+      Index_List  : Gtk.Combo.Gtk_Combo;
+      Index_Last  : Gtk.Button.Gtk_Button;
+
+      --  Row 2:
+      ID_Label   : Gtk.Label.Gtk_Label;
+      ID_Display : Gtk.Label.Gtk_Label;
+      --  End of Search_Table
+
+      Links_Table   : Gtk.Table.Gtk_Table;
+      --  Row 0, 1:
+      Links_Label   : Gtk.Label.Gtk_Label;
+
+      --  End of Links_Table
+
+      List_Select_Hbox       : Gtk.Box.Gtk_Hbox;
+      --  Contains List_Select_* in public view.
+
+      List_Edit_Hbox          : Gtk.Box.Gtk_Hbox;
+      --  Contains add, delete widgets
+      List_Edit_Add_Button    : Gtk.Button.Gtk_Button;
+      List_Edit_Add_Entry     : Gtk.GEntry.Gtk_Entry;
+      List_Edit_Delete_Button : Gtk.Button.Gtk_Button;
+
+      List_Display_Scroll : Table_Array_Scroll_Type;
+
+      Config : SAL.Config_Files.Configuration_Access_Type;
+   end record;
+
+   procedure Free is new Ada.Unchecked_Deallocation (Private_Stuff_Record, Private_Stuff_Access);
+
+   ----------
+   --  Local declarations
+
+   procedure On_Button_Add    (Button : access Gtk.Button.Gtk_Button_Record'Class);
+   procedure On_Button_Edit   (Button : access Gtk.Button.Gtk_Button_Record'Class);
+   procedure On_Button_Delete (Button : access Gtk.Button.Gtk_Button_Record'Class);
+   procedure On_Button_Cancel (Button : access Gtk.Button.Gtk_Button_Record'Class);
+   procedure On_Button_Insert (Button : access Gtk.Button.Gtk_Button_Record'Class);
+   procedure On_Button_Update (Button : access Gtk.Button.Gtk_Button_Record'Class);
+   procedure On_Button_Test   (Button : access Gtk.Button.Gtk_Button_Record'Class);
+
+   procedure On_Find_Changed (GEntry : access Gtk.GEntry.Gtk_Entry_Record'Class);
+   procedure On_Find_Next (Button : access Gtk.Button.Gtk_Button_Record'Class);
+   procedure On_List_Column (Clist : access Gtk.Clist.Gtk_Clist_Record'Class; Column : in Glib.Gint);
+
+   procedure On_List_Edit_Add_Clicked (Button : access Gtk.Button.Gtk_Button_Record'Class);
+   procedure On_List_Edit_Delete_Clicked (Button : access Gtk.Button.Gtk_Button_Record'Class);
+
+   procedure On_List_Select_Clicked (Button : access Gtk.Button.Gtk_Button_Record'Class);
+
+   function On_Window_Configure_Event
+     (Widget : access Gtk.Widget.Gtk_Widget_Record'Class;
+      Event  : in     Gdk.Event.Gdk_Event_Configure)
+     return Boolean;
+
+   procedure On_Window_Destroy (Object : access Gtk.Object.Gtk_Object_Record'Class);
+
+   procedure To_Add (Table_View : in Gtk_Table_View);
+   --  Show controls for Add display, hide main.
+
+   procedure To_Edit (Table_View : in Gtk_Table_View);
+   --  Show controls for Edit display, hide main.
+
+   ----------
+   --  Bodies (alphabetical order)
+
+   procedure Create_GUI
+     (Table_View : access Gtk_Table_View_Record'Class;
+      Config     : in     SAL.Config_Files.Configuration_Access_Type)
+   is
+      Vbox : Gtk.Box.Gtk_Box; -- contains everthing
+   begin
+      Gtk.Window.Initialize (Table_View, Gtk.Enums.Window_Toplevel);
+
+      Gtk.Object.Signal.Connect_Destroy (Table_View, On_Window_Destroy'Access);
+      Gtk.Window.Signal.Connect_Configure_Event (Table_View, On_Window_Configure_Event'Access);
+
+      Table_View.Private_Stuff := new Private_Stuff_Record;
+
+      Table_View.Private_Stuff.Config := Config;
+
+      Gtk.Box.Gtk_New_Vbox (Vbox);
+      Add (Table_View, Vbox);
+
+      --  Buttons
+      Gtk.Box.Gtk_New_Hbox (Table_View.Private_Stuff.Button_Box);
+      Gtk.Box.Pack_Start (Vbox, Table_View.Private_Stuff.Button_Box, Expand => False);
+
+      Gtk.Button.Gtk_New_With_Mnemonic (Table_View.Private_Stuff.Add_Button, "_Add");
+      Gtk.Box.Add (Table_View.Private_Stuff.Button_Box, Table_View.Private_Stuff.Add_Button);
+      Gtk.Button.Signal.Connect_Clicked (Table_View.Private_Stuff.Add_Button, On_Button_Add'Access);
+
+      Gtk.Button.Gtk_New_With_Mnemonic (Table_View.Private_Stuff.Edit_Button, "_Edit");
+      Gtk.Box.Add (Table_View.Private_Stuff.Button_Box, Table_View.Private_Stuff.Edit_Button);
+      Gtk.Button.Signal.Connect_Clicked (Table_View.Private_Stuff.Edit_Button, On_Button_Edit'Access);
+
+      Gtk.Button.Gtk_New_With_Mnemonic (Table_View.Private_Stuff.Delete_Button, "_Delete");
+      Gtk.Box.Add (Table_View.Private_Stuff.Button_Box, Table_View.Private_Stuff.Delete_Button);
+      Gtk.Button.Signal.Connect_Clicked (Table_View.Private_Stuff.Delete_Button, On_Button_Delete'Access);
+
+      Table_View.Private_Stuff.Enable_Test_Button := SAL.Config_Files.Boolean.Read (Config.all, "Test_Button", False);
+      if Table_View.Private_Stuff.Enable_Test_Button then
+         Gtk.Button.Gtk_New_With_Mnemonic (Table_View.Private_Stuff.Test_Button, "_Test");
+         Gtk.Box.Add (Table_View.Private_Stuff.Button_Box, Table_View.Private_Stuff.Test_Button);
+         Gtk.Button.Signal.Connect_Clicked (Table_View.Private_Stuff.Test_Button, On_Button_Test'Access);
+      end if;
+
+      Gtk.Button.Gtk_New_With_Mnemonic (Table_View.Private_Stuff.Insert_Button, "_Insert");
+      Gtk.Box.Add (Table_View.Private_Stuff.Button_Box, Table_View.Private_Stuff.Insert_Button);
+      Gtk.Button.Hide (Table_View.Private_Stuff.Insert_Button);
+      Gtk.Button.Signal.Connect_Clicked (Table_View.Private_Stuff.Insert_Button, On_Button_Insert'Access);
+
+      Gtk.Button.Gtk_New_With_Mnemonic (Table_View.Private_Stuff.Update_Button, "_Update");
+      Gtk.Box.Add (Table_View.Private_Stuff.Button_Box, Table_View.Private_Stuff.Update_Button);
+      Gtk.Button.Hide (Table_View.Private_Stuff.Update_Button);
+      Gtk.Button.Signal.Connect_Clicked (Table_View.Private_Stuff.Update_Button, On_Button_Update'Access);
+
+      Gtk.Button.Gtk_New_With_Mnemonic (Table_View.Private_Stuff.Cancel_Button, "_Cancel");
+      Gtk.Box.Add (Table_View.Private_Stuff.Button_Box, Table_View.Private_Stuff.Cancel_Button);
+      Gtk.Button.Hide (Table_View.Private_Stuff.Cancel_Button);
+      Gtk.Button.Signal.Connect_Clicked (Table_View.Private_Stuff.Cancel_Button, On_Button_Cancel'Access);
+
+      -- Search_Table
+      Gtk.Table.Gtk_New (Table_View.Private_Stuff.Search_Table, Rows => 3, Columns => 3, Homogeneous => False);
+      Gtk.Box.Pack_Start (Vbox, Table_View.Private_Stuff.Search_Table, Expand => False);
+
+      -- Row 0
+      Gtk.Label.Gtk_New (Table_View.Private_Stuff.Find_Label, "Find");
+      Gtk.Label.Set_Justify (Table_View.Private_Stuff.Find_Label, Gtk.Enums.Justify_Right);
+      Gtk.GEntry.Gtk_New (Table_View.Find_Text);
+      Gtk.Button.Gtk_New_With_Mnemonic (Table_View.Private_Stuff.Find_Next, "_Next");
+
+      Gtk.Table.Attach (Table_View.Private_Stuff.Search_Table, Table_View.Private_Stuff.Find_Label, 0, 1, 0, 1);
+      Gtk.Table.Attach (Table_View.Private_Stuff.Search_Table, Table_View.Find_Text, 1, 2, 0, 1);
+      Gtk.Table.Attach (Table_View.Private_Stuff.Search_Table, Table_View.Private_Stuff.Find_Next, 2, 3, 0, 1);
+
+      Gtk.GEntry.Signal.Connect_Changed (Table_View.Find_Text, On_Find_Changed'Access);
+      Gtk.Button.Signal.Connect_Clicked (Table_View.Private_Stuff.Find_Next, On_Find_Next'Access);
+
+      -- Row 1
+      Gtk.Label.Gtk_New (Table_View.Private_Stuff.Index_Label, "Index");
+      Gtk.Label.Set_Justify (Table_View.Private_Stuff.Index_Label, Gtk.Enums.Justify_Right);
+      Gtk.Combo.Gtk_New (Table_View.Private_Stuff.Index_List);
+      declare
+         use Gtk.Widget.Widget_List;
+         Index_Widget_List : Glist;
+         List_Item         : Gtk.List_Item.Gtk_List_Item;
+      begin
+         Gtk.List_Item.Gtk_New (List_Item, Main_Index_Name (Table_View));
+         Append (Index_Widget_List, Gtk.Widget.Gtk_Widget (List_Item));
+         Gtk.List_Item.Gtk_New (List_Item, "ID");
+         Append (Index_Widget_List, Gtk.Widget.Gtk_Widget (List_Item));
+         Gtk.List.Append_Items (Gtk.Combo.Get_List (Table_View.Private_Stuff.Index_List), Index_Widget_List);
+
+         Gtk.Combo.Set_Value_In_List (Table_View.Private_Stuff.Index_List);
+      end;
+      Gtk.Button.Gtk_New_With_Mnemonic (Table_View.Private_Stuff.Index_Last, "_Last");
+
+      Gtk.Table.Attach (Table_View.Private_Stuff.Search_Table, Table_View.Private_Stuff.Index_Label, 0, 1, 1, 2);
+      Gtk.Table.Attach (Table_View.Private_Stuff.Search_Table, Table_View.Private_Stuff.Index_List, 1, 2, 1, 2);
+      Gtk.Table.Attach (Table_View.Private_Stuff.Search_Table, Table_View.Private_Stuff.Index_Last, 2, 3, 1, 2);
+
+      -- Row 2
+      Gtk.Label.Gtk_New (Table_View.Private_Stuff.ID_Label, "ID");
+      Gtk.Label.Set_Justify (Table_View.Private_Stuff.ID_Label, Gtk.Enums.Justify_Right);
+      Gtk.Label.Gtk_New (Table_View.Private_Stuff.ID_Display);
+
+      Gtk.Table.Attach (Table_View.Private_Stuff.Search_Table, Table_View.Private_Stuff.ID_Label, 0, 1, 2, 3);
+      Gtk.Table.Attach (Table_View.Private_Stuff.Search_Table, Table_View.Private_Stuff.ID_Display, 1, 2, 2, 3);
+
+      --  Links_Table
+      Gtk.Table.Gtk_New (Table_View.Private_Stuff.Links_Table, Rows => 2, Columns => 3, Homogeneous => False);
+      Gtk.Box.Pack_Start (Vbox, Table_View.Private_Stuff.Links_Table, Expand => False);
+
+      --  Row 0
+      Gtk.Label.Gtk_New (Table_View.Private_Stuff.Links_Label, "Links");
+      Gtk.Table.Attach (Table_View.Private_Stuff.Links_Table, Table_View.Private_Stuff.Links_Label, 0, 1, 0, 1);
+
+      Gtk.Check_Button.Gtk_New (Table_View.Links_Buttons (Title), "Title");
+      Gtk.Table.Attach
+        (Table_View.Private_Stuff.Links_Table, Table_View.Links_Buttons (Title), 2, 3, 0, 1);
+
+      --  Row 1
+      Gtk.Check_Button.Gtk_New (Table_View.Links_Buttons (Author), "Author");
+      Gtk.Table.Attach
+        (Table_View.Private_Stuff.Links_Table, Table_View.Links_Buttons (Author), 0, 1, 1, 2);
+
+      Gtk.Check_Button.Gtk_New (Table_View.Links_Buttons (Collection), "Collection");
+      Gtk.Table.Attach
+        (Table_View.Private_Stuff.Links_Table, Table_View.Links_Buttons (Collection), 1, 2, 1, 2);
+
+      Gtk.Check_Button.Gtk_New (Table_View.Links_Buttons (Series), "Series");
+      Gtk.Table.Attach
+        (Table_View.Private_Stuff.Links_Table, Table_View.Links_Buttons (Series), 2, 3, 1, 2);
+
+      Gtk.Table.Hide (Table_View.Private_Stuff.Links_Table);
+
+      --  Data_Table set by child type.
+      Gtk.Table.Gtk_New (Table_View.Data_Table, Rows => 1, Columns => 1, Homogeneous => False);
+      Gtk.Box.Pack_Start (Vbox, Table_View.Data_Table, Expand => False);
+      --  contents set by child type.
+
+      -- List_Select radio buttons
+      Gtk.Box.Gtk_New_Hbox (Table_View.Private_Stuff.List_Select_Hbox);
+
+      for I in Table_Name_Type loop
+         if I = Table_Name_Type'First then
+            --  Start the radio button group
+            Gtk.Radio_Button.Gtk_New (Table_View.List_Select (I), Label => Image (I));
+         else
+            --  Add to the group
+            Gtk.Radio_Button.Gtk_New
+              (Table_View.List_Select (I), Table_View.List_Select (Table_Name_Type'First), Label => Image (I));
+         end if;
+
+         Gtk.Button.Signal.Connect_Clicked (Table_View.List_Select (I), On_List_Select_Clicked'Access);
+         Gtk.Box.Pack_Start (Table_View.Private_Stuff.List_Select_Hbox, Table_View.List_Select (I), Expand => False);
+      end loop;
+
+      Gtk.Box.Pack_Start (Vbox, Table_View.Private_Stuff.List_Select_Hbox, Expand => False);
+
+      --  List editing
+      Gtk.Box.Gtk_New_Hbox (Table_View.Private_Stuff.List_Edit_Hbox);
+      Gtk.Button.Gtk_New_With_Mnemonic (Table_View.Private_Stuff.List_Edit_Add_Button, "Add Lin_k");
+      Gtk.Button.Signal.Connect_Clicked
+        (Table_View.Private_Stuff.List_Edit_Add_Button, On_List_Edit_Add_Clicked'Access);
+
+      Gtk.GEntry.Gtk_New (Table_View.Private_Stuff.List_Edit_Add_Entry);
+
+      Gtk.Button.Gtk_New (Table_View.Private_Stuff.List_Edit_Delete_Button, "Delete Link");
+      Gtk.Button.Signal.Connect_Clicked
+        (Table_View.Private_Stuff.List_Edit_Delete_Button, On_List_Edit_Delete_Clicked'Access);
+
+      Gtk.Box.Pack_Start
+        (Table_View.Private_Stuff.List_Edit_Hbox, Table_View.Private_Stuff.List_Edit_Add_Button, Expand => False);
+      Gtk.Box.Pack_Start
+        (Table_View.Private_Stuff.List_Edit_Hbox, Table_View.Private_Stuff.List_Edit_Add_Entry, Expand => False);
+      Gtk.Box.Pack_Start
+        (Table_View.Private_Stuff.List_Edit_Hbox, Table_View.Private_Stuff.List_Edit_Delete_Button, Expand => False);
+      Gtk.Box.Pack_Start (Vbox, Table_View.Private_Stuff.List_Edit_Hbox, Expand => False);
+
+      --  List display.
+      for I in Table_Name_Type loop
+         Gtk.Scrolled_Window.Gtk_New (Table_View.Private_Stuff.List_Display_Scroll (I));
+         Gtk.Scrolled_Window.Set_Policy
+           (Table_View.Private_Stuff.List_Display_Scroll (I),
+            H_Scrollbar_Policy => Gtk.Enums.Policy_Automatic,
+            V_Scrollbar_Policy => Gtk.Enums.Policy_Automatic);
+
+         Gtk.Box.Pack_Start (Vbox, Table_View.Private_Stuff.List_Display_Scroll (I));
+
+         case I is
+         when Author =>
+            Gtk.Clist.Gtk_New
+              (Table_View.List_Display (I),
+               Columns => 4,
+               Titles =>
+                 (1 => Interfaces.C.Strings.New_String ("ID"),
+                  2 => Interfaces.C.Strings.New_String ("First"),
+                  3 => Interfaces.C.Strings.New_String ("M"),
+                  4 => Interfaces.C.Strings.New_String ("Last")));
+
+         when Collection =>
+            Gtk.Clist.Gtk_New
+              (Table_View.List_Display (I),
+               Columns => 2,
+               Titles =>
+                 (1 => Interfaces.C.Strings.New_String ("ID"),
+                  2 => Interfaces.C.Strings.New_String ("Title")));
+
+         when Title =>
+            Gtk.Clist.Gtk_New
+              (Table_View.List_Display (I),
+               Columns => 3,
+               Titles =>
+                 (1 => Interfaces.C.Strings.New_String ("ID"),
+                  2 => Interfaces.C.Strings.New_String ("Title"),
+                  3 => Interfaces.C.Strings.New_String ("Year")));
+
+         when Series =>
+            Gtk.Clist.Gtk_New
+              (Table_View.List_Display (I),
+               Columns => 2,
+               Titles =>
+                 (1 => Interfaces.C.Strings.New_String ("ID"),
+                  2 => Interfaces.C.Strings.New_String ("Title")));
+
+         end case;
+
+         Gtk.Clist.Set_Sort_Column (Table_View.List_Display (I), 0);
+         Gtk.Clist.Set_Sort_Type (Table_View.List_Display (I), Gtk.Clist.Ascending);
+         Gtk.Clist.Signal.Connect_Click_Column (Table_View.List_Display (I), On_List_Column'Access);
+
+         Gtk.Scrolled_Window.Add (Table_View.Private_Stuff.List_Display_Scroll (I), Table_View.List_Display (I));
+      end loop;
+
+      --  Show everything except the list displays, let To_Main etc
+      --  hide stuff.
+      Show_All (Table_View);
+
+      for I in Table_Name_Type loop
+         Gtk.Scrolled_Window.Hide (Table_View.Private_Stuff.List_Display_Scroll (I));
+      end loop;
+
+      To_Main (Table_View);
+
+   end Create_GUI;
+
+   procedure Set_Visibility (Table_View : access Gtk_Table_View_Record'class)
+   is begin
+      for I in Table_Name_Type loop
+         Gtk.Scrolled_Window.Hide (Table_View.Private_Stuff.List_Display_Scroll (I));
+      end loop;
+
+      To_Main (Table_View);
+
+   end Set_Visibility;
+
+   procedure Finalize_DB (Table_View : access Gtk_Table_View_Record'Class)
+   is
+      use type Books.Database.Data_Tables.Author.Table_Access;
+   begin
+      if Table_View.Author_Table /= null then
+         Books.Database.Free (Books.Database.Table_Access (Table_View.Author_Table));
+         Books.Database.Free (Books.Database.Table_Access (Table_View.Title_Table));
+         Books.Database.Free (Books.Database.Table_Access (Table_View.Collection_Table));
+         Books.Database.Free (Books.Database.Table_Access (Table_View.Series_Table));
+         Books.Database.Free (Books.Database.Table_Access (Table_View.AuthorTitle_Table));
+         Books.Database.Free (Books.Database.Table_Access (Table_View.CollectionTitle_Table));
+         Books.Database.Free (Books.Database.Table_Access (Table_View.SeriesTitle_Table));
+      end if;
+   end Finalize_DB;
+
+   function ID (Table_View : access Gtk_Table_View_Record'Class) return Books.Database.ID_Type
+   is begin
+      return Books.Database.Data_Tables.ID (Table_View.Primary_Table.all);
+   end ID;
+
+   procedure Initialize_DB (Table_View : access Gtk_Table_View_Record'Class; DB : in Books.Database.Database_Access)
+   is
+      use type Books.Database.Data_Tables.Author.Table_Access;
+   begin
+      if Table_View.Author_Table = null then
+         Table_View.Author_Table          := new Books.Database.Data_Tables.Author.Table (DB);
+         Table_View.Title_Table           := new Books.Database.Data_Tables.Title.Table (DB);
+         Table_View.Collection_Table      := new Books.Database.Data_Tables.Collection.Table (DB);
+         Table_View.Series_Table          := new Books.Database.Data_Tables.Series.Table (DB);
+         Table_View.AuthorTitle_Table     := new Books.Database.Link_Tables.AuthorTitle.Table (DB);
+         Table_View.CollectionTitle_Table := new Books.Database.Link_Tables.CollectionTitle.Table (DB);
+         Table_View.SeriesTitle_Table     := new Books.Database.Link_Tables.SeriesTitle.Table (DB);
+      end if;
+
+      Books.Database.Data_Tables.Author.Initialize (Table_View.Author_Table.all);
+      Books.Database.Data_Tables.Title.Initialize (Table_View.Title_Table.all);
+      Books.Database.Data_Tables.Collection.Initialize (Table_View.Collection_Table.all);
+      Books.Database.Data_Tables.Series.Initialize (Table_View.Series_Table.all);
+      Books.Database.Link_Tables.AuthorTitle.Initialize (Table_View.AuthorTitle_Table.all);
+      Books.Database.Link_Tables.CollectionTitle.Initialize (Table_View.CollectionTitle_Table.all);
+      Books.Database.Link_Tables.SeriesTitle.Initialize (Table_View.SeriesTitle_Table.all);
+
+   end Initialize_DB;
+
+   procedure On_Button_Add (Button : access Gtk.Button.Gtk_Button_Record'Class)
+   is
+      Table_View : constant Gtk_Table_View := Gtk_Table_View (Gtk.Button.Get_Toplevel (Button));
+   begin
+      To_Add (Table_View);
+      Default_Add (Table_View);
+   end On_Button_Add;
+
+   procedure On_Button_Cancel (Button : access Gtk.Button.Gtk_Button_Record'Class)
+   is
+      Table_View : constant Gtk_Table_View := Gtk_Table_View (Gtk.Button.Get_Toplevel (Button));
+   begin
+      To_Main (Table_View);
+   end On_Button_Cancel;
+
+   procedure On_Button_Delete (Button : access Gtk.Button.Gtk_Button_Record'Class)
+   is
+      Table_View : constant Gtk_Table_View := Gtk_Table_View (Gtk.Button.Get_Toplevel (Button));
+   begin
+      Books.Database.Data_Tables.Delete (Table_View.Primary_Table.all);
+
+      Update_Display (Table_View);
+   end On_Button_Delete;
+
+   procedure On_Button_Edit (Button : access Gtk.Button.Gtk_Button_Record'Class)
+   is
+      Table_View : constant Gtk_Table_View := Gtk_Table_View (Gtk.Button.Get_Toplevel (Button));
+   begin
+      To_Edit (Table_View);
+   end On_Button_Edit;
+
+   procedure On_Button_Insert (Button : access Gtk.Button.Gtk_Button_Record'Class)
+   is
+      Table_View : constant Gtk_Table_View := Gtk_Table_View (Gtk.Button.Get_Toplevel (Button));
+   begin
+      --  Add main data
+      Insert_Database (Table_View);
+
+      -- Add links
+      for I in Table_Name_Type loop
+         if Gtk.Check_Button.Get_Active (Table_View.Links_Buttons (I)) then
+            Add_Link (Table_View, ID (Table_View.Sibling_Views (I)), I);
+         end if;
+      end loop;
+
+      --  Back to Main view.
+      Update_Display (Table_View);
+      To_Main (Table_View);
+   end On_Button_Insert;
+
+   procedure On_Button_Test (Button : access Gtk.Button.Gtk_Button_Record'Class)
+   is
+      Table_View : constant Gtk_Table_View := Gtk_Table_View (Gtk.Button.Get_Toplevel (Button));
+   begin
+      if Test_Hook /= null then
+         Test_Hook.all (Table_View);
+      end if;
+   exception
+   when E : others =>
+      Ada.Text_IO.Put_Line
+        (Ada.Text_IO.Standard_Error,
+         "Test_Hook : " &
+           Ada.Exceptions.Exception_Name (E) & " " &
+           Ada.Exceptions.Exception_Message (E));
+   end On_Button_Test;
+
+   procedure On_Button_Update (Button : access Gtk.Button.Gtk_Button_Record'Class)
+   is
+      Table_View : constant Gtk_Table_View := Gtk_Table_View (Gtk.Button.Get_Toplevel (Button));
+   begin
+      Update_Database (Table_View);
+      To_Main (Table_View);
+   end On_Button_Update;
+
+   procedure On_Find_Changed (GEntry : access Gtk.GEntry.Gtk_Entry_Record'Class)
+   is
+      Table_View : constant Gtk_Table_View := Gtk_Table_View (Gtk.GEntry.Get_Toplevel (GEntry));
+   begin
+      --  FIXME: should check Index.
+      Books.Database.Data_Tables.Find (Table_View.Primary_Table.all, Gtk.GEntry.Get_Text (GEntry));
+      Update_Display (Table_View);
+   end On_Find_Changed;
+
+   procedure On_Find_Next (Button : access Gtk.Button.Gtk_Button_Record'Class)
+   is
+      Table_View : constant Gtk_Table_View := Gtk_Table_View (Gtk.Button.Get_Toplevel (Button));
+   begin
+      Books.Database.Next (Table_View.Primary_Table.all);
+      Update_Display (Table_View);
+   exception
+   when Books.Database.No_Data =>
+      null;
+   end On_Find_Next;
+
+   procedure On_List_Edit_Add_Clicked (Button : access Gtk.Button.Gtk_Button_Record'Class)
+   is
+      Table_View : constant Gtk_Table_View := Gtk_Table_View (Gtk.Button.Get_Toplevel (Button));
+
+      Text           : constant String                :=
+        Gtk.GEntry.Get_Text (Table_View.Private_Stuff.List_Edit_Add_Entry);
+      ID             : Books.Database.ID_Type;
+   begin
+      ID := Books.Database.Value (Text); --  Do this here to catch the exception
+
+      Add_Link (Table_View, ID, Table_View.Current_List);
+
+   exception
+   when others =>
+      --  Not a valid ID number
+      Gdk.Main.Beep;
+   end On_List_Edit_Add_Clicked;
+
+   procedure On_List_Edit_Delete_Clicked (Button : access Gtk.Button.Gtk_Button_Record'Class)
+   is
+      use Books.Database;
+      use type Glib.Guint;
+      Table_View : constant Gtk_Table_View := Gtk_Table_View (Gtk.Button.Get_Toplevel (Button));
+
+      List_Display : Gtk.Clist.Gtk_Clist renames Table_View.List_Display (Table_View.Current_List);
+      Selected     : constant Gtk.Enums.Gint_List.Glist :=  Gtk.Clist.Get_Selection (List_Display);
+
+   begin
+      --  Clist selection mode is Selection_Single, so we only have to
+      --  deal with deleting one link.
+
+      if Gtk.Enums.Gint_List.Length (Selected) = 0 then
+         Gdk.Main.Beep;
+         return;
+      end if;
+
+      declare
+         Row       : constant Glib.Gint := Gtk.Enums.Gint_List.Get_Data (Gtk.Enums.Gint_List.First (Selected));
+         ID_String : constant String    := Gtk.Clist.Get_Text (List_Display, Row, Column => 0);
+         ID        : constant ID_Type   := Value (ID_String);
+      begin
+         Delete_Link (Table_View, ID);
+      end;
+   end On_List_Edit_Delete_Clicked;
+
+   procedure On_List_Column (Clist : access Gtk.Clist.Gtk_Clist_Record'Class; Column : in Glib.Gint)
+   is begin
+      Gtk.Clist.Set_Sort_Column (Clist, Column);
+      Gtk.Clist.Sort (Clist);
+   end On_List_Column;
+
+   procedure On_List_Select_Clicked (Button : access Gtk.Button.Gtk_Button_Record'Class)
+   is
+      use type Gtk.Radio_Button.Gtk_Radio_Button;
+      Radio_Button : constant Gtk.Radio_Button.Gtk_Radio_Button := Gtk.Radio_Button.Gtk_Radio_Button (Button);
+      Table_View   : constant Gtk_Table_View                    := Gtk_Table_View (Gtk.Button.Get_Toplevel (Button));
+   begin
+      Gtk.Scrolled_Window.Hide (Table_View.Private_Stuff.List_Display_Scroll (Table_View.Current_List));
+
+      for I in Table_View.List_Select'Range loop
+         if Table_View.List_Select (I) = Radio_Button then
+            Table_View.Current_List := I;
+            Gtk.Scrolled_Window.Show (Table_View.Private_Stuff.List_Display_Scroll (I));
+         end if;
+      end loop;
+      Update_Display_Child (Table_View);
+   end On_List_Select_Clicked;
+
+   function On_Window_Configure_Event
+     (Widget : access Gtk.Widget.Gtk_Widget_Record'Class;
+      Event  : in     Gdk.Event.Gdk_Event_Configure)
+     return Boolean
+   is
+      pragma Unreferenced (Event);
+
+      Table_View : constant Gtk_Table_View := Gtk_Table_View (Widget);
+      Title      : constant String         := Get_Title (Table_View);
+   begin
+      Gtk.Window.Config.Save_Geometry (Table_View, Table_View.Private_Stuff.Config.all, Title);
+      return False; -- propagate
+   end On_Window_Configure_Event;
+
+   procedure On_Window_Destroy (Object : access Gtk.Object.Gtk_Object_Record'Class)
+   is
+      Table_View : constant Gtk_Table_View := Gtk_Table_View (Object);
+   begin
+      Finalize_DB (Table_View);
+      Free (Table_View.Private_Stuff);
+   end On_Window_Destroy;
+
+   procedure Set_Sibling_Views
+     (Table_View    : access Gtk_Table_View_Record'Class;
+      Sibling_Views : in     Table_Array_Table_View_Type)
+   is begin
+      Table_View.Sibling_Views := Sibling_Views;
+   end Set_Sibling_Views;
+
+   procedure To_Add (Table_View : in Gtk_Table_View)
+   is begin
+      Gtk.Button.Hide (Table_View.Private_Stuff.Add_Button);
+      Gtk.Button.Hide (Table_View.Private_Stuff.Edit_Button);
+      Gtk.Button.Hide (Table_View.Private_Stuff.Delete_Button);
+      if Table_View.Private_Stuff.Enable_Test_Button then
+         Gtk.Button.Hide (Table_View.Private_Stuff.Test_Button);
+      end if;
+      Gtk.Table.Hide (Table_View.Private_Stuff.Search_Table);
+
+      Gtk.Button.Show (Table_View.Private_Stuff.Insert_Button);
+      Gtk.Button.Show (Table_View.Private_Stuff.Cancel_Button);
+      Gtk.Table.Show (Table_View.Private_Stuff.Links_Table);
+
+      Gtk.Box.Hide (Table_View.Private_Stuff.List_Select_Hbox);
+      Gtk.Box.Hide (Table_View.Private_Stuff.List_Edit_Hbox);
+      Gtk.Scrolled_Window.Hide (Table_View.Private_Stuff.List_Display_Scroll (Table_View.Current_List));
+   end To_Add;
+
+   procedure To_Edit (Table_View : in Gtk_Table_View)
+   is begin
+      Gtk.Button.Hide (Table_View.Private_Stuff.Add_Button);
+      Gtk.Button.Hide (Table_View.Private_Stuff.Edit_Button);
+      Gtk.Button.Hide (Table_View.Private_Stuff.Delete_Button);
+      if Table_View.Private_Stuff.Enable_Test_Button then
+         Gtk.Button.Hide (Table_View.Private_Stuff.Test_Button);
+      end if;
+      Gtk.Table.Hide (Table_View.Private_Stuff.Search_Table);
+
+      Gtk.Button.Show (Table_View.Private_Stuff.Update_Button);
+      Gtk.Button.Show (Table_View.Private_Stuff.Cancel_Button);
+
+      Gtk.Box.Hide (Table_View.Private_Stuff.List_Select_Hbox);
+      Gtk.Box.Hide (Table_View.Private_Stuff.List_Edit_Hbox);
+      Gtk.Scrolled_Window.Hide (Table_View.Private_Stuff.List_Display_Scroll (Table_View.Current_List));
+
+   end To_Edit;
+
+   procedure To_Main (Table_View : access Gtk_Table_View_Record'class)
+   is begin
+      Gtk.Button.Show (Table_View.Private_Stuff.Add_Button);
+      Gtk.Button.Show (Table_View.Private_Stuff.Edit_Button);
+      Gtk.Button.Show (Table_View.Private_Stuff.Delete_Button);
+      if Table_View.Private_Stuff.Enable_Test_Button then
+         Gtk.Button.Show (Table_View.Private_Stuff.Test_Button);
+      end if;
+      Gtk.Table.Show (Table_View.Private_Stuff.Search_Table);
+
+      Gtk.Button.Hide (Table_View.Private_Stuff.Update_Button);
+      Gtk.Button.Hide (Table_View.Private_Stuff.Insert_Button);
+      Gtk.Button.Hide (Table_View.Private_Stuff.Cancel_Button);
+      Gtk.Table.Hide (Table_View.Private_Stuff.Links_Table);
+
+      Gtk.Box.Show (Table_View.Private_Stuff.List_Select_Hbox);
+      Gtk.Box.Show (Table_View.Private_Stuff.List_Edit_Hbox);
+      Gtk.Scrolled_Window.Show (Table_View.Private_Stuff.List_Display_Scroll (Table_View.Current_List));
+
+      Gtk.GEntry.Grab_Focus (Table_View.Find_Text);
+   end To_Main;
+
+   procedure Update_Display (Table_View : access Gtk_Table_View_Record'class)
+   is
+      ID : constant Books.Database.ID_Type := Books.Database.Data_Tables.ID (Table_View.Primary_Table.all);
+   begin
+      Gtk.Label.Set_Text (Table_View.Private_Stuff.ID_Display, Books.Database.Image (ID));
+      Update_Display_Child (Table_View);
+   end Update_Display;
+
+end Books.Table_Views;

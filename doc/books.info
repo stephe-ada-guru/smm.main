@@ -1,0 +1,391 @@
+This is books.info, produced by makeinfo version 4.2 from books.texinfo.
+
+
+File: books.info,  Node: Top,  Next: Development Environment,  Prev: (dir),  Up: (dir)
+
+Books
+*****
+
+   Books is a user interface to a database holding information on books,
+stories and novels; their titles, authors, what collection or series
+they belong to, how I rate them, etc.
+
+   This document is a design and user guide for the books program.
+
+   See Books/INSTALL for instructions on building the program, from
+either the normal source distribution or CVS checkout.
+
+* Menu:
+
+* Development Environment::
+* Program design::
+* Database schema::
+
+
+File: books.info,  Node: Development Environment,  Next: Program design,  Prev: Top,  Up: Top
+
+Development Environment
+***********************
+
+   I use Gnu autoconf and automake, following the Gnu build style as
+descibed in http://autotoolset.sourceforge.net/tutorial.html#SEC46.
+This is partly to try them out for myself, and partly to see how well
+they work with an Ada application. The results are quite satisfying.
+
+Tool   Version   Source
+Windows98        
+Cygwin 1.3.10,   `http://sources.redhat.com/cygwin/'
+       April     
+       2002      
+GNAT   5.01a     `http://www.gnat.com'
+GtkAda 2.2.0     `http://libre.act-europe.fr/GtkAda/'
+GNADE  1.5.0     `http://gnade.sourceforge.net/'
+GRACE  0.51      `http://savannah.nongnu.org/projects/grace/'
+MySQL  3.23.49   `http://www.mysql.com/'
+MySQL  3.51      `http://www.mysql.com/'
+ODBC             
+
+* Menu:
+
+* Development Environment Installation::
+* Install application::
+
+
+File: books.info,  Node: Development Environment Installation,  Next: Install application,  Prev: Development Environment,  Up: Development Environment
+
+Development Environment Installation
+====================================
+
+   Windows 98 comes on the computer :).
+
+* Menu:
+
+* Install Cygwin::
+* Install GNAT::
+* Install GtkAda::
+* Install GNADE::
+* Install Grace::
+
+
+File: books.info,  Node: Install Cygwin,  Next: Install GNAT,  Prev: Development Environment Installation,  Up: Development Environment Installation
+
+Install Cygwin
+--------------
+
+   Cygwin has a nice GUI installer/package manager.
+
+  1. Run `setup.exe'. This evenutally brings up a list of packages. I
+     use:
+        * Base
+
+        * Devel/autoconf
+
+        * Devel/automake
+
+        * Devel/cvs
+
+        * Devel/make
+
+        * Doc/texinfo
+
+        * Editors/ed
+
+        * Shells/sh-utils
+     Note that other packages will be installed; the Cygwin installer
+     manages dependencies automatically. Please let me know if you
+     discover I've left something off this list.
+
+  2. Put `cygwin/bin' in your path.
+
+
+
+File: books.info,  Node: Install GNAT,  Next: Install GtkAda,  Prev: Install Cygwin,  Up: Development Environment Installation
+
+Install GNAT
+------------
+
+  1. If you don't have access to GNAT 5.01a, 3.15p will do; you'll have
+     to comment out a few pragmas.
+
+     Run `gnat-5.01a-nt.exe'
+
+  2. Run `gnatwin-5.01a.exe'
+
+  3. Put `gnat/bin' in your path before `cygwin/bin' (use gnat gcc, not
+     Cygwin gcc).
+
+  4. If using GNAT 3.15p, delete or rename `gnat/bin/make.exe';
+     Cygwin's `make' is better for Windows.
+
+
+
+File: books.info,  Node: Install GtkAda,  Next: Install GNADE,  Prev: Install GNAT,  Up: Development Environment Installation
+
+Install GtkAda
+--------------
+
+  1. Run `GtkAda-2.2.0.exe', extract to `c:/Gnu/GtkAda-2.2.0'.
+
+  2. Put `c:/Gnu/GtkAda-2.2.0/bin' in your path, before `gnat', for the
+     dlls.
+
+
+
+File: books.info,  Node: Install GNADE,  Next: Install Grace,  Prev: Install GtkAda,  Up: Development Environment Installation
+
+Install GNADE
+-------------
+
+  1. If GNADE 1.5.0 isn't released yet, get the latest GNADE from CVS.
+     Otherwise, unzip source.
+
+  2. cd gnade/win32
+
+  3. make
+
+  4. Copy `gnade/bin/gnade-config.in' to `gnade/bin/gnade-config'; this
+     allows the Books configure process to find GNADE.
+
+  5. Add `gnade/bin' to your path.
+
+
+
+File: books.info,  Node: Install Grace,  Prev: Install GNADE,  Up: Development Environment Installation
+
+Install Grace
+-------------
+
+  1. Unzip source.
+
+  2. Define an environment variable:
+     `export GRACE=c:/Gnu/grace'
+
+
+File: books.info,  Node: Install application,  Prev: Development Environment Installation,  Up: Development Environment
+
+Install application
+===================
+
+   To run the database, we need to install MySQL and MyODBC, then create
+the ODBC data source, the database user account, and the database. We
+also need to compile the Books application.
+
+* Menu:
+
+* Install MySQL::
+* Install MyODBC::
+* Create database::
+* Compile Books::
+
+
+File: books.info,  Node: Install MySQL,  Next: Install MyODBC,  Prev: Install application,  Up: Install application
+
+Install MySQL
+-------------
+
+  1. Unzip `mysql-4.0.15-win.zip' using WinZip or equivalent, to a temp
+     directory.
+
+  2. Run `Setup.exe', install to `C:/Apps/MySQL'
+
+  3. Create file `c:/WINNT/my.ini', with (edit paths to match your
+     setup):
+
+     [mysqld]
+     basedir=C:/Apps/MySQL/
+     datadir=C:/Stephe/MySQL_Data/
+
+
+
+File: books.info,  Node: Install MyODBC,  Next: Create database,  Prev: Install MySQL,  Up: Install application
+
+Install MyODBC
+--------------
+
+   Install the MyODBC driver and configure the ODBC data source.
+  1. Run `MyODBC-3.51.06.exe'
+
+  2. In Windows Control Panel, select Administrative Tools | Data Source
+     (ODBC)
+
+  3. In the User DSN tab, click Add.
+
+  4. Select MySQL ODBC 3.51 Driver, click Finish.
+
+  5. Fill in the form:
+
+     Data Source Name : Books
+
+     Host/Server Name : localhost
+
+     Database Name : books
+
+     User : <you>
+
+     Password : <blank>
+
+  6. Click Ok.
+
+  7. To run the Books unit test, repeat for a second data source named
+     'test', with database name 'test'.
+
+  8. Click Ok.
+
+
+
+File: books.info,  Node: Create database,  Next: Compile Books,  Prev: Install MyODBC,  Up: Install application
+
+Create database
+---------------
+
+  1. Run `c:/Apps/MySQL/bin/winmysqladmin.exe', to start the database
+     server. Note that this application minimizes to the system tray
+     immediately. To stop the server, right click on the system tray
+     icon.
+
+     First create a user, then the database schema.
+
+  2. In a bash shell, _not_ under Emacs:
+
+     cd Books/src
+     c:/Apps/MySQL/bin/mysql.exe -u root mysql
+     source create_user_mysql.sql;
+     quit;
+     c:/Apps/MySQL/bin/mysql.exe -u stephe
+     source create_database_books_mysql.sql;
+     source create_schema_mysql.sql;
+     quit;
+
+  3. To run the books unit tests, create the 'test' database:
+
+     cd Books/src
+     c:/Apps/MySQL/bin/mysql.exe -u stephe
+     source create_database_test_mysql.sql;
+     source create_schema_mysql.sql;
+     quit;
+
+
+
+File: books.info,  Node: Compile Books,  Prev: Create database,  Up: Install application
+
+Compile Books
+-------------
+
+   See `Books/INSTALL'
+
+
+File: books.info,  Node: Program design,  Next: Database schema,  Prev: Development Environment,  Up: Top
+
+Program design
+**************
+
+   The user interface is written in Ada, using the GtkAda toolkit. I
+don't use the GLADE GUI builder, partly because it doesn't write code
+well under Windows 98 (my first build machine), but also because I don't
+like the structure of the code it produces. I did use it to get ideas
+about how to build the GUI.
+
+   The database interface is via ODBC 3.5, using the GNADE toolkit.
+Since ODBC does not support defining the database schema, it must be
+built by a database-specific tool. I use MySQL, so a MySQL script to
+create the database schema is provided in src/create_schema_mysql.sql.
+In addition, the user must have an account on the database server. An
+example MySQL script to create an account is provided in
+src/create_user_mysql.sql.  This script also creates the user account
+needed by the GNADE odbc demo program.
+
+
+File: books.info,  Node: Database schema,  Prev: Program design,  Up: Top
+
+Database schema
+***************
+
+   The database holds four tables containing data, and three tables
+holding links between the other tables. Each table has appropriate
+indexes.  Indexes on data tables have unique values.
+
+   The data tables, with their fields and indexes, are:
+
+`Author'
+     Holds author names and IDs.
+
+     Fields:
+     ID           integer      32 bit
+     First        Text         20
+     Middle       Text         20
+     Last         Text         20
+
+     Indexes:
+     ID           ID
+     Last Name    +Last;+First;+Middle
+     Name         +First;+Middle;+Last
+
+`Collection'
+     Holds collection names, and a link to the collection author. A
+     collection is a single volume containing stories or novels. The
+     'author' may have written all the stories, or just collected them
+     in an anthology.
+
+     Fields:
+     ID           integer      32 bit
+     Name         Text         50
+     Editor       Integer      32 bit
+     Year         Integer      16 bit
+
+     Indexes:
+     ID           ID
+     Name         Name
+
+`Series'
+     Holds series names, and a link to the series author. A series is a
+     set of related stories, normally all written by the same author.
+
+     Fields:
+     ID           integer      32 bit
+     Title        Text         50
+     Author       Integer      32 bit
+
+     Indexes:
+     ID           ID
+     Title        Title
+
+`Title'
+     Holds information on a single title (one story or novel).
+
+     Fields:
+     ID           integer      32 bit
+     Title        Text         50
+     Year         Integer      16 bit
+     Comment      Text         50
+     Rating       Integer      8 bit
+
+     Indexes:
+     ID           ID
+     Title Year   +Title;+Year
+
+   The link tables each hold two ids from two data tables, with an
+index on each. Duplicates are allowed in these indexes. The link tables
+are AuthorTitle, CollectionTitle, SeriesTitle. These tables list the
+authors of the title, the collections the title appears in, and the
+series the title is part of.
+
+
+
+Tag Table:
+Node: Top74
+Node: Development Environment627
+Node: Development Environment Installation1561
+Node: Install Cygwin1933
+Node: Install GNAT2656
+Node: Install GtkAda3182
+Node: Install GNADE3491
+Node: Install Grace3949
+Node: Install application4176
+Node: Install MySQL4613
+Node: Install MyODBC5060
+Node: Create database5784
+Node: Compile Books6713
+Node: Program design6858
+Node: Database schema7823
+
+End Tag Table
