@@ -2,7 +2,7 @@
 --
 --  download files to a music player
 --
---  Copyright (C) 2008 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2009 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -175,7 +175,7 @@ is
       Source_Root : constant String := SAL.Config_Files.Read (Db, Root_Key);
 
       Download_Time : constant String := SAL.Time_Conversions.Time_Type'Image
-        (SAL.Time_Conversions.To_TAI_Time (Ada.Real_Time.Clock));
+        (SAL.Time_Conversions.To_Time (Ada.Real_Time.Clock));
    begin
       Randomize (Songs);
       I := First (Songs);
