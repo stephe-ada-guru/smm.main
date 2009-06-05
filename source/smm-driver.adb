@@ -2,7 +2,7 @@
 --
 --  main procedure for SMM application
 --
---  Copyright (C) 2008 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008, 2009 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -38,8 +38,8 @@ is
       Put_Line ("    downloads default amount of music to target_dir");
       Put_Line ("    music is drawn from least-recently downloaded songs in category");
       New_Line;
-      Put_Line ("  import <root_dir>");
-      Put_Line ("    scan <root_dir> for new music");
+      Put_Line ("  import <dir>");
+      Put_Line ("    scan <dir> for new music; dir must be relative to database root dir");
       New_Line;
       Put_Line ("  set_category <category> <file>");
       Put_Line ("    <file> can have '*' wildcards");
