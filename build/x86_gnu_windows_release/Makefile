@@ -2,6 +2,9 @@ all : dirs books.exe
 
 one : books.run
 
+two : RUN_ARGS := stephe csv/jet
+two : import_books-main.run
+
 include ../common.make
 
 GNAT_PROJECT := books.gpr

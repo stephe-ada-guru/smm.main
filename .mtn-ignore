@@ -1,4 +1,5 @@
 .*\.exe$
+^build/x86_gnu_windows_release/csv$
 ^build/x86_gnu_windows_release/objects$
 books\.config$
 doc/books.info
