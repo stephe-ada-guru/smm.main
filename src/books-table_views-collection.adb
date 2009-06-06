@@ -2,11 +2,11 @@
 --
 --  See spec.
 --
---  Copyright (C) 2002 - 2004 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002 - 2004, 2009 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
---  published by the Free Software Foundation; either version 2, or (at
+--  published by the Free Software Foundation; either version 3, or (at
 --  your option) any later version. This program is distributed in the
 --  hope that it will be useful, but WITHOUT ANY WARRANTY; without even
 --  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
@@ -71,8 +71,8 @@ package body Books.Table_Views.Collection is
    is begin
       Books.Table_Views.Create_GUI (Collection_View, Config);
 
-      -- Data_Table
-      -- Row 0
+      --  Data_Table
+      --  Row 0
       Gtk.Label.Gtk_New (Collection_View.Name_Label, "Name");
       Gtk.Label.Set_Justify (Collection_View.Name_Label, Gtk.Enums.Justify_Right);
       Gtk.GEntry.Gtk_New (Collection_View.Name_Text);
@@ -80,7 +80,7 @@ package body Books.Table_Views.Collection is
       Gtk.Table.Attach (Collection_View.Data_Table, Collection_View.Name_Label, 0, 1, 0, 1);
       Gtk.Table.Attach (Collection_View.Data_Table, Collection_View.Name_Text, 1, 3, 0, 1);
 
-      -- Row 2
+      --  Row 2
       Gtk.Label.Gtk_New (Collection_View.Editor_Label, "Editor");
       Gtk.Label.Set_Justify (Collection_View.Editor_Label, Gtk.Enums.Justify_Right);
       Gtk.GEntry.Gtk_New (Collection_View.Editor_Text);
@@ -88,7 +88,7 @@ package body Books.Table_Views.Collection is
       Gtk.Table.Attach (Collection_View.Data_Table, Collection_View.Editor_Label, 0, 1, 3, 4);
       Gtk.Table.Attach (Collection_View.Data_Table, Collection_View.Editor_Text, 1, 3, 3, 4);
 
-      -- Row 3
+      --  Row 3
       Gtk.Label.Gtk_New (Collection_View.Year_Label, "Year");
       Gtk.Label.Set_Justify (Collection_View.Year_Label, Gtk.Enums.Justify_Right);
       Gtk.GEntry.Gtk_New (Collection_View.Year_Text);

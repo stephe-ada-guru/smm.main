@@ -2,11 +2,11 @@
 --
 --  See spec.
 --
---  Copyright (C) 2002 - 2004 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002 - 2004, 2009 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
---  published by the Free Software Foundation; either version 2, or (at
+--  published by the Free Software Foundation; either version 3, or (at
 --  your option) any later version. This program is distributed in the
 --  hope that it will be useful, but WITHOUT ANY WARRANTY; without even
 --  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
@@ -71,8 +71,8 @@ package body Books.Table_Views.Series is
    is begin
       Books.Table_Views.Create_GUI (Series_View, Config);
 
-      -- Data_Table
-      -- Row 0
+      --  Data_Table
+      --  Row 0
       Gtk.Label.Gtk_New (Series_View.Title_Label, "Title");
       Gtk.Label.Set_Justify (Series_View.Title_Label, Gtk.Enums.Justify_Right);
       Gtk.GEntry.Gtk_New (Series_View.Title_Text);
@@ -80,7 +80,7 @@ package body Books.Table_Views.Series is
       Gtk.Table.Attach (Series_View.Data_Table, Series_View.Title_Label, 0, 1, 0, 1);
       Gtk.Table.Attach (Series_View.Data_Table, Series_View.Title_Text, 1, 3, 0, 1);
 
-      -- Row 2
+      --  Row 2
       Gtk.Label.Gtk_New (Series_View.Author_Label, "Author");
       Gtk.Label.Set_Justify (Series_View.Author_Label, Gtk.Enums.Justify_Right);
       Gtk.GEntry.Gtk_New (Series_View.Author_Text);

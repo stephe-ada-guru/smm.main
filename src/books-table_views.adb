@@ -2,11 +2,11 @@
 --
 --  See spec.
 --
---  Copyright (C) 2002 - 2005 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002 - 2005, 2009 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
---  published by the Free Software Foundation; either version 2, or (at
+--  published by the Free Software Foundation; either version 3, or (at
 --  your option) any later version. This program is distributed in the
 --  hope that it will be useful, but WITHOUT ANY WARRANTY; without even
 --  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
@@ -45,7 +45,7 @@ package body Books.Table_Views is
 
    type Private_Stuff_Record is record
       Button_Box    : Gtk.Box.Gtk_Box;
-      -- Main buttons
+      --  Main buttons
       Add_Button    : Gtk.Button.Gtk_Button;
       Edit_Button   : Gtk.Button.Gtk_Button;
       Delete_Button : Gtk.Button.Gtk_Button;
@@ -53,11 +53,11 @@ package body Books.Table_Views is
 
       Enable_Test_Button : Boolean;
 
-      -- Add buttons
+      --  Add buttons
       Insert_Button   : Gtk.Button.Gtk_Button;
       Cancel_Button   : Gtk.Button.Gtk_Button;
 
-      -- Edit buttons
+      --  Edit buttons
       Update_Button : Gtk.Button.Gtk_Button;
 
       Search_Table : Gtk.Table.Gtk_Table;
@@ -190,11 +190,11 @@ package body Books.Table_Views is
       Gtk.Button.Hide (Table_View.Private_Stuff.Cancel_Button);
       Gtk.Button.Signal.Connect_Clicked (Table_View.Private_Stuff.Cancel_Button, On_Button_Cancel'Access);
 
-      -- Search_Table
+      --  Search_Table
       Gtk.Table.Gtk_New (Table_View.Private_Stuff.Search_Table, Rows => 3, Columns => 3, Homogeneous => False);
       Gtk.Box.Pack_Start (Vbox, Table_View.Private_Stuff.Search_Table, Expand => False);
 
-      -- Row 0
+      --  Row 0
       Gtk.Label.Gtk_New (Table_View.Private_Stuff.Find_Label, "Find");
       Gtk.Label.Set_Justify (Table_View.Private_Stuff.Find_Label, Gtk.Enums.Justify_Right);
       Gtk.GEntry.Gtk_New (Table_View.Find_Text);
@@ -207,7 +207,7 @@ package body Books.Table_Views is
       Gtk.GEntry.Signal.Connect_Changed (Table_View.Find_Text, On_Find_Changed'Access);
       Gtk.Button.Signal.Connect_Clicked (Table_View.Private_Stuff.Find_Next, On_Find_Next'Access);
 
-      -- Row 1
+      --  Row 1
       Gtk.Label.Gtk_New (Table_View.Private_Stuff.Index_Label, "Index");
       Gtk.Label.Set_Justify (Table_View.Private_Stuff.Index_Label, Gtk.Enums.Justify_Right);
       Gtk.Combo.Gtk_New (Table_View.Private_Stuff.Index_List);
@@ -230,7 +230,7 @@ package body Books.Table_Views is
       Gtk.Table.Attach (Table_View.Private_Stuff.Search_Table, Table_View.Private_Stuff.Index_List, 1, 2, 1, 2);
       Gtk.Table.Attach (Table_View.Private_Stuff.Search_Table, Table_View.Private_Stuff.Index_Last, 2, 3, 1, 2);
 
-      -- Row 2
+      --  Row 2
       Gtk.Label.Gtk_New (Table_View.Private_Stuff.ID_Label, "ID");
       Gtk.Label.Set_Justify (Table_View.Private_Stuff.ID_Label, Gtk.Enums.Justify_Right);
       Gtk.Label.Gtk_New (Table_View.Private_Stuff.ID_Display);
@@ -270,7 +270,7 @@ package body Books.Table_Views is
       Gtk.Box.Pack_Start (Vbox, Table_View.Data_Table, Expand => False);
       --  contents set by child type.
 
-      -- List_Select radio buttons
+      --  List_Select radio buttons
       Gtk.Box.Gtk_New_Hbox (Table_View.Private_Stuff.List_Select_Hbox);
 
       for I in Table_Name_Type loop
@@ -468,7 +468,7 @@ package body Books.Table_Views is
       --  Add main data
       Insert_Database (Table_View);
 
-      -- Add links
+      --  Add links
       for I in Table_Name_Type loop
          if Gtk.Check_Button.Get_Active (Table_View.Links_Buttons (I)) then
             Add_Link (Table_View, ID (Table_View.Sibling_Views (I)), I);

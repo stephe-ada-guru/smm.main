@@ -1,0 +1,41 @@
+with "gtkada";
+with "odbc";
+with "sal";
+with "sal_gtk";
+with "standard_common";
+project Books is
+   for Source_Dirs use
+     ("../../src");
+
+   for Main use ("books-main");
+
+   for Object_Dir use "objects";
+   for Exec_Dir use ".";
+
+   package Compiler is
+      --  -gnatwJ turns off warnings on obsolescent features
+      --  FIXME: we are using obsolete Gtk widgets
+      for Default_Switches ("Ada") use
+        Standard_Common.Compiler.Release_Switches &
+        Standard_Common.Compiler.Style_Checks &
+        Standard_Common.Compiler'Default_Switches ("Ada") &
+        ("-gnatwJ");
+   end Compiler;
+
+   package Binder is
+      for Default_Switches ("Ada") use Standard_Common.Binder'Default_Switches ("Ada");
+   end Binder;
+
+   package Linker is
+      --  libodbc32.a is provided by GNAT
+      for Default_Switches ("Ada") use ("-g", "-lodbc32");
+   end Linker;
+
+   package Builder is
+      --  We use ".exe" extension even on non-Windows, to simplify the makefiles.
+      for Switches ("books-main") use ("-o", "books.exe");
+
+      for Executable_Suffix use ".exe";
+   end Builder;
+
+end Books;

@@ -2,11 +2,11 @@
 --
 --  See spec.
 --
---  Copyright (C) 2002, 2004 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002, 2004, 2009 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
---  published by the Free Software Foundation; either version 2, or (at
+--  published by the Free Software Foundation; either version 3, or (at
 --  your option) any later version. This program is distributed in the
 --  hope that it will be useful, but WITHOUT ANY WARRANTY; without even
 --  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
@@ -46,6 +46,7 @@ package body Books.Database.Data_Tables.Author is
    is
       use Ada.Strings;
       use Ada.Strings.Fixed;
+      use GNU.DB.SQLCLI;
    begin
       Move (Source => First_Name, Target => T.First.all, Drop => Right);
       T.First_Length := SQLINTEGER'Min (T.First.all'Length, First_Name'Length);
@@ -67,17 +68,19 @@ package body Books.Database.Data_Tables.Author is
    end Copy;
 
    procedure Find_Name (T : in out Table; Item : in String)
-   is begin
+   is
+      use type GNU.DB.SQLCLI.SQLINTEGER;
+   begin
       T.Find_Pattern (1 .. Item'Length) := Item;
       T.Find_Pattern (Item'Length + 1) := '%';
       T.Find_Pattern_Length := Item'Length + 1;
-      SQLCloseCursor (T.By_Name_Statement);
+      GNU.DB.SQLCLI.SQLCloseCursor (T.By_Name_Statement);
       Checked_Execute (T.By_Name_Statement);
       T.Find_Statement := T.By_Name_Statement;
       Next (T);
    exception
    when GNU.DB.SQLCLI.No_Data =>
-      SQLCloseCursor (T.By_Name_Statement);
+      GNU.DB.SQLCLI.SQLCloseCursor (T.By_Name_Statement);
       --  Just keep current data.
    end Find_Name;
 
@@ -88,7 +91,8 @@ package body Books.Database.Data_Tables.Author is
 
    procedure Initialize (T : in out Table)
    is
-      use Statement_Attribute;
+      use GNU.DB.SQLCLI;
+      use GNU.DB.SQLCLI.Statement_Attribute;
    begin
       if T.First = null then
          T.First        := new String'(1 .. Name_Field_Length + 1 => ' ');

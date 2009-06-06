@@ -2,7 +2,7 @@
 --
 --  See spec.
 --
---  Copyright (C) 2002 - 2005 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002 - 2005, 2009 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -16,6 +16,7 @@
 --  write to the Free Software Foundation, 59 Temple Place - Suite
 --  330, Boston, MA 02111-1307, USA.
 
+with Ada.Exceptions;
 with Ada.Text_IO;
 with Books.Database;
 with Gdk.Event;

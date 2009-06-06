@@ -17,17 +17,19 @@ This document is a design and user guide for the books program.
 
 See Books/INSTALL for instructions on building the program.
 
+Books is written in Ada, using the Gnu Ada tools, which don't need
+autoconf and automake.
+
 @menu
 * Development Environment::
 * Program design::
 * Database schema::
 @end menu
 
-@node Development Environment, Program design, Top, Top
-@chapter Development Environment
+@node Debian Development Environment, Program design, Top, Top
+@chapter Debian Development Environment
 
-Books is written in Ada, using the Gnu Ada tools, which don't need
-autoconf and automake. I follow the Debian Ada policy
+I follow the Debian Ada policy
 @uref{http://people.debian.org/~lbrenta/debian-ada-policy.html,
 http://people.debian.org/~lbrenta/debian-ada-policy.html,
 http://people.debian.org/~lbrenta/debian-ada-policy.html}.
@@ -42,22 +44,38 @@ http://people.debian.org/~lbrenta/debian-ada-policy.html}.
 @item Sqlite3 @tab 3.6.13-1 @tab Debian package sqlite3
 @end multitable
 
-@menu
-* Development Environment Installation::
-* Install application::
-@end menu
-
-@node Development Environment Installation, Install application, Development Environment, Development Environment
-@section Development Environment Installation
-
 Use Debian synaptic to install Debian packages.
 
-@menu
-* Install SAL::
-@end menu
+@enumerate 1
+@item
+Unzip source, note location (for example, @file{/home/Projects/sal}).
 
-@node Install Grace,  , Install GNADE, Development Environment Installation
-@subsection Install SAL
+@item
+Define an environment variable giving location of SAL GNAT project
+file @file{sal.gpr}: @*
+@code{export SAL_GPR=/home/Projects/sal/build/x86_gnu_linux_release}.
+This environment variable is used by the Books Makefile to set @var{ADA_PROJECT_PATH}.
+@end enumerate
+
+@node Windows Development Environment, Program design, Top, Top
+@chapter Windows Development Environment
+
+@multitable {Tool} {Version} {Source}
+@item Tool @tab Version @tab Source
+@item Windows @tab XP @tab
+@item GNAT @tab 6.2.1 @tab AdaCore
+@item GtkAda @tab 2.14.0 @tab @uref{http://libre.adacore.com/libre/}
+@item GNADE @tab 1.5.3 @tab @uref{http://gnade.sourceforge.net/}
+@item SAL @tab 2.01 @tab @uref{http://stephe-leake.org/ada/sal.html}
+@item Sqlite3 @tab 3.6.13-1 @tab Debian package sqlite3
+@end multitable
+
+GtkAda installer offers to compile the library, but if the GNAT
+compiler is not in your path, it silently fails. To compile:
+@example
+cd /Apps/GNAT-GPL_2009/GtkAda
+gnatmake -P include/gtkada/gtkada_install_static
+@end example
 
 @enumerate 1
 @item
@@ -71,7 +89,7 @@ This environment variable is used by the Books Makefile to set @var{ADA_PROJECT_
 @end enumerate
 
 @node Install application,  , Development Environment Installation, Development Environment
-@section Install application
+@chapter Install application
 To run the database, we need to install MySQL and MyODBC, then create
 the ODBC data source, the database user account, and the database. We
 also need to compile the Books application.

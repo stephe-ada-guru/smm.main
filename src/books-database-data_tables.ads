@@ -2,11 +2,11 @@
 --
 --  Operations on a base table type.
 --
---  Copyright (C) 2002, 2004 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002, 2004, 2009 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
---  published by the Free Software Foundation; either version 2, or (at
+--  published by the Free Software Foundation; either version 3, or (at
 --  your option) any later version. This program is distributed in the
 --  hope that it will be useful, but WITHOUT ANY WARRANTY; without even
 --  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
@@ -53,16 +53,14 @@ package Books.Database.Data_Tables is
 
 private
 
-   use GNU.DB.SQLCLI;
-
    type Table is abstract new Books.Database.Table with record
 
       --  Data
       ID            : aliased ID_Type    := 0;
-      ID_Indicator  : aliased SQLINTEGER := SQL_NULL_DATA;
+      ID_Indicator  : aliased GNU.DB.SQLCLI.SQLINTEGER := GNU.DB.SQLCLI.SQL_NULL_DATA;
 
-      By_ID_Statement   : SQLHANDLE := SQL_NULL_HANDLE;
-      By_Name_Statement : SQLHANDLE := SQL_NULL_HANDLE;
+      By_ID_Statement   : GNU.DB.SQLCLI.SQLHANDLE := GNU.DB.SQLCLI.SQL_NULL_HANDLE;
+      By_Name_Statement : GNU.DB.SQLCLI.SQLHANDLE := GNU.DB.SQLCLI.SQL_NULL_HANDLE;
    end record;
 
 end Books.Database.Data_Tables;

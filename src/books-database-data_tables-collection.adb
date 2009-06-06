@@ -2,11 +2,11 @@
 --
 --  See spec.
 --
---  Copyright (C) 2002, 2004 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002, 2004, 2009 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
---  published by the Free Software Foundation; either version 2, or (at
+--  published by the Free Software Foundation; either version 3, or (at
 --  your option) any later version. This program is distributed in the
 --  hope that it will be useful, but WITHOUT ANY WARRANTY; without even
 --  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
@@ -50,28 +50,31 @@ package body Books.Database.Data_Tables.Collection is
    is
       use Ada.Strings;
       use Ada.Strings.Fixed;
+      use type GNU.DB.SQLCLI.SQLINTEGER;
    begin
       Move (Source => Name, Target => T.Name.all, Drop => Right);
-      T.Name_Length := SQLINTEGER'Min (T.Name.all'Length, Name'Length);
+      T.Name_Length := GNU.DB.SQLCLI.SQLINTEGER'Min (T.Name.all'Length, Name'Length);
 
       if Editor_Valid then
          T.Editor           := Editor;
          T.Editor_Indicator := ID_Type'Size / 8;
       else
-         T.Editor_Indicator := SQL_NULL_DATA;
+         T.Editor_Indicator := GNU.DB.SQLCLI.SQL_NULL_DATA;
       end if;
 
       if Year_Valid then
          T.Year           := Year;
          T.Year_Indicator := Interfaces.Unsigned_16'Size / 8;
       else
-         T.Year_Indicator := SQL_NULL_DATA;
+         T.Year_Indicator := GNU.DB.SQLCLI.SQL_NULL_DATA;
       end if;
    end Copy;
 
-   function Editor (T : in Table) return ID_Type is
+   function Editor (T : in Table) return ID_Type
+   is
+      use type GNU.DB.SQLCLI.SQLINTEGER;
    begin
-      if T.Editor_Indicator = SQL_NULL_DATA then
+      if T.Editor_Indicator = GNU.DB.SQLCLI.SQL_NULL_DATA then
          return 0;
       else
          return ID_Type (T.Editor);
@@ -79,30 +82,36 @@ package body Books.Database.Data_Tables.Collection is
    end Editor;
 
    procedure Finalize (T : in out Table)
-   is begin
+   is
+      use type GNU.DB.SQLCLI.SQLHANDLE;
+   begin
       Books.Database.Data_Tables.Finalize (Books.Database.Data_Tables.Table (T));
 
-      if T.By_Editor_Statement /= SQL_NULL_HANDLE then
-         SQLFreeHandle (SQL_HANDLE_STMT, T.By_Editor_Statement);
+      if T.By_Editor_Statement /= GNU.DB.SQLCLI.SQL_NULL_HANDLE then
+         GNU.DB.SQLCLI.SQLFreeHandle (GNU.DB.SQLCLI.SQL_HANDLE_STMT, T.By_Editor_Statement);
       end if;
    end Finalize;
 
    procedure Find_Editor (T : in out Table; Editor : in ID_Type)
-   is begin
+   is
+      use type GNU.DB.SQLCLI.SQLINTEGER;
+   begin
       T.Editor           := Editor;
       T.Editor_Indicator := ID_Type'Size / 8;
-      SQLCloseCursor (T.By_Editor_Statement);
+      GNU.DB.SQLCLI.SQLCloseCursor (T.By_Editor_Statement);
       Checked_Execute (T.By_Editor_Statement);
       T.Find_Statement   := T.By_Editor_Statement;
       Next (T);
    end Find_Editor;
 
    procedure Find_Name (T : in out Table; Item : in String)
-   is begin
+   is
+      use type GNU.DB.SQLCLI.SQLINTEGER;
+   begin
       T.Find_Pattern (1 .. Item'Length) := Item;
       T.Find_Pattern (Item'Length + 1) := '%';
       T.Find_Pattern_Length := Item'Length + 1;
-      SQLCloseCursor (T.By_Name_Statement);
+      GNU.DB.SQLCLI.SQLCloseCursor (T.By_Name_Statement);
       Checked_Execute (T.By_Name_Statement);
       T.Find_Statement := T.By_Name_Statement;
       Next (T);
@@ -110,7 +119,8 @@ package body Books.Database.Data_Tables.Collection is
 
    procedure Initialize (T : in out Table)
    is
-      use Statement_Attribute;
+      use GNU.DB.SQLCLI;
+      use GNU.DB.SQLCLI.Statement_Attribute;
    begin
       if T.Name = null then
          T.Name         := new String'(1 .. Field_Length + 1  => ' ');
@@ -236,9 +246,11 @@ package body Books.Database.Data_Tables.Collection is
       Checked_Execute (T.Update_Statement);
    end Update;
 
-   function Year (T : in Table) return Interfaces.Unsigned_16 is
+   function Year (T : in Table) return Interfaces.Unsigned_16
+   is
+      use type GNU.DB.SQLCLI.SQLINTEGER;
    begin
-      if T.ID_Indicator = SQL_NULL_DATA then
+      if T.ID_Indicator = GNU.DB.SQLCLI.SQL_NULL_DATA then
          return 0;
       else
          return Interfaces.Unsigned_16 (T.Year);

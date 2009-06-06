@@ -2,11 +2,11 @@
 --
 --  see spec
 --
---  Copyright (C) 2002, 2003, 2004 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002, 2003, 2004, 2009 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
---  published by the Free Software Foundation; either version 2, or (at
+--  published by the Free Software Foundation; either version 3, or (at
 --  your option) any later version. This program is distributed in the
 --  hope that it will be useful, but WITHOUT ANY WARRANTY; without even
 --  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
@@ -28,7 +28,9 @@ package body Books.Database is
    --  Subprogram bodies (alphabetical order)
 
    procedure Finalize (T : in out Table)
-   is begin
+   is
+      use GNU.DB.SQLCLI;
+   begin
       if T.Update_Statement /= SQL_NULL_HANDLE then
          SQLFreeHandle (SQL_HANDLE_STMT, T.Update_Statement);
       end if;
@@ -87,12 +89,13 @@ package body Books.Database is
       declare
          use SAL.Config_Files;
          Database_Name : constant String := Read (DB.Config.all, "Database_Name", "books");
+         User_Name     : constant String := Read (DB.Config.all, "Database_Username", "");
       begin
          Generate_Detailed_Exceptions := False;
          SQLConnect
            (ConnectionHandle => DB.Connection,
             ServerName       => Database_Name, --  local server, so servername only includes database name.
-            UserName         => "",
+            UserName         => User_Name,
             Authentication   => "");
       exception
       when E : Database_Error =>
@@ -125,13 +128,14 @@ package body Books.Database is
                   SQLConnect
                     (ConnectionHandle => DB.Connection,
                      ServerName       => Database_Name,
-                     UserName         => "",
+                     UserName         => User_Name,
                      Authentication   => "");
                end if;
             elsif Index (Error_Message, "Data source name not found") /= 0 then
-               Ada.Exceptions.Raise_Exception
-                 (SAL.Config_File_Error'Identity,
-                  "ODBC data source '" & Database_Name & "' not found");
+               raise SAL.Config_File_Error with "ODBC data source '" & Database_Name & "' not found";
+            elsif Index (Error_Message, "Access denied for user") /= 0 then
+               raise SAL.Config_File_Error with "database user '" & User_Name & "' denied access: " &
+                 Ada.Exceptions.Exception_Message (E);
             else
                raise;
             end if;
@@ -160,7 +164,9 @@ package body Books.Database is
    end Finalize;
 
    procedure Find_All_By_ID (T : in out Table'Class)
-   is begin
+   is
+      use GNU.DB.SQLCLI;
+   begin
       SQLCloseCursor (T.All_By_ID_Statement);
       Checked_Execute (T.All_By_ID_Statement);
       T.Find_Statement := T.All_By_ID_Statement;
@@ -173,10 +179,10 @@ package body Books.Database is
 
    procedure Next (T : in Table'Class)
    is begin
-      SQLFetch (T.Find_Statement);
+      GNU.DB.SQLCLI.SQLFetch (T.Find_Statement);
    exception
    when GNU.DB.SQLCLI.No_Data =>
-      SQLCloseCursor (T.Find_Statement);
+      GNU.DB.SQLCLI.SQLCloseCursor (T.Find_Statement);
       raise Books.Database.No_Data;
    end Next;
 
@@ -185,11 +191,11 @@ package body Books.Database is
       return ID_Type'Value (ID);
    end Value;
 
-   procedure Checked_Execute (Statement : in SQLHANDLE)
+   procedure Checked_Execute (Statement : in GNU.DB.SQLCLI.SQLHANDLE)
    is
       use Ada.Exceptions;
    begin
-      SQLExecute (Statement);
+      GNU.DB.SQLCLI.SQLExecute (Statement);
    exception
    when E : GNU.DB.SQLCLI.Database_Error =>
       if 0 /= Ada.Strings.Fixed.Index

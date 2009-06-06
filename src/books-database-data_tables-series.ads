@@ -2,11 +2,11 @@
 --
 --  Operations on the Series table
 --
---  Copyright (C) 2002, 2004 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002, 2004, 2009 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
---  published by the Free Software Foundation; either version 2, or (at
+--  published by the Free Software Foundation; either version 3, or (at
 --  your option) any later version. This program is distributed in the
 --  hope that it will be useful, but WITHOUT ANY WARRANTY; without even
 --  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
@@ -64,19 +64,17 @@ package Books.Database.Data_Tables.Series is
 
 private
 
-   use GNU.DB.SQLCLI;
-
    Field_Length : constant := 50;
 
    type Table (DB : access Database'Class) is new Data_Tables.Table (DB => DB) with record
 
       --  Data
       Title            : String_Access;
-      Title_Length     : aliased SQLINTEGER := 0;
+      Title_Length     : aliased GNU.DB.SQLCLI.SQLINTEGER := 0;
       Author           : aliased ID_Type;
-      Author_Indicator : aliased SQLINTEGER := SQL_NULL_DATA;
+      Author_Indicator : aliased GNU.DB.SQLCLI.SQLINTEGER := GNU.DB.SQLCLI.SQL_NULL_DATA;
 
-      By_Author_Statement : SQLHANDLE;
+      By_Author_Statement : GNU.DB.SQLCLI.SQLHANDLE;
    end record;
 
 end Books.Database.Data_Tables.Series;

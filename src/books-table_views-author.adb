@@ -2,11 +2,11 @@
 --
 --  See spec.
 --
---  Copyright (C) 2002 - 2004 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002 - 2004, 2009 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
---  published by the Free Software Foundation; either version 2, or (at
+--  published by the Free Software Foundation; either version 3, or (at
 --  your option) any later version. This program is distributed in the
 --  hope that it will be useful, but WITHOUT ANY WARRANTY; without even
 --  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
@@ -74,8 +74,8 @@ package body Books.Table_Views.Author is
    begin
       Books.Table_Views.Create_GUI (Author_View, Config);
 
-      -- Data_Table
-      -- Row 0
+      --  Data_Table
+      --  Row 0
       Gtk.Label.Gtk_New (Author_View.First_Label, "First");
       Gtk.Label.Set_Justify (Author_View.First_Label, Gtk.Enums.Justify_Right);
       Gtk.GEntry.Gtk_New (Author_View.First_Text);
@@ -83,7 +83,7 @@ package body Books.Table_Views.Author is
       Gtk.Table.Attach (Author_View.Data_Table, Author_View.First_Label, 0, 1, 0, 1);
       Gtk.Table.Attach (Author_View.Data_Table, Author_View.First_Text, 1, 3, 0, 1);
 
-      -- Row 1
+      --  Row 1
       Gtk.Label.Gtk_New (Author_View.Middle_Label, "Middle");
       Gtk.Label.Set_Justify (Author_View.Middle_Label, Gtk.Enums.Justify_Right);
       Gtk.GEntry.Gtk_New (Author_View.Middle_Text);
@@ -91,7 +91,7 @@ package body Books.Table_Views.Author is
       Gtk.Table.Attach (Author_View.Data_Table, Author_View.Middle_Label, 0, 1, 1, 2);
       Gtk.Table.Attach (Author_View.Data_Table, Author_View.Middle_Text, 1, 3, 1, 2);
 
-      -- Row 2
+      --  Row 2
       Gtk.Label.Gtk_New (Author_View.Last_Label, "Last");
       Gtk.Label.Set_Justify (Author_View.Last_Label, Gtk.Enums.Justify_Right);
       Gtk.GEntry.Gtk_New (Author_View.Last_Text);

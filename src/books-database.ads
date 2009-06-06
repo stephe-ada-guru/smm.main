@@ -2,11 +2,11 @@
 --
 --  Top level interface to the database for Books.
 --
---  Copyright (C) 2002 - 2004 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002 - 2004, 2009 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
---  published by the Free Software Foundation; either version 2, or (at
+--  published by the Free Software Foundation; either version 3, or (at
 --  your option) any later version. This program is distributed in the
 --  hope that it will be useful, but WITHOUT ANY WARRANTY; without even
 --  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
@@ -100,21 +100,19 @@ private
    package Unsigned_16_Binding is new GNU.DB.SQLCLI.UnsignedBinding (Interfaces.Unsigned_16);
    package Unsigned_8_Binding is new GNU.DB.SQLCLI.UnsignedBinding (Interfaces.Unsigned_8);
 
-   use GNU.DB.SQLCLI;
-
    type Table (DB : access Database'Class) is abstract new Ada.Finalization.Limited_Controlled with record
 
-      Update_Statement    : SQLHANDLE := SQL_NULL_HANDLE;
-      Insert_Statement    : SQLHANDLE := SQL_NULL_HANDLE;
-      Delete_Statement    : SQLHANDLE := SQL_NULL_HANDLE;
-      All_By_ID_Statement : SQLHANDLE := SQL_NULL_HANDLE;
-      Find_Statement      : SQLHANDLE; --  Copy of actual handle; not freed.
+      Update_Statement    : GNU.DB.SQLCLI.SQLHANDLE := GNU.DB.SQLCLI.SQL_NULL_HANDLE;
+      Insert_Statement    : GNU.DB.SQLCLI.SQLHANDLE := GNU.DB.SQLCLI.SQL_NULL_HANDLE;
+      Delete_Statement    : GNU.DB.SQLCLI.SQLHANDLE := GNU.DB.SQLCLI.SQL_NULL_HANDLE;
+      All_By_ID_Statement : GNU.DB.SQLCLI.SQLHANDLE := GNU.DB.SQLCLI.SQL_NULL_HANDLE;
+      Find_Statement      : GNU.DB.SQLCLI.SQLHANDLE; --  Copy of actual handle; not freed.
       Find_Pattern        : String_Access;
-      Find_Pattern_Length : aliased SQLINTEGER := 0;
+      Find_Pattern_Length : aliased GNU.DB.SQLCLI.SQLINTEGER := 0;
 
    end record;
 
-   procedure Checked_Execute (Statement : in SQLHANDLE);
+   procedure Checked_Execute (Statement : in GNU.DB.SQLCLI.SQLHANDLE);
    --  Execute Statement, catch GNU.DB.SQLCLI.Database_Error, check
    --  error message, convert to Entry_Error if recognized.
 

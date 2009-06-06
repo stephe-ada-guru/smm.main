@@ -2,11 +2,11 @@
 --
 --  Operations on the Author table
 --
---  Copyright (C) 2002, 2004 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002, 2004, 2009 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
---  published by the Free Software Foundation; either version 2, or (at
+--  published by the Free Software Foundation; either version 3, or (at
 --  your option) any later version. This program is distributed in the
 --  hope that it will be useful, but WITHOUT ANY WARRANTY; without even
 --  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
@@ -58,19 +58,17 @@ package Books.Database.Data_Tables.Author is
 
 private
 
-   use GNU.DB.SQLCLI;
-
    Name_Field_Length : constant := 20;
 
    type Table (DB : access Database'Class) is new Data_Tables.Table (DB => DB) with record
 
       --  Data
       First         : String_Access;
-      First_Length  : aliased SQLINTEGER := 0;
+      First_Length  : aliased GNU.DB.SQLCLI.SQLINTEGER := 0;
       Middle        : String_Access;
-      Middle_Length : aliased SQLINTEGER := 0;
+      Middle_Length : aliased GNU.DB.SQLCLI.SQLINTEGER := 0;
       Last          : String_Access;
-      Last_Length   : aliased SQLINTEGER := 0;
+      Last_Length   : aliased GNU.DB.SQLCLI.SQLINTEGER := 0;
 
    end record;
 

@@ -2,11 +2,11 @@
 --
 --  See spec.
 --
---  Copyright (C) 2002, 2004 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002, 2004, 2009 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
---  published by the Free Software Foundation; either version 2, or (at
+--  published by the Free Software Foundation; either version 3, or (at
 --  your option) any later version. This program is distributed in the
 --  hope that it will be useful, but WITHOUT ANY WARRANTY; without even
 --  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
@@ -57,50 +57,54 @@ package body Books.Database.Data_Tables.Title is
    is
       use Ada.Strings;
       use Ada.Strings.Fixed;
+      use type GNU.DB.SQLCLI.SQLINTEGER;
    begin
       Move (Source => Title, Target => T.Title.all, Drop => Right);
-      T.Title_Length := SQLINTEGER'Min (T.Title.all'Length, Title'Length);
+      T.Title_Length := GNU.DB.SQLCLI.SQLINTEGER'Min (T.Title.all'Length, Title'Length);
 
       if Year_Valid then
          T.Year           := Year;
          T.Year_Indicator := Interfaces.Unsigned_16'Size / 8;
       else
-         T.Year_Indicator := SQL_NULL_DATA;
+         T.Year_Indicator := GNU.DB.SQLCLI.SQL_NULL_DATA;
       end if;
 
       Move (Source => Comment, Target => T.Comment.all, Drop => Right);
-      T.Comment_Length := SQLINTEGER'Min (T.Comment.all'Length, Comment'Length);
+      T.Comment_Length := GNU.DB.SQLCLI.SQLINTEGER'Min (T.Comment.all'Length, Comment'Length);
       if T.Comment_Length = 0 then
-         T.Comment_Length := SQL_NULL_DATA;
+         T.Comment_Length := GNU.DB.SQLCLI.SQL_NULL_DATA;
       end if;
 
       if Rating_Valid then
          T.Rating           := Rating;
          T.Rating_Indicator := Interfaces.Unsigned_8'Size / 8;
       else
-         T.Rating_Indicator := SQL_NULL_DATA;
+         T.Rating_Indicator := GNU.DB.SQLCLI.SQL_NULL_DATA;
       end if;
    end Copy;
 
    procedure Find_Title (T : in out Table; Item : in String)
-   is begin
+   is
+      use type GNU.DB.SQLCLI.SQLINTEGER;
+   begin
       T.Find_Pattern (1 .. Item'Length) := Item;
       T.Find_Pattern (Item'Length + 1) := '%';
       T.Find_Pattern_Length := Item'Length + 1;
-      SQLCloseCursor (T.By_Name_Statement);
+      GNU.DB.SQLCLI.SQLCloseCursor (T.By_Name_Statement);
       Checked_Execute (T.By_Name_Statement);
-      SQLFetch (T.By_Name_Statement);
+      GNU.DB.SQLCLI.SQLFetch (T.By_Name_Statement);
 
       T.Find_Statement := T.By_Name_Statement;
    exception
    when GNU.DB.SQLCLI.No_Data =>
-      SQLCloseCursor (T.By_Name_Statement);
+      GNU.DB.SQLCLI.SQLCloseCursor (T.By_Name_Statement);
       --  Just keep current data.
    end Find_Title;
 
    procedure Initialize (T : in out Table)
    is
-      use Statement_Attribute;
+      use GNU.DB.SQLCLI;
+      use GNU.DB.SQLCLI.Statement_Attribute;
    begin
       if T.Title = null then
          T.Title        := new String'(1 .. Field_Length + 1 => ' ');
@@ -203,9 +207,11 @@ package body Books.Database.Data_Tables.Title is
       Find_Title (T, Title);
    end Insert;
 
-   function Rating (T : in Table) return Interfaces.Unsigned_8 is
+   function Rating (T : in Table) return Interfaces.Unsigned_8
+   is
+      use type GNU.DB.SQLCLI.SQLINTEGER;
    begin
-      if T.Rating_Indicator = SQL_NULL_DATA then
+      if T.Rating_Indicator = GNU.DB.SQLCLI.SQL_NULL_DATA then
          return 0;
       else
          return Interfaces.Unsigned_8 (T.Rating);
@@ -230,9 +236,11 @@ package body Books.Database.Data_Tables.Title is
       Checked_Execute (T.Update_Statement);
    end Update;
 
-   function Year (T : in Table) return Interfaces.Unsigned_16 is
+   function Year (T : in Table) return Interfaces.Unsigned_16
+   is
+      use type GNU.DB.SQLCLI.SQLINTEGER;
    begin
-      if T.ID_Indicator = SQL_NULL_DATA then
+      if T.ID_Indicator = GNU.DB.SQLCLI.SQL_NULL_DATA then
          return 0;
       else
          return Interfaces.Unsigned_16 (T.Year);

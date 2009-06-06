@@ -2,11 +2,11 @@
 --
 --  See spec.
 --
---  Copyright (C) 2002, 2003, 2004 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002, 2003, 2004, 2009 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
---  published by the Free Software Foundation; either version 2, or (at
+--  published by the Free Software Foundation; either version 3, or (at
 --  your option) any later version. This program is distributed in the
 --  hope that it will be useful, but WITHOUT ANY WARRANTY; without even
 --  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
@@ -83,8 +83,8 @@ package body Books.Table_Views.Title is
    is begin
       Books.Table_Views.Create_GUI (Title_View, Config);
 
-      -- Data_Table
-      -- Row 0
+      --  Data_Table
+      --  Row 0
       Gtk.Label.Gtk_New (Title_View.Title_Label, "Title");
       Gtk.Label.Set_Justify (Title_View.Title_Label, Gtk.Enums.Justify_Right);
       Gtk.GEntry.Gtk_New (Title_View.Title_Text);
@@ -92,7 +92,7 @@ package body Books.Table_Views.Title is
       Gtk.Table.Attach (Title_View.Data_Table, Title_View.Title_Label, 0, 1, 0, 1);
       Gtk.Table.Attach (Title_View.Data_Table, Title_View.Title_Text, 1, 3, 0, 1);
 
-      -- Row 1
+      --  Row 1
       Gtk.Label.Gtk_New (Title_View.Year_Label, "Year");
       Gtk.Label.Set_Justify (Title_View.Year_Label, Gtk.Enums.Justify_Right);
       Gtk.GEntry.Gtk_New (Title_View.Year_Text);
@@ -100,7 +100,7 @@ package body Books.Table_Views.Title is
       Gtk.Table.Attach (Title_View.Data_Table, Title_View.Year_Label, 0, 1, 1, 2);
       Gtk.Table.Attach (Title_View.Data_Table, Title_View.Year_Text, 1, 3, 1, 2);
 
-      -- Row 2
+      --  Row 2
       Gtk.Label.Gtk_New (Title_View.Comment_Label, "Comment");
       Gtk.Label.Set_Justify (Title_View.Comment_Label, Gtk.Enums.Justify_Right);
       Gtk.GEntry.Gtk_New (Title_View.Comment_Text);
@@ -108,7 +108,7 @@ package body Books.Table_Views.Title is
       Gtk.Table.Attach (Title_View.Data_Table, Title_View.Comment_Label, 0, 1, 2, 3);
       Gtk.Table.Attach (Title_View.Data_Table, Title_View.Comment_Text, 1, 3, 2, 3);
 
-      -- Row 3
+      --  Row 3
       Gtk.Label.Gtk_New (Title_View.Rating_Label, "Rating");
       Gtk.Label.Set_Justify (Title_View.Rating_Label, Gtk.Enums.Justify_Right);
       Gtk.GEntry.Gtk_New (Title_View.Rating_Text);
