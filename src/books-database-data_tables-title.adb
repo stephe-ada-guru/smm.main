@@ -36,7 +36,7 @@ package body Books.Database.Data_Tables.Title is
    ----------
    --  Subprogram bodies (alphabetical order)
 
-   procedure Clear_Data (T : in out Table)
+   overriding procedure Clear_Data (T : in out Table)
    is begin
       Copy (T, "", 0, False, "", 0, False);
    end Clear_Data;
@@ -101,7 +101,7 @@ package body Books.Database.Data_Tables.Title is
       --  Just keep current data.
    end Find_Title;
 
-   procedure Initialize (T : in out Table)
+   overriding procedure Initialize (T : in out Table)
    is
       use GNU.DB.SQLCLI;
       use GNU.DB.SQLCLI.Statement_Attribute;

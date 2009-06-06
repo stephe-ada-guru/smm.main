@@ -2,11 +2,11 @@
 --
 --  See spec.
 --
---  Copyright (C) 2002, 2004 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002, 2004, 2009 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
---  published by the Free Software Foundation; either version 2, or (at
+--  published by the Free Software Foundation; either version 3, or (at
 --  your option) any later version. This program is distributed in the
 --  hope that it will be useful, but WITHOUT ANY WARRANTY; without even
 --  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
@@ -20,7 +20,7 @@
 with GNU.DB.SQLCLI.Statement_Attribute;
 package body Books.Database.Gen_Link_Tables is
 
-   procedure Clear_Data (T : in out Table)
+   overriding procedure Clear_Data (T : in out Table)
    is begin
       T.Data      := (others      => 0);
       T.Indicator := (others => SQL_NULL_DATA);
@@ -52,7 +52,7 @@ package body Books.Database.Gen_Link_Tables is
       end if;
    end ID;
 
-   procedure Initialize (T : in out Table)
+   overriding procedure Initialize (T : in out Table)
    is
       use Statement_Attribute;
       Table_Name : constant String :=

@@ -45,7 +45,7 @@ package body Books.Database.Data_Tables is
       raise Books.Database.No_Data;
    end Fetch;
 
-   procedure Finalize (T : in out Table)
+   overriding procedure Finalize (T : in out Table)
    is
       use GNU.DB.SQLCLI;
    begin

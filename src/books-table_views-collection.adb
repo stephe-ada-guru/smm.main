@@ -32,7 +32,7 @@ package body Books.Table_Views.Collection is
    ----------
    --  Bodies (alphabetical order)
 
-   procedure Add_Link
+   overriding procedure Add_Link
      (Collection_View : access Gtk_Collection_View_Record;
       ID              : in     Books.Database.ID_Type;
       List            : in     Table_Name_Type)
@@ -107,7 +107,7 @@ package body Books.Table_Views.Collection is
       Gtk.Radio_Button.Hide (Collection_View.List_Select (Series));
    end Create_GUI;
 
-   procedure Default_Add (Collection_View : access Gtk_Collection_View_Record)
+   overriding procedure Default_Add (Collection_View : access Gtk_Collection_View_Record)
    is begin
       Gtk.GEntry.Set_Text (Collection_View.Name_Text, Gtk.GEntry.Get_Text (Collection_View.Find_Text));
       Gtk.GEntry.Set_Text (Collection_View.Editor_Text, "");
@@ -115,7 +115,9 @@ package body Books.Table_Views.Collection is
       Gtk.GEntry.Grab_Focus (Collection_View.Name_Text);
    end Default_Add;
 
-   procedure Delete_Link (Collection_View : access Gtk_Collection_View_Record; ID : in Books.Database.ID_Type)
+   overriding procedure Delete_Link
+     (Collection_View : access Gtk_Collection_View_Record;
+      ID              : in     Books.Database.ID_Type)
    is
       use Books.Database;
       Collection_ID : constant ID_Type := Data_Tables.ID (Collection_View.Collection_Table.all);
@@ -162,7 +164,7 @@ package body Books.Table_Views.Collection is
       Update_Display (Collection_View);
    end Initialize;
 
-   procedure Insert_Database (Collection_View : access Gtk_Collection_View_Record)
+   overriding procedure Insert_Database (Collection_View : access Gtk_Collection_View_Record)
    is
       Editor       : Database.ID_Type;
       Editor_Valid : Boolean                := True;
@@ -192,14 +194,16 @@ package body Books.Table_Views.Collection is
          Year_Valid   => Year_Valid);
    end Insert_Database;
 
-   function Main_Index_Name (Collection_View : access Gtk_Collection_View_Record) return String
+   overriding function Main_Index_Name
+     (Collection_View : access Gtk_Collection_View_Record)
+     return String
    is
       pragma Unreferenced (Collection_View);
    begin
       return "Collection";
    end Main_Index_Name;
 
-   procedure Update_Database (Collection_View : access Gtk_Collection_View_Record)
+   overriding procedure Update_Database (Collection_View : access Gtk_Collection_View_Record)
    is
       Editor       : Database.ID_Type;
       Editor_Valid : Boolean                := True;
@@ -320,7 +324,7 @@ package body Books.Table_Views.Collection is
 
    end Update_Display_CollectionTitle;
 
-   procedure Update_Display_Child (Collection_View : access Gtk_Collection_View_Record)
+   overriding procedure Update_Display_Child (Collection_View : access Gtk_Collection_View_Record)
    is begin
       Gtk.Radio_Button.Set_Active (Collection_View.List_Select (Title), True);
       case Collection_View.Current_List is

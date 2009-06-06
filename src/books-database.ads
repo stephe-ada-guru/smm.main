@@ -33,13 +33,13 @@ package Books.Database is
    --  We need an access type because Gtk Windows are not limited, and
    --  thus cannot have a limited component.
 
-   procedure Initialize (DB : in out Database);
+   overriding procedure Initialize (DB : in out Database);
    --  Connect to database. Gets database name, user name from
    --  DB.Config, which must be Open.
    --
    --  Raises SAL.Config_File_Error for any errors.
 
-   procedure Finalize (DB : in out Database);
+   overriding procedure Finalize (DB : in out Database);
 
    type ID_Type is new Interfaces.Unsigned_32;
 
@@ -72,10 +72,9 @@ package Books.Database is
    ----------
    --  Dispatching Table operations
 
-   procedure Initialize (T : in out Table) is abstract;
-   --  Create database access statements, fetch first record.
+   --  Initialize should create database access statements, fetch first record.
 
-   procedure Finalize (T : in out Table);
+   overriding procedure Finalize (T : in out Table);
    --  Free all statements. Root version frees common statements.
 
    procedure Clear_Data (T : in out Table) is abstract;

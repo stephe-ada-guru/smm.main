@@ -32,7 +32,7 @@ package body Books.Table_Views.Series is
    ----------
    --  Bodies (alphabetical order)
 
-   procedure Add_Link
+   overriding procedure Add_Link
      (Series_View : access Gtk_Series_View_Record;
       ID          : in     Books.Database.ID_Type;
       List        : in     Table_Name_Type)
@@ -99,14 +99,16 @@ package body Books.Table_Views.Series is
       Gtk.Radio_Button.Hide (Series_View.List_Select (Collection));
    end Create_GUI;
 
-   procedure Default_Add (Series_View : access Gtk_Series_View_Record)
+   overriding procedure Default_Add (Series_View : access Gtk_Series_View_Record)
    is begin
       Gtk.GEntry.Set_Text (Series_View.Title_Text, Gtk.GEntry.Get_Text (Series_View.Find_Text));
       Gtk.GEntry.Set_Text (Series_View.Author_Text, "");
       Gtk.GEntry.Grab_Focus (Series_View.Title_Text);
    end Default_Add;
 
-   procedure Delete_Link (Series_View : access Gtk_Series_View_Record; ID : in Books.Database.ID_Type)
+   overriding procedure Delete_Link
+     (Series_View : access Gtk_Series_View_Record;
+      ID          : in     Books.Database.ID_Type)
    is
       use Books.Database;
       Series_ID : constant ID_Type := Data_Tables.ID (Series_View.Series_Table.all);
@@ -152,7 +154,7 @@ package body Books.Table_Views.Series is
       Update_Display (Series_View);
    end Initialize;
 
-   procedure Insert_Database (Series_View : access Gtk_Series_View_Record)
+   overriding procedure Insert_Database (Series_View : access Gtk_Series_View_Record)
    is
       Author       : Database.ID_Type;
       Author_Valid : Boolean := True;
@@ -171,14 +173,14 @@ package body Books.Table_Views.Series is
          Author_Valid => Author_Valid);
    end Insert_Database;
 
-   function Main_Index_Name (Series_View : access Gtk_Series_View_Record) return String
+   overriding function Main_Index_Name (Series_View : access Gtk_Series_View_Record) return String
    is
       pragma Unreferenced (Series_View);
    begin
       return "Series";
    end Main_Index_Name;
 
-   procedure Update_Database (Series_View : access Gtk_Series_View_Record)
+   overriding procedure Update_Database (Series_View : access Gtk_Series_View_Record)
    is
       Author       : Database.ID_Type;
       Author_Valid : Boolean := True;
@@ -279,7 +281,7 @@ package body Books.Table_Views.Series is
 
    end Update_Display_SeriesTitle;
 
-   procedure Update_Display_Child (Series_View : access Gtk_Series_View_Record)
+   overriding procedure Update_Display_Child (Series_View : access Gtk_Series_View_Record)
    is begin
       Gtk.Radio_Button.Set_Active (Series_View.List_Select (Title), True);
       case Series_View.Current_List is

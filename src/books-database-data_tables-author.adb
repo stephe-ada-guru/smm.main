@@ -33,7 +33,7 @@ package body Books.Database.Data_Tables.Author is
    ----------
    --  Subprogram bodies (alphabetical order)
 
-   procedure Clear_Data (T : in out Table)
+   overriding procedure Clear_Data (T : in out Table)
    is begin
       Copy (T, "", "", "");
    end Clear_Data;
@@ -89,7 +89,7 @@ package body Books.Database.Data_Tables.Author is
       return T.First (1 .. Integer (T.First_Length));
    end First_Name;
 
-   procedure Initialize (T : in out Table)
+   overriding procedure Initialize (T : in out Table)
    is
       use GNU.DB.SQLCLI;
       use GNU.DB.SQLCLI.Statement_Attribute;

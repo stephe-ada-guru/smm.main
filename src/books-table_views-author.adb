@@ -34,7 +34,7 @@ package body Books.Table_Views.Author is
    ----------
    --  Bodies (alphabetical order)
 
-   procedure Add_Link
+   overriding procedure Add_Link
      (Author_View : access Gtk_Author_View_Record;
       ID          : in     Books.Database.ID_Type;
       List        : in     Table_Name_Type)
@@ -108,7 +108,7 @@ package body Books.Table_Views.Author is
       Gtk.Radio_Button.Hide (Author_View.List_Select (Books.Author));
    end Create_GUI;
 
-   procedure Default_Add (Author_View : access Gtk_Author_View_Record)
+   overriding procedure Default_Add (Author_View : access Gtk_Author_View_Record)
    is begin
       Gtk.GEntry.Set_Text (Author_View.First_Text, "");
       Gtk.GEntry.Set_Text (Author_View.Middle_Text, "");
@@ -116,7 +116,7 @@ package body Books.Table_Views.Author is
       Gtk.GEntry.Grab_Focus (Author_View.Last_Text);
    end Default_Add;
 
-   procedure Delete_Link (Author_View : access Gtk_Author_View_Record; ID : in Books.Database.ID_Type)
+   overriding procedure Delete_Link (Author_View : access Gtk_Author_View_Record; ID : in Books.Database.ID_Type)
    is
       use Books.Database;
       Author_ID : constant ID_Type := Data_Tables.ID (Author_View.Author_Table.all);
@@ -164,7 +164,7 @@ package body Books.Table_Views.Author is
       Update_Display (Author_View);
    end Initialize;
 
-   procedure Insert_Database (Author_View : access Gtk_Author_View_Record)
+   overriding procedure Insert_Database (Author_View : access Gtk_Author_View_Record)
    is
    begin
       Books.Database.Data_Tables.Author.Insert
@@ -174,14 +174,14 @@ package body Books.Table_Views.Author is
          Last_Name   => Gtk.GEntry.Get_Text (Author_View.Last_Text));
    end Insert_Database;
 
-   function Main_Index_Name (Author_View : access Gtk_Author_View_Record) return String
+   overriding function Main_Index_Name (Author_View : access Gtk_Author_View_Record) return String
    is
       pragma Unreferenced (Author_View);
    begin
       return "Author";
    end Main_Index_Name;
 
-   procedure Update_Database (Author_View : access Gtk_Author_View_Record)
+   overriding procedure Update_Database (Author_View : access Gtk_Author_View_Record)
    is begin
       Books.Database.Data_Tables.Author.Update
         (Author_View.Author_Table.all,
@@ -316,7 +316,7 @@ package body Books.Table_Views.Author is
 
    end Update_Display_AuthorSeries;
 
-   procedure Update_Display_Child (Author_View : access Gtk_Author_View_Record)
+   overriding procedure Update_Display_Child (Author_View : access Gtk_Author_View_Record)
    is begin
       declare
          use Database.Data_Tables.Author;

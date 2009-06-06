@@ -27,7 +27,7 @@ package body Books.Database is
 
    --  Subprogram bodies (alphabetical order)
 
-   procedure Finalize (T : in out Table)
+   overriding procedure Finalize (T : in out Table)
    is
       use GNU.DB.SQLCLI;
    begin
@@ -72,7 +72,7 @@ package body Books.Database is
       return Result;
    end Image;
 
-   procedure Initialize (DB : in out Database)
+   overriding procedure Initialize (DB : in out Database)
    is
       use GNU.DB.SQLCLI;
    begin
@@ -145,7 +145,7 @@ package body Books.Database is
       Ada.Text_IO.Put_Line ("Connected to database.");
    end Initialize;
 
-   procedure Finalize (DB : in out Database)
+   overriding procedure Finalize (DB : in out Database)
    is
       use GNU.DB.SQLCLI;
    begin

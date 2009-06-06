@@ -19,7 +19,7 @@ project Books is
         Standard_Common.Compiler.Release_Switches &
         Standard_Common.Compiler.Style_Checks &
         Standard_Common.Compiler'Default_Switches ("Ada") &
-        ("-gnatwJ");
+        ("-gnatwJ", "-gnatyO");
    end Compiler;
 
    package Binder is

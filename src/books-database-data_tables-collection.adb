@@ -35,7 +35,7 @@ package body Books.Database.Data_Tables.Collection is
    ----------
    --  Subprogram bodies (alphabetical order)
 
-   procedure Clear_Data (T : in out Table)
+   overriding procedure Clear_Data (T : in out Table)
    is begin
       Copy (T, "", 0, False, 0, False);
    end Clear_Data;
@@ -81,7 +81,7 @@ package body Books.Database.Data_Tables.Collection is
       end if;
    end Editor;
 
-   procedure Finalize (T : in out Table)
+   overriding procedure Finalize (T : in out Table)
    is
       use type GNU.DB.SQLCLI.SQLHANDLE;
    begin
@@ -117,7 +117,7 @@ package body Books.Database.Data_Tables.Collection is
       Next (T);
    end Find_Name;
 
-   procedure Initialize (T : in out Table)
+   overriding procedure Initialize (T : in out Table)
    is
       use GNU.DB.SQLCLI;
       use GNU.DB.SQLCLI.Statement_Attribute;

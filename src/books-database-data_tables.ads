@@ -42,13 +42,12 @@ package Books.Database.Data_Tables is
    ----------
    --  Dispatching operations
 
-   procedure Initialize (T : in out Table) is abstract;
-   --  Create database access statements, fetch first record.
+   --  Initialize should create database access statements, fetch first record.
 
-   procedure Finalize (T : in out Table);
+   overriding procedure Finalize (T : in out Table);
    --  Free all statements. Root version frees common statements.
 
-   procedure Clear_Data (T : in out Table) is abstract;
+   overriding procedure Clear_Data (T : in out Table) is abstract;
    --  Erase local data.
 
 private

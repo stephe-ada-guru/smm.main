@@ -35,7 +35,7 @@ package body Books.Table_Views.Title is
    ----------
    --  Bodies (alphabetical order)
 
-   procedure Add_Link
+   overriding procedure Add_Link
      (Title_View : access Gtk_Title_View_Record;
       ID         : in     Books.Database.ID_Type;
       List       : in     Table_Name_Type)
@@ -124,7 +124,7 @@ package body Books.Table_Views.Title is
       Gtk.Radio_Button.Hide (Title_View.List_Select (Books.Title));
    end Create_GUI;
 
-   procedure Default_Add (Title_View : access Gtk_Title_View_Record)
+   overriding procedure Default_Add (Title_View : access Gtk_Title_View_Record)
    is begin
       Gtk.GEntry.Set_Text (Title_View.Title_Text, Gtk.GEntry.Get_Text (Title_View.Find_Text));
       Gtk.GEntry.Set_Text (Title_View.Year_Text, Ada.Strings.Unbounded.To_String (Title_View.Default_Year));
@@ -133,7 +133,7 @@ package body Books.Table_Views.Title is
       Gtk.GEntry.Grab_Focus (Title_View.Title_Text);
    end Default_Add;
 
-   procedure Delete_Link (Title_View : access Gtk_Title_View_Record; ID : in Books.Database.ID_Type)
+   overriding procedure Delete_Link (Title_View : access Gtk_Title_View_Record; ID : in Books.Database.ID_Type)
    is
       use Books.Database;
       Title_ID : constant ID_Type := Data_Tables.ID (Title_View.Title_Table.all);
@@ -202,7 +202,7 @@ package body Books.Table_Views.Title is
       Update_Display (Title_View);
    end Initialize;
 
-   procedure Insert_Database (Title_View : access Gtk_Title_View_Record)
+   overriding procedure Insert_Database (Title_View : access Gtk_Title_View_Record)
    is
       use Ada.Strings.Unbounded;
 
@@ -236,14 +236,14 @@ package body Books.Table_Views.Title is
          Rating_Valid => Rating_Valid);
    end Insert_Database;
 
-   function Main_Index_Name (Title_View : access Gtk_Title_View_Record) return String
+   overriding function Main_Index_Name (Title_View : access Gtk_Title_View_Record) return String
    is
       pragma Unreferenced (Title_View);
    begin
       return "Title";
    end Main_Index_Name;
 
-   procedure Update_Database (Title_View : access Gtk_Title_View_Record)
+   overriding procedure Update_Database (Title_View : access Gtk_Title_View_Record)
    is
       Year         : Interfaces.Unsigned_16;
       Year_Valid   : Boolean := True;
@@ -406,7 +406,7 @@ package body Books.Table_Views.Title is
 
    end Update_Display_SeriesTitle;
 
-   procedure Update_Display_Child (Title_View : access Gtk_Title_View_Record)
+   overriding procedure Update_Display_Child (Title_View : access Gtk_Title_View_Record)
    is begin
       declare
          use Database.Data_Tables.Title;

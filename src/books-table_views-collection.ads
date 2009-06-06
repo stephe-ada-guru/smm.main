@@ -2,11 +2,11 @@
 --
 --  Collection view widget for Books application.
 --
---  Copyright (C) 2002, 2004 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002, 2004, 2009 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
---  published by the Free Software Foundation; either version 2, or (at
+--  published by the Free Software Foundation; either version 3, or (at
 --  your option) any later version. This program is distributed in the
 --  hope that it will be useful, but WITHOUT ANY WARRANTY; without even
 --  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
@@ -38,16 +38,20 @@ package Books.Table_Views.Collection is
    ----------
    --  Override Table_View operations.
 
-   procedure Add_Link
+   overriding procedure Add_Link
      (Collection_View : access Gtk_Collection_View_Record;
       ID              : in     Books.Database.ID_Type;
       List            : in     Table_Name_Type);
-   procedure Default_Add          (Collection_View : access Gtk_Collection_View_Record);
-   procedure Delete_Link          (Collection_View : access Gtk_Collection_View_Record; ID : in Books.Database.ID_Type);
-   function Main_Index_Name       (Collection_View : access Gtk_Collection_View_Record) return String;
-   procedure Update_Display_Child (Collection_View : access Gtk_Collection_View_Record);
-   procedure Update_Database      (Collection_View : access Gtk_Collection_View_Record);
-   procedure Insert_Database      (Collection_View : access Gtk_Collection_View_Record);
+   overriding procedure Default_Add (Collection_View : access Gtk_Collection_View_Record);
+   overriding procedure Delete_Link
+     (Collection_View : access Gtk_Collection_View_Record;
+      ID : in Books.Database.ID_Type);
+   overriding function Main_Index_Name
+     (Collection_View : access Gtk_Collection_View_Record)
+     return String;
+   overriding procedure Update_Display_Child (Collection_View : access Gtk_Collection_View_Record);
+   overriding procedure Update_Database      (Collection_View : access Gtk_Collection_View_Record);
+   overriding procedure Insert_Database      (Collection_View : access Gtk_Collection_View_Record);
 
 private
 
