@@ -38,14 +38,24 @@ package body Import_Books.Title_Table is
       Read_Int_16 (File, Start_Column + 1, Title.Year, Title.Year_Indicator);
    end Read;
 
+   procedure Read
+     (File         : in     SAL.CSV.File_Type;
+      Start_Column : in     Integer;
+      Title        :    out ID_Indicator_Type)
+   is
+      Temp : Title_Type;
+   begin
+      Read (File, Start_Column, Temp);
+      Title := Lookup (Temp);
+   end Read;
+
    Statement_Title : Title_Type;
 
-   MySQL_ID           : aliased MySQL_ID_Type := 0;
-   MySQL_ID_Indicator : aliased GNU.DB.SQLCLI.SQLINTEGER    := 0;
+   MySQL_ID : ID_Indicator_Type;
 
    MySQL_TY_Lookup_Statement : GNU.DB.SQLCLI.SQLHANDLE;
-   MySQL_T_Lookup_Statement : GNU.DB.SQLCLI.SQLHANDLE;
-   MySQL_Quote_Statement  : GNU.DB.SQLCLI.SQLHANDLE;
+   MySQL_T_Lookup_Statement  : GNU.DB.SQLCLI.SQLHANDLE;
+   MySQL_Quote_Statement     : GNU.DB.SQLCLI.SQLHANDLE;
 
    procedure Initialize
    is
@@ -60,7 +70,7 @@ package body Import_Books.Title_Table is
       SQLPrepare
         (MySQL_TY_Lookup_Statement,
          String'("SELECT ID FROM Title WHERE Title=""""?"""" AND Year=?"));
-      SQLBindCol (MySQL_TY_Lookup_Statement, 1, MySQL_ID'Access, MySQL_ID_Indicator'Access);
+      SQLBindCol (MySQL_TY_Lookup_Statement, 1, MySQL_ID.ID'Access, MySQL_ID.Indicator'Access);
 
       SQLBindParameter (MySQL_TY_Lookup_Statement, 1, Statement_Title.Title, Statement_Title.Title_Length'Access);
       SQLBindParameter
@@ -70,7 +80,7 @@ package body Import_Books.Title_Table is
       SQLPrepare
         (MySQL_T_Lookup_Statement,
          String'("SELECT ID FROM Title WHERE Title=""""?"""""));
-      SQLBindCol (MySQL_T_Lookup_Statement, 1, MySQL_ID'Access, MySQL_ID_Indicator'Access);
+      SQLBindCol (MySQL_T_Lookup_Statement, 1, MySQL_ID.ID'Access, MySQL_ID.Indicator'Access);
 
       SQLBindParameter (MySQL_T_Lookup_Statement, 1, Statement_Title.Title, Statement_Title.Title_Length'Access);
 
@@ -80,11 +90,11 @@ package body Import_Books.Title_Table is
       SQLBindCol (MySQL_Quote_Statement, 1, Statement_Title.Title, Statement_Title.Title_Length'Access);
       SQLBindCol (MySQL_Quote_Statement, 2, Statement_Title.Year'Access, Statement_Title.Year_Indicator'Access);
 
-      SQLBindParameter (MySQL_Quote_Statement, 1, MySQL_ID'Access, MySQL_ID_Indicator'Access);
+      SQLBindParameter (MySQL_Quote_Statement, 1, MySQL_ID.ID'Access, MySQL_ID.Indicator'Access);
 
    end Initialize;
 
-   function Lookup (Title : in Title_Type) return MySQL_ID_Type
+   function Lookup (Title : in Title_Type) return ID_Indicator_Type
    is
       use GNU.DB.SQLCLI;
       Lookup_Statement : SQLHANDLE;
@@ -125,11 +135,11 @@ package body Import_Books.Title_Table is
 
    end Quote;
 
-   function Quote (MySQL_ID : in MySQL_ID_Type) return String
+   function Quote (ID : in ID_Indicator_Type) return String
    is
       use GNU.DB.SQLCLI;
    begin
-      Title_Table.MySQL_ID := MySQL_ID;
+      MySQL_ID := ID;
       SQLExecute (MySQL_Quote_Statement);
       SQLFetch (MySQL_Quote_Statement);
       SQLCloseCursor (MySQL_Quote_Statement);

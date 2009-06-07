@@ -104,12 +104,13 @@ package body Import_Books is
       Indicator :    out GNU.DB.SQLCLI.SQLINTEGER)
    is
       Data : constant String := SAL.CSV.Read (File, Column);
+      use type GNU.DB.SQLCLI.SQLINTEGER;
    begin
       if Data'Length = 0 then
-         Indicator := 0;
+         Indicator := GNU.DB.SQLCLI.SQL_NULL_DATA;
          Value     := 0;
       else
-         Indicator := 1;
+         Indicator := GNU.DB.SQLCLI.SQL_NULL_DATA + 1;
          Value := Interfaces.Integer_16'Value (Data);
       end if;
    exception
@@ -124,12 +125,13 @@ package body Import_Books is
       Indicator :    out GNU.DB.SQLCLI.SQLINTEGER)
    is
       Data : constant String := SAL.CSV.Read (File, Column);
+      use type GNU.DB.SQLCLI.SQLINTEGER;
    begin
       if Data'Length = 0 then
-         Indicator := 0;
+         Indicator := GNU.DB.SQLCLI.SQL_NULL_DATA;
          Value     := 0;
       else
-         Indicator := 1;
+         Indicator := GNU.DB.SQLCLI.SQL_NULL_DATA + 1;
          Value := Interfaces.Unsigned_8'Value (Data);
       end if;
    exception

@@ -28,8 +28,19 @@ package body Import_Books.Author_Table is
       Read_String (File, Start_Column + 2, Name.Last.all, Name.Last_Length);
    end Read;
 
-   MySQL_ID           : aliased MySQL_ID_Type := 0;
-   MySQL_ID_Indicator : aliased GNU.DB.SQLCLI.SQLINTEGER    := 0;
+   procedure Read
+     (File              : in     SAL.CSV.File_Type;
+      Start_Column      : in     Integer;
+      Author            :    out ID_Indicator_Type;
+      Exception_On_Null : in     Boolean)
+   is
+      Name : Name_Type;
+   begin
+      Read (File, Start_Column, Name);
+      Author := Lookup (Name, Exception_On_Null);
+   end Read;
+
+   MySQL_ID : ID_Indicator_Type;
 
    MySQL_Lookup_FML_Statement : GNU.DB.SQLCLI.SQLHANDLE;
    MySQL_Lookup_FL_Statement  : GNU.DB.SQLCLI.SQLHANDLE;
@@ -49,7 +60,7 @@ package body Import_Books.Author_Table is
                    " WHERE First=? AND Middle=? AND Last=?" &
                    " ORDER BY First, Middle, Last"));
 
-      SQLBindCol (MySQL_Lookup_FML_Statement, 1, MySQL_ID'Access, MySQL_ID_Indicator'Access);
+      SQLBindCol (MySQL_Lookup_FML_Statement, 1, MySQL_ID.ID'Access, MySQL_ID.Indicator'Access);
 
       SQLBindParameter (MySQL_Lookup_FML_Statement, 1, Statement_Name.First, Statement_Name.First_Length'Access);
       SQLBindParameter (MySQL_Lookup_FML_Statement, 2, Statement_Name.Middle, Statement_Name.Middle_Length'Access);
@@ -62,7 +73,7 @@ package body Import_Books.Author_Table is
                    " WHERE First=? AND Last=?" &
                    " ORDER BY First, Middle, Last"));
 
-      SQLBindCol (MySQL_Lookup_FL_Statement, 1, MySQL_ID'Access, MySQL_ID_Indicator'Access);
+      SQLBindCol (MySQL_Lookup_FL_Statement, 1, MySQL_ID.ID'Access, MySQL_ID.Indicator'Access);
 
       SQLBindParameter (MySQL_Lookup_FL_Statement, 1, Statement_Name.First, Statement_Name.First_Length'Access);
       SQLBindParameter (MySQL_Lookup_FL_Statement, 2, Statement_Name.Last, Statement_Name.Last_Length'Access);
@@ -74,11 +85,11 @@ package body Import_Books.Author_Table is
       SQLBindCol (MySQL_Quote_Statement, 2, Statement_Name.Middle, Statement_Name.Middle_Length'Access);
       SQLBindCol (MySQL_Quote_Statement, 3, Statement_Name.Last, Statement_Name.Last_Length'Access);
 
-      SQLBindParameter (MySQL_Quote_Statement, 1, MySQL_ID'Access, MySQL_ID_Indicator'Access);
+      SQLBindParameter (MySQL_Quote_Statement, 1, MySQL_ID.ID'Access, MySQL_ID.Indicator'Access);
 
    end Initialize;
 
-   function Lookup (Name : in Name_Type) return MySQL_ID_Type
+   function Lookup (Name : in Name_Type; Exception_On_Null : in Boolean) return ID_Indicator_Type
    is
       use GNU.DB.SQLCLI;
       Lookup_Statement : SQLHANDLE;
@@ -115,7 +126,11 @@ package body Import_Books.Author_Table is
          SQLCloseCursor (Lookup_Statement);
       exception
       when No_Data =>
-         raise No_Data with "Can't find " & Quote & " in Author table";
+         if Exception_On_Null then
+            raise No_Data with "Can't find " & Quote & " in Author table";
+         else
+            MySQL_ID.Indicator := SQL_NULL_DATA;
+         end if;
       end;
 
       return MySQL_ID;
@@ -123,12 +138,10 @@ package body Import_Books.Author_Table is
 
    function Quote return String
    is begin
-      return Quote (Statement_Name.First.all, Statement_Name.First_Length) & "," &
-        Quote (Statement_Name.Middle.all, Statement_Name.Middle_Length) & "," &
-        Quote (Statement_Name.Last.all, Statement_Name.Last_Length);
+      return Quote (Statement_Name);
    end Quote;
 
-   function Quote (ID : in MySQL_ID_Type) return String
+   function Quote (ID : in ID_Indicator_Type) return String
    is
       use GNU.DB.SQLCLI;
    begin
@@ -137,6 +150,13 @@ package body Import_Books.Author_Table is
       SQLFetch (MySQL_Quote_Statement);
       SQLCloseCursor (MySQL_Quote_Statement);
       return Quote;
+   end Quote;
+
+   function Quote (Name : in Name_Type) return String
+   is begin
+      return Quote (Name.First.all, Name.First_Length) & "," &
+        Quote (Name.Middle.all, Name.Middle_Length) & "," &
+        Quote (Name.Last.all, Name.Last_Length);
    end Quote;
 
 end Import_Books.Author_Table;

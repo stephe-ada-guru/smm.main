@@ -28,7 +28,6 @@ is
    use SAL.CSV;
 
    Data : Title_Table.Data_Type;
-   Count : Integer := 0;
 
    File_Name : constant String := Root_File_Name & "_title.csv";
 
@@ -52,10 +51,9 @@ begin
    SQLBindParameter (MySQL_Statement, 3, Data.Comment, Data.Comment_Length'Access);
    SQLBindParameter (MySQL_Statement, 4, Data.Rating'Access, Data.Rating_Indicator'Access);
 
+   Warm_Fuzzy_Count := 0;
    loop
       Title_Table.Read (File, 1, Data);
-
-      Warm_Fuzzy;
 
       begin
          SQLExecute (MySQL_Statement);
@@ -68,7 +66,7 @@ begin
          end if;
       end;
 
-      Count := Count + 1;
+      Warm_Fuzzy;
 
       exit when End_Of_File (File);
 
@@ -78,5 +76,5 @@ begin
    SQLCommit (MySQL_Connection);
 
    Ada.Text_IO.New_Line;
-   Ada.Text_IO.Put_Line (Integer'Image (Count) & " titles");
+   Ada.Text_IO.Put_Line (Integer'Image (Warm_Fuzzy_Count) & " titles");
 end Import_Books.Import_Title;

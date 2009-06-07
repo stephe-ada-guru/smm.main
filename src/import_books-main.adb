@@ -22,9 +22,15 @@ with Ada.Command_Line;
 with Ada.Exceptions;
 with Ada.Text_IO;
 with Import_Books.Author_Table;
+with Import_Books.Collection_Table;
 with Import_Books.Import_Author;
 with Import_Books.Import_AuthorTitle;
+with Import_Books.Import_Collection;
+with Import_Books.Import_CollectionTitle;
+with Import_Books.Import_Series;
+with Import_Books.Import_SeriesTitle;
 with Import_Books.Import_Title;
+with Import_Books.Series_Table;
 with Import_Books.Title_Table;
 procedure Import_Books.Main
 is begin
@@ -44,12 +50,18 @@ is begin
       Connect (Database_Username => Ada.Command_Line.Argument (1));
 
       Author_Table.Initialize;
+      Collection_Table.Initialize;
+      Series_Table.Initialize;
       Title_Table.Initialize;
 
       Import_Books.Import_Author (Root_File_Name);
+      Import_Books.Import_Collection (Root_File_Name);
+      Import_Books.Import_Series (Root_File_Name);
       Import_Books.Import_Title (Root_File_Name);
 
       Import_Books.Import_AuthorTitle (Root_File_Name);
+      Import_Books.Import_CollectionTitle (Root_File_Name);
+      Import_Books.Import_SeriesTitle (Root_File_Name);
    end;
 exception
 when E : others =>

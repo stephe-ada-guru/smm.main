@@ -1,6 +1,6 @@
 --  Abstract :
 --
---  Operations on the Title table
+--  Operations on the Collection table.
 --
 --  Copyright (C) 2009 Stephen Leake.  All Rights Reserved.
 --
@@ -16,45 +16,44 @@
 --  the Free Software Foundation, 59 Temple Place - Suite 330, Boston,
 --  MA 02111-1307, USA.
 
-package Import_Books.Title_Table is
+package Import_Books.Collection_Table is
 
    type Data_Type is record
-      Title            : access String := new String (1 .. Title_Field_Length);
-      Title_Length     : aliased GNU.DB.SQLCLI.SQLINTEGER := 0;
+      Name             : access String                    := new String (1 .. Title_Field_Length);
+      Name_Length      : aliased GNU.DB.SQLCLI.SQLINTEGER := 0;
+      Editor           : ID_Indicator_Type;
       Year             : aliased Interfaces.Integer_16;
       Year_Indicator   : aliased GNU.DB.SQLCLI.SQLINTEGER := GNU.DB.SQLCLI.SQL_NULL_DATA;
-      Comment          : access String := new String (1 .. Title_Field_Length);
-      Comment_Length   : aliased GNU.DB.SQLCLI.SQLINTEGER := 0;
-      Rating           : aliased Interfaces.Unsigned_8;
-      Rating_Indicator : aliased GNU.DB.SQLCLI.SQLINTEGER := GNU.DB.SQLCLI.SQL_NULL_DATA;
    end record;
 
-   type Title_Type is record
-      Title          : access String := new String (1 .. Title_Field_Length);
-      Title_Length   : aliased GNU.DB.SQLCLI.SQLINTEGER := 0;
-      Year           : aliased Interfaces.Integer_16;
-      Year_Indicator : aliased GNU.DB.SQLCLI.SQLINTEGER := GNU.DB.SQLCLI.SQL_NULL_DATA;
+   type Name_Editor_Type is record
+      Name             : access String                    := new String (1 .. Title_Field_Length);
+      Name_Length      : aliased GNU.DB.SQLCLI.SQLINTEGER := 0;
+      Editor           : ID_Indicator_Type;
    end record;
+
+   --  CSV operations
 
    procedure Read
      (File         : in     SAL.CSV.File_Type;
       Start_Column : in     Integer;
       Data         :    out Data_Type);
-   --  Read title data from current line in File, starting at Start_Column
-
-   procedure Read
-     (File         : in     SAL.CSV.File_Type;
-      Start_Column : in     Integer;
-      Title        :    out Title_Type);
-   --  Read just title, year from current line in File, starting at
+   --  Read collection data from current line in File, starting at
    --  Start_Column
 
    procedure Read
      (File         : in     SAL.CSV.File_Type;
       Start_Column : in     Integer;
-      Title        :    out ID_Indicator_Type);
-   --  Read just title, year from current line in File, starting at
-   --  Start_Column. Lookup ID.
+      Name_Editor  :    out Name_Editor_Type);
+   --  Read collection, editor name from current line in File,
+   --  starting at Start_Column
+
+   procedure Read
+     (File         : in     SAL.CSV.File_Type;
+      Start_Column : in     Integer;
+      Collection   :    out ID_Indicator_Type);
+   --  Read collection, editor name from current line in File,
+   --  starting at Start_Column; lookup collection ID.
 
    ----------
    --  Database operations
@@ -63,15 +62,15 @@ package Import_Books.Title_Table is
    --  Set up queries. Must be called once before first call to
    --  Lookup.
 
-   function Lookup (Title : in Title_Type) return ID_Indicator_Type;
-   --  Return the Title ID for Title in the database.
+   function Lookup (Name_Editor : in Name_Editor_Type) return ID_Indicator_Type;
+   --  Return the collection ID for Name_Editor.
 
    function Quote return String;
-   --  Return title, year from last operation, as quoted comma
-   --  separated values.
+   --  Return collection name and editor from last operation, as quoted
+   --  comma separated values.
 
    function Quote (ID : in ID_Indicator_Type) return String;
-   --  Return title, year from MySQL database, as quoted comma
-   --  separated values.
+   --  Return collection name and editor from database, as quoted
+   --  comma separated values.
 
-end Import_Books.Title_Table;
+end Import_Books.Collection_Table;

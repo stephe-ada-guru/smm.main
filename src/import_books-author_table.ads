@@ -33,7 +33,16 @@ package Import_Books.Author_Table is
      (File         : in     SAL.CSV.File_Type;
       Start_Column : in     Integer;
       Name         :    out Name_Type);
-   --  Read an author name from current line in File, starting at Start_Column
+   --  Read an author name from current line in File, starting at
+   --  Start_Column
+
+   procedure Read
+     (File              : in     SAL.CSV.File_Type;
+      Start_Column      : in     Integer;
+      Author            :    out ID_Indicator_Type;
+      Exception_On_Null : in     Boolean);
+   --  Read an author name from current line in File, starting at
+   --  Start_Column; lookup ID.
 
    ----------
    --  Database operations
@@ -42,14 +51,16 @@ package Import_Books.Author_Table is
    --  Set up queries. Must be called once before first call to
    --  Lookup.
 
-   function Lookup (Name : in Name_Type) return MySQL_ID_Type;
+   function Lookup (Name : in Name_Type; Exception_On_Null : in Boolean) return ID_Indicator_Type;
    --  Return the Author ID in the database.
 
    function Quote return String;
    --  Return name from last operation, for error message
 
-   function Quote (ID : in MySQL_ID_Type) return String;
+   function Quote (ID : in ID_Indicator_Type) return String;
    --  Return name from MySQL database, as quoted comma separated
    --  values.
+
+   function Quote (Name : in Name_Type) return String;
 
 end Import_Books.Author_Table;

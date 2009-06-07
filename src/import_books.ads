@@ -36,6 +36,11 @@ package Import_Books is
 
    type MySQL_ID_Type is new Interfaces.Integer_32;
 
+   type ID_Indicator_Type is record
+      ID        : aliased MySQL_ID_Type;
+      Indicator : aliased GNU.DB.SQLCLI.SQLINTEGER;
+   end record;
+
    package MySQL_ID_Binding   is new GNU.DB.SQLCLI.IntegerBinding (MySQL_ID_Type);
    package Int_16_Binding     is new GNU.DB.SQLCLI.IntegerBinding (Interfaces.Integer_16);
    package Unsigned_8_Binding is new GNU.DB.SQLCLI.UnsignedBinding (Interfaces.Unsigned_8);
