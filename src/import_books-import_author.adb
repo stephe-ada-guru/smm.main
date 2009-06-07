@@ -24,6 +24,7 @@ is
    use SAL.CSV;
 
    Name : Author_Table.Name_Type;
+   Count : Integer := 0;
 
    File_Name : constant String := Root_File_Name & "_author.csv";
 
@@ -47,15 +48,18 @@ begin
    SQLBindParameter (MySQL_Statement, 3, Name.Last, Name.Last_Length'Access);
 
    loop
-      exit when End_Of_File (File);
-
       Author_Table.Read (File, 1, Name);
-
-      Next_Row (File);
 
       Warm_Fuzzy;
 
       SQLExecute (MySQL_Statement);
+
+      Count := Count + 1;
+
+      exit when End_Of_File (File);
+
+      Next_Row (File);
+
    end loop;
 
    --  Don't commit until all csv lines are processed; that lets us
@@ -63,7 +67,6 @@ begin
    SQLCommit (MySQL_Connection);
 
    Ada.Text_IO.New_Line;
-
-   Finalize (File);
+   Ada.Text_IO.Put_Line (Integer'Image (Count) & " titles");
 
 end Import_Books.Import_Author;

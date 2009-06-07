@@ -19,11 +19,11 @@
 package Import_Books.Author_Table is
 
    type Name_Type is record
-      First         : access String := new String (1 .. Name_Field_Length + 1); -- Null termination
+      First         : access String := new String (1 .. Name_Field_Length);
       First_Length  : aliased GNU.DB.SQLCLI.SQLINTEGER := 0;
-      Middle        : access String := new String (1 .. Name_Field_Length + 1);
+      Middle        : access String := new String (1 .. Name_Field_Length);
       Middle_Length : aliased GNU.DB.SQLCLI.SQLINTEGER := 0;
-      Last          : access String := new String (1 .. Name_Field_Length + 1);
+      Last          : access String := new String (1 .. Name_Field_Length);
       Last_Length   : aliased GNU.DB.SQLCLI.SQLINTEGER := 0;
    end record;
 

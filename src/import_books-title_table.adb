@@ -89,7 +89,10 @@ package body Import_Books.Title_Table is
       use GNU.DB.SQLCLI;
       Lookup_Statement : SQLHANDLE;
    begin
-      Statement_Title := Title;
+      Statement_Title.Title.all      := Title.Title.all;
+      Statement_Title.Title_Length   := Title.Title_Length;
+      Statement_Title.Year           := Title.Year;
+      Statement_Title.Year_Indicator := Title.Year_Indicator;
 
       if Title.Year_Indicator = SQL_NULL_DATA then
          Lookup_Statement := MySQL_T_Lookup_Statement;
@@ -97,9 +100,14 @@ package body Import_Books.Title_Table is
          Lookup_Statement := MySQL_TY_Lookup_Statement;
       end if;
 
-      SQLExecute (Lookup_Statement);
-      SQLFetch (Lookup_Statement);
-      SQLCloseCursor (Lookup_Statement);
+      begin
+         SQLExecute (Lookup_Statement);
+         SQLFetch (Lookup_Statement);
+         SQLCloseCursor (Lookup_Statement);
+      exception
+      when No_Data =>
+         raise No_Data with "Can't find " & Quote & " in Title table";
+      end;
 
       return MySQL_ID;
    end Lookup;

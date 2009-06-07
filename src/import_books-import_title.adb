@@ -16,6 +16,8 @@
 --  the Free Software Foundation, 59 Temple Place - Suite 330, Boston,
 --  MA 02111-1307, USA.
 
+with Ada.Exceptions;
+with Ada.Strings.Fixed;
 with Ada.Text_IO;
 with Import_Books.Title_Table;
 procedure Import_Books.Import_Title (Root_File_Name : in String)
@@ -26,6 +28,7 @@ is
    use SAL.CSV;
 
    Data : Title_Table.Data_Type;
+   Count : Integer := 0;
 
    File_Name : constant String := Root_File_Name & "_title.csv";
 
@@ -50,18 +53,30 @@ begin
    SQLBindParameter (MySQL_Statement, 4, Data.Rating'Access, Data.Rating_Indicator'Access);
 
    loop
-      exit when End_Of_File (File);
-
       Title_Table.Read (File, 1, Data);
-
-      Next_Row (File);
 
       Warm_Fuzzy;
 
-      SQLExecute (MySQL_Statement);
+      begin
+         SQLExecute (MySQL_Statement);
+      exception
+      when E : Database_Error =>
+         if Ada.Strings.Fixed.Index (Ada.Exceptions.Exception_Message (E), "Data too Long") /= 0 then
+            raise Database_Error with "'" & Data.Title (1 .. Integer (Data.Title_Length)) & "'" & " too long";
+         else
+            raise;
+         end if;
+      end;
+
+      Count := Count + 1;
+
+      exit when End_Of_File (File);
+
+      Next_Row (File);
    end loop;
 
    SQLCommit (MySQL_Connection);
 
    Ada.Text_IO.New_Line;
+   Ada.Text_IO.Put_Line (Integer'Image (Count) & " titles");
 end Import_Books.Import_Title;

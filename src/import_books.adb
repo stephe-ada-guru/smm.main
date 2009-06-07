@@ -72,7 +72,7 @@ package body Import_Books is
       if Item_Length <= 0 then
          return """""";
       else
-         return '"' & Trim (Item (Item'First .. Integer (Item_Length)), Ada.Strings.Both) & '"';
+         return SAL.CSV.Quote (Trim (Item (Item'First .. Integer (Item_Length)), Ada.Strings.Both));
       end if;
    end Quote;
 
@@ -85,14 +85,13 @@ package body Import_Books is
       end if;
    end Warm_Fuzzy;
 
-
    procedure Read_String
      (File         : in     SAL.CSV.File_Type;
       Column       : in     Integer;
       Value        :    out String;
       Value_Length :    out GNU.DB.SQLCLI.SQLINTEGER)
    is
-      Data : constant String := SAL.CSV.Read (File, Column);
+      Data : constant String := SAL.CSV.Unquote (SAL.CSV.Read (File, Column));
    begin
       Ada.Strings.Fixed.Move (Data, Value);
       Value_Length := Data'Length;

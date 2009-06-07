@@ -83,7 +83,13 @@ package body Import_Books.Author_Table is
       use GNU.DB.SQLCLI;
       Lookup_Statement : SQLHANDLE;
    begin
-      Statement_Name := Name;
+      --  prepared statements have original string pointers; preseve them
+      Statement_Name.First.all     := Name.First.all;
+      Statement_Name.First_Length  := Name.First_Length;
+      Statement_Name.Middle.all    := Name.Middle.all;
+      Statement_Name.Middle_Length := Name.Middle_Length;
+      Statement_Name.Last.all      := Name.Last.all;
+      Statement_Name.Last_Length   := Name.Last_Length;
 
       --  If a string is empty, the length is returned as -1, but must
       --  be 0 for the next SQL statement. Also we apparently need to

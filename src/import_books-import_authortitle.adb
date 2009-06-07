@@ -58,7 +58,7 @@ begin
       exit when End_Of_File (File);
 
       Author_Table.Read (File, 1, Author);
-      Title_Table.Read (File, 1, Title);
+      Title_Table.Read (File, 4, Title);
 
       Next_Row (File);
 

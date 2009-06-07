@@ -19,18 +19,18 @@
 package Import_Books.Title_Table is
 
    type Data_Type is record
-      Title            : access String := new String (1 .. Title_Field_Length + 1);
+      Title            : access String := new String (1 .. Title_Field_Length);
       Title_Length     : aliased GNU.DB.SQLCLI.SQLINTEGER := 0;
       Year             : aliased Interfaces.Integer_16;
       Year_Indicator   : aliased GNU.DB.SQLCLI.SQLINTEGER := 0;
-      Comment          : access String := new String (1 .. Title_Field_Length + 1);
+      Comment          : access String := new String (1 .. Title_Field_Length);
       Comment_Length   : aliased GNU.DB.SQLCLI.SQLINTEGER := 0;
       Rating           : aliased Interfaces.Unsigned_8;
       Rating_Indicator : aliased GNU.DB.SQLCLI.SQLINTEGER := 0;
    end record;
 
    type Title_Type is record
-      Title          : access String := new String (1 .. Title_Field_Length + 1);
+      Title          : access String := new String (1 .. Title_Field_Length);
       Title_Length   : aliased GNU.DB.SQLCLI.SQLINTEGER := 0;
       Year           : aliased Interfaces.Integer_16;
       Year_Indicator : aliased GNU.DB.SQLCLI.SQLINTEGER := 0;

@@ -45,8 +45,8 @@ package Import_Books is
    procedure Disconnect;
 
    function Quote
-     (Item               : in     String;
-      Item_Length        : in     GNU.DB.SQLCLI.SQLINTEGER)
+     (Item        : in String;
+      Item_Length : in GNU.DB.SQLCLI.SQLINTEGER)
      return String;
    --  Return quoted Item.
 
