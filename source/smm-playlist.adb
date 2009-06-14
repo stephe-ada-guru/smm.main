@@ -44,9 +44,10 @@ begin
       use Ada.Text_IO;
    begin
       if Exists (Destination) then
-         Delete_File (Destination);
+         Open (Playlist_File, Append_File, Destination);
+      else
+         Create (Playlist_File, Out_File, Destination);
       end if;
-      Create (Playlist_File, Out_File, Destination);
    end;
 
    Least_Recent_Songs (Db, Category, Song_Count => 30, Songs => Songs);
