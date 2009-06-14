@@ -41,8 +41,8 @@ package body Books.Table_Views.Collection is
    begin
       case List is
       when Author =>
-         --  Not a link table (collections only have one editor).
-         Gdk.Main.Beep;
+         --  Not a link table (collections only have one editor). But see Insert_Database below.
+         null;
 
       when Books.Collection =>
          --  not possible
@@ -99,7 +99,6 @@ package body Books.Table_Views.Collection is
       Gtk.Table.Show_All (Collection_View.Data_Table);
 
       --  Hide invalid stuff
-      Gtk.Check_Button.Hide (Collection_View.Links_Buttons (Author));
       Gtk.Check_Button.Hide (Collection_View.Links_Buttons (Books.Collection));
       Gtk.Check_Button.Hide (Collection_View.Links_Buttons (Series));
 
@@ -175,7 +174,11 @@ package body Books.Table_Views.Collection is
          Editor := Database.Value (Gtk.GEntry.Get_Text (Collection_View.Editor_Text));
       exception
       when others =>
-         Editor_Valid := False;
+         if Gtk.Check_Button.Get_Active (Collection_View.Links_Buttons (Books.Author)) then
+            Editor := ID (Collection_View.Sibling_Views (Books.Author));
+         else
+            Editor_Valid := False;
+         end if;
       end;
 
       begin
@@ -326,7 +329,6 @@ package body Books.Table_Views.Collection is
 
    overriding procedure Update_Display_Child (Collection_View : access Gtk_Collection_View_Record)
    is begin
-      Gtk.Radio_Button.Set_Active (Collection_View.List_Select (Title), True);
       case Collection_View.Current_List is
       when Author =>
          Update_Display_Editor (Collection_View);

@@ -181,6 +181,9 @@ package body Books.Database is
    is begin
       GNU.DB.SQLCLI.SQLFetch (T.Find_Statement);
    exception
+   when GNU.DB.SQLCLI.Database_Error =>
+      --  Next button pushed twice by mistake; cursor already closed
+      raise Books.Database.No_Data;
    when GNU.DB.SQLCLI.No_Data =>
       GNU.DB.SQLCLI.SQLCloseCursor (T.Find_Statement);
       raise Books.Database.No_Data;

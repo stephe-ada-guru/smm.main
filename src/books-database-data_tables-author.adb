@@ -95,10 +95,10 @@ package body Books.Database.Data_Tables.Author is
       use GNU.DB.SQLCLI.Statement_Attribute;
    begin
       if T.First = null then
-         T.First        := new String'(1 .. Name_Field_Length + 1 => ' ');
-         T.Middle       := new String'(1 .. Name_Field_Length + 1 => ' ');
-         T.Last         := new String'(1 .. Name_Field_Length + 1 => ' ');
-         T.Find_Pattern := new String'(1 .. Name_Field_Length + 1 => ' ');
+         T.First        := new String'(1 .. Name_Field_Length => ' ');
+         T.Middle       := new String'(1 .. Name_Field_Length => ' ');
+         T.Last         := new String'(1 .. Name_Field_Length => ' ');
+         T.Find_Pattern := new String'(1 .. Name_Field_Length => ' ');
       end if;
 
       --  All_By_ID_Statement

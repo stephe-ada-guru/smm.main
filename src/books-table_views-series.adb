@@ -41,8 +41,9 @@ package body Books.Table_Views.Series is
    begin
       case List is
       when Author =>
-         --  Not a link table (series only have one author).
-         Gdk.Main.Beep;
+         --  Not a link table (series only have one author). But see
+         --  Insert_Database below.
+         null;
 
       when Collection =>
          --  Collections are not in series.
@@ -91,7 +92,6 @@ package body Books.Table_Views.Series is
       Gtk.Table.Show_All (Series_View.Data_Table);
 
       --  Hide invalid stuff
-      Gtk.Check_Button.Hide (Series_View.Links_Buttons (Author));
       Gtk.Check_Button.Hide (Series_View.Links_Buttons (Collection));
       Gtk.Check_Button.Hide (Series_View.Links_Buttons (Books.Series));
 
@@ -163,7 +163,11 @@ package body Books.Table_Views.Series is
          Author := Database.Value (Gtk.GEntry.Get_Text (Series_View.Author_Text));
       exception
       when others =>
-         Author_Valid := False;
+         if Gtk.Check_Button.Get_Active (Series_View.Links_Buttons (Books.Author)) then
+            Author := ID (Series_View.Sibling_Views (Books.Author));
+         else
+            Author_Valid := False;
+         end if;
       end;
 
       Books.Database.Data_Tables.Series.Insert
@@ -283,7 +287,6 @@ package body Books.Table_Views.Series is
 
    overriding procedure Update_Display_Child (Series_View : access Gtk_Series_View_Record)
    is begin
-      Gtk.Radio_Button.Set_Active (Series_View.List_Select (Title), True);
       case Series_View.Current_List is
       when Author =>
          Update_Display_Author (Series_View);

@@ -107,9 +107,9 @@ package body Books.Database.Data_Tables.Title is
       use GNU.DB.SQLCLI.Statement_Attribute;
    begin
       if T.Title = null then
-         T.Title        := new String'(1 .. Field_Length + 1 => ' ');
-         T.Comment      := new String'(1 .. Field_Length + 1 => ' ');
-         T.Find_Pattern := new String'(1 .. Field_Length + 1 => ' ');
+         T.Title        := new String'(1 .. Field_Length => ' ');
+         T.Comment      := new String'(1 .. Field_Length => ' ');
+         T.Find_Pattern := new String'(1 .. Field_Length => ' ');
       end if;
 
       --  All_By_ID_Statement
