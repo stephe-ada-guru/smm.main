@@ -45,7 +45,7 @@ package body Books.Table_Views.Title is
       case List is
       when Author =>
 
-         Books.Database.Link_Tables.AuthorTitle.Insert
+         Link_Tables.AuthorTitle.Insert
            (Title_View.AuthorTitle_Table.all,
             (Link_Tables.Title  => Data_Tables.ID (Title_View.Title_Table.all),
              Link_Tables.Author => ID));
@@ -339,18 +339,17 @@ package body Books.Table_Views.Title is
       Gtk.Clist.Clear (Title_View.List_Display (Collection));
 
       loop
+         Data_Tables.Fetch
+           (Title_View.Collection_Table.all,
+            Link_Tables.CollectionTitle.ID (Title_View.CollectionTitle_Table.all, Link_Tables.Collection));
+
+         Gtk.Clist.Insert
+           (Title_View.List_Display (Collection),
+            0,
+            (1 => New_String (Image (Data_Tables.ID (Title_View.Collection_Table.all))),
+             2 => New_String (Data_Tables.Collection.Name (Title_View.Collection_Table.all))));
+
          begin
-            Data_Tables.Fetch
-              (Title_View.Collection_Table.all,
-               Link_Tables.CollectionTitle.ID (Title_View.CollectionTitle_Table.all, Link_Tables.Collection));
-            --  This can raise an exception if tables are swtiched in the middle of editing.
-
-            Gtk.Clist.Insert
-              (Title_View.List_Display (Collection),
-               0,
-               (1 => New_String (Image (Data_Tables.ID (Title_View.Collection_Table.all))),
-                2 => New_String (Data_Tables.Collection.Name (Title_View.Collection_Table.all))));
-
             Books.Database.Next (Title_View.CollectionTitle_Table.all);
          exception
          when Database.No_Data =>

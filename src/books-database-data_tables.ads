@@ -35,6 +35,7 @@ package Books.Database.Data_Tables is
    --  If there is no match, current data is unchanged.
 
    function ID (T : in Table'Class) return ID_Type;
+   --  Return ID of current record.
 
    procedure Fetch (T : in out Table'Class; ID : in ID_Type);
    --  Fetch record by ID.
