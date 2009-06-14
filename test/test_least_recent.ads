@@ -1,6 +1,6 @@
 --  Abstract :
 --
---  Run all AUnit tests.
+--  Test generating playlists
 --
 --  Copyright (C) 2009 Stephen Leake.  All Rights Reserved.
 --
@@ -18,22 +18,14 @@
 
 pragma License (GPL);
 
-with AUnit.Test_Results.Text_Reporter;
-with AUnit.Test_Suites;
-with Test_Least_Recent;
-procedure Test_All_Harness
-is
-   use AUnit.Test_Suites;
+with Ada.Strings.Unbounded;
+with AUnit.Test_Cases; use AUnit.Test_Cases;
+package Test_Least_Recent is
 
-   Suite  : constant Access_Test_Suite := new Test_Suite;
+   type Test_Case is new Standard.AUnit.Test_Cases.Test_Case with null record;
 
-   Result : AUnit.Test_Results.Result;
+   overriding procedure Register_Tests (T : in out Test_Case);
 
-begin
-   Add_Test (Suite, new Test_Least_Recent.Test_Case);
+   overriding function Name (T : Test_Case) return Ada.Strings.Unbounded.String_Access;
 
-   Run (Suite.all, Result);
-
-   AUnit.Test_Results.Text_Reporter.Report (Result);
-
-end Test_All_Harness;
+end Test_Least_Recent;

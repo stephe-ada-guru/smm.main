@@ -2,7 +2,7 @@
 --
 --  Root of Stephe's Music Manager packages
 --
---  Copyright (C) 2008 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008, 2009 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -18,6 +18,11 @@
 
 pragma License (GPL);
 
+with SAL.Aux.Definite_Private_Items;
+with SAL.Config_Files;
+with SAL.Gen.Alg.Count;
+with SAL.Poly.Lists.Double;
+with SAL.Storage_Pools;
 package SMM is
 
    Verbosity : Integer;
@@ -30,4 +35,37 @@ package SMM is
    Last_Downloaded_Key : constant String := "Last_Downloaded";
    Songs_Key           : constant String := "Songs";
    Root_Key            : constant String := "Root";
+
+   package Song_Lists_Aux is new SAL.Aux.Definite_Private_Items (SAL.Config_Files.Iterator_Type);
+
+   package Song_Lists is new SAL.Poly.Lists.Double
+     (Item_Type         => SAL.Config_Files.Iterator_Type,
+      Item_Node_Type    => SAL.Config_Files.Iterator_Type,
+      To_Item_Node      => Song_Lists_Aux.To_Item_Node,
+      Free_Item         => Song_Lists_Aux.Free_Item,
+      Copy              => Song_Lists_Aux.Copy_Item_Node,
+      Node_Storage_Pool => SAL.Storage_Pools.Integer_Access_Type'Storage_Pool);
+
+   package Song_Lists_Algorithms is new SAL.Gen.Alg
+     (Item_Node_Type => SAL.Config_Files.Iterator_Type,
+      Container_Type => Song_Lists.List_Type,
+      Iterator_Type  => Song_Lists.Iterator_Type,
+      Current        => Song_Lists.Current,
+      First          => Song_Lists.First,
+      Last           => Song_Lists.Last,
+      None           => Song_Lists.None,
+      Is_Null        => Song_Lists.Is_Null,
+      Next_Procedure => Song_Lists.Next,
+      Next_Function  => Song_Lists.Next);
+
+   function Count is new Song_Lists_Algorithms.Count;
+
+   procedure Least_Recent_Songs
+     (Db         : in     SAL.Config_Files.Configuration_Type;
+      Category   : in     String;
+      Songs      :    out Song_Lists.List_Type;
+      Song_Count : in     Integer;
+      Seed       : in     Integer                             := 0);
+   --  Return randomized list of Song_Count least-recently downloaded songs in Category.
+
 end SMM;

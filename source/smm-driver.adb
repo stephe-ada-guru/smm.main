@@ -26,6 +26,7 @@ with SAL.Command_Line_IO;
 with SAL.Config_Files;
 with SMM.Download;
 with SMM.Import;
+with SMM.Playlist;
 procedure SMM.Driver
 is
    procedure Put_Usage
@@ -38,18 +39,18 @@ is
       Put_Line ("    downloads default amount of music to target_dir");
       Put_Line ("    music is drawn from least-recently downloaded songs in category");
       New_Line;
+      Put_Line ("  playlist <category> <file>");
+      Put_Line ("    create a playlist in <file> (same songs as 'download' would do)");
+      New_Line;
       Put_Line ("  import <dir>");
       Put_Line ("    scan <dir> for new music; dir must be relative to database root dir");
-      New_Line;
-      Put_Line ("  set_category <category> <file>");
-      Put_Line ("    <file> can have '*' wildcards");
    end Put_Usage;
 
    Db_File_Name : access String;
    Db           : SAL.Config_Files.Configuration_Type;
    Next_Arg     : Integer := 1;
 
-   type Command_Type is (Download, Import, Set_Category);
+   type Command_Type is (Download, Playlist, Import);
 
    procedure Get_Command is new SAL.Command_Line_IO.Gen_Get_Discrete (Command_Type, "command", Next_Arg);
 
@@ -100,6 +101,9 @@ begin
          end if;
       end;
 
+   when Playlist =>
+      SMM.Playlist (Db, Argument (Next_Arg), Argument (Next_Arg + 1));
+
    when Import =>
       declare
          Root : constant String := Argument (Next_Arg);
@@ -110,9 +114,6 @@ begin
             SMM.Import (Db, Root);
          end if;
       end;
-
-   when Set_Category =>
-      raise SAL.Not_Implemented;
 
    end case;
 

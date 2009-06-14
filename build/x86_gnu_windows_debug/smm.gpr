@@ -14,7 +14,7 @@ project Smm is
   package Compiler is
      for Default_Switches ("Ada") use
        Standard_Common.Compiler'Default_Switches ("Ada") &
-       Standard_Common.Compiler.Release_Switches &
+       Standard_Common.Compiler.Debug_Switches &
        Standard_Common.Compiler.Style_Checks;
   end Compiler;
 
