@@ -1,4 +1,4 @@
-c;;; xmtn-conflicts.el --- conflict resolution for DVC backend for monotone
+;;; xmtn-conflicts.el --- conflict resolution for DVC backend for monotone
 
 ;; Copyright (C) 2008 - 2009 Stephen Leake
 
