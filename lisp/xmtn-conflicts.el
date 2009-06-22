@@ -1,6 +1,6 @@
-;;; xmtn-conflicts.el --- conflict resolution for DVC backend for monotone
+c;;; xmtn-conflicts.el --- conflict resolution for DVC backend for monotone
 
-;; Copyright (C) 2008 Stephen Leake
+;; Copyright (C) 2008 - 2009 Stephen Leake
 
 ;; Author: Stephen Leake
 ;; Keywords: tools
@@ -944,6 +944,18 @@ Prompt if the last two conditions are not satisfied."
 
   )
 
+(defun xmtn-check-propagate-needed (left-work right-work)
+  "Throw error unless branch in workspace LEFT-WORK needs to be propagated to RIGHT-WORK."
+  ;; We assume xmtn-check-workspace-for-propagate has already been run
+  ;; on left-work, right-work, so just check if they have the same
+  ;; base revision.
+  (let ((left-base (xmtn--get-base-revision-hash-id-or-null left-work))
+        (right-base (xmtn--get-base-revision-hash-id-or-null right-work)))
+
+    (if (string= left-base right-base)
+        (error "don't need to propagate"))
+  ))
+
 ;;;###autoload
 (defun xmtn-conflicts-propagate (left-work right-work)
   "List conflicts for a propagate from LEFT-WORK to RIGHT-WORK workspace branch head revisions.
@@ -956,6 +968,8 @@ workspace."
 
   (xmtn-check-workspace-for-propagate left-work)
   (xmtn-check-workspace-for-propagate right-work)
+
+  (xmtn-check-propagate-needed left-work right-work)
 
   (let ((default-directory right-work))
     (xmtn-conflicts-1 left-work
