@@ -322,6 +322,13 @@ the file before saving."
     ;; Saving the buffer will automatically delete any log edit hints.
     (save-buffer)
     (dvc-save-some-buffers root)
+
+    ;; check that the first line says something; it should be a summary of the rest
+    (goto-char (point-min))
+    (forward-line)
+    (if (= (point) (1+ (point-min)))
+        (error "Please put a summary comment on the first line"))
+
     ;; We used to check for things that would make commit fail;
     ;; missing files, nothing to commit. But that just slows things
     ;; down in the typical case; better to just handle the error
