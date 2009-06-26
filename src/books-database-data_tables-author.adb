@@ -71,7 +71,10 @@ package body Books.Database.Data_Tables.Author is
    is
       use type GNU.DB.SQLCLI.SQLINTEGER;
    begin
-      T.Find_Pattern (1 .. Item'Length) := Item;
+      Ada.Strings.Fixed.Move
+        (Source => Item,
+         Target => T.Find_Pattern.all,
+         Drop   => Ada.Strings.Right);
       T.Find_Pattern (Item'Length + 1) := '%';
       T.Find_Pattern_Length := Item'Length + 1;
       GNU.DB.SQLCLI.SQLCloseCursor (T.By_Name_Statement);
@@ -98,7 +101,7 @@ package body Books.Database.Data_Tables.Author is
          T.First        := new String'(1 .. Name_Field_Length => ' ');
          T.Middle       := new String'(1 .. Name_Field_Length => ' ');
          T.Last         := new String'(1 .. Name_Field_Length => ' ');
-         T.Find_Pattern := new String'(1 .. Name_Field_Length => ' ');
+         T.Find_Pattern := new String'(1 .. Name_Field_Length + 1 => ' '); --  +1 for '%'
       end if;
 
       --  All_By_ID_Statement

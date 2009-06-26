@@ -15,9 +15,8 @@
 --  distributed with this program; see file COPYING. If not, write to
 --  the Free Software Foundation, 59 Temple Place - Suite 330, Boston,
 --  MA 02111-1307, USA.
---
 
-with Ada.Exceptions;
+with Ada.Strings.Fixed;
 package body Books.Database.Data_Tables is
 
    --  Subprogram bodies (alphabetical order)
@@ -27,7 +26,13 @@ package body Books.Database.Data_Tables is
       Checked_Execute (T.Delete_Statement);
       Clear_Data (T);
       T.ID_Indicator := GNU.DB.SQLCLI.SQL_NULL_DATA;
-      Next (T);
+      begin
+         Next (T);
+      exception
+      when No_Data =>
+         --  Empty table
+         null;
+      end;
    end Delete;
 
    procedure Fetch (T : in out Table'Class; ID : in ID_Type)
@@ -61,20 +66,20 @@ package body Books.Database.Data_Tables is
 
    procedure Find (T : in out Table'Class; Item : in String)
    is
+      use Ada.Strings.Fixed;
       use type GNU.DB.SQLCLI.SQLINTEGER;
    begin
-      T.Find_Pattern (1 .. Item'Length) := Item;
-      T.Find_Pattern (Item'Length + 1) := '%';
+      Move
+        (Source => Item,
+         Target => T.Find_Pattern.all,
+         Drop   => Ada.Strings.Right);
+
+      T.Find_Pattern (Integer'Min (Item'Length + 1, T.Find_Pattern'Length)) := '%';
       T.Find_Pattern_Length := Item'Length + 1;
       GNU.DB.SQLCLI.SQLCloseCursor (T.Find_Statement);
       Checked_Execute (T.Find_Statement);
       GNU.DB.SQLCLI.SQLFetch (T.Find_Statement);
    exception
-   when Constraint_Error =>
-      Ada.Exceptions.Raise_Exception
-        (Entry_Error'Identity,
-         "Entry too long for database field; max" & Integer'Image (T.Find_Pattern'Length - 1));
-
    when GNU.DB.SQLCLI.No_Data =>
       GNU.DB.SQLCLI.SQLCloseCursor (T.Find_Statement);
       --  Just keep current data.

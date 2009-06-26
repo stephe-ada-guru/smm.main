@@ -6,7 +6,7 @@
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
---  published by the Free Software Foundation; either version 2, or (at
+--  published by the Free Software Foundation; either version 3, or (at
 --  your option) any later version. This program is distributed in the
 --  hope that it will be useful, but WITHOUT ANY WARRANTY; without even
 --  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
@@ -20,13 +20,10 @@
 with AUnit.Assertions;
 with AUnit.Test_Cases.Registration;
 with Ada.Exceptions;
-with Ada.Strings.Unbounded;
 with Ada.Text_IO;
 with Books.Event_Handler;
 with Books.Main_Window;
-with GNAT.OS_Lib;
 with GNAT.Traceback.Symbolic;
-with Gdk.Test_Events;
 with Gdk.Test_Events;
 with Gtk.Gen_Background_Window;
 with Gtk.Window;
@@ -139,14 +136,14 @@ package body Test_Books.Errors is
    ----------
    --  Public bodies
 
-   function Name (T : Test_Case) return Ada.Strings.Unbounded.String_Access
+   overriding function Name (T : Test_Case) return Ada.Strings.Unbounded.String_Access
    is
       pragma Unreferenced (T);
    begin
       return new String'("Errors");
    end Name;
 
-   procedure Register_Tests (T : in out Test_Case)
+   overriding procedure Register_Tests (T : in out Test_Case)
    is
       use AUnit.Test_Cases.Registration;
    begin
@@ -155,7 +152,7 @@ package body Test_Books.Errors is
       Register_Routine (T, Long_Title'Access, "Long_Title");
    end Register_Tests;
 
-   procedure Set_Up_Case (T : in out Test_Case)
+   overriding procedure Set_Up_Case (T : in out Test_Case)
    is
       use Ada.Strings.Unbounded;
    begin
@@ -179,7 +176,7 @@ package body Test_Books.Errors is
          null;
       end case;
 
-      Config_File := To_Unbounded_String (T.Root_Directory.all & "/test.config");
+      Config_File := To_Unbounded_String (T.Config_File.all);
 
       GUI_Utils.Set_Window_Origins (Config_File);
 
@@ -189,7 +186,7 @@ package body Test_Books.Errors is
       Background.Background_Task.Run (Books.Event_Handler.Event_Handler'Access);
    end Set_Up_Case;
 
-   procedure Tear_Down_Case (T : in out Test_Case)
+   overriding procedure Tear_Down_Case (T : in out Test_Case)
    is
       pragma Unreferenced (T);
    begin

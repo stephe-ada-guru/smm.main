@@ -15,7 +15,6 @@
 --  distributed with this program; see file COPYING. If not, write to
 --  the Free Software Foundation, 59 Temple Place - Suite 330, Boston,
 --  MA 02111-1307, USA.
---
 
 with Ada.Strings.Fixed;
 with GNU.DB.SQLCLI.Statement_Attribute;
@@ -87,7 +86,11 @@ package body Books.Database.Data_Tables.Title is
    is
       use type GNU.DB.SQLCLI.SQLINTEGER;
    begin
-      T.Find_Pattern (1 .. Item'Length) := Item;
+      Ada.Strings.Fixed.Move
+        (Source => Item,
+         Target => T.Find_Pattern.all,
+         Drop   => Ada.Strings.Right);
+
       T.Find_Pattern (Item'Length + 1) := '%';
       T.Find_Pattern_Length := Item'Length + 1;
       GNU.DB.SQLCLI.SQLCloseCursor (T.By_Name_Statement);
@@ -109,7 +112,7 @@ package body Books.Database.Data_Tables.Title is
       if T.Title = null then
          T.Title        := new String'(1 .. Field_Length => ' ');
          T.Comment      := new String'(1 .. Field_Length => ' ');
-         T.Find_Pattern := new String'(1 .. Field_Length => ' ');
+         T.Find_Pattern := new String'(1 .. Field_Length + 1 => ' '); -- for '%'
       end if;
 
       --  All_By_ID_Statement

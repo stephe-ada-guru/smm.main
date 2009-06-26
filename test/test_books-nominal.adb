@@ -6,7 +6,7 @@
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
---  published by the Free Software Foundation; either version 2, or (at
+--  published by the Free Software Foundation; either version 3, or (at
 --  your option) any later version. This program is distributed in the
 --  hope that it will be useful, but WITHOUT ANY WARRANTY; without even
 --  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
@@ -18,13 +18,10 @@
 --
 
 with AUnit.Test_Cases.Registration;
-with Ada.Strings.Unbounded;
 with Books.Event_Handler;
 with Books.Main_Window;
 with Books.Table_Views.Test;
-with GNAT.OS_Lib;
 with Gdk.Test_Events;
-with Gdk.Test_Events; use Gdk.Test_Events;
 with Gtk.Gen_Background_Window;
 with Gtk.Window;
 with Test_Books.GUI_Utils;
@@ -60,7 +57,9 @@ package body Test_Books.Nominal is
    procedure Add_Title (T : in out AUnit.Test_Cases.Test_Case'Class)
    is
       pragma Unreferenced (T);
-      use Test_Books.String_Lists, Test_Books.GUI_Utils;
+      use Gdk.Test_Events;
+      use Test_Books.String_Lists;
+      use Test_Books.GUI_Utils;
    begin
       Add_Title
         (Title   => "2001",
@@ -82,7 +81,9 @@ package body Test_Books.Nominal is
    procedure Search_Author (T : in out AUnit.Test_Cases.Test_Case'Class)
    is
       pragma Unreferenced (T);
-      use Test_Books.String_Lists, Test_Books.GUI_Utils;
+      use Gdk.Test_Events;
+      use Test_Books.String_Lists;
+      use Test_Books.GUI_Utils;
    begin
       Mouse_Move (Author_Origin + Find_Entry);
       Mouse_Double_Click;
@@ -97,7 +98,9 @@ package body Test_Books.Nominal is
    procedure Search_Title (T : in out AUnit.Test_Cases.Test_Case'Class)
    is
       pragma Unreferenced (T);
-      use Test_Books.String_Lists, Test_Books.GUI_Utils;
+      use Gdk.Test_Events;
+      use Test_Books.String_Lists;
+      use Test_Books.GUI_Utils;
    begin
       Mouse_Move (Title_Origin + Find_Entry);
       Mouse_Double_Click;
@@ -112,14 +115,14 @@ package body Test_Books.Nominal is
    ----------
    --  Public bodies
 
-   function Name (T : Test_Case) return Ada.Strings.Unbounded.String_Access
+   overriding function Name (T : Test_Case) return Ada.Strings.Unbounded.String_Access
    is
       pragma Unreferenced (T);
    begin
       return new String'("Nominal");
    end Name;
 
-   procedure Register_Tests (T : in out Test_Case)
+   overriding procedure Register_Tests (T : in out Test_Case)
    is
       use AUnit.Test_Cases.Registration;
    begin
@@ -131,7 +134,7 @@ package body Test_Books.Nominal is
       end if;
    end Register_Tests;
 
-   procedure Set_Up_Case (T : in out Test_Case)
+   overriding procedure Set_Up_Case (T : in out Test_Case)
    is
       use Ada.Strings.Unbounded;
    begin
@@ -155,7 +158,7 @@ package body Test_Books.Nominal is
          null;
       end case;
 
-      Config_File := To_Unbounded_String (T.Root_Directory.all & "/test.config");
+      Config_File := To_Unbounded_String (T.Config_File.all);
 
       GUI_Utils.Set_Window_Origins (Config_File);
 
@@ -165,7 +168,7 @@ package body Test_Books.Nominal is
       Background.Background_Task.Run (Books.Event_Handler.Event_Handler'Access);
    end Set_Up_Case;
 
-   procedure Tear_Down_Case (T : in out Test_Case)
+   overriding procedure Tear_Down_Case (T : in out Test_Case)
    is
       pragma Unreferenced (T);
    begin

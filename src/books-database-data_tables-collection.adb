@@ -124,7 +124,7 @@ package body Books.Database.Data_Tables.Collection is
    begin
       if T.Name = null then
          T.Name         := new String'(1 .. Field_Length  => ' ');
-         T.Find_Pattern := new String'(1 .. Field_Length => ' ');
+         T.Find_Pattern := new String'(1 .. Field_Length + 1 => ' '); -- for '%'
       end if;
 
       --  All_By_ID_Statement

@@ -119,7 +119,7 @@ package body Books.Database.Data_Tables.Series is
    begin
       if T.Title = null then
          T.Title        := new String'(1 .. Field_Length => ' ');
-         T.Find_Pattern := new String'(1 .. Field_Length  => ' ');
+         T.Find_Pattern := new String'(1 .. Field_Length + 1  => ' '); -- for '%'
       end if;
 
       --  All_By_ID_Statement
