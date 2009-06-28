@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2004 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2004, 2009 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -22,46 +22,46 @@ with AUnit.Test_Cases.Registration;
 with Ada.Exceptions;
 with Ada.Text_IO;
 with Books.Event_Handler;
-with Books.Main_Window;
 with GNAT.Traceback.Symbolic;
 with Gdk.Test_Events;
-with Gtk.Gen_Background_Window;
-with Gtk.Window;
+with SAL.AUnit;
 with Test_Books.GUI_Utils;
 package body Test_Books.Errors is
 
-   Main_Window : Books.Main_Window.Gtk_Window;
-   Config_File : Ada.Strings.Unbounded.Unbounded_String;
-
-   procedure Create_Main_Window (Window : out Gtk.Window.Gtk_Window)
+   procedure Reset_Exception
    is begin
-      Books.Main_Window.Gtk_New (Main_Window, Ada.Strings.Unbounded.To_String (Config_File));
-
-      Window := Gtk.Window.Gtk_Window (Main_Window);
-
-   end Create_Main_Window;
-
-   package Background is new Gtk.Gen_Background_Window (Create_Main_Window);
+      Books.Event_Handler.Handled_Exception   := False;
+      Books.Event_Handler.Unhandled_Exception := False;
+   end Reset_Exception;
 
    procedure Check_Exception (Label : in String)
-   is
-      use Ada.Exceptions;
-      use Books.Event_Handler;
-   begin
-      if Unhandled_Exception then
+   is begin
+      if Books.Event_Handler.Unhandled_Exception then
          Ada.Text_IO.Put_Line
            (Ada.Text_IO.Standard_Error,
             Label & " unhandled exception: " &
-              Exception_Name (Unhandled_Occurrence) & " " &
-              Exception_Message (Unhandled_Occurrence));
+              Ada.Exceptions.Exception_Name (Books.Event_Handler.Unhandled_Occurrence) & " " &
+              Ada.Exceptions.Exception_Message (Books.Event_Handler.Unhandled_Occurrence));
 
          Ada.Text_IO.Put_Line
            (Ada.Text_IO.Standard_Error,
-            GNAT.Traceback.Symbolic.Symbolic_Traceback (Unhandled_Occurrence));
+            GNAT.Traceback.Symbolic.Symbolic_Traceback (Books.Event_Handler.Unhandled_Occurrence));
 
          AUnit.Assertions.Assert (False, "unhandled exception");
       end if;
+
+      if not Books.Event_Handler.Handled_Exception then
+         AUnit.Assertions.Assert (False, "handled exception");
+      end if;
    end Check_Exception;
+
+   procedure Check_No_Exception (Label : in String)
+   is
+      use SAL.AUnit;
+   begin
+      Check (Label & "unhandled exception", Books.Event_Handler.Unhandled_Exception, False);
+      Check (Label & "handled exception", Books.Event_Handler.Handled_Exception, False);
+   end Check_No_Exception;
 
    ----------
    --  Test procedures
@@ -120,16 +120,13 @@ package body Test_Books.Errors is
       use Gdk.Test_Events;
    begin
       GUI_Utils.Add_Title
-        (Title   => "A really, really, really, really, long, long, long, t",
+        (Title   => "A really, really, really, really, long, long, long, title",
          Year    => "1970",
          Comment => "",
          Rating  => "");
 
-      Key_Stroke (Enter); --  Acknowledge exception message
-
-      Check_Exception ("Long_Title");
-
-      Alt_Key_Stroke ('c'); -- cancel
+      --  Since there's no way to fix this, there is no exception message; the title is silently truncated.
+      Check_No_Exception ("Long_Title");
 
    end Long_Title;
 
@@ -140,7 +137,7 @@ package body Test_Books.Errors is
    is
       pragma Unreferenced (T);
    begin
-      return new String'("Errors");
+      return new String'("Test_Books.Errors");
    end Name;
 
    overriding procedure Register_Tests (T : in out Test_Case)
@@ -158,43 +155,25 @@ package body Test_Books.Errors is
    begin
       GUI_Utils.Empty_Database;
 
-      Background.Debug_Level := T.Debug_Level;
-
-      case T.Debug_Level is
-      when 0 =>
-         null;
-
-      when 1 =>
-         Background.Test_Delay_Time    := 1.0;
-         Gdk.Test_Events.Default_Delay := Background.Test_Delay_Time;
-
-      when 2 =>
-         --  Let user run window; it shows mouse click locations.
-         null;
-
-      when others =>
-         null;
-      end case;
-
-      Config_File := To_Unbounded_String (T.Config_File.all);
-
-      GUI_Utils.Set_Window_Origins (Config_File);
-
-      Background.Background_Task.Init;
-      Background.Background_Task.Create_Window (Gtk.Window.Gtk_Window (Main_Window));
-
-      Background.Background_Task.Run (Books.Event_Handler.Event_Handler'Access);
+      GUI_Utils.Set_Up_Case (T.Config_File, T.Debug_Level);
    end Set_Up_Case;
 
    overriding procedure Tear_Down_Case (T : in out Test_Case)
    is
       pragma Unreferenced (T);
    begin
-      if Background.Debug_Level < 2 then
-         Background.Close;
+      if GUI_Utils.Background.Debug_Level < 2 then
+         GUI_Utils.Background.Close (GUI_Utils.Main_Window);
       end if;
 
-      Background.Background_Task.Wait_Shutdown;
+      GUI_Utils.Background.Background_Task.Wait_Shutdown;
    end Tear_Down_Case;
+
+   overriding procedure Set_up (T : in out Test_Case)
+   is
+      pragma Unreferenced (T);
+   begin
+      Reset_Exception;
+   end Set_up;
 
 end Test_Books.Errors;

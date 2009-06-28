@@ -1,8 +1,9 @@
 --  Abstract :
 --
---  Test Books with user errors.
+--  Test showing "other" data; double click on a link to show data in
+--  other window.
 --
---  Copyright (C) 2004, 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2009 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -18,7 +19,7 @@
 
 with AUnit.Test_Cases; use AUnit.Test_Cases;
 with Ada.Strings.Unbounded;
-package Test_Books.Errors is
+package Test_Books.Show_Other is
 
    type Test_Case
      (Config_File : access String;
@@ -33,6 +34,4 @@ package Test_Books.Errors is
 
    overriding procedure Tear_Down_Case (T : in out Test_Case);
 
-   overriding procedure Set_up (T : in out Test_Case);
-
-end Test_Books.Errors;
+end Test_Books.Show_Other;

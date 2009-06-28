@@ -71,15 +71,24 @@ This environment variable is used by the Books Makefile to set @var{ADA_PROJECT_
 @end multitable
 
 GtkAda installer offers to compile the library, but if the GNAT
-compiler is not in your path, it silently fails. To compile:
+compiler is not in your path, it silently fails. In addition we must
+change the default exception handling mechanism, to allow propagating
+exceptions thru the gtk dlls. To compile:
+
+@enumerate 1
+@item
+Edit
+@file{/Apps/GNAT-GPL_2009/GtkAda/include/gtkada/gtkada_install_static.gpr},
+add @code{"--RTS=sjlj"} to @code{Compiler.Default_Switches}.
+
+@item
 @example
 cd /Apps/GNAT-GPL_2009/GtkAda
 gnatmake -P include/gtkada/gtkada_install_static
 @end example
 
-@enumerate 1
 @item
-Unzip source, note location (for example, @file{/home/Projects/sal}).
+Unzip Books source, note location (for example, @file{/home/Projects/sal}).
 
 @item
 Define an environment variable giving location of SAL GNAT project

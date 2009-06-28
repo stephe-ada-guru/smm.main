@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2004 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2004, 2009 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -21,6 +21,7 @@ with AUnit.Assertions; use AUnit.Assertions;
 with AUnit.Test_Cases.Registration;
 with Books.Database.Data_Tables.Author;
 with SAL.Config_Files;
+with Test_Books.GUI_Utils;
 package body Test_Books.Database.Author is
 
    Config : aliased SAL.Config_Files.Configuration_Type;
@@ -118,7 +119,8 @@ package body Test_Books.Database.Author is
    overriding procedure Set_Up_Case (T : in out Test_Case)
    is
    begin
-      --  We assume no authors are in database.
+      Test_Books.GUI_Utils.Empty_Database;
+
       SAL.Config_Files.Open (Config, T.Config_File.all);
       DB           := new Books.Database.Database (Config'Access);
       Author_Table := new Books.Database.Data_Tables.Author.Table (DB);

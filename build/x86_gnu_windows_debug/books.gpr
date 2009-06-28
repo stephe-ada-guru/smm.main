@@ -4,8 +4,7 @@ with "sal";
 with "sal_gtk";
 with "standard_common";
 project Books is
-   for Source_Dirs use
-     ("../../src");
+   for Source_Dirs use ("../../src", "../../test");
 
    for Main use ("books-main");
 
@@ -19,7 +18,7 @@ project Books is
         Standard_Common.Compiler.Debug_Switches &
         Standard_Common.Compiler.Style_Checks &
         Standard_Common.Compiler'Default_Switches ("Ada") &
-        ("-gnatwJ", "-gnatyO");
+        ("-gnatwJ"); --  WORKAROUND: s-pooglo.ads edited, but this still gives problems "-gnatyO");
    end Compiler;
 
    package Binder is
@@ -32,6 +31,8 @@ project Books is
    end Linker;
 
    package Builder is
+      for Default_Switches ("Ada") use Standard_Common.Binder'Default_Switches ("Ada") & ("--RTS=sjlj");
+
       --  We use ".exe" extension even on non-Windows, to simplify the makefiles.
       for Switches ("books-main") use ("-o", "books.exe");
 

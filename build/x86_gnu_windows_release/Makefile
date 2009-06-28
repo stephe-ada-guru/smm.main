@@ -5,6 +5,8 @@ one : books.run
 two : RUN_ARGS := stephe csv/jet
 two : import_books-main.run
 
+#../../test/test_books-one_harness.adb
+t_one : RUN_ARGS := 1
 t_one : test_books-one_harness.run
 
 trace :

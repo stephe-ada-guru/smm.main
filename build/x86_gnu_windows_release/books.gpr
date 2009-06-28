@@ -19,6 +19,14 @@ project Books is
         Standard_Common.Compiler.Style_Checks &
         Standard_Common.Compiler'Default_Switches ("Ada") &
         ("-gnatwJ", "-gnatyO");
+
+      --  WORKAROUND: in GNAT 6.2.1, s-pooglo.ads is missing some 'overriding' keywords
+      for Switches ("test_books-string_lists.adb") use
+        Standard_Common.Compiler.Release_Switches &
+        Standard_Common.Compiler.Style_Checks &
+        Standard_Common.Compiler'Default_Switches ("Ada") &
+        ("-gnatwJ");
+
    end Compiler;
 
    package Binder is
@@ -31,6 +39,8 @@ project Books is
    end Linker;
 
    package Builder is
+      for Default_Switches ("Ada") use Standard_Common.Binder'Default_Switches ("Ada") & ("--RTS=sjlj");
+
       --  We use ".exe" extension even on non-Windows, to simplify the makefiles.
       for Switches ("books-main") use ("-o", "books.exe");
 

@@ -8,9 +8,10 @@ books.exe : books-main.exe
 tests : test_books-all_harness.diff
 
 empty_database_test :
-	 mysql -u stephe --execute="source ../../test/delete_database_test_mysql.sql"
-	 mysql -u stephe --execute="source ../../test/create_database_test_mysql.sql"
-	 mysql -u stephe --execute="source ../../src/create_schema_mysql.sql" test
+	 mysql -u stephe --execute="source ../../test/recreate_database_test_mysql.sql"
+
+test_data :
+	mysql -u stephe --execute="source ../../test/create_test_data_mysql.sql"
 
 VPATH = ../../src
 VPATH += ../../test

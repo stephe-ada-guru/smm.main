@@ -1,0 +1,56 @@
+--- ../../test/test_books-all_harness.good_out	2009-06-25 05:30:47.234375000 -0400
++++ test_books-all_harness.out	2009-06-28 09:38:58.437500000 -0400
+@@ -1 +1,52 @@
+-foo
++Connected to database.
++Disconnecting from database ... done.
++Connected to database.
++Disconnecting from database ... done.
++Connected to database.
++Disconnecting from database ... done.
++make[1]: Entering directory `/Projects/books.main/build/x86_gnu_windows_debug'
++mysql -u stephe --execute="source ../../test/recreate_database_test_mysql.sql"
++make[1]: Leaving directory `/Projects/books.main/build/x86_gnu_windows_debug'
++using config file C:\Projects\books.main\test\test.config
++Connected to database.
++Disconnecting from database ... done.
++make[1]: Entering directory `/Projects/books.main/build/x86_gnu_windows_debug'
++mysql -u stephe --execute="source ../../test/recreate_database_test_mysql.sql"
++make[1]: Leaving directory `/Projects/books.main/build/x86_gnu_windows_debug'
++using config file C:\Projects\books.main\test\test.config
++Connected to database.
++Disconnecting from database ... done.
++make[1]: Entering directory `/Projects/books.main/build/x86_gnu_windows_debug'
++mysql -u stephe --execute="source ../../test/recreate_database_test_mysql.sql"
++make[1]: Leaving directory `/Projects/books.main/build/x86_gnu_windows_debug'
++make[1]: Entering directory `/Projects/books.main/build/x86_gnu_windows_debug'
++mysql -u stephe --execute="source ../../test/create_test_data_mysql.sql"
++make[1]: Leaving directory `/Projects/books.main/build/x86_gnu_windows_debug'
++using config file C:\Projects\books.main\test\test.config
++Connected to database.
++Disconnecting from database ... done.
++   Total Tests Run:  15
++
++   Successful Tests: 14
++( 0.171471235) Test_Books.Database.Author: Add_Authors
++( 0.000296127) Test_Books.Database.Author: Fetch_Authors
++( 0.000882794) Test_Books.Database.Author: Fetch_Fresh
++( 0.002091607) Test_Books.Database.Title: Add_Titles
++( 0.000301156) Test_Books.Database.Title: Fetch_Titles
++( 0.000879721) Test_Books.Database.Title: Fetch_Fresh
++( 0.001966451) Test_Books.Database.AuthorTitle: Add_AuthorTitles
++( 2.201919518) Test_Books.Errors: Duplicate_Author
++( 2.334890329) Test_Books.Errors: Duplicate_Title
++( 2.854271143) Test_Books.Errors: Long_Title
++( 1.992014069) Test_Books.Nominal: Add_Author
++( 1.570239793) Test_Books.Nominal: Add_Title
++( 0.304664978) Test_Books.Nominal: Search_Author
++( 0.236300144) Test_Books.Nominal: Search_Title
++
++   Failed Tests: 1
++      Test_Books.Show_Other: 
++      Show_From_Title: 
++      ( 0, 0) got '00001', expected '00002'
++
++
++   Unexpected Errors: 0

@@ -88,10 +88,10 @@ package body Books.Database.Data_Tables.Title is
    begin
       Ada.Strings.Fixed.Move
         (Source => Item,
-         Target => T.Find_Pattern.all,
+         Target => T.Find_Pattern.all (1 .. Field_Length),
          Drop   => Ada.Strings.Right);
 
-      T.Find_Pattern (Item'Length + 1) := '%';
+      T.Find_Pattern (Integer'Min (T.Find_Pattern'Last, Item'Length + 1)) := '%';
       T.Find_Pattern_Length := Item'Length + 1;
       GNU.DB.SQLCLI.SQLCloseCursor (T.By_Name_Statement);
       Checked_Execute (T.By_Name_Statement);

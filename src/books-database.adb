@@ -195,17 +195,15 @@ package body Books.Database is
    end Value;
 
    procedure Checked_Execute (Statement : in GNU.DB.SQLCLI.SQLHANDLE)
-   is
-      use Ada.Exceptions;
-   begin
+   is begin
       GNU.DB.SQLCLI.SQLExecute (Statement);
    exception
    when E : GNU.DB.SQLCLI.Database_Error =>
       if 0 /= Ada.Strings.Fixed.Index
-        (Source => Exception_Message (E),
+        (Source  => Ada.Exceptions.Exception_Message (E),
          Pattern => "Duplicate entry")
       then
-         Raise_Exception (Entry_Error'Identity, "Entry already in database");
+         raise Entry_Error with "Entry already in database";
       else
          raise;
       end if;

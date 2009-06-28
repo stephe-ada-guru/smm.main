@@ -2,11 +2,11 @@
 --
 --  Utilities for GUI tests for Books
 --
---  Copyright (C) 2004 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2004, 2009 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
---  published by the Free Software Foundation; either version 2, or (at
+--  published by the Free Software Foundation; either version 3, or (at
 --  your option) any later version. This program is distributed in the
 --  hope that it will be useful, but WITHOUT ANY WARRANTY; without even
 --  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
@@ -19,7 +19,10 @@
 pragma License (GPL);
 
 with Ada.Strings.Unbounded;
+with Books.Main_Window;
 with Gdk.Test_Events;
+with Gtk.Gen_Background_Window;
+with Gtk.Window;
 package Test_Books.GUI_Utils is
 
    --  Absolute window origins, set by Set_Window_Origins
@@ -28,14 +31,33 @@ package Test_Books.GUI_Utils is
    Title_Origin  : Gdk.Test_Events.Point_Type;
 
    --  Common mouse locations, relative to *_Origin. Use mnemonics when possible.
-   Find_Entry            : constant Gdk.Test_Events.Point_Type := (72, 63);
-   Title_Add_Link_Button : constant Gdk.Test_Events.Point_Type := (45, 220);
+   --  These sizes are dependent on the font used, which we don't control!
+   Find_Entry            : constant Gdk.Test_Events.Point_Type := (72, 70);
+   Title_Add_Link_Button : constant Gdk.Test_Events.Point_Type := (43, 260);
+   Title_Add_Link_Entry  : constant Gdk.Test_Events.Point_Type := (118, 260);
+   Title_First_Link      : constant Gdk.Test_Events.Point_Type := (118, 310);
+   Title_Second_Link     : constant Gdk.Test_Events.Point_Type := (118, 332);
 
    procedure Set_Window_Origins (Config_File : in Ada.Strings.Unbounded.Unbounded_String);
    --  Set window origins from Config_File.
 
    procedure Empty_Database;
    --  Run 'make empty_database_test'.
+
+   Main_Window : Books.Main_Window.Gtk_Window;
+   Config_File : Ada.Strings.Unbounded.Unbounded_String;
+
+   procedure Create_Main_Window (Window : out Gtk.Window.Gtk_Window);
+
+   package Background is new Gtk.Gen_Background_Window (Create_Main_Window);
+
+   procedure Set_Up_Case
+     (Config_File : access String;
+      Debug_Level : in     Integer);
+   --  Set up Main_Window for typical GUI test
+
+   procedure Create_Some_Data;
+   --  standard set of data for tests
 
    procedure Add_Author
      (First  : in String;

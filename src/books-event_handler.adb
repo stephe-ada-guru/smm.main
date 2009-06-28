@@ -32,6 +32,7 @@ package body Books.Event_Handler is
       Gtk.Main.Do_Event (Event);
    exception
    when E : Books.Database.Entry_Error =>
+      Handled_Exception := True;
       Gtk.Message_Box.Information_Box
         (Title   => "Entry error",
          Message => Exception_Message (E));

@@ -1,5 +1,6 @@
 .*\.exe$
 ^build/x86_gnu_windows_debug/objects$
+^build/x86_gnu_windows_debug/test_books-all_harness\.out$
 ^build/x86_gnu_windows_release/.*\.diff$
 ^build/x86_gnu_windows_release/.*\.out$
 ^build/x86_gnu_windows_release/csv$

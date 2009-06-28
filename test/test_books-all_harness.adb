@@ -2,7 +2,7 @@
 --
 --  Run all tests of books.
 --
---  Copyright (C) 2004 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2004, 2009 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -24,6 +24,7 @@ with Test_Books.Database.AuthorTitle;
 with Test_Books.Database.Title;
 with Test_Books.Errors;
 with Test_Books.Nominal;
+with Test_Books.Show_Other;
 procedure Test_Books.All_Harness
 is
    Suite       : constant Access_Test_Suite := new Test_Suite;
@@ -62,6 +63,12 @@ begin
    Add_Test
      (Suite,
       new Test_Books.Nominal.Test_Case
+        (Config_File => new String'("../../test/test.config"),
+         Debug_Level => Debug_Level));
+
+   Add_Test
+     (Suite,
+      new Test_Books.Show_Other.Test_Case
         (Config_File => new String'("../../test/test.config"),
          Debug_Level => Debug_Level));
 

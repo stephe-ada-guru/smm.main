@@ -23,13 +23,20 @@ with Gdk.Event;
 with System;
 package Books.Event_Handler is
 
-   Unhandled_Exception : Boolean := False;
+   Handled_Exception    : Boolean := True;
+   Unhandled_Exception  : Boolean := False;
    Unhandled_Occurrence : Ada.Exceptions.Exception_Occurrence;
 
    procedure Event_Handler (Event : in Gdk.Event.Gdk_Event; Data : in System.Address);
-   --  Provides catch-all exception handling. If exception is not
-   --  recognized, sets Unhandled_Exception to True, and stores
-   --  exception occurance in Unhandled_Occurance, for unit testing.
    pragma Convention (C, Event_Handler);
+   --  Provides catch-all exception handling.
+   --
+   --  For unit testing:
+   --
+   --  If excepction is recognized, puts up a dialog box, and sets
+   --  Handled_Exception True.
+   --
+   --  If exception is not recognized, sets Unhandled_Exception to
+   --  True, and stores exception occurance in Unhandled_Occurance.
 
 end Books.Event_Handler;
