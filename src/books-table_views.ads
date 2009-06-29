@@ -2,11 +2,11 @@
 --
 --  Base database table view widget for Books application.
 --
---  Copyright (C) 2002, 2004 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002, 2004, 2009 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
---  published by the Free Software Foundation; either version 2, or (at
+--  published by the Free Software Foundation; either version 3, or (at
 --  your option) any later version. This program is distributed in the
 --  hope that it will be useful, but WITHOUT ANY WARRANTY; without even
 --  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
@@ -15,12 +15,8 @@
 --  distributed with this program; see file COPYING. If not, write to
 --  the Free Software Foundation, 59 Temple Place - Suite 330, Boston,
 --  MA 02111-1307, USA.
---
 
-with Books.Database.Data_Tables.Author;
-with Books.Database.Data_Tables.Collection;
-with Books.Database.Data_Tables.Series;
-with Books.Database.Data_Tables.Title;
+with Books.Database.Data_Tables;
 with Books.Database.Link_Tables.AuthorTitle;
 with Books.Database.Link_Tables.CollectionTitle;
 with Books.Database.Link_Tables.SeriesTitle;
@@ -90,6 +86,8 @@ package Books.Table_Views is
 
    procedure Update_Display_Child (Table_View : access Gtk_Table_View_Record) is abstract;
    --  Update child-specific display with current database values.
+   --
+   --  In List_Display, column 0 contains the linked database ID
 
    procedure Update_Database (Table_View : access Gtk_Table_View_Record) is abstract;
    --  Update current database record with values from display.
@@ -108,6 +106,7 @@ private
    type Table_Array_Radio_Type is array (Table_Name_Type) of Gtk.Radio_Button.Gtk_Radio_Button;
    type Table_Array_Clist_Type is array (Table_Name_Type) of Gtk.Clist.Gtk_Clist;
    type Table_Array_Check_Button_Type is array (Table_Name_Type) of Gtk.Check_Button.Gtk_Check_Button;
+   type Table_Array_Data_Table_Access_Type is array (Table_Name_Type) of Books.Database.Data_Tables.Table_Access;
 
    type Gtk_Table_View_Record is abstract new Gtk.Window.Gtk_Window_Record with record
       Private_Stuff : Private_Stuff_Access;
@@ -122,11 +121,10 @@ private
       Sibling_Views : Table_Array_Table_View_Type;
 
       --  Non-GUI stuff
-      Primary_Table    : Books.Database.Data_Tables.Table_Access;
-      Author_Table     : Books.Database.Data_Tables.Author.Table_Access;
-      Title_Table      : Books.Database.Data_Tables.Title.Table_Access;
-      Collection_Table : Books.Database.Data_Tables.Collection.Table_Access;
-      Series_Table     : Books.Database.Data_Tables.Series.Table_Access;
+
+      --  All table views share the same tables
+      Primary_Table  : Books.Database.Data_Tables.Table_Access;
+      Sibling_Tables : Table_Array_Data_Table_Access_Type;
 
       AuthorTitle_Table     : Books.Database.Link_Tables.AuthorTitle.Table_Access;
       CollectionTitle_Table : Books.Database.Link_Tables.CollectionTitle.Table_Access;

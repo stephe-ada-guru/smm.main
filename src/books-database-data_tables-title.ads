@@ -33,12 +33,17 @@ package Books.Database.Data_Tables.Title is
    --  New operations
 
    function Title (T : in Table) return String;
+   function Title (T : in Data_Tables.Table_Access) return String;
    function Year (T : in Table) return Interfaces.Unsigned_16;
+   function Year (T : in Data_Tables.Table_Access) return Interfaces.Unsigned_16;
    function Comment (T : in Table) return String;
+   function Comment (T : in Data_Tables.Table_Access) return String;
    function Rating (T : in Table) return Interfaces.Unsigned_8;
+   function Rating (T : in Data_Tables.Table_Access) return Interfaces.Unsigned_8;
    --  Retrieve data from current record
 
    procedure Find_Title (T : in out Table; Item : in String);
+   procedure Find_Title (T : in Data_Tables.Table_Access; Item : in String);
    --  Search for records with titles starting with String. Fetch
    --  first.
    --

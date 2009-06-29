@@ -35,9 +35,9 @@ package body Test_Books.Show_Other is
    begin
       Mouse_Move (Title_Origin + Find_Entry);
       Mouse_Double_Click;
-      Key_Stroke ("2001");
+      Key_Stroke ("Foundation");
 
-      Mouse_Move (Title_Origin + Title_First_Link); -- Asimov
+      Mouse_Move (Title_Origin + Title_Second_Link); -- Asimov
       Mouse_Double_Click;
 
       Mouse_Move (Author_Origin + Find_Entry);

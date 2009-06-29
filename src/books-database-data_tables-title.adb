@@ -45,6 +45,11 @@ package body Books.Database.Data_Tables.Title is
       return T.Comment (1 .. Integer (T.Comment_Length));
    end Comment;
 
+   function Comment (T : in Data_Tables.Table_Access) return String
+   is begin
+      return Comment (Table (T.all));
+   end Comment;
+
    procedure Copy
      (T            : in out Table;
       Title        : in     String;
@@ -102,6 +107,11 @@ package body Books.Database.Data_Tables.Title is
    when GNU.DB.SQLCLI.No_Data =>
       GNU.DB.SQLCLI.SQLCloseCursor (T.By_Name_Statement);
       --  Just keep current data.
+   end Find_Title;
+
+   procedure Find_Title (T : in Data_Tables.Table_Access; Item : in String)
+   is begin
+      Find_Title (Table (T.all), Item);
    end Find_Title;
 
    overriding procedure Initialize (T : in out Table)
@@ -221,9 +231,19 @@ package body Books.Database.Data_Tables.Title is
       end if;
    end Rating;
 
+   function Rating (T : in Data_Tables.Table_Access) return Interfaces.Unsigned_8
+   is begin
+      return Rating (Table (T.all));
+   end Rating;
+
    function Title (T : in Table) return String is
    begin
       return T.Title (1 .. Integer (T.Title_Length));
+   end Title;
+
+   function Title (T : in Data_Tables.Table_Access) return String
+   is begin
+      return Title (Table (T.all));
    end Title;
 
    procedure Update
@@ -248,6 +268,11 @@ package body Books.Database.Data_Tables.Title is
       else
          return Interfaces.Unsigned_16 (T.Year);
       end if;
+   end Year;
+
+   function Year (T : in Data_Tables.Table_Access) return Interfaces.Unsigned_16
+   is begin
+      return Year (Table (T.all));
    end Year;
 
 end Books.Database.Data_Tables.Title;

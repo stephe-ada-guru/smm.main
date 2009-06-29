@@ -15,9 +15,11 @@
 --  distributed with this program; see file COPYING. If not, write to
 --  the Free Software Foundation, 59 Temple Place - Suite 330, Boston,
 --  MA 02111-1307, USA.
---
 
+with Books.Database.Data_Tables.Author;
+with Books.Database.Data_Tables.Collection;
 with Books.Database.Data_Tables.Title;
+with Books.Database.Data_Tables.Series;
 with Gdk.Main;
 with Glib;
 with Gtk.Clist;
@@ -47,7 +49,7 @@ package body Books.Table_Views.Title is
 
          Link_Tables.AuthorTitle.Insert
            (Title_View.AuthorTitle_Table.all,
-            (Link_Tables.Title  => Data_Tables.ID (Title_View.Title_Table.all),
+            (Link_Tables.Title  => Data_Tables.ID (Title_View.Primary_Table.all),
              Link_Tables.Author => ID));
 
          Update_Display_AuthorTitle (Title_View);
@@ -56,7 +58,7 @@ package body Books.Table_Views.Title is
 
          Books.Database.Link_Tables.CollectionTitle.Insert
            (Title_View.CollectionTitle_Table.all,
-            (Link_Tables.Title  => Data_Tables.ID (Title_View.Title_Table.all),
+            (Link_Tables.Title  => Data_Tables.ID (Title_View.Primary_Table.all),
              Link_Tables.Collection => ID));
 
          Update_Display_CollectionTitle (Title_View);
@@ -65,7 +67,7 @@ package body Books.Table_Views.Title is
 
          Books.Database.Link_Tables.SeriesTitle.Insert
            (Title_View.SeriesTitle_Table.all,
-            (Link_Tables.Title  => Data_Tables.ID (Title_View.Title_Table.all),
+            (Link_Tables.Title  => Data_Tables.ID (Title_View.Primary_Table.all),
              Link_Tables.Series => ID));
 
          Update_Display_SeriesTitle (Title_View);
@@ -136,7 +138,7 @@ package body Books.Table_Views.Title is
    overriding procedure Delete_Link (Title_View : access Gtk_Title_View_Record; ID : in Books.Database.ID_Type)
    is
       use Books.Database;
-      Title_ID : constant ID_Type := Data_Tables.ID (Title_View.Title_Table.all);
+      Title_ID : constant ID_Type := Data_Tables.ID (Title_View.Primary_Table.all);
    begin
       case Title_View.Current_List is
       when Author =>
@@ -189,7 +191,7 @@ package body Books.Table_Views.Title is
 
       Table_Views.Initialize_DB (Title_View, Parameters.DB);
 
-      Title_View.Primary_Table := Books.Database.Data_Tables.Table_Access (Title_View.Title_Table);
+      Title_View.Primary_Table := Title_View.Sibling_Tables (Books.Title);
 
       To_Main (Title_View);
 
@@ -226,8 +228,8 @@ package body Books.Table_Views.Title is
          Rating_Valid := False;
       end;
 
-      Books.Database.Data_Tables.Title.Insert
-        (Title_View.Title_Table.all,
+      Database.Data_Tables.Title.Insert
+        (Database.Data_Tables.Title.Table (Title_View.Primary_Table.all),
          Title        => Gtk.GEntry.Get_Text (Title_View.Title_Text),
          Year         => Year,
          Year_Valid   => Year_Valid,
@@ -264,8 +266,8 @@ package body Books.Table_Views.Title is
          Rating_Valid := False;
       end;
 
-      Books.Database.Data_Tables.Title.Update
-        (Title_View.Title_Table.all,
+      Database.Data_Tables.Title.Update
+        (Database.Data_Tables.Title.Table (Title_View.Primary_Table.all),
          Title        => Gtk.GEntry.Get_Text (Title_View.Title_Text),
          Year         => Year,
          Year_Valid   => Year_Valid,
@@ -279,7 +281,7 @@ package body Books.Table_Views.Title is
       use Database, Interfaces.C.Strings;
       Width    : Glib.Gint;
       pragma Unreferenced (Width);
-      Title_ID : constant ID_Type := Data_Tables.ID (Title_View.Title_Table.all);
+      Title_ID : constant ID_Type := Data_Tables.ID (Title_View.Primary_Table.all);
    begin
       begin
          Link_Tables.AuthorTitle.Fetch_Links_Of (Title_View.AuthorTitle_Table.all, Link_Tables.Title, Title_ID);
@@ -297,15 +299,15 @@ package body Books.Table_Views.Title is
             Author_ID : constant ID_Type :=
               Link_Tables.AuthorTitle.ID (Title_View.AuthorTitle_Table.all, Link_Tables.Author);
          begin
-            Data_Tables.Fetch (Title_View.Author_Table.all, Author_ID);
+            Data_Tables.Fetch (Title_View.Sibling_Tables (Author).all, Author_ID);
 
             Gtk.Clist.Insert
               (Title_View.List_Display (Author),
                0,
                (1 => New_String (Image (Author_ID)),
-                2 => New_String (Data_Tables.Author.First_Name (Title_View.Author_Table.all)),
-                3 => New_String (Data_Tables.Author.Middle_Name (Title_View.Author_Table.all)),
-                4 => New_String (Data_Tables.Author.Last_Name (Title_View.Author_Table.all))));
+                2 => New_String (Data_Tables.Author.First_Name (Title_View.Sibling_Tables (Author))),
+                3 => New_String (Data_Tables.Author.Middle_Name (Title_View.Sibling_Tables (Author))),
+                4 => New_String (Data_Tables.Author.Last_Name (Title_View.Sibling_Tables (Author)))));
 
             Books.Database.Next (Title_View.AuthorTitle_Table.all);
          exception
@@ -328,7 +330,9 @@ package body Books.Table_Views.Title is
    begin
       begin
          Link_Tables.CollectionTitle.Fetch_Links_Of
-           (Title_View.CollectionTitle_Table.all, Link_Tables.Title, Data_Tables.ID (Title_View.Title_Table.all));
+           (Title_View.CollectionTitle_Table.all,
+            Link_Tables.Title,
+            Data_Tables.ID (Title_View.Primary_Table.all));
       exception
       when Database.No_Data =>
          Gtk.Clist.Clear (Title_View.List_Display (Collection));
@@ -340,14 +344,14 @@ package body Books.Table_Views.Title is
 
       loop
          Data_Tables.Fetch
-           (Title_View.Collection_Table.all,
+           (Title_View.Sibling_Tables (Collection).all,
             Link_Tables.CollectionTitle.ID (Title_View.CollectionTitle_Table.all, Link_Tables.Collection));
 
          Gtk.Clist.Insert
            (Title_View.List_Display (Collection),
             0,
-            (1 => New_String (Image (Data_Tables.ID (Title_View.Collection_Table.all))),
-             2 => New_String (Data_Tables.Collection.Name (Title_View.Collection_Table.all))));
+            (1 => New_String (Image (Data_Tables.ID (Title_View.Sibling_Tables (Collection).all))),
+             2 => New_String (Data_Tables.Collection.Name (Title_View.Sibling_Tables (Collection)))));
 
          begin
             Books.Database.Next (Title_View.CollectionTitle_Table.all);
@@ -371,7 +375,9 @@ package body Books.Table_Views.Title is
    begin
       begin
          Link_Tables.SeriesTitle.Fetch_Links_Of
-           (Title_View.SeriesTitle_Table.all, Link_Tables.Title, Data_Tables.ID (Title_View.Title_Table.all));
+           (Title_View.SeriesTitle_Table.all,
+            Link_Tables.Title,
+            Data_Tables.ID (Title_View.Primary_Table.all));
       exception
       when Database.No_Data =>
          Gtk.Clist.Clear (Title_View.List_Display (Series));
@@ -383,14 +389,14 @@ package body Books.Table_Views.Title is
 
       loop
          Data_Tables.Fetch
-           (Title_View.Series_Table.all,
+           (Title_View.Sibling_Tables (Series).all,
             Link_Tables.SeriesTitle.ID (Title_View.SeriesTitle_Table.all, Link_Tables.Series));
 
          Gtk.Clist.Insert
            (Title_View.List_Display (Series),
             0,
-            (1 => New_String (Image (Data_Tables.ID (Title_View.Series_Table.all))),
-             2 => New_String (Data_Tables.Series.Title (Title_View.Series_Table.all))));
+            (1 => New_String (Image (Data_Tables.ID (Title_View.Sibling_Tables (Series).all))),
+             2 => New_String (Data_Tables.Series.Title (Title_View.Sibling_Tables (Series)))));
 
          begin
             Books.Database.Next (Title_View.SeriesTitle_Table.all);
@@ -413,19 +419,19 @@ package body Books.Table_Views.Title is
       begin
          Gtk.GEntry.Set_Text
            (Title_View.Title_Text,
-            Database.Data_Tables.Title.Title (Title_View.Title_Table.all));
+            Database.Data_Tables.Title.Title (Title_View.Primary_Table));
 
          Gtk.GEntry.Set_Text
            (Title_View.Year_Text,
-            Interfaces.Unsigned_16'Image (Year (Title_View.Title_Table.all)));
+            Interfaces.Unsigned_16'Image (Year (Title_View.Primary_Table)));
 
          Gtk.GEntry.Set_Text
            (Title_View.Comment_Text,
-            Comment (Title_View.Title_Table.all));
+            Comment (Title_View.Primary_Table));
 
          Gtk.GEntry.Set_Text
            (Title_View.Rating_Text,
-            Interfaces.Unsigned_8'Image (Rating (Title_View.Title_Table.all)));
+            Interfaces.Unsigned_8'Image (Rating (Title_View.Primary_Table)));
       end;
 
       case Title_View.Current_List is

@@ -19,6 +19,9 @@
 
 with Ada.Strings.Fixed;
 with Books.Database.Data_Tables.Author;
+with Books.Database.Data_Tables.Collection;
+with Books.Database.Data_Tables.Title;
+with Books.Database.Data_Tables.Series;
 with Gdk.Main;
 with Glib;
 with Gtk.Clist;
@@ -54,7 +57,7 @@ package body Books.Table_Views.Author is
 
          Books.Database.Link_Tables.AuthorTitle.Insert
            (Author_View.AuthorTitle_Table.all,
-            (Link_Tables.Author => Data_Tables.ID (Author_View.Author_Table.all),
+            (Link_Tables.Author => Data_Tables.ID (Author_View.Primary_Table.all),
              Link_Tables.Title  => ID));
 
          Update_Display_AuthorTitle (Author_View);
@@ -119,7 +122,7 @@ package body Books.Table_Views.Author is
    overriding procedure Delete_Link (Author_View : access Gtk_Author_View_Record; ID : in Books.Database.ID_Type)
    is
       use Books.Database;
-      Author_ID : constant ID_Type := Data_Tables.ID (Author_View.Author_Table.all);
+      Author_ID : constant ID_Type := Data_Tables.ID (Author_View.Primary_Table.all);
    begin
       case Author_View.Current_List is
       when Title =>
@@ -155,7 +158,7 @@ package body Books.Table_Views.Author is
 
       Table_Views.Initialize_DB (Author_View, Parameters.DB);
 
-      Author_View.Primary_Table := Books.Database.Data_Tables.Table_Access (Author_View.Author_Table);
+      Author_View.Primary_Table := Author_View.Sibling_Tables (Books.Author);
 
       Gtk.Radio_Button.Set_Active (Author_View.List_Select (Title), True);
 
@@ -167,8 +170,8 @@ package body Books.Table_Views.Author is
    overriding procedure Insert_Database (Author_View : access Gtk_Author_View_Record)
    is
    begin
-      Books.Database.Data_Tables.Author.Insert
-        (Author_View.Author_Table.all,
+      Database.Data_Tables.Author.Insert
+        (Database.Data_Tables.Author.Table (Author_View.Primary_Table.all),
          First_Name  => Gtk.GEntry.Get_Text (Author_View.First_Text),
          Middle_Name => Gtk.GEntry.Get_Text (Author_View.Middle_Text),
          Last_Name   => Gtk.GEntry.Get_Text (Author_View.Last_Text));
@@ -183,8 +186,8 @@ package body Books.Table_Views.Author is
 
    overriding procedure Update_Database (Author_View : access Gtk_Author_View_Record)
    is begin
-      Books.Database.Data_Tables.Author.Update
-        (Author_View.Author_Table.all,
+      Database.Data_Tables.Author.Update
+        (Database.Data_Tables.Author.Table (Author_View.Primary_Table.all),
          First_Name  => Gtk.GEntry.Get_Text (Author_View.First_Text),
          Middle_Name => Gtk.GEntry.Get_Text (Author_View.Middle_Text),
          Last_Name   => Gtk.GEntry.Get_Text (Author_View.Last_Text));
@@ -195,7 +198,7 @@ package body Books.Table_Views.Author is
       use Database, Interfaces.C.Strings;
       Width     : Glib.Gint;
       pragma Unreferenced (Width);
-      Author_ID : constant ID_Type := Data_Tables.ID (Author_View.Author_Table.all);
+      Author_ID : constant ID_Type := Data_Tables.ID (Author_View.Primary_Table.all);
    begin
       begin
          Link_Tables.AuthorTitle.Fetch_Links_Of
@@ -215,15 +218,17 @@ package body Books.Table_Views.Author is
             Title_ID : constant ID_Type :=
               Link_Tables.AuthorTitle.ID (Author_View.AuthorTitle_Table.all, Link_Tables.Title);
          begin
-            Data_Tables.Fetch (Author_View.Title_Table.all, Title_ID);
+            Data_Tables.Fetch (Author_View.Sibling_Tables (Title).all, Title_ID);
 
             Gtk.Clist.Insert
               (Author_View.List_Display (Title),
                0,
                (1 => New_String (Image (Title_ID)),
-                2 => New_String (Data_Tables.Title.Title (Author_View.Title_Table.all)),
+                2 => New_String (Data_Tables.Title.Title (Author_View.Sibling_Tables (Title))),
                 3 => New_String
-                  (Trim (Interfaces.Unsigned_16'Image (Data_Tables.Title.Year (Author_View.Title_Table.all)), Left))));
+                  (Trim
+                     (Interfaces.Unsigned_16'Image
+                        (Data_Tables.Title.Year (Author_View.Sibling_Tables (Title))), Left))));
 
             Books.Database.Next (Author_View.AuthorTitle_Table.all);
          exception
@@ -246,7 +251,7 @@ package body Books.Table_Views.Author is
    begin
       begin
          Data_Tables.Collection.Find_Editor
-           (Author_View.Collection_Table.all, Data_Tables.ID (Author_View.Author_Table.all));
+           (Author_View.Sibling_Tables (Collection), Data_Tables.ID (Author_View.Primary_Table.all));
       exception
       when Database.No_Data =>
          Gtk.Clist.Clear (Author_View.List_Display (Collection));
@@ -260,11 +265,11 @@ package body Books.Table_Views.Author is
          Gtk.Clist.Insert
            (Author_View.List_Display (Collection),
             0,
-            (1 => New_String (Image (Data_Tables.ID (Author_View.Collection_Table.all))),
-             2 => New_String (Data_Tables.Collection.Name (Author_View.Collection_Table.all))));
+            (1 => New_String (Image (Data_Tables.ID (Author_View.Sibling_Tables (Collection).all))),
+             2 => New_String (Data_Tables.Collection.Name (Author_View.Sibling_Tables (Collection)))));
 
          begin
-            Books.Database.Next (Author_View.Collection_Table.all);
+            Books.Database.Next (Author_View.Sibling_Tables (Collection).all);
          exception
          when Books.Database.No_Data =>
             exit;
@@ -285,7 +290,7 @@ package body Books.Table_Views.Author is
    begin
       begin
          Data_Tables.Series.Find_Author
-           (Author_View.Series_Table.all, Data_Tables.ID (Author_View.Author_Table.all));
+           (Author_View.Sibling_Tables (Series), Data_Tables.ID (Author_View.Primary_Table.all));
       exception
       when Database.No_Data =>
          Gtk.Clist.Clear (Author_View.List_Display (Series));
@@ -299,11 +304,11 @@ package body Books.Table_Views.Author is
          Gtk.Clist.Insert
            (Author_View.List_Display (Series),
             0,
-            (1 => New_String (Image (Data_Tables.ID (Author_View.Series_Table.all))),
-             2 => New_String (Data_Tables.Series.Title (Author_View.Series_Table.all))));
+            (1 => New_String (Image (Data_Tables.ID (Author_View.Sibling_Tables (Series).all))),
+             2 => New_String (Data_Tables.Series.Title (Author_View.Sibling_Tables (Series)))));
 
          begin
-            Books.Database.Next (Author_View.Series_Table.all);
+            Books.Database.Next (Author_View.Sibling_Tables (Series).all);
          exception
          when Books.Database.No_Data =>
             exit;
@@ -321,9 +326,9 @@ package body Books.Table_Views.Author is
       declare
          use Database.Data_Tables.Author;
       begin
-         Gtk.GEntry.Set_Text (Author_View.First_Text, First_Name (Author_View.Author_Table.all));
-         Gtk.GEntry.Set_Text (Author_View.Middle_Text, Middle_Name (Author_View.Author_Table.all));
-         Gtk.GEntry.Set_Text (Author_View.Last_Text, Last_Name (Author_View.Author_Table.all));
+         Gtk.GEntry.Set_Text (Author_View.First_Text, First_Name (Author_View.Primary_Table));
+         Gtk.GEntry.Set_Text (Author_View.Middle_Text, Middle_Name (Author_View.Primary_Table));
+         Gtk.GEntry.Set_Text (Author_View.Last_Text, Last_Name (Author_View.Primary_Table));
       end;
 
       case Author_View.Current_List is

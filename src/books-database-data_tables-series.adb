@@ -71,6 +71,11 @@ package body Books.Database.Data_Tables.Series is
       end if;
    end Author;
 
+   function Author (T : in Data_Tables.Table_Access) return ID_Type
+   is begin
+      return Author (Table (T.all));
+   end Author;
+
    overriding procedure Finalize (T : in out Table)
    is
       use type GNU.DB.SQLCLI.SQLHANDLE;
@@ -94,6 +99,11 @@ package body Books.Database.Data_Tables.Series is
       Next (T);
    end Find_Author;
 
+   procedure Find_Author (T : in Data_Tables.Table_Access; Author : in ID_Type)
+   is begin
+      Find_Author (Table (T.all), Author);
+   end Find_Author;
+
    procedure Find_Title (T : in out Table; Item : in String)
    is
       use type GNU.DB.SQLCLI.SQLINTEGER;
@@ -110,6 +120,11 @@ package body Books.Database.Data_Tables.Series is
    when GNU.DB.SQLCLI.No_Data =>
       GNU.DB.SQLCLI.SQLCloseCursor (T.By_Name_Statement);
       --  Just keep current data.
+   end Find_Title;
+
+   procedure Find_Title (T : in Data_Tables.Table_Access; Item : in String)
+   is begin
+      Find_Title (Table (T.all), Item);
    end Find_Title;
 
    overriding procedure Initialize (T : in out Table)
@@ -216,9 +231,14 @@ package body Books.Database.Data_Tables.Series is
       Find_Title (T, Title);
    end Insert;
 
-   function Title (T : in Table) return String is
-   begin
+   function Title (T : in Table) return String
+   is begin
       return T.Title (1 .. Integer (T.Title_Length));
+   end Title;
+
+   function Title (T : in Data_Tables.Table_Access) return String
+   is begin
+      return Title (Table (T.all));
    end Title;
 
    procedure Update

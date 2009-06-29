@@ -87,9 +87,19 @@ package body Books.Database.Data_Tables.Author is
       --  Just keep current data.
    end Find_Name;
 
+   procedure Find_Name (T : in Data_Tables.Table_Access; Item : in String)
+   is begin
+      Find_Name (Table (T.all), Item);
+   end Find_Name;
+
    function First_Name (T : in Table) return String is
    begin
       return T.First (1 .. Integer (T.First_Length));
+   end First_Name;
+
+   function First_Name (T : in Data_Tables.Table_Access) return String
+   is begin
+      return First_Name (Table (T.all));
    end First_Name;
 
    overriding procedure Initialize (T : in out Table)
@@ -200,9 +210,19 @@ package body Books.Database.Data_Tables.Author is
       return T.Last (1 .. Integer (T.Last_Length));
    end Last_Name;
 
+   function Last_Name (T : in Data_Tables.Table_Access) return String
+   is begin
+      return Last_Name (Table (T.all));
+   end Last_Name;
+
    function Middle_Name (T : in Table) return String is
    begin
       return T.Middle (1 .. Integer (T.Middle_Length));
+   end Middle_Name;
+
+   function Middle_Name (T : in Data_Tables.Table_Access) return String
+   is begin
+      return Middle_Name (Table (T.all));
    end Middle_Name;
 
    procedure Update

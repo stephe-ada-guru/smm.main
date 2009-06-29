@@ -81,6 +81,11 @@ package body Books.Database.Data_Tables.Collection is
       end if;
    end Editor;
 
+   function Editor (T : in Data_Tables.Table_Access) return ID_Type
+   is begin
+      return Editor (Table (T.all));
+   end Editor;
+
    overriding procedure Finalize (T : in out Table)
    is
       use type GNU.DB.SQLCLI.SQLHANDLE;
@@ -104,6 +109,11 @@ package body Books.Database.Data_Tables.Collection is
       Next (T);
    end Find_Editor;
 
+   procedure Find_Editor (T : in Data_Tables.Table_Access; Editor : in ID_Type)
+   is begin
+      Find_Editor (Table (T.all), Editor);
+   end Find_Editor;
+
    procedure Find_Name (T : in out Table; Item : in String)
    is
       use type GNU.DB.SQLCLI.SQLINTEGER;
@@ -115,6 +125,11 @@ package body Books.Database.Data_Tables.Collection is
       Checked_Execute (T.By_Name_Statement);
       T.Find_Statement := T.By_Name_Statement;
       Next (T);
+   end Find_Name;
+
+   procedure Find_Name (T : in Data_Tables.Table_Access; Item : in String)
+   is begin
+      Find_Name (Table (T.all), Item);
    end Find_Name;
 
    overriding procedure Initialize (T : in out Table)
@@ -234,6 +249,11 @@ package body Books.Database.Data_Tables.Collection is
       return T.Name (1 .. Integer (T.Name_Length));
    end Name;
 
+   function Name (T : in Data_Tables.Table_Access) return String
+   is begin
+      return Name (Table (T.all));
+   end Name;
+
    procedure Update
      (T      : in out Table;
       Name   : in     String;
@@ -255,6 +275,11 @@ package body Books.Database.Data_Tables.Collection is
       else
          return Interfaces.Unsigned_16 (T.Year);
       end if;
+   end Year;
+
+   function Year (T : in Data_Tables.Table_Access) return Interfaces.Unsigned_16
+   is begin
+      return Year (Table (T.all));
    end Year;
 
 end Books.Database.Data_Tables.Collection;

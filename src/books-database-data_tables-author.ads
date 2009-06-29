@@ -32,11 +32,15 @@ package Books.Database.Data_Tables.Author is
    --  New operations
 
    function First_Name (T : in Table) return String;
+   function First_Name (T : in Data_Tables.Table_Access) return String;
    function Middle_Name (T : in Table) return String;
+   function Middle_Name (T : in Data_Tables.Table_Access) return String;
    function Last_Name (T : in Table) return String;
+   function Last_Name (T : in Data_Tables.Table_Access) return String;
    --  Retrieve data from current record
 
    procedure Find_Name (T : in out Table; Item : in String);
+   procedure Find_Name (T : in Data_Tables.Table_Access; Item : in String);
    --  Search for records with names starting with String. Fetch
    --  first.
    --

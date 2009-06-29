@@ -15,9 +15,10 @@
 --  distributed with this program; see file COPYING. If not, write to
 --  the Free Software Foundation, 59 Temple Place - Suite 330, Boston,
 --  MA 02111-1307, USA.
---
 
+with Books.Database.Data_Tables.Author;
 with Books.Database.Data_Tables.Series;
+with Books.Database.Data_Tables.Title;
 with Gdk.Main;
 with Glib;
 with Gtk.Clist;
@@ -57,7 +58,7 @@ package body Books.Table_Views.Series is
 
          Books.Database.Link_Tables.SeriesTitle.Insert
            (Series_View.SeriesTitle_Table.all,
-            (Link_Tables.Series => Data_Tables.ID (Series_View.Series_Table.all),
+            (Link_Tables.Series => Data_Tables.ID (Series_View.Primary_Table.all),
              Link_Tables.Title  => ID));
 
          Update_Display_SeriesTitle (Series_View);
@@ -111,7 +112,7 @@ package body Books.Table_Views.Series is
       ID          : in     Books.Database.ID_Type)
    is
       use Books.Database;
-      Series_ID : constant ID_Type := Data_Tables.ID (Series_View.Series_Table.all);
+      Series_ID : constant ID_Type := Data_Tables.ID (Series_View.Primary_Table.all);
    begin
       case Series_View.Current_List is
       when Title =>
@@ -145,7 +146,7 @@ package body Books.Table_Views.Series is
 
       Table_Views.Initialize_DB (Series_View, Parameters.DB);
 
-      Series_View.Primary_Table := Books.Database.Data_Tables.Table_Access (Series_View.Series_Table);
+      Series_View.Primary_Table := Series_View.Sibling_Tables (Books.Series);
 
       Gtk.Radio_Button.Set_Active (Series_View.List_Select (Title), True);
 
@@ -170,8 +171,8 @@ package body Books.Table_Views.Series is
          end if;
       end;
 
-      Books.Database.Data_Tables.Series.Insert
-        (Series_View.Series_Table.all,
+      Database.Data_Tables.Series.Insert
+        (Database.Data_Tables.Series.Table (Series_View.Primary_Table.all),
          Title        => Gtk.GEntry.Get_Text (Series_View.Title_Text),
          Author       => Author,
          Author_Valid => Author_Valid);
@@ -196,8 +197,8 @@ package body Books.Table_Views.Series is
          Author_Valid := False;
       end;
 
-      Books.Database.Data_Tables.Series.Update
-        (Series_View.Series_Table.all,
+      Database.Data_Tables.Series.Update
+        (Database.Data_Tables.Series.Table (Series_View.Primary_Table.all),
          Title        => Gtk.GEntry.Get_Text (Series_View.Title_Text),
          Author       => Author,
          Author_Valid => Author_Valid);
@@ -208,10 +209,10 @@ package body Books.Table_Views.Series is
       use Database, Interfaces.C.Strings;
       Width     : Glib.Gint;
       pragma Unreferenced (Width);
-      Author_ID : constant ID_Type := Data_Tables.Series.Author (Series_View.Series_Table.all);
+      Author_ID : constant ID_Type := Data_Tables.Series.Author (Series_View.Primary_Table);
    begin
       begin
-         Data_Tables.Fetch (Series_View.Author_Table.all, Author_ID);
+         Data_Tables.Fetch (Series_View.Sibling_Tables (Author).all, Author_ID);
       exception
       when No_Data =>
          Gtk.Clist.Clear (Series_View.List_Display (Author));
@@ -225,9 +226,9 @@ package body Books.Table_Views.Series is
         (Series_View.List_Display (Author),
          0,
          (1 => New_String (Image (Author_ID)),
-          2 => New_String (Data_Tables.Author.First_Name (Series_View.Author_Table.all)),
-          3 => New_String (Data_Tables.Author.Middle_Name (Series_View.Author_Table.all)),
-          4 => New_String (Data_Tables.Author.Last_Name (Series_View.Author_Table.all))));
+          2 => New_String (Data_Tables.Author.First_Name (Series_View.Sibling_Tables (Author))),
+          3 => New_String (Data_Tables.Author.Middle_Name (Series_View.Sibling_Tables (Author))),
+          4 => New_String (Data_Tables.Author.Last_Name (Series_View.Sibling_Tables (Author)))));
 
       Width := Gtk.Clist.Columns_Autosize (Series_View.List_Display (Author));
       Gtk.Clist.Thaw (Series_View.List_Display (Author));
@@ -239,12 +240,13 @@ package body Books.Table_Views.Series is
       use Database, Interfaces.C.Strings;
       Width : Glib.Gint;
       pragma Unreferenced (Width);
-      Series_ID : constant ID_Type := Data_Tables.ID (Series_View.Series_Table.all);
+      Series_ID : constant ID_Type := Data_Tables.ID (Series_View.Primary_Table.all);
    begin
-      Gtk.GEntry.Set_Text (Series_View.Title_Text, Database.Data_Tables.Series.Title (Series_View.Series_Table.all));
+      Gtk.GEntry.Set_Text
+        (Series_View.Title_Text, Database.Data_Tables.Series.Title (Series_View.Primary_Table));
       Gtk.GEntry.Set_Text
         (Series_View.Author_Text,
-         Database.Image (Database.Data_Tables.Series.Author (Series_View.Series_Table.all)));
+         Database.Image (Database.Data_Tables.Series.Author (Series_View.Primary_Table)));
 
       begin
          Link_Tables.SeriesTitle.Fetch_Links_Of (Series_View.SeriesTitle_Table.all, Link_Tables.Series, Series_ID);
@@ -262,15 +264,15 @@ package body Books.Table_Views.Series is
             Title_ID : constant ID_Type :=
               Link_Tables.SeriesTitle.ID (Series_View.SeriesTitle_Table.all, Link_Tables.Title);
          begin
-            Data_Tables.Fetch (Series_View.Title_Table.all, Title_ID);
+            Data_Tables.Fetch (Series_View.Sibling_Tables (Title).all, Title_ID);
 
             Gtk.Clist.Insert
               (Series_View.List_Display (Title),
                0,
                (1 => New_String (Image (Title_ID)),
-                2 => New_String (Data_Tables.Title.Title (Series_View.Title_Table.all)),
+                2 => New_String (Data_Tables.Title.Title (Series_View.Sibling_Tables (Title))),
                 3 => New_String
-                  (Interfaces.Unsigned_16'Image (Data_Tables.Title.Year (Series_View.Title_Table.all)))));
+                  (Interfaces.Unsigned_16'Image (Data_Tables.Title.Year (Series_View.Sibling_Tables (Title))))));
 
             Books.Database.Next (Series_View.SeriesTitle_Table.all);
          exception

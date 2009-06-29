@@ -20,6 +20,10 @@
 with Ada.Exceptions;
 with Ada.Text_IO;
 with Ada.Unchecked_Deallocation;
+with Books.Database.Data_Tables.Author;
+with Books.Database.Data_Tables.Collection;
+with Books.Database.Data_Tables.Series;
+with Books.Database.Data_Tables.Title;
 with Gdk.Event;
 with Gdk.Main;
 with Glib;
@@ -112,7 +116,10 @@ package body Books.Table_Views is
    procedure On_Find_Changed (GEntry : access Gtk.GEntry.Gtk_Entry_Record'Class);
    procedure On_Find_Next (Button : access Gtk.Button.Gtk_Button_Record'Class);
    procedure On_List_Column (Clist : access Gtk.Clist.Gtk_Clist_Record'Class; Column : in Glib.Gint);
-
+   function  On_List_Double_Click
+     (Clist : access Gtk.Clist.Gtk_Clist_Record'Class;
+      Event : in     Gdk.Event.Gdk_Event)
+     return Boolean;
    procedure On_List_Edit_Add_Clicked (Button : access Gtk.Button.Gtk_Button_Record'Class);
    procedure On_List_Edit_Delete_Clicked (Button : access Gtk.Button.Gtk_Button_Record'Class);
 
@@ -360,6 +367,7 @@ package body Books.Table_Views is
          Gtk.Clist.Set_Sort_Column (Table_View.List_Display (I), 0);
          Gtk.Clist.Set_Sort_Type (Table_View.List_Display (I), Gtk.Clist.Ascending);
          Gtk.Clist.Signal.Connect_Click_Column (Table_View.List_Display (I), On_List_Column'Access);
+         Gtk.Clist.Signal.Connect_Button_Press_Event (Table_View.List_Display (I), On_List_Double_Click'Access);
 
          Gtk.Scrolled_Window.Add (Table_View.Private_Stuff.List_Display_Scroll (I), Table_View.List_Display (I));
       end loop;
@@ -388,13 +396,13 @@ package body Books.Table_Views is
 
    procedure Finalize_DB (Table_View : access Gtk_Table_View_Record'Class)
    is
-      use type Books.Database.Data_Tables.Author.Table_Access;
+      use type Books.Database.Data_Tables.Table_Access;
    begin
-      if Table_View.Author_Table /= null then
-         Books.Database.Free (Books.Database.Table_Access (Table_View.Author_Table));
-         Books.Database.Free (Books.Database.Table_Access (Table_View.Title_Table));
-         Books.Database.Free (Books.Database.Table_Access (Table_View.Collection_Table));
-         Books.Database.Free (Books.Database.Table_Access (Table_View.Series_Table));
+      if Table_View.Sibling_Tables (Author) /= null then
+         Books.Database.Free (Books.Database.Table_Access (Table_View.Sibling_Tables (Author)));
+         Books.Database.Free (Books.Database.Table_Access (Table_View.Sibling_Tables (Title)));
+         Books.Database.Free (Books.Database.Table_Access (Table_View.Sibling_Tables (Collection)));
+         Books.Database.Free (Books.Database.Table_Access (Table_View.Sibling_Tables (Series)));
          Books.Database.Free (Books.Database.Table_Access (Table_View.AuthorTitle_Table));
          Books.Database.Free (Books.Database.Table_Access (Table_View.CollectionTitle_Table));
          Books.Database.Free (Books.Database.Table_Access (Table_View.SeriesTitle_Table));
@@ -408,22 +416,26 @@ package body Books.Table_Views is
 
    procedure Initialize_DB (Table_View : access Gtk_Table_View_Record'Class; DB : in Books.Database.Database_Access)
    is
-      use type Books.Database.Data_Tables.Author.Table_Access;
+      use type Books.Database.Data_Tables.Table_Access;
    begin
-      if Table_View.Author_Table = null then
-         Table_View.Author_Table          := new Books.Database.Data_Tables.Author.Table (DB);
-         Table_View.Title_Table           := new Books.Database.Data_Tables.Title.Table (DB);
-         Table_View.Collection_Table      := new Books.Database.Data_Tables.Collection.Table (DB);
-         Table_View.Series_Table          := new Books.Database.Data_Tables.Series.Table (DB);
-         Table_View.AuthorTitle_Table     := new Books.Database.Link_Tables.AuthorTitle.Table (DB);
-         Table_View.CollectionTitle_Table := new Books.Database.Link_Tables.CollectionTitle.Table (DB);
-         Table_View.SeriesTitle_Table     := new Books.Database.Link_Tables.SeriesTitle.Table (DB);
+      if Table_View.Sibling_Tables (Author) = null then
+         Table_View.Sibling_Tables (Author)     := new Books.Database.Data_Tables.Author.Table (DB);
+         Table_View.Sibling_Tables (Title)      := new Books.Database.Data_Tables.Title.Table (DB);
+         Table_View.Sibling_Tables (Collection) := new Books.Database.Data_Tables.Collection.Table (DB);
+         Table_View.Sibling_Tables (Series)     := new Books.Database.Data_Tables.Series.Table (DB);
+         Table_View.AuthorTitle_Table          := new Books.Database.Link_Tables.AuthorTitle.Table (DB);
+         Table_View.CollectionTitle_Table      := new Books.Database.Link_Tables.CollectionTitle.Table (DB);
+         Table_View.SeriesTitle_Table          := new Books.Database.Link_Tables.SeriesTitle.Table (DB);
       end if;
 
-      Books.Database.Data_Tables.Author.Initialize (Table_View.Author_Table.all);
-      Books.Database.Data_Tables.Title.Initialize (Table_View.Title_Table.all);
-      Books.Database.Data_Tables.Collection.Initialize (Table_View.Collection_Table.all);
-      Books.Database.Data_Tables.Series.Initialize (Table_View.Series_Table.all);
+      Books.Database.Data_Tables.Author.Initialize
+        (Books.Database.Data_Tables.Author.Table (Table_View.Sibling_Tables (Author).all));
+      Books.Database.Data_Tables.Title.Initialize
+        (Books.Database.Data_Tables.Title.Table (Table_View.Sibling_Tables (Title).all));
+      Books.Database.Data_Tables.Collection.Initialize
+        (Books.Database.Data_Tables.Collection.Table (Table_View.Sibling_Tables (Collection).all));
+      Books.Database.Data_Tables.Series.Initialize
+        (Books.Database.Data_Tables.Series.Table (Table_View.Sibling_Tables (Series).all));
       Books.Database.Link_Tables.AuthorTitle.Initialize (Table_View.AuthorTitle_Table.all);
       Books.Database.Link_Tables.CollectionTitle.Initialize (Table_View.CollectionTitle_Table.all);
       Books.Database.Link_Tables.SeriesTitle.Initialize (Table_View.SeriesTitle_Table.all);
@@ -574,6 +586,49 @@ package body Books.Table_Views is
       Gtk.Clist.Set_Sort_Column (Clist, Column);
       Gtk.Clist.Sort (Clist);
    end On_List_Column;
+
+   function On_List_Double_Click
+     (Clist : access Gtk.Clist.Gtk_Clist_Record'Class;
+      Event : in     Gdk.Event.Gdk_Event)
+     return Boolean
+   is
+      use Gdk.Event;
+      use type Glib.Guint;
+      Table_View : constant Gtk_Table_View := Gtk_Table_View (Gtk.Clist.Get_Toplevel (Clist));
+   begin
+      case Get_Event_Type (Event) is
+      when Gdk_2button_Press =>
+         declare
+            Clist : Gtk.Clist.Gtk_Clist renames Table_View.List_Display (Table_View.Current_List);
+
+            Selected_Rows : constant Gtk.Enums.Gint_List.Glist := Gtk.Clist.Get_Selection (Clist);
+         begin
+            if Gtk.Enums.Gint_List.Length (Selected_Rows) >= 1 then
+               declare
+                  ID_String : constant String := Gtk.Clist.Get_Text
+                    (Clist  => Clist,
+                     Row    => Gtk.Enums.Gint_List.Get_Data (Selected_Rows),
+                     Column => 0);
+               begin
+                  if ID_String'Length = 0 then
+                     raise SAL.Programmer_Error with "column 0 has no text";
+                  end if;
+
+                  Database.Data_Tables.Fetch
+                    (Table_View.Sibling_Tables (Table_View.Current_List).all, Database.ID_Type'Value (ID_String));
+
+                  Update_Display_Child (Table_View.Sibling_Views (Table_View.Current_List));
+               end;
+               return True;
+            else
+               return False;
+            end if;
+         end;
+
+      when others =>
+         return False;
+      end case;
+   end On_List_Double_Click;
 
    procedure On_List_Select_Clicked (Button : access Gtk.Button.Gtk_Button_Record'Class)
    is

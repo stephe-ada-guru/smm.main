@@ -17,7 +17,9 @@
 --  MA 02111-1307, USA.
 --
 
+with Books.Database.Data_Tables.Author;
 with Books.Database.Data_Tables.Collection;
+with Books.Database.Data_Tables.Title;
 with Gdk.Main;
 with Glib;
 with Gtk.Clist;
@@ -56,7 +58,7 @@ package body Books.Table_Views.Collection is
 
          Books.Database.Link_Tables.CollectionTitle.Insert
            (Collection_View.CollectionTitle_Table.all,
-            (Link_Tables.Collection => Data_Tables.ID (Collection_View.Collection_Table.all),
+            (Link_Tables.Collection => Data_Tables.ID (Collection_View.Primary_Table.all),
              Link_Tables.Title      => ID));
 
          Update_Display_CollectionTitle (Collection_View);
@@ -119,7 +121,7 @@ package body Books.Table_Views.Collection is
       ID              : in     Books.Database.ID_Type)
    is
       use Books.Database;
-      Collection_ID : constant ID_Type := Data_Tables.ID (Collection_View.Collection_Table.all);
+      Collection_ID : constant ID_Type := Data_Tables.ID (Collection_View.Primary_Table.all);
    begin
       case Collection_View.Current_List is
       when Title =>
@@ -154,7 +156,7 @@ package body Books.Table_Views.Collection is
 
       Table_Views.Initialize_DB (Collection_View, Parameters.DB);
 
-      Collection_View.Primary_Table := Books.Database.Data_Tables.Table_Access (Collection_View.Collection_Table);
+      Collection_View.Primary_Table := Collection_View.Sibling_Tables (Books.Collection);
 
       Gtk.Radio_Button.Set_Active (Collection_View.List_Select (Title), True);
 
@@ -188,8 +190,8 @@ package body Books.Table_Views.Collection is
          Year_Valid := False;
       end;
 
-      Books.Database.Data_Tables.Collection.Insert
-        (Collection_View.Collection_Table.all,
+      Database.Data_Tables.Collection.Insert
+        (Database.Data_Tables.Collection.Table (Collection_View.Primary_Table.all),
          Name         => Gtk.GEntry.Get_Text (Collection_View.Name_Text),
          Editor       => Editor,
          Editor_Valid => Editor_Valid,
@@ -227,8 +229,8 @@ package body Books.Table_Views.Collection is
          Year_Valid := False;
       end;
 
-      Books.Database.Data_Tables.Collection.Update
-        (Collection_View.Collection_Table.all,
+      Database.Data_Tables.Collection.Update
+        (Database.Data_Tables.Collection.Table (Collection_View.Primary_Table.all),
          Name         => Gtk.GEntry.Get_Text (Collection_View.Name_Text),
          Editor       => Editor,
          Editor_Valid => Editor_Valid,
@@ -241,10 +243,10 @@ package body Books.Table_Views.Collection is
       use Database, Interfaces.C.Strings;
       Width     : Glib.Gint;
       pragma Unreferenced (Width);
-      Editor_ID : constant ID_Type := Data_Tables.Collection.Editor (Collection_View.Collection_Table.all);
+      Editor_ID : constant ID_Type := Data_Tables.Collection.Editor (Collection_View.Primary_Table);
    begin
       begin
-         Data_Tables.Fetch (Collection_View.Author_Table.all, Editor_ID);
+         Data_Tables.Fetch (Collection_View.Sibling_Tables (Author).all, Editor_ID);
       exception
       when No_Data =>
          Gtk.Clist.Clear (Collection_View.List_Display (Author));
@@ -258,9 +260,9 @@ package body Books.Table_Views.Collection is
         (Collection_View.List_Display (Author),
          0,
          (1 => New_String (Image (Editor_ID)),
-          2 => New_String (Data_Tables.Author.First_Name (Collection_View.Author_Table.all)),
-          3 => New_String (Data_Tables.Author.Middle_Name (Collection_View.Author_Table.all)),
-          4 => New_String (Data_Tables.Author.Last_Name (Collection_View.Author_Table.all))));
+          2 => New_String (Data_Tables.Author.First_Name (Collection_View.Sibling_Tables (Author))),
+          3 => New_String (Data_Tables.Author.Middle_Name (Collection_View.Sibling_Tables (Author))),
+          4 => New_String (Data_Tables.Author.Last_Name (Collection_View.Sibling_Tables (Author)))));
 
       Width := Gtk.Clist.Columns_Autosize (Collection_View.List_Display (Author));
       Gtk.Clist.Thaw (Collection_View.List_Display (Author));
@@ -272,17 +274,19 @@ package body Books.Table_Views.Collection is
       use Database, Interfaces.C.Strings;
       Width         : Glib.Gint;
       pragma Unreferenced (Width);
-      Collection_ID : constant ID_Type := Data_Tables.ID (Collection_View.Collection_Table.all);
+      Collection_ID : constant ID_Type := Data_Tables.ID (Collection_View.Primary_Table.all);
    begin
       declare
          use Database.Data_Tables.Collection;
       begin
-         Gtk.GEntry.Set_Text (Collection_View.Name_Text,
-                              Name (Collection_View.Collection_Table.all));
-         Gtk.GEntry.Set_Text (Collection_View.Editor_Text,
-                              Database.Image (Editor (Collection_View.Collection_Table.all)));
-         Gtk.GEntry.Set_Text (Collection_View.Year_Text,
-                              Interfaces.Unsigned_16'Image (Year (Collection_View.Collection_Table.all)));
+         Gtk.GEntry.Set_Text
+           (Collection_View.Name_Text, Name (Collection_View.Primary_Table));
+         Gtk.GEntry.Set_Text
+           (Collection_View.Editor_Text,
+            Database.Image (Editor (Collection_View.Primary_Table)));
+         Gtk.GEntry.Set_Text
+           (Collection_View.Year_Text,
+            Interfaces.Unsigned_16'Image (Year (Collection_View.Primary_Table)));
       end;
 
       begin
@@ -304,15 +308,16 @@ package body Books.Table_Views.Collection is
             Title_ID : constant ID_Type :=
               Link_Tables.CollectionTitle.ID (Collection_View.CollectionTitle_Table.all, Link_Tables.Title);
          begin
-            Data_Tables.Fetch (Collection_View.Title_Table.all, Title_ID);
+            Data_Tables.Fetch (Collection_View.Sibling_Tables (Title).all, Title_ID);
 
             Gtk.Clist.Insert
               (Collection_View.List_Display (Title),
                0,
                (1 => New_String (Image (Title_ID)),
-                2 => New_String (Data_Tables.Title.Title (Collection_View.Title_Table.all)),
+                2 => New_String (Data_Tables.Title.Title (Collection_View.Sibling_Tables (Title))),
                 3 => New_String
-                  (Interfaces.Unsigned_16'Image (Data_Tables.Title.Year (Collection_View.Title_Table.all)))));
+                  (Interfaces.Unsigned_16'Image
+                     (Data_Tables.Title.Year (Collection_View.Sibling_Tables (Title))))));
 
             Books.Database.Next (Collection_View.CollectionTitle_Table.all);
          exception

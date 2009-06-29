@@ -34,17 +34,22 @@ package Books.Database.Data_Tables.Collection is
    --  New operations
 
    function Name (T : in Table) return String;
+   function Name (T : in Data_Tables.Table_Access) return String;
    function Editor (T : in Table) return ID_Type;
+   function Editor (T : in Data_Tables.Table_Access) return ID_Type;
    function Year (T : in Table) return Interfaces.Unsigned_16;
+   function Year (T : in Data_Tables.Table_Access) return Interfaces.Unsigned_16;
    --  Retrieve data from current record
 
    procedure Find_Name (T : in out Table; Item : in String);
+   procedure Find_Name (T : in Data_Tables.Table_Access; Item : in String);
    --  Search for records with Name starting with String. Fetch
    --  first.
    --
    --  If there is no match, current data is unchanged.
 
    procedure Find_Editor (T : in out Table; Editor : in ID_Type);
+   procedure Find_Editor (T : in Data_Tables.Table_Access; Editor : in ID_Type);
    --  Find records with Editor_ID = Editor.
 
    procedure Insert

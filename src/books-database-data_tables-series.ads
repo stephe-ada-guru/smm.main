@@ -33,16 +33,20 @@ package Books.Database.Data_Tables.Series is
    --  New operations
 
    function Title (T : in Table) return String;
+   function Title (T : in Data_Tables.Table_Access) return String;
    function Author (T : in Table) return ID_Type;
+   function Author (T : in Data_Tables.Table_Access) return ID_Type;
    --  Retrieve data from current record
 
    procedure Find_Title (T : in out Table; Item : in String);
+   procedure Find_Title (T : in Data_Tables.Table_Access; Item : in String);
    --  Search for records with Title starting with String. Fetch
    --  first.
    --
    --  If there is no match, current data is unchanged.
 
    procedure Find_Author (T : in out Table; Author : in ID_Type);
+   procedure Find_Author (T : in Data_Tables.Table_Access; Author : in ID_Type);
    --  Find records with Author_ID = Author. Fetch
    --  first.
    --
