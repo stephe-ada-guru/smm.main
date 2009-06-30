@@ -1,6 +1,6 @@
 ;;; xmtn-revlist.el --- Interactive display of revision histories for monotone
 
-;; Copyright (C) 2008 Stephen Leake
+;; Copyright (C) 2008, 2009 Stephen Leake
 ;; Copyright (C) 2006, 2007 Christian M. Ohler
 
 ;; Author: Christian M. Ohler
@@ -345,6 +345,38 @@ arg; root. Result is of the form:
        '()
        difference))))
 
+(defun xmtn-revlist-show-conflicts ()
+  "If point is on a revision that has two parents, show conflicts
+from the merge."
+  ;; IMPROVEME: We just use the xmtn conflicts machinery for now. It
+  ;; would be better if we had a read-only version of it. And a way to
+  ;; compare to the actual result.
+  (interactive)
+  (let ((changelog (car (xmtn--revlist-entry-changelogs (dvc-revlist-entry-patch-struct (dvc-revlist-current-patch))))))
+    ;; string-match does _not_ set up match-strings properly, so we do this instead
+    (if (not (string= (substring changelog 0 9) "propagate"))
+        ;; IMPROVEME: There are two-parent revisions that are not the results of propagate
+        (error "not on a propagate revision"))
+
+    (let* ((left-start (+ 6 (string-match "(head" changelog)))
+           (left-end (string-match ")" changelog left-start))
+           (left-rev (substring changelog left-start (1- left-end)))
+           (right-start (+ 6 (string-match "(head .*)" changelog left-start)))
+           (right-end (string-match ")" changelog right-start))
+           (right-rev (substring changelog right-start (1- right-end))))
+      (dvc-run-dvc-async
+       'xmtn
+       (list "conflicts" "store" left-rev right-rev)
+       :finished (lambda (output error status arguments)
+                   (let ((conflicts-buffer (dvc-get-buffer-create 'xmtn 'conflicts default-directory)))
+                     (pop-to-buffer conflicts-buffer)
+                     (set (make-local-variable 'after-insert-file-functions) '(xmtn-conflicts-after-insert-file))
+                     (insert-file-contents "_MTN/conflicts" t)))
+
+       :error (lambda (output error status arguments)
+                (xmtn-dvc-log-clean)
+                (pop-to-buffer error))) )))
+
 ;;;###autoload
 (defvar xmtn-revlist-mode-map
   (let ((map (make-sparse-keymap)))
@@ -354,6 +386,7 @@ arg; root. Result is of the form:
     (define-key map "CC" 'xmtn-conflicts-clean)
     (define-key map "MH" 'xmtn-view-heads-revlist)
     (define-key map "MP" 'xmtn-propagate-from)
+    (define-key map "MC" 'xmtn-revlist-show-conflicts)
     map))
 
 ;; items added here should probably also be added to xmtn-diff-mode-menu, -map in xmtn-dvc.el
@@ -361,7 +394,8 @@ arg; root. Result is of the form:
   "Mtn specific revlist menu."
   `("DVC-Mtn"
     ["View Heads"       xmtn-view-heads-revlist t]
-    ["Show merge conflicts" xmtn-conflicts-merge t]
+    ["Show merge conflicts before merge" xmtn-conflicts-merge t]
+    ["Show merge conflicts after merge" xmtn-revlist-show-conflicts t]
     ["Show propagate conflicts" xmtn-conflicts-propagate t]
     ["Review conflicts" xmtn-conflicts-review t]
     ["Propagate branch" xmtn-propagate-from t]

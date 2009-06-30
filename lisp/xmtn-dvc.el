@@ -1324,7 +1324,6 @@ finished."
        (resolve-conflicts
         (if (file-exists-p (concat root "/_MTN/conflicts"))
             (progn
-              (xmtn-conflicts-check-mtn-version)
               "--resolve-conflicts-file=_MTN/conflicts")))
        (cmd (list "propagate" other local-branch resolve-conflicts
                   (xmtn-dvc-log-message)))
@@ -1357,7 +1356,6 @@ finished."
            (resolve-conflicts
             (if (file-exists-p (concat root "/_MTN/conflicts"))
                 (progn
-                  (xmtn-conflicts-check-mtn-version)
                   "--resolve-conflicts-file=_MTN/conflicts"))))
       (lexical-let
           ((display-buffer (current-buffer)))

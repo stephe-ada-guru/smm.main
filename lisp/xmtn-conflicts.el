@@ -172,11 +172,6 @@ All xmtn-conflicts functions operate on this ewoc.
 The elements must all be of class xmtn-conflicts.")
 (make-variable-buffer-local 'xmtn-conflicts-ewoc)
 
-(defun xmtn-conflicts-check-mtn-version()
-  "Error if mtn version does not support conflict resolution."
-  (let ((xmtn--minimum-required-command-version '(0 42)))
-    (xmtn--check-cached-command-version)))
-
 (defun xmtn-conflicts-parse-header ()
   "Fill `xmtn-conflicts-left-revision', `xmtn-conflicts-left-root',
 `xmtn-conflicts-right-revision', `xmtn-conflicts-right-root'
@@ -891,7 +886,6 @@ revisions (monotone revision specs; if nil, defaults to heads of
 respective workspace branches) in LEFT-WORK and RIGHT-WORK
 workspaces (strings).  Allow specifying resolutions.  Stores
 conflict file in LEFT-WORK/_MTN."
-  (xmtn-conflicts-check-mtn-version)
   (xmtn-conflicts-save-opts left-work right-work)
   (dvc-run-dvc-async
    'xmtn
@@ -948,12 +942,21 @@ Prompt if the last two conditions are not satisfied."
   "Throw error unless branch in workspace LEFT-WORK needs to be propagated to RIGHT-WORK."
   ;; We assume xmtn-check-workspace-for-propagate has already been run
   ;; on left-work, right-work, so just check if they have the same
-  ;; base revision.
+  ;; base revision, or the target (right) base revision is a
+  ;; descendant of the source.
+  (message "checking if propagate needed")
+
   (let ((left-base (xmtn--get-base-revision-hash-id-or-null left-work))
         (right-base (xmtn--get-base-revision-hash-id-or-null right-work)))
 
     (if (string= left-base right-base)
-        (error "don't need to propagate"))
+        (error "don't need to propagate")
+      ;; check for right descendant of left
+      (let ((descendents (xmtn-automate-simple-command-output-lines left-work (list "descendents" left-base))))
+        (while descendents
+          (if (string= right-base (car descendents))
+              (error "don't need to propagate"))
+          (setq descendents (cdr descendents)))))
   ))
 
 ;;;###autoload
@@ -970,6 +973,8 @@ workspace."
   (xmtn-check-workspace-for-propagate right-work)
 
   (xmtn-check-propagate-needed left-work right-work)
+
+  (message "computing conflicts")
 
   (let ((default-directory right-work))
     (xmtn-conflicts-1 left-work
