@@ -32,8 +32,8 @@ package Books.Table_Views.Author is
    procedure Initialize
      (Author_View : access Gtk_Author_View_Record'Class;
       Parameters  : in     Create_Parameters_Type);
-   --  Create GUI elements, set initial database values. DB is assumed
-   --  already Connected.
+   --  Create GUI elements, copy Tables, set initial database values.
+   --  DB is assumed already Connected.
 
    ----------
    --  Override Table_View operations.

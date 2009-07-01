@@ -57,7 +57,7 @@ package body Books.Table_Views.Collection is
       when Title =>
 
          Books.Database.Link_Tables.CollectionTitle.Insert
-           (Collection_View.CollectionTitle_Table.all,
+           (Collection_View.Tables.CollectionTitle.all,
             (Link_Tables.Collection => Data_Tables.ID (Collection_View.Primary_Table.all),
              Link_Tables.Title      => ID));
 
@@ -127,7 +127,7 @@ package body Books.Table_Views.Collection is
       when Title =>
 
          Link_Tables.CollectionTitle.Delete
-           (Collection_View.CollectionTitle_Table.all,
+           (Collection_View.Tables.CollectionTitle.all,
             (Link_Tables.Collection => Collection_ID,
              Link_Tables.Title      => ID));
 
@@ -154,9 +154,9 @@ package body Books.Table_Views.Collection is
    is begin
       Collection.Create_GUI (Collection_View, Parameters.Config);
 
-      Table_Views.Initialize_DB (Collection_View, Parameters.DB);
+      Collection_View.Tables := Parameters.Tables;
 
-      Collection_View.Primary_Table := Collection_View.Sibling_Tables (Books.Collection);
+      Collection_View.Primary_Table := Collection_View.Tables.Sibling (Books.Collection);
 
       Gtk.Radio_Button.Set_Active (Collection_View.List_Select (Title), True);
 
@@ -246,7 +246,7 @@ package body Books.Table_Views.Collection is
       Editor_ID : constant ID_Type := Data_Tables.Collection.Editor (Collection_View.Primary_Table);
    begin
       begin
-         Data_Tables.Fetch (Collection_View.Sibling_Tables (Author).all, Editor_ID);
+         Data_Tables.Fetch (Collection_View.Tables.Sibling (Author).all, Editor_ID);
       exception
       when No_Data =>
          Gtk.Clist.Clear (Collection_View.List_Display (Author));
@@ -260,9 +260,9 @@ package body Books.Table_Views.Collection is
         (Collection_View.List_Display (Author),
          0,
          (1 => New_String (Image (Editor_ID)),
-          2 => New_String (Data_Tables.Author.First_Name (Collection_View.Sibling_Tables (Author))),
-          3 => New_String (Data_Tables.Author.Middle_Name (Collection_View.Sibling_Tables (Author))),
-          4 => New_String (Data_Tables.Author.Last_Name (Collection_View.Sibling_Tables (Author)))));
+          2 => New_String (Data_Tables.Author.First_Name (Collection_View.Tables.Sibling (Author))),
+          3 => New_String (Data_Tables.Author.Middle_Name (Collection_View.Tables.Sibling (Author))),
+          4 => New_String (Data_Tables.Author.Last_Name (Collection_View.Tables.Sibling (Author)))));
 
       Width := Gtk.Clist.Columns_Autosize (Collection_View.List_Display (Author));
       Gtk.Clist.Thaw (Collection_View.List_Display (Author));
@@ -291,7 +291,7 @@ package body Books.Table_Views.Collection is
 
       begin
          Link_Tables.CollectionTitle.Fetch_Links_Of
-           (Collection_View.CollectionTitle_Table.all,
+           (Collection_View.Tables.CollectionTitle.all,
             Link_Tables.Collection,
             Collection_ID);
       exception
@@ -306,20 +306,20 @@ package body Books.Table_Views.Collection is
       loop
          declare
             Title_ID : constant ID_Type :=
-              Link_Tables.CollectionTitle.ID (Collection_View.CollectionTitle_Table.all, Link_Tables.Title);
+              Link_Tables.CollectionTitle.ID (Collection_View.Tables.CollectionTitle.all, Link_Tables.Title);
          begin
-            Data_Tables.Fetch (Collection_View.Sibling_Tables (Title).all, Title_ID);
+            Data_Tables.Fetch (Collection_View.Tables.Sibling (Title).all, Title_ID);
 
             Gtk.Clist.Insert
               (Collection_View.List_Display (Title),
                0,
                (1 => New_String (Image (Title_ID)),
-                2 => New_String (Data_Tables.Title.Title (Collection_View.Sibling_Tables (Title))),
+                2 => New_String (Data_Tables.Title.Title (Collection_View.Tables.Sibling (Title))),
                 3 => New_String
                   (Interfaces.Unsigned_16'Image
-                     (Data_Tables.Title.Year (Collection_View.Sibling_Tables (Title))))));
+                     (Data_Tables.Title.Year (Collection_View.Tables.Sibling (Title))))));
 
-            Books.Database.Next (Collection_View.CollectionTitle_Table.all);
+            Books.Database.Next (Collection_View.Tables.CollectionTitle.all);
          exception
          when Database.No_Data =>
             exit;

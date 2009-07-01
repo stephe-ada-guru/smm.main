@@ -33,9 +33,19 @@ package Books.Table_Views is
    type Gtk_Table_View is access all Gtk_Table_View_Record'Class;
 
    type Table_Array_Table_View_Type is array (Table_Name_Type) of Gtk_Table_View;
+   type Table_Array_Data_Table_Access_Type is array (Table_Name_Type) of Books.Database.Data_Tables.Table_Access;
+
+   type Tables_Type is record
+      Sibling : Table_Array_Data_Table_Access_Type;
+
+      AuthorTitle     : Books.Database.Link_Tables.AuthorTitle.Table_Access;
+      CollectionTitle : Books.Database.Link_Tables.CollectionTitle.Table_Access;
+      SeriesTitle     : Books.Database.Link_Tables.SeriesTitle.Table_Access;
+   end record;
 
    type Create_Parameters_Type is record
       DB     : Books.Database.Database_Access;
+      Tables : Tables_Type;
       Config : SAL.Config_Files.Configuration_Access_Type;
    end record;
 
@@ -47,9 +57,6 @@ package Books.Table_Views is
       Config     : in     SAL.Config_Files.Configuration_Access_Type);
    --  Create common GUI components. Child type must set data table
    --  components, and hide uneeded links, list selectors, lists.
-
-   procedure Initialize_DB (Table_View : access Gtk_Table_View_Record'Class; DB : in Books.Database.Database_Access);
-   --  Initialize database table access.
 
    procedure Update_Display (Table_View : access Gtk_Table_View_Record'class);
    --  Update common parts of display, call Update_Display_Child.
@@ -106,7 +113,6 @@ private
    type Table_Array_Radio_Type is array (Table_Name_Type) of Gtk.Radio_Button.Gtk_Radio_Button;
    type Table_Array_Clist_Type is array (Table_Name_Type) of Gtk.Clist.Gtk_Clist;
    type Table_Array_Check_Button_Type is array (Table_Name_Type) of Gtk.Check_Button.Gtk_Check_Button;
-   type Table_Array_Data_Table_Access_Type is array (Table_Name_Type) of Books.Database.Data_Tables.Table_Access;
 
    type Gtk_Table_View_Record is abstract new Gtk.Window.Gtk_Window_Record with record
       Private_Stuff : Private_Stuff_Access;
@@ -123,12 +129,8 @@ private
       --  Non-GUI stuff
 
       --  All table views share the same tables
-      Primary_Table  : Books.Database.Data_Tables.Table_Access;
-      Sibling_Tables : Table_Array_Data_Table_Access_Type;
-
-      AuthorTitle_Table     : Books.Database.Link_Tables.AuthorTitle.Table_Access;
-      CollectionTitle_Table : Books.Database.Link_Tables.CollectionTitle.Table_Access;
-      SeriesTitle_Table     : Books.Database.Link_Tables.SeriesTitle.Table_Access;
+      Primary_Table : Books.Database.Data_Tables.Table_Access;
+      Tables        : Tables_Type;
    end record;
 
    --  For children to call

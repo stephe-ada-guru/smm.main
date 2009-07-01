@@ -20,10 +20,6 @@
 with Ada.Exceptions;
 with Ada.Text_IO;
 with Ada.Unchecked_Deallocation;
-with Books.Database.Data_Tables.Author;
-with Books.Database.Data_Tables.Collection;
-with Books.Database.Data_Tables.Series;
-with Books.Database.Data_Tables.Title;
 with Gdk.Event;
 with Gdk.Main;
 with Glib;
@@ -394,53 +390,10 @@ package body Books.Table_Views is
 
    end Set_Visibility;
 
-   procedure Finalize_DB (Table_View : access Gtk_Table_View_Record'Class)
-   is
-      use type Books.Database.Data_Tables.Table_Access;
-   begin
-      if Table_View.Sibling_Tables (Author) /= null then
-         Books.Database.Free (Books.Database.Table_Access (Table_View.Sibling_Tables (Author)));
-         Books.Database.Free (Books.Database.Table_Access (Table_View.Sibling_Tables (Title)));
-         Books.Database.Free (Books.Database.Table_Access (Table_View.Sibling_Tables (Collection)));
-         Books.Database.Free (Books.Database.Table_Access (Table_View.Sibling_Tables (Series)));
-         Books.Database.Free (Books.Database.Table_Access (Table_View.AuthorTitle_Table));
-         Books.Database.Free (Books.Database.Table_Access (Table_View.CollectionTitle_Table));
-         Books.Database.Free (Books.Database.Table_Access (Table_View.SeriesTitle_Table));
-      end if;
-   end Finalize_DB;
-
    function ID (Table_View : access Gtk_Table_View_Record'Class) return Books.Database.ID_Type
    is begin
       return Books.Database.Data_Tables.ID (Table_View.Primary_Table.all);
    end ID;
-
-   procedure Initialize_DB (Table_View : access Gtk_Table_View_Record'Class; DB : in Books.Database.Database_Access)
-   is
-      use type Books.Database.Data_Tables.Table_Access;
-   begin
-      if Table_View.Sibling_Tables (Author) = null then
-         Table_View.Sibling_Tables (Author)     := new Books.Database.Data_Tables.Author.Table (DB);
-         Table_View.Sibling_Tables (Title)      := new Books.Database.Data_Tables.Title.Table (DB);
-         Table_View.Sibling_Tables (Collection) := new Books.Database.Data_Tables.Collection.Table (DB);
-         Table_View.Sibling_Tables (Series)     := new Books.Database.Data_Tables.Series.Table (DB);
-         Table_View.AuthorTitle_Table          := new Books.Database.Link_Tables.AuthorTitle.Table (DB);
-         Table_View.CollectionTitle_Table      := new Books.Database.Link_Tables.CollectionTitle.Table (DB);
-         Table_View.SeriesTitle_Table          := new Books.Database.Link_Tables.SeriesTitle.Table (DB);
-      end if;
-
-      Books.Database.Data_Tables.Author.Initialize
-        (Books.Database.Data_Tables.Author.Table (Table_View.Sibling_Tables (Author).all));
-      Books.Database.Data_Tables.Title.Initialize
-        (Books.Database.Data_Tables.Title.Table (Table_View.Sibling_Tables (Title).all));
-      Books.Database.Data_Tables.Collection.Initialize
-        (Books.Database.Data_Tables.Collection.Table (Table_View.Sibling_Tables (Collection).all));
-      Books.Database.Data_Tables.Series.Initialize
-        (Books.Database.Data_Tables.Series.Table (Table_View.Sibling_Tables (Series).all));
-      Books.Database.Link_Tables.AuthorTitle.Initialize (Table_View.AuthorTitle_Table.all);
-      Books.Database.Link_Tables.CollectionTitle.Initialize (Table_View.CollectionTitle_Table.all);
-      Books.Database.Link_Tables.SeriesTitle.Initialize (Table_View.SeriesTitle_Table.all);
-
-   end Initialize_DB;
 
    procedure On_Button_Add (Button : access Gtk.Button.Gtk_Button_Record'Class)
    is
@@ -615,7 +568,7 @@ package body Books.Table_Views is
                   end if;
 
                   Database.Data_Tables.Fetch
-                    (Table_View.Sibling_Tables (Table_View.Current_List).all, Database.ID_Type'Value (ID_String));
+                    (Table_View.Tables.Sibling (Table_View.Current_List).all, Database.ID_Type'Value (ID_String));
 
                   Update_Display_Child (Table_View.Sibling_Views (Table_View.Current_List));
                end;
@@ -665,7 +618,6 @@ package body Books.Table_Views is
    is
       Table_View : constant Gtk_Table_View := Gtk_Table_View (Object);
    begin
-      Finalize_DB (Table_View);
       Free (Table_View.Private_Stuff);
    end On_Window_Destroy;
 

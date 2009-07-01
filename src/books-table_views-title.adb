@@ -48,7 +48,7 @@ package body Books.Table_Views.Title is
       when Author =>
 
          Link_Tables.AuthorTitle.Insert
-           (Title_View.AuthorTitle_Table.all,
+           (Title_View.Tables.AuthorTitle.all,
             (Link_Tables.Title  => Data_Tables.ID (Title_View.Primary_Table.all),
              Link_Tables.Author => ID));
 
@@ -57,7 +57,7 @@ package body Books.Table_Views.Title is
       when Collection =>
 
          Books.Database.Link_Tables.CollectionTitle.Insert
-           (Title_View.CollectionTitle_Table.all,
+           (Title_View.Tables.CollectionTitle.all,
             (Link_Tables.Title  => Data_Tables.ID (Title_View.Primary_Table.all),
              Link_Tables.Collection => ID));
 
@@ -66,7 +66,7 @@ package body Books.Table_Views.Title is
       when Series =>
 
          Books.Database.Link_Tables.SeriesTitle.Insert
-           (Title_View.SeriesTitle_Table.all,
+           (Title_View.Tables.SeriesTitle.all,
             (Link_Tables.Title  => Data_Tables.ID (Title_View.Primary_Table.all),
              Link_Tables.Series => ID));
 
@@ -144,7 +144,7 @@ package body Books.Table_Views.Title is
       when Author =>
 
          Books.Database.Link_Tables.AuthorTitle.Delete
-           (Title_View.AuthorTitle_Table.all,
+           (Title_View.Tables.AuthorTitle.all,
             (Link_Tables.Title  => Title_ID,
              Link_Tables.Author => ID));
 
@@ -153,7 +153,7 @@ package body Books.Table_Views.Title is
       when Collection =>
 
          Books.Database.Link_Tables.CollectionTitle.Delete
-           (Title_View.CollectionTitle_Table.all,
+           (Title_View.Tables.CollectionTitle.all,
             (Link_Tables.Title      => Title_ID,
              Link_Tables.Collection => ID));
 
@@ -162,7 +162,7 @@ package body Books.Table_Views.Title is
       when Series =>
 
          Books.Database.Link_Tables.SeriesTitle.Delete
-           (Title_View.SeriesTitle_Table.all,
+           (Title_View.Tables.SeriesTitle.all,
             (Link_Tables.Title  => Title_ID,
              Link_Tables.Series => ID));
 
@@ -189,9 +189,9 @@ package body Books.Table_Views.Title is
    is begin
       Title.Create_GUI (Title_View, Parameters.Config);
 
-      Table_Views.Initialize_DB (Title_View, Parameters.DB);
+      Title_View.Tables := Parameters.Tables;
 
-      Title_View.Primary_Table := Title_View.Sibling_Tables (Books.Title);
+      Title_View.Primary_Table := Title_View.Tables.Sibling (Books.Title);
 
       To_Main (Title_View);
 
@@ -284,7 +284,7 @@ package body Books.Table_Views.Title is
       Title_ID : constant ID_Type := Data_Tables.ID (Title_View.Primary_Table.all);
    begin
       begin
-         Link_Tables.AuthorTitle.Fetch_Links_Of (Title_View.AuthorTitle_Table.all, Link_Tables.Title, Title_ID);
+         Link_Tables.AuthorTitle.Fetch_Links_Of (Title_View.Tables.AuthorTitle.all, Link_Tables.Title, Title_ID);
       exception
       when Database.No_Data =>
          Gtk.Clist.Clear (Title_View.List_Display (Author));
@@ -297,19 +297,19 @@ package body Books.Table_Views.Title is
       loop
          declare
             Author_ID : constant ID_Type :=
-              Link_Tables.AuthorTitle.ID (Title_View.AuthorTitle_Table.all, Link_Tables.Author);
+              Link_Tables.AuthorTitle.ID (Title_View.Tables.AuthorTitle.all, Link_Tables.Author);
          begin
-            Data_Tables.Fetch (Title_View.Sibling_Tables (Author).all, Author_ID);
+            Data_Tables.Fetch (Title_View.Tables.Sibling (Author).all, Author_ID);
 
             Gtk.Clist.Insert
               (Title_View.List_Display (Author),
                0,
                (1 => New_String (Image (Author_ID)),
-                2 => New_String (Data_Tables.Author.First_Name (Title_View.Sibling_Tables (Author))),
-                3 => New_String (Data_Tables.Author.Middle_Name (Title_View.Sibling_Tables (Author))),
-                4 => New_String (Data_Tables.Author.Last_Name (Title_View.Sibling_Tables (Author)))));
+                2 => New_String (Data_Tables.Author.First_Name (Title_View.Tables.Sibling (Author))),
+                3 => New_String (Data_Tables.Author.Middle_Name (Title_View.Tables.Sibling (Author))),
+                4 => New_String (Data_Tables.Author.Last_Name (Title_View.Tables.Sibling (Author)))));
 
-            Books.Database.Next (Title_View.AuthorTitle_Table.all);
+            Books.Database.Next (Title_View.Tables.AuthorTitle.all);
          exception
          when Database.No_Data =>
             exit;
@@ -330,7 +330,7 @@ package body Books.Table_Views.Title is
    begin
       begin
          Link_Tables.CollectionTitle.Fetch_Links_Of
-           (Title_View.CollectionTitle_Table.all,
+           (Title_View.Tables.CollectionTitle.all,
             Link_Tables.Title,
             Data_Tables.ID (Title_View.Primary_Table.all));
       exception
@@ -344,17 +344,17 @@ package body Books.Table_Views.Title is
 
       loop
          Data_Tables.Fetch
-           (Title_View.Sibling_Tables (Collection).all,
-            Link_Tables.CollectionTitle.ID (Title_View.CollectionTitle_Table.all, Link_Tables.Collection));
+           (Title_View.Tables.Sibling (Collection).all,
+            Link_Tables.CollectionTitle.ID (Title_View.Tables.CollectionTitle.all, Link_Tables.Collection));
 
          Gtk.Clist.Insert
            (Title_View.List_Display (Collection),
             0,
-            (1 => New_String (Image (Data_Tables.ID (Title_View.Sibling_Tables (Collection).all))),
-             2 => New_String (Data_Tables.Collection.Name (Title_View.Sibling_Tables (Collection)))));
+            (1 => New_String (Image (Data_Tables.ID (Title_View.Tables.Sibling (Collection).all))),
+             2 => New_String (Data_Tables.Collection.Name (Title_View.Tables.Sibling (Collection)))));
 
          begin
-            Books.Database.Next (Title_View.CollectionTitle_Table.all);
+            Books.Database.Next (Title_View.Tables.CollectionTitle.all);
          exception
          when Database.No_Data =>
             exit;
@@ -375,7 +375,7 @@ package body Books.Table_Views.Title is
    begin
       begin
          Link_Tables.SeriesTitle.Fetch_Links_Of
-           (Title_View.SeriesTitle_Table.all,
+           (Title_View.Tables.SeriesTitle.all,
             Link_Tables.Title,
             Data_Tables.ID (Title_View.Primary_Table.all));
       exception
@@ -389,17 +389,17 @@ package body Books.Table_Views.Title is
 
       loop
          Data_Tables.Fetch
-           (Title_View.Sibling_Tables (Series).all,
-            Link_Tables.SeriesTitle.ID (Title_View.SeriesTitle_Table.all, Link_Tables.Series));
+           (Title_View.Tables.Sibling (Series).all,
+            Link_Tables.SeriesTitle.ID (Title_View.Tables.SeriesTitle.all, Link_Tables.Series));
 
          Gtk.Clist.Insert
            (Title_View.List_Display (Series),
             0,
-            (1 => New_String (Image (Data_Tables.ID (Title_View.Sibling_Tables (Series).all))),
-             2 => New_String (Data_Tables.Series.Title (Title_View.Sibling_Tables (Series)))));
+            (1 => New_String (Image (Data_Tables.ID (Title_View.Tables.Sibling (Series).all))),
+             2 => New_String (Data_Tables.Series.Title (Title_View.Tables.Sibling (Series)))));
 
          begin
-            Books.Database.Next (Title_View.SeriesTitle_Table.all);
+            Books.Database.Next (Title_View.Tables.SeriesTitle.all);
          exception
          when Database.No_Data =>
             exit;

@@ -57,7 +57,7 @@ package body Books.Table_Views.Series is
       when Title =>
 
          Books.Database.Link_Tables.SeriesTitle.Insert
-           (Series_View.SeriesTitle_Table.all,
+           (Series_View.Tables.SeriesTitle.all,
             (Link_Tables.Series => Data_Tables.ID (Series_View.Primary_Table.all),
              Link_Tables.Title  => ID));
 
@@ -118,7 +118,7 @@ package body Books.Table_Views.Series is
       when Title =>
 
          Link_Tables.SeriesTitle.Delete
-           (Series_View.SeriesTitle_Table.all,
+           (Series_View.Tables.SeriesTitle.all,
             (Link_Tables.Series => Series_ID,
              Link_Tables.Title  => ID));
 
@@ -144,9 +144,9 @@ package body Books.Table_Views.Series is
    is begin
       Series.Create_GUI (Series_View, Parameters.Config);
 
-      Table_Views.Initialize_DB (Series_View, Parameters.DB);
+      Series_View.Tables := Parameters.Tables;
 
-      Series_View.Primary_Table := Series_View.Sibling_Tables (Books.Series);
+      Series_View.Primary_Table := Series_View.Tables.Sibling (Books.Series);
 
       Gtk.Radio_Button.Set_Active (Series_View.List_Select (Title), True);
 
@@ -212,7 +212,7 @@ package body Books.Table_Views.Series is
       Author_ID : constant ID_Type := Data_Tables.Series.Author (Series_View.Primary_Table);
    begin
       begin
-         Data_Tables.Fetch (Series_View.Sibling_Tables (Author).all, Author_ID);
+         Data_Tables.Fetch (Series_View.Tables.Sibling (Author).all, Author_ID);
       exception
       when No_Data =>
          Gtk.Clist.Clear (Series_View.List_Display (Author));
@@ -226,9 +226,9 @@ package body Books.Table_Views.Series is
         (Series_View.List_Display (Author),
          0,
          (1 => New_String (Image (Author_ID)),
-          2 => New_String (Data_Tables.Author.First_Name (Series_View.Sibling_Tables (Author))),
-          3 => New_String (Data_Tables.Author.Middle_Name (Series_View.Sibling_Tables (Author))),
-          4 => New_String (Data_Tables.Author.Last_Name (Series_View.Sibling_Tables (Author)))));
+          2 => New_String (Data_Tables.Author.First_Name (Series_View.Tables.Sibling (Author))),
+          3 => New_String (Data_Tables.Author.Middle_Name (Series_View.Tables.Sibling (Author))),
+          4 => New_String (Data_Tables.Author.Last_Name (Series_View.Tables.Sibling (Author)))));
 
       Width := Gtk.Clist.Columns_Autosize (Series_View.List_Display (Author));
       Gtk.Clist.Thaw (Series_View.List_Display (Author));
@@ -249,7 +249,7 @@ package body Books.Table_Views.Series is
          Database.Image (Database.Data_Tables.Series.Author (Series_View.Primary_Table)));
 
       begin
-         Link_Tables.SeriesTitle.Fetch_Links_Of (Series_View.SeriesTitle_Table.all, Link_Tables.Series, Series_ID);
+         Link_Tables.SeriesTitle.Fetch_Links_Of (Series_View.Tables.SeriesTitle.all, Link_Tables.Series, Series_ID);
       exception
       when Database.No_Data =>
          Gtk.Clist.Clear (Series_View.List_Display (Title));
@@ -262,19 +262,19 @@ package body Books.Table_Views.Series is
       loop
          declare
             Title_ID : constant ID_Type :=
-              Link_Tables.SeriesTitle.ID (Series_View.SeriesTitle_Table.all, Link_Tables.Title);
+              Link_Tables.SeriesTitle.ID (Series_View.Tables.SeriesTitle.all, Link_Tables.Title);
          begin
-            Data_Tables.Fetch (Series_View.Sibling_Tables (Title).all, Title_ID);
+            Data_Tables.Fetch (Series_View.Tables.Sibling (Title).all, Title_ID);
 
             Gtk.Clist.Insert
               (Series_View.List_Display (Title),
                0,
                (1 => New_String (Image (Title_ID)),
-                2 => New_String (Data_Tables.Title.Title (Series_View.Sibling_Tables (Title))),
+                2 => New_String (Data_Tables.Title.Title (Series_View.Tables.Sibling (Title))),
                 3 => New_String
-                  (Interfaces.Unsigned_16'Image (Data_Tables.Title.Year (Series_View.Sibling_Tables (Title))))));
+                  (Interfaces.Unsigned_16'Image (Data_Tables.Title.Year (Series_View.Tables.Sibling (Title))))));
 
-            Books.Database.Next (Series_View.SeriesTitle_Table.all);
+            Books.Database.Next (Series_View.Tables.SeriesTitle.all);
          exception
          when Database.No_Data =>
             exit;
