@@ -17,6 +17,7 @@
 --  MA 02111-1307, USA.
 
 with AUnit.Test_Cases.Registration;
+with Books.Table_Views.Author.Test;
 with Books.Table_Views.Test;
 with Gdk.Test_Events;
 with Test_Books.GUI_Utils;
@@ -33,6 +34,8 @@ package body Test_Books.Show_Other is
       use Test_Books.GUI_Utils;
       use Test_Books.String_Lists;
    begin
+      Books.Table_Views.Test.Set_Test_Hook (Books.Table_Views.Author.Test.Dump_Author'Access);
+
       Mouse_Move (Title_Origin + Find_Entry);
       Mouse_Double_Click;
       Key_Stroke ("Foundation");
@@ -41,19 +44,21 @@ package body Test_Books.Show_Other is
       Mouse_Double_Click;
 
       Mouse_Move (Author_Origin + Find_Entry);
-      Books.Table_Views.Test.Set_Test_Hook (Books.Table_Views.Test.Dump_Clist'Access);
+      Mouse_Click;
+      delay 0.1;
       Alt_Key_Stroke ('t'); -- test
 
-      Check_List (Books.Table_Views.Test.Clist_Contents, +(+"00002", +"Isaac", +"", +"Asimov"));
+      Check ("asimov", Books.Table_Views.Author.Test.Author_Contents, (+"Isaac", +"", +"Asimov"));
 
       Mouse_Move (Title_Origin + Title_First_Link); -- clarke
       Mouse_Double_Click;
 
       Mouse_Move (Author_Origin + Find_Entry);
-      Books.Table_Views.Test.Set_Test_Hook (Books.Table_Views.Test.Dump_Clist'Access);
+      Mouse_Click;
+      delay 0.1;
       Alt_Key_Stroke ('t'); -- test
 
-      Check_List (Books.Table_Views.Test.Clist_Contents, +(+"00001", +"Arthur", +"C.", +"Clarke"));
+      Check ("clarke", Books.Table_Views.Author.Test.Author_Contents, (+"Arthur", +"C.", +"Clarke"));
    end Show_From_Title;
 
    ----------
@@ -70,7 +75,7 @@ package body Test_Books.Show_Other is
    is
       use AUnit.Test_Cases.Registration;
    begin
-      if T.Debug_Level < 2 then
+      if T.Debug_Level < 3 then
          Register_Routine (T, Show_From_Title'Access, "Show_From_Title");
       end if;
    end Register_Tests;

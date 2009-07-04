@@ -2,11 +2,11 @@
 --
 --  See spec
 --
---  Copyright (C) 2004 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2004, 2009 Stephen Leake.  All Rights Reserved.
 --
 --  This library is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
---  published by the Free Software Foundation; either version 2, or (at
+--  published by the Free Software Foundation; either version 3, or (at
 --  your option) any later version. This library is distributed in the
 --  hope that it will be useful, but WITHOUT ANY WARRANTY; without even
 --  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
@@ -24,7 +24,19 @@
 --  executable file  might be covered by the  GNU Public License.
 
 with AUnit.Assertions;
+with SAL.AUnit;
 package body Test_Books.String_Lists is
+
+   procedure Check (Label : in String; Computed, Expected : in String_List_Type)
+   is
+      use SAL.AUnit;
+      use type Glib.Gint;
+   begin
+      Check (Label & ".count", Computed'Length, Expected'Length);
+      for I in Computed'Range loop
+         Check (Label & Glib.Gint'Image (I), -Computed (I), -Expected (Expected'First + I - Computed'First));
+      end loop;
+   end Check;
 
    function "+" (Right : in String) return String_List_Type
    is begin
@@ -39,8 +51,9 @@ package body Test_Books.String_Lists is
       return Table;
    end "+";
 
-   procedure Check_List (Computed, Expected : in String_Table_Type)
+   procedure Check (Computed, Expected : in String_Table_Type)
    is
+      use AUnit.Assertions;
       use String_Tables;
       Computed_Iterator : Iterator_Type := First (Computed);
       Expected_Iterator : Iterator_Type := First (Expected);
@@ -49,7 +62,7 @@ package body Test_Books.String_Lists is
       loop
          exit when Is_Done (Computed_Iterator);
 
-         AUnit.Assertions.Assert (not Is_Done (Expected_Iterator), "not all of Computed compared");
+         Assert (not Is_Done (Expected_Iterator), "not all of Computed compared");
 
          declare
             Computed : String_List_Access_Type renames Current (Computed_Iterator);
@@ -61,7 +74,7 @@ package body Test_Books.String_Lists is
                   Computed_String : constant String := -Computed (Column);
                   Expected_String : constant String := -Expected (Expected'First + Column - Computed'First);
                begin
-                  AUnit.Assertions.Assert
+                  Assert
                     (Computed_String = Expected_String,
                      "(" & Integer'Image (Row) & "," & Glib.Gint'Image (Column) & ") got '" &
                        Computed_String & "', expected '" & Expected_String & "'");
@@ -72,7 +85,7 @@ package body Test_Books.String_Lists is
          Next (Computed_Iterator);
          Next (Expected_Iterator);
       end loop;
-      AUnit.Assertions.Assert (Is_Null (Expected_Iterator), "not all of Expected compared");
-   end Check_List;
+      Assert (Is_Null (Expected_Iterator), "not all of Expected compared");
+   end Check;
 
 end Test_Books.String_Lists;

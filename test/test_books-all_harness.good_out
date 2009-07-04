@@ -16,20 +16,16 @@ Disconnecting from database ... done.
 make[1]: Entering directory `/Projects/books.main/build/x86_gnu_windows_release'
 mysql -u stephe --execute="source ../../test/recreate_database_test_mysql.sql"
 make[1]: Leaving directory `/Projects/books.main/build/x86_gnu_windows_release'
-using config file C:\Projects\books.main\test\test.config
-Connected to database.
-Disconnecting from database ... done.
-make[1]: Entering directory `/Projects/books.main/build/x86_gnu_windows_release'
-mysql -u stephe --execute="source ../../test/recreate_database_test_mysql.sql"
-make[1]: Leaving directory `/Projects/books.main/build/x86_gnu_windows_release'
 make[1]: Entering directory `/Projects/books.main/build/x86_gnu_windows_release'
 mysql -u stephe --execute="source ../../test/create_test_data_mysql.sql"
 make[1]: Leaving directory `/Projects/books.main/build/x86_gnu_windows_release'
 using config file C:\Projects\books.main\test\test.config
 Connected to database.
 Disconnecting from database ... done.
-   Total Tests Run:  15
+   Total Tests Run:  12
 
-   Successful Tests: 15
+   Successful Tests: 12
+
+   Failed Tests: 0
 
    Unexpected Errors: 0

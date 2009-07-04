@@ -23,8 +23,8 @@ with Gdk.Event;
 with System;
 package Books.Event_Handler is
 
-   Handled_Exception    : Boolean := True;
-   Unhandled_Exception  : Boolean := False;
+   Handled_Exception    : aliased Boolean := False;
+   Unhandled_Exception  : aliased Boolean := False;
    Unhandled_Occurrence : Ada.Exceptions.Exception_Occurrence;
 
    procedure Event_Handler (Event : in Gdk.Event.Gdk_Event; Data : in System.Address);

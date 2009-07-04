@@ -2,11 +2,11 @@
 --
 --  List of list of strings, for testing GUI list displays.
 --
---  Copyright (C) 2004 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2004, 2009 Stephen Leake.  All Rights Reserved.
 --
 --  This library is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
---  published by the Free Software Foundation; either version 2, or (at
+--  published by the Free Software Foundation; either version 3, or (at
 --  your option) any later version. This library is distributed in the
 --  hope that it will be useful, but WITHOUT ANY WARRANTY; without even
 --  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
@@ -35,6 +35,11 @@ package Test_Books.String_Lists is
    type String_List_Type is array (Glib.Gint range <>) of Ada.Strings.Unbounded.Unbounded_String;
    type String_List_Access_Type is access String_List_Type;
 
+   procedure Check (Label : in String; Computed, Expected : in String_List_Type);
+   --  Does AUnit.Assertions.Assert on each element of computed,
+   --  expected. Also checks that all elements of Expected are
+   --  checked.
+
    package String_List_Aux is new SAL.Aux.Indefinite_Private_Items (String_List_Type, String_List_Access_Type);
    package String_Tables is new SAL.Poly.Lists.Double
      (Item_Type         => String_List_Type,
@@ -53,9 +58,9 @@ package Test_Books.String_Lists is
    function "+" (Right : in String) return String_List_Type;
    function "+" (Right : in String_List_Type) return String_Table_Type;
 
-   procedure Check_List (Computed, Expected : in String_Table_Type);
+   procedure Check (Computed, Expected : in String_Table_Type);
    --  Does AUnit.Assertions.Assert on each element of computed,
    --  expected. Also checks that all elements of Expected are
-   --  checked. String_Lists must be 0 indexed, since Clists are.
+   --  checked.
 
 end Test_Books.String_Lists;

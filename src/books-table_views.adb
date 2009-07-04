@@ -570,7 +570,7 @@ package body Books.Table_Views is
                   Database.Data_Tables.Fetch
                     (Table_View.Tables.Sibling (Table_View.Current_List).all, Database.ID_Type'Value (ID_String));
 
-                  Update_Display_Child (Table_View.Sibling_Views (Table_View.Current_List));
+                  Update_Display (Table_View.Sibling_Views (Table_View.Current_List));
                end;
                return True;
             else

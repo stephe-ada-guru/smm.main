@@ -115,7 +115,8 @@ package body Test_Books.GUI_Utils is
       use Gdk.Test_Events;
    begin
       Mouse_Move (Author_Origin + Find_Entry);
-      Mouse_Double_Click;
+      Mouse_Click;
+      Ctrl_Key_Stroke ('a');
       Key_Stroke (Last);
       Alt_Key_Stroke ('a', Key_Delay => 0.1); -- Add, let window get painted
       Shift_Tab;
@@ -134,7 +135,8 @@ package body Test_Books.GUI_Utils is
       use Gdk.Test_Events;
    begin
       Mouse_Move (Title_Origin + Find_Entry);
-      Mouse_Double_Click (Mouse_Delay => 0.1); -- let current text get selected
+      Mouse_Click;
+      Ctrl_Key_Stroke ('a'); -- select all current
       Key_Stroke (Title);
       Alt_Key_Stroke ('a', Key_Delay => 0.1); -- Add
       Key_Stroke (Tab); --  Year

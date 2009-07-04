@@ -51,7 +51,7 @@ package body Test_Books.Errors is
       end if;
 
       if not Books.Event_Handler.Handled_Exception then
-         AUnit.Assertions.Assert (False, "handled exception");
+         AUnit.Assertions.Assert (False, Label & ": no handled exception");
       end if;
    end Check_Exception;
 
@@ -83,9 +83,9 @@ package body Test_Books.Errors is
 
       Key_Stroke (Enter); --  Acknowledge exception message
 
-      Check_Exception ("Duplicate_Author");
-
       Alt_Key_Stroke ('c'); -- cancel
+
+      Check_Exception ("Duplicate_Author");
 
    end Duplicate_Author;
 
@@ -106,11 +106,11 @@ package body Test_Books.Errors is
          Comment => "",
          Rating  => "");
 
-      Key_Stroke (Enter); --  Acknowledge exception message
-
-      Check_Exception ("Duplicate_Title");
+      Key_Stroke (Enter, Key_Delay => 0.1); --  Acknowledge exception message, let focus shift back
 
       Alt_Key_Stroke ('c'); -- cancel
+
+      Check_Exception ("Duplicate_Title");
 
    end Duplicate_Title;
 

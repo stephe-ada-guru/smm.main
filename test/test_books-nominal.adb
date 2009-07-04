@@ -63,7 +63,7 @@ package body Test_Books.Nominal is
       Books.Table_Views.Test.Set_Test_Hook (Books.Table_Views.Test.Dump_Clist'Access);
       Alt_Key_Stroke ('t'); -- test
 
-      Check_List (Books.Table_Views.Test.Clist_Contents, +(+"00001", +"Arthur", +"C.", +"Clarke"));
+      Check (Books.Table_Views.Test.Clist_Contents, +(+"00001", +"Arthur", +"C.", +"Clarke"));
    end Add_Title;
 
    procedure Search_Author (T : in out AUnit.Test_Cases.Test_Case'Class)
@@ -80,7 +80,7 @@ package body Test_Books.Nominal is
       Books.Table_Views.Test.Set_Test_Hook (Books.Table_Views.Test.Dump_Clist'Access);
       Alt_Key_Stroke ('t'); -- test
 
-      Check_List (Books.Table_Views.Test.Clist_Contents, +(+"00001", +"2001", +"1970"));
+      Check (Books.Table_Views.Test.Clist_Contents, +(+"00001", +"2001", +"1970"));
    end Search_Author;
 
    procedure Search_Title (T : in out AUnit.Test_Cases.Test_Case'Class)
@@ -97,7 +97,7 @@ package body Test_Books.Nominal is
       Books.Table_Views.Test.Set_Test_Hook (Books.Table_Views.Test.Dump_Clist'Access);
       Alt_Key_Stroke ('t'); -- test
 
-      Check_List (Books.Table_Views.Test.Clist_Contents, +(+"00001", +"Arthur", +"C.", +"Clarke"));
+      Check (Books.Table_Views.Test.Clist_Contents, +(+"00001", +"Arthur", +"C.", +"Clarke"));
    end Search_Title;
 
    ----------
