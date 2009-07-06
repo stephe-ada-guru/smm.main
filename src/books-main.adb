@@ -20,13 +20,10 @@
 with Ada.Command_Line;
 with Ada.Exceptions;
 with Ada.Text_IO;
-with Books.Event_Handler;
 with Books.Main_Window;
 with GNAT.Traceback.Symbolic;
-with Gdk.Event;
 with Gtk.Main;
 with SAL;
-with System.Storage_Elements;
 procedure Books.Main
 is
    Main_Window : Books.Main_Window.Gtk_Window;
@@ -43,7 +40,8 @@ begin
          Config_File  => Ada.Command_Line.Argument (1));
    end if;
 
-   Gdk.Event.Event_Handler_Set (Books.Event_Handler.Event_Handler'Access, System.Storage_Elements.To_Address (0));
+   --  Easier to fix bugs if get stack trace
+   --  Gdk.Event.Event_Handler_Set (Books.Event_Handler.Event_Handler'Access, System.Storage_Elements.To_Address (0));
 
    Books.Main_Window.Show (Main_Window);
    Gtk.Main.Main;

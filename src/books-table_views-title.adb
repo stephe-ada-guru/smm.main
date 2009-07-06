@@ -343,15 +343,27 @@ package body Books.Table_Views.Title is
       Gtk.Clist.Clear (Title_View.List_Display (Collection));
 
       loop
-         Data_Tables.Fetch
-           (Title_View.Tables.Sibling (Collection).all,
-            Link_Tables.CollectionTitle.ID (Title_View.Tables.CollectionTitle.all, Link_Tables.Collection));
+         begin
+            Data_Tables.Fetch
+              (Title_View.Tables.Sibling (Collection).all,
+               Link_Tables.CollectionTitle.ID (Title_View.Tables.CollectionTitle.all, Link_Tables.Collection));
 
-         Gtk.Clist.Insert
-           (Title_View.List_Display (Collection),
-            0,
-            (1 => New_String (Image (Data_Tables.ID (Title_View.Tables.Sibling (Collection).all))),
-             2 => New_String (Data_Tables.Collection.Name (Title_View.Tables.Sibling (Collection)))));
+            Gtk.Clist.Insert
+              (Title_View.List_Display (Collection),
+               0,
+               (1 => New_String (Image (Data_Tables.ID (Title_View.Tables.Sibling (Collection).all))),
+                2 => New_String (Data_Tables.Collection.Name (Title_View.Tables.Sibling (Collection)))));
+         exception
+         when Database.No_Data =>
+            --  bad IDs accidently entered; allow deleting
+            Gtk.Clist.Insert
+              (Title_View.List_Display (Collection),
+               0,
+               (1 => New_String
+                  (Image
+                     (Link_Tables.CollectionTitle.ID (Title_View.Tables.CollectionTitle.all, Link_Tables.Collection))),
+                2 => New_String ("<bad id>")));
+         end;
 
          begin
             Books.Database.Next (Title_View.Tables.CollectionTitle.all);
@@ -388,17 +400,17 @@ package body Books.Table_Views.Title is
       Gtk.Clist.Clear (Title_View.List_Display (Series));
 
       loop
-         Data_Tables.Fetch
-           (Title_View.Tables.Sibling (Series).all,
-            Link_Tables.SeriesTitle.ID (Title_View.Tables.SeriesTitle.all, Link_Tables.Series));
-
-         Gtk.Clist.Insert
-           (Title_View.List_Display (Series),
-            0,
-            (1 => New_String (Image (Data_Tables.ID (Title_View.Tables.Sibling (Series).all))),
-             2 => New_String (Data_Tables.Series.Title (Title_View.Tables.Sibling (Series)))));
-
          begin
+            Data_Tables.Fetch
+              (Title_View.Tables.Sibling (Series).all,
+               Link_Tables.SeriesTitle.ID (Title_View.Tables.SeriesTitle.all, Link_Tables.Series));
+
+            Gtk.Clist.Insert
+              (Title_View.List_Display (Series),
+               0,
+               (1 => New_String (Image (Data_Tables.ID (Title_View.Tables.Sibling (Series).all))),
+                2 => New_String (Data_Tables.Series.Title (Title_View.Tables.Sibling (Series)))));
+
             Books.Database.Next (Title_View.Tables.SeriesTitle.all);
          exception
          when Database.No_Data =>
