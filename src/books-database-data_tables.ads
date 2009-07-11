@@ -34,6 +34,9 @@ package Books.Database.Data_Tables is
    --
    --  If there is no match, current data is unchanged.
 
+   function Valid (T : in Table'Class) return Boolean;
+   --  True if current data is valid (Find or Fetch did not raise No_Data)
+
    function ID (T : in Table'Class) return ID_Type;
    --  Return ID of current record.
 
@@ -56,7 +59,7 @@ private
    type Table is abstract new Books.Database.Table with record
 
       --  Data
-      ID            : aliased ID_Type    := 0;
+      ID            : aliased ID_Type    := Invalid_ID;
       ID_Indicator  : aliased GNU.DB.SQLCLI.SQLINTEGER := GNU.DB.SQLCLI.SQL_NULL_DATA;
 
       By_ID_Statement   : GNU.DB.SQLCLI.SQLHANDLE := GNU.DB.SQLCLI.SQL_NULL_HANDLE;

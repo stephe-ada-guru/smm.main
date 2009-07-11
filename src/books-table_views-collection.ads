@@ -37,15 +37,7 @@ package Books.Table_Views.Collection is
 
    ----------
    --  Override Table_View operations.
-
-   overriding procedure Add_Link
-     (Collection_View : access Gtk_Collection_View_Record;
-      ID              : in     Books.Database.ID_Type;
-      List            : in     Table_Name_Type);
    overriding procedure Default_Add (Collection_View : access Gtk_Collection_View_Record);
-   overriding procedure Delete_Link
-     (Collection_View : access Gtk_Collection_View_Record;
-      ID : in Books.Database.ID_Type);
    overriding function Main_Index_Name
      (Collection_View : access Gtk_Collection_View_Record)
      return String;

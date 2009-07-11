@@ -40,13 +40,14 @@ package body Books.Database.Data_Tables is
       use type GNU.DB.SQLCLI.SQLINTEGER;
    begin
       T.ID           := ID;
-      T.ID_Indicator := ID_Type'Size / 8;
+      T.ID_Indicator := 4; -- That's what Find sets it to on success.
       Checked_Execute (T.By_ID_Statement);
       GNU.DB.SQLCLI.SQLFetch (T.By_ID_Statement);
       GNU.DB.SQLCLI.SQLCloseCursor (T.By_ID_Statement);
    exception
    when GNU.DB.SQLCLI.No_Data =>
       GNU.DB.SQLCLI.SQLCloseCursor (T.By_ID_Statement);
+      T.ID_Indicator := GNU.DB.SQLCLI.SQL_NULL_DATA;
       raise Books.Database.No_Data;
    end Fetch;
 
@@ -85,12 +86,19 @@ package body Books.Database.Data_Tables is
       --  Just keep current data.
    end Find;
 
+   function Valid (T : in Table'Class) return Boolean
+   is
+      use type GNU.DB.SQLCLI.SQLINTEGER;
+   begin
+      return T.ID_Indicator /= GNU.DB.SQLCLI.SQL_NULL_DATA;
+   end Valid;
+
    function ID (T : in Table'Class) return ID_Type
    is
       use type GNU.DB.SQLCLI.SQLINTEGER;
    begin
       if T.ID_Indicator = GNU.DB.SQLCLI.SQL_NULL_DATA then
-         return 0;
+         return Invalid_ID;
       else
          return T.ID;
       end if;

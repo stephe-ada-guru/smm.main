@@ -20,26 +20,9 @@ pragma License (GPL);
 
 with Ada.Strings.Unbounded;
 with Books.Main_Window;
-with Gdk.Test_Events;
+with Gdk.Event;
 with Gtk.Gen_Background_Window;
-with Gtk.Window;
 package Test_Books.GUI_Utils is
-
-   --  Absolute window origins, set by Set_Window_Origins
-   Main_Origin   : Gdk.Test_Events.Point_Type;
-   Author_Origin : Gdk.Test_Events.Point_Type;
-   Title_Origin  : Gdk.Test_Events.Point_Type;
-
-   --  Common mouse locations, relative to *_Origin. Use mnemonics when possible.
-   --  These sizes are dependent on the font used, which we don't control!
-   Find_Entry            : constant Gdk.Test_Events.Point_Type := (72, 70);
-   Title_Add_Link_Button : constant Gdk.Test_Events.Point_Type := (43, 260);
-   Title_Add_Link_Entry  : constant Gdk.Test_Events.Point_Type := (118, 260);
-   Title_First_Link      : constant Gdk.Test_Events.Point_Type := (118, 310);
-   Title_Second_Link     : constant Gdk.Test_Events.Point_Type := (118, 332);
-
-   procedure Set_Window_Origins (Config_File : in Ada.Strings.Unbounded.Unbounded_String);
-   --  Set window origins from Config_File.
 
    procedure Empty_Database;
    --  Run 'make empty_database_test'.
@@ -47,13 +30,14 @@ package Test_Books.GUI_Utils is
    Main_Window : Books.Main_Window.Gtk_Window;
    Config_File : Ada.Strings.Unbounded.Unbounded_String;
 
-   procedure Create_Main_Window (Window : out Gtk.Window.Gtk_Window);
+   procedure Create_Show_Main_Window;
 
-   package Background is new Gtk.Gen_Background_Window (Create_Main_Window);
+   package Background is new Gtk.Gen_Background_Window (Create_Show_Main_Window);
 
    procedure Set_Up_Case
      (Config_File : access String;
-      Debug_Level : in     Integer);
+      Debug_Level : in     Integer;
+      Event_Handler : in     Gdk.Event.Event_Handler_Func := null);
    --  Set up Main_Window for typical GUI test
 
    procedure Create_Some_Data;
@@ -67,6 +51,11 @@ package Test_Books.GUI_Utils is
    --  window is showing main display. Last is typed into the Find
    --  window, as the user normally will do.
 
+   procedure Find_Author (Last : in String);
+   --  Use Mouse & Keyboard events to search for author, assuming Last
+   --  is unique. Assumes Author window is showing main display. Last
+   --  is typed into the Find window.
+
    procedure Add_Title
      (Title   : in String;
       Year    : in String;
@@ -75,5 +64,10 @@ package Test_Books.GUI_Utils is
    --  Use Mouse & Keyboard events to add title. Assumes Title
    --  window is showing main display. Title is typed into the Find
    --  window, as the user normally will do.
+
+   procedure Find_Title (Title : in String);
+   --  Use Mouse & Keyboard events to search for title, assuming Title
+   --  is unique. Assumes Title window is showing main display. Title
+   --  is typed into the Find window.
 
 end Test_Books.GUI_Utils;

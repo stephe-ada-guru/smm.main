@@ -42,6 +42,7 @@ package Books.Database is
    overriding procedure Finalize (DB : in out Database);
 
    type ID_Type is new Interfaces.Unsigned_32;
+   Invalid_ID : constant ID_Type := 0;
 
    function Image (ID : in ID_Type) return String;
    --  Image has leading zeros to width 5, to allow sorting.

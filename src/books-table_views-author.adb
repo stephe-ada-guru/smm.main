@@ -22,7 +22,6 @@ with Books.Database.Data_Tables.Author;
 with Books.Database.Data_Tables.Collection;
 with Books.Database.Data_Tables.Title;
 with Books.Database.Data_Tables.Series;
-with Gdk.Main;
 with Glib;
 with Gtk.Clist;
 with Gtk.Enums;
@@ -36,39 +35,6 @@ package body Books.Table_Views.Author is
 
    ----------
    --  Bodies (alphabetical order)
-
-   overriding procedure Add_Link
-     (Author_View : access Gtk_Author_View_Record;
-      ID          : in     Books.Database.ID_Type;
-      List        : in     Table_Name_Type)
-   is
-      use Books.Database;
-   begin
-      case List is
-      when Books.Author =>
-         --  Not actually possible.
-         Gdk.Main.Beep;
-
-      when Collection =>
-         --  Not a link table (collections only have one editor).
-         Gdk.Main.Beep;
-
-      when Title =>
-
-         Books.Database.Link_Tables.AuthorTitle.Insert
-           (Author_View.Tables.AuthorTitle.all,
-            (Link_Tables.Author => Data_Tables.ID (Author_View.Primary_Table.all),
-             Link_Tables.Title  => ID));
-
-         Update_Display_AuthorTitle (Author_View);
-
-      when Series =>
-         --  Not a link table (series only have one author).
-         Gdk.Main.Beep;
-
-      end case;
-
-   end Add_Link;
 
    procedure Create_GUI
      (Author_View : access Gtk_Author_View_Record'Class;
@@ -119,28 +85,6 @@ package body Books.Table_Views.Author is
       Gtk.GEntry.Grab_Focus (Author_View.Last_Text);
    end Default_Add;
 
-   overriding procedure Delete_Link (Author_View : access Gtk_Author_View_Record; ID : in Books.Database.ID_Type)
-   is
-      use Books.Database;
-      Author_ID : constant ID_Type := Data_Tables.ID (Author_View.Primary_Table.all);
-   begin
-      case Author_View.Current_List is
-      when Title =>
-
-         Link_Tables.AuthorTitle.Delete
-           (Author_View.Tables.AuthorTitle.all,
-            (Link_Tables.Author => Author_ID,
-             Link_Tables.Title  => ID));
-
-         Update_Display_AuthorTitle (Author_View);
-
-      when others =>
-         --  others are not link tables.
-         Gdk.Main.Beep;
-      end case;
-
-   end Delete_Link;
-
    procedure Gtk_New
      (Author_View :    out Gtk_Author_View;
       Parameters  : in     Create_Parameters_Type)
@@ -158,6 +102,7 @@ package body Books.Table_Views.Author is
 
       Author_View.Tables := Parameters.Tables;
 
+      Author_View.Primary_Kind  := Books.Author;
       Author_View.Primary_Table := Author_View.Tables.Sibling (Books.Author);
 
       Gtk.Radio_Button.Set_Active (Author_View.List_Select (Title), True);
@@ -175,6 +120,8 @@ package body Books.Table_Views.Author is
          First_Name  => Gtk.GEntry.Get_Text (Author_View.First_Text),
          Middle_Name => Gtk.GEntry.Get_Text (Author_View.Middle_Text),
          Last_Name   => Gtk.GEntry.Get_Text (Author_View.Last_Text));
+
+      Author_View.Displayed_ID := Database.Data_Tables.ID (Author_View.Primary_Table.all);
    end Insert_Database;
 
    overriding function Main_Index_Name (Author_View : access Gtk_Author_View_Record) return String
@@ -289,8 +236,7 @@ package body Books.Table_Views.Author is
       pragma Unreferenced (Width);
    begin
       begin
-         Data_Tables.Series.Find_Author
-           (Author_View.Tables.Sibling (Series), Data_Tables.ID (Author_View.Primary_Table.all));
+         Data_Tables.Series.Find_Author (Author_View.Tables.Sibling (Series), Author_View.Displayed_ID);
       exception
       when Database.No_Data =>
          Gtk.Clist.Clear (Author_View.List_Display (Series));
@@ -323,24 +269,32 @@ package body Books.Table_Views.Author is
 
    overriding procedure Update_Display_Child (Author_View : access Gtk_Author_View_Record)
    is begin
-      declare
-         use Database.Data_Tables.Author;
-      begin
-         Gtk.GEntry.Set_Text (Author_View.First_Text, First_Name (Author_View.Primary_Table));
-         Gtk.GEntry.Set_Text (Author_View.Middle_Text, Middle_Name (Author_View.Primary_Table));
-         Gtk.GEntry.Set_Text (Author_View.Last_Text, Last_Name (Author_View.Primary_Table));
-      end;
+      if Database.Data_Tables.Valid (Author_View.Primary_Table.all) then
+         declare
+            use Database.Data_Tables.Author;
+         begin
+            Gtk.GEntry.Set_Text (Author_View.First_Text, First_Name (Author_View.Primary_Table));
+            Gtk.GEntry.Set_Text (Author_View.Middle_Text, Middle_Name (Author_View.Primary_Table));
+            Gtk.GEntry.Set_Text (Author_View.Last_Text, Last_Name (Author_View.Primary_Table));
+         end;
 
-      case Author_View.Current_List is
-      when Books.Author =>
-         null;
-      when Collection =>
-         Update_Display_AuthorCollection (Author_View);
-      when Series =>
-         Update_Display_AuthorSeries (Author_View);
-      when Title =>
-         Update_Display_AuthorTitle (Author_View);
-      end case;
+         case Author_View.Current_List is
+         when Books.Author =>
+            null;
+         when Collection =>
+            Update_Display_AuthorCollection (Author_View);
+         when Series =>
+            Update_Display_AuthorSeries (Author_View);
+         when Title =>
+            Update_Display_AuthorTitle (Author_View);
+         end case;
+
+      else
+         Gtk.GEntry.Set_Text (Author_View.First_Text, "");
+         Gtk.GEntry.Set_Text (Author_View.Middle_Text, "");
+         Gtk.GEntry.Set_Text (Author_View.Last_Text, "");
+         Gtk.Clist.Clear (Author_View.List_Display (Author_View.Current_List));
+      end if;
 
    end Update_Display_Child;
 

@@ -20,6 +20,7 @@ with Books.Database.Data_Tables;
 with Books.Database.Link_Tables.AuthorTitle;
 with Books.Database.Link_Tables.CollectionTitle;
 with Books.Database.Link_Tables.SeriesTitle;
+with Gdk.Test_Events;
 with Gtk.Check_Button;
 with Gtk.Clist;
 with Gtk.GEntry;
@@ -75,18 +76,8 @@ package Books.Table_Views is
    ----------
    --  New dispatching operations.
 
-   procedure Add_Link
-     (Table_View : access Gtk_Table_View_Record;
-      ID         : in     Books.Database.ID_Type;
-      List       : in     Table_Name_Type)
-      is abstract;
-   --  Add a link from current item to ID in List.
-
    procedure Default_Add (Table_View : access Gtk_Table_View_Record) is abstract;
    --  Set default contents of Add display, set focus.
-
-   procedure Delete_Link (Table_View : access Gtk_Table_View_Record; ID : in Books.Database.ID_Type) is abstract;
-   --  Delete the link to ID in the currently displayed list.
 
    function Main_Index_Name (Table_View : access Gtk_Table_View_Record) return String is abstract;
    --  Return the name of the main index (for index select drop box).
@@ -129,7 +120,9 @@ private
       --  Non-GUI stuff
 
       --  All table views share the same tables
+      Primary_Kind  : Table_Name_Type;
       Primary_Table : Books.Database.Data_Tables.Table_Access;
+      Displayed_ID  : Books.Database.ID_Type := 0;
       Tables        : Tables_Type;
    end record;
 
@@ -139,5 +132,10 @@ private
 
    --  For unit tests
    Test_Hook : Test_Hook_Type;
+
+   function Find_Entry (Table_View : access Gtk_Table_View_Record'Class) return Gdk.Test_Events.Point_Type;
+   function Add_Link_Button (Table_View : access Gtk_Table_View_Record'Class) return Gdk.Test_Events.Point_Type;
+   function First_Link (Table_View : access Gtk_Table_View_Record'Class) return Gdk.Test_Events.Point_Type;
+   --  Return absolute coordinates of left top of GUI item.
 
 end Books.Table_Views;

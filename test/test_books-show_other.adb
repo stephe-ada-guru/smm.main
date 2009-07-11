@@ -30,30 +30,29 @@ package body Test_Books.Show_Other is
    procedure Show_From_Title (T : in out AUnit.Test_Cases.Test_Case'Class)
    is
       pragma Unreferenced (T);
+      use Books.Table_Views.Test;
       use Gdk.Test_Events;
       use Test_Books.GUI_Utils;
       use Test_Books.String_Lists;
    begin
       Books.Table_Views.Test.Set_Test_Hook (Books.Table_Views.Author.Test.Dump_Author'Access);
 
-      Mouse_Move (Title_Origin + Find_Entry);
-      Mouse_Double_Click;
-      Key_Stroke ("Foundation");
+      Find_Title ("Foundation");
 
-      Mouse_Move (Title_Origin + Title_Second_Link); -- Asimov
+      Mouse_Move (Second_Link (Main_Window.Title_View)); -- Asimov
       Mouse_Double_Click;
 
-      Mouse_Move (Author_Origin + Find_Entry);
+      Mouse_Move (Find_Entry (Main_Window.Author_View));
       Mouse_Click;
       delay 0.1;
       Alt_Key_Stroke ('t'); -- test
 
       Check ("asimov", Books.Table_Views.Author.Test.Author_Contents, (+"Isaac", +"", +"Asimov"));
 
-      Mouse_Move (Title_Origin + Title_First_Link); -- clarke
+      Mouse_Move (First_Link (Main_Window.Title_View)); -- clarke
       Mouse_Double_Click;
 
-      Mouse_Move (Author_Origin + Find_Entry);
+      Mouse_Move (Find_Entry (Main_Window.Author_View));
       Mouse_Click;
       delay 0.1;
       Alt_Key_Stroke ('t'); -- test
@@ -75,7 +74,7 @@ package body Test_Books.Show_Other is
    is
       use AUnit.Test_Cases.Registration;
    begin
-      if T.Debug_Level < 3 then
+      if T.Debug_Level < 2 then
          Register_Routine (T, Show_From_Title'Access, "Show_From_Title");
       end if;
    end Register_Tests;
@@ -92,8 +91,8 @@ package body Test_Books.Show_Other is
    is
       pragma Unreferenced (T);
    begin
-      if GUI_Utils.Background.Debug_Level < 2 then
-         GUI_Utils.Background.Close (GUI_Utils.Main_Window);
+      if Gdk.Test_Events.Debug_Level < 2 then
+         Gdk.Test_Events.Close (GUI_Utils.Main_Window);
       end if;
       GUI_Utils.Background.Background_Task.Wait_Shutdown;
    end Tear_Down_Case;

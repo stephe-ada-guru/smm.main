@@ -37,16 +37,7 @@ package Books.Table_Views.Author is
 
    ----------
    --  Override Table_View operations.
-
-   overriding procedure Add_Link
-     (Author_View : access Gtk_Author_View_Record;
-      ID          : in     Books.Database.ID_Type;
-      List        : in     Table_Name_Type);
-
    overriding procedure Default_Add (Author_View : access Gtk_Author_View_Record);
-   overriding procedure Delete_Link
-     (Author_View : access Gtk_Author_View_Record;
-      ID          : in     Books.Database.ID_Type);
    overriding function Main_Index_Name       (Author_View : access Gtk_Author_View_Record) return String;
    overriding procedure Update_Display_Child (Author_View : access Gtk_Author_View_Record);
    overriding procedure Update_Database      (Author_View : access Gtk_Author_View_Record);

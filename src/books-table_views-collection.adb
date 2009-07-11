@@ -20,7 +20,6 @@
 with Books.Database.Data_Tables.Author;
 with Books.Database.Data_Tables.Collection;
 with Books.Database.Data_Tables.Title;
-with Gdk.Main;
 with Glib;
 with Gtk.Clist;
 with Gtk.Enums;
@@ -33,39 +32,6 @@ package body Books.Table_Views.Collection is
 
    ----------
    --  Bodies (alphabetical order)
-
-   overriding procedure Add_Link
-     (Collection_View : access Gtk_Collection_View_Record;
-      ID              : in     Books.Database.ID_Type;
-      List            : in     Table_Name_Type)
-   is
-      use Books.Database;
-   begin
-      case List is
-      when Author =>
-         --  Not a link table (collections only have one editor). But see Insert_Database below.
-         null;
-
-      when Books.Collection =>
-         --  not possible
-         Gdk.Main.Beep;
-
-      when Series =>
-         --  Collections are not in series.
-         Gdk.Main.Beep;
-
-      when Title =>
-
-         Books.Database.Link_Tables.CollectionTitle.Insert
-           (Collection_View.Tables.CollectionTitle.all,
-            (Link_Tables.Collection => Data_Tables.ID (Collection_View.Primary_Table.all),
-             Link_Tables.Title      => ID));
-
-         Update_Display_CollectionTitle (Collection_View);
-
-      end case;
-
-   end Add_Link;
 
    procedure Create_GUI
      (Collection_View : access Gtk_Collection_View_Record'Class;
@@ -116,30 +82,6 @@ package body Books.Table_Views.Collection is
       Gtk.GEntry.Grab_Focus (Collection_View.Name_Text);
    end Default_Add;
 
-   overriding procedure Delete_Link
-     (Collection_View : access Gtk_Collection_View_Record;
-      ID              : in     Books.Database.ID_Type)
-   is
-      use Books.Database;
-      Collection_ID : constant ID_Type := Data_Tables.ID (Collection_View.Primary_Table.all);
-   begin
-      case Collection_View.Current_List is
-      when Title =>
-
-         Link_Tables.CollectionTitle.Delete
-           (Collection_View.Tables.CollectionTitle.all,
-            (Link_Tables.Collection => Collection_ID,
-             Link_Tables.Title      => ID));
-
-         Update_Display_CollectionTitle (Collection_View);
-
-      when others =>
-         --  others are not link tables.
-         Gdk.Main.Beep;
-      end case;
-
-   end Delete_Link;
-
    procedure Gtk_New
      (Collection_View :    out Gtk_Collection_View;
       Parameters      : in     Create_Parameters_Type)
@@ -156,6 +98,7 @@ package body Books.Table_Views.Collection is
 
       Collection_View.Tables := Parameters.Tables;
 
+      Collection_View.Primary_Kind  := Books.Collection;
       Collection_View.Primary_Table := Collection_View.Tables.Sibling (Books.Collection);
 
       Gtk.Radio_Button.Set_Active (Collection_View.List_Select (Title), True);
@@ -197,6 +140,8 @@ package body Books.Table_Views.Collection is
          Editor_Valid => Editor_Valid,
          Year         => Year,
          Year_Valid   => Year_Valid);
+
+      Collection_View.Displayed_ID := Database.Data_Tables.ID (Collection_View.Primary_Table.all);
    end Insert_Database;
 
    overriding function Main_Index_Name
@@ -245,6 +190,8 @@ package body Books.Table_Views.Collection is
       pragma Unreferenced (Width);
       Editor_ID : constant ID_Type := Data_Tables.Collection.Editor (Collection_View.Primary_Table);
    begin
+      --  We display the Editor both in the primary table and in this
+      --  list, to allow using Add_Link and Delete_Link buttons.
       begin
          Data_Tables.Fetch (Collection_View.Tables.Sibling (Author).all, Editor_ID);
       exception
@@ -274,21 +221,8 @@ package body Books.Table_Views.Collection is
       use Database, Interfaces.C.Strings;
       Width         : Glib.Gint;
       pragma Unreferenced (Width);
-      Collection_ID : constant ID_Type := Data_Tables.ID (Collection_View.Primary_Table.all);
+      Collection_ID : constant ID_Type := Collection_View.Displayed_ID;
    begin
-      declare
-         use Database.Data_Tables.Collection;
-      begin
-         Gtk.GEntry.Set_Text
-           (Collection_View.Name_Text, Name (Collection_View.Primary_Table));
-         Gtk.GEntry.Set_Text
-           (Collection_View.Editor_Text,
-            Database.Image (Editor (Collection_View.Primary_Table)));
-         Gtk.GEntry.Set_Text
-           (Collection_View.Year_Text,
-            Interfaces.Unsigned_16'Image (Year (Collection_View.Primary_Table)));
-      end;
-
       begin
          Link_Tables.CollectionTitle.Fetch_Links_Of
            (Collection_View.Tables.CollectionTitle.all,
@@ -334,16 +268,33 @@ package body Books.Table_Views.Collection is
 
    overriding procedure Update_Display_Child (Collection_View : access Gtk_Collection_View_Record)
    is begin
-      case Collection_View.Current_List is
-      when Author =>
-         Update_Display_Editor (Collection_View);
-      when Books.Collection =>
-         null;
-      when Series =>
-         null;
-      when Title =>
-         Update_Display_CollectionTitle (Collection_View);
-      end case;
+      if Database.Data_Tables.Valid (Collection_View.Primary_Table.all) then
+         declare
+            use Database.Data_Tables.Collection;
+         begin
+            Gtk.GEntry.Set_Text (Collection_View.Name_Text, Name (Collection_View.Primary_Table));
+            Gtk.GEntry.Set_Text (Collection_View.Editor_Text, Database.Image (Editor (Collection_View.Primary_Table)));
+            Gtk.GEntry.Set_Text
+              (Collection_View.Year_Text,
+               Interfaces.Unsigned_16'Image (Year (Collection_View.Primary_Table)));
+         end;
+
+         case Collection_View.Current_List is
+         when Author =>
+            Update_Display_Editor (Collection_View);
+         when Books.Collection =>
+            null;
+         when Series =>
+            null;
+         when Title =>
+            Update_Display_CollectionTitle (Collection_View);
+         end case;
+      else
+         Gtk.GEntry.Set_Text (Collection_View.Name_Text, "");
+         Gtk.GEntry.Set_Text (Collection_View.Editor_Text, "");
+         Gtk.GEntry.Set_Text (Collection_View.Year_Text, "");
+         Gtk.Clist.Clear (Collection_View.List_Display (Collection_View.Current_List));
+      end if;
    end Update_Display_Child;
 
 end Books.Table_Views.Collection;

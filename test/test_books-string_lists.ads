@@ -28,12 +28,20 @@ pragma License (Modified_GPL);
 with Ada.Strings.Unbounded;
 with Glib;
 with SAL.Aux.Indefinite_Private_Items;
+with SAL.Gen.Alg.Count;
 with SAL.Poly.Lists.Double;
 with System.Storage_Pools;
 package Test_Books.String_Lists is
 
+   function "+" (Right : in String) return Ada.Strings.Unbounded.Unbounded_String
+     renames Ada.Strings.Unbounded.To_Unbounded_String;
+   function "-" (Right : in Ada.Strings.Unbounded.Unbounded_String) return String
+     renames Ada.Strings.Unbounded.To_String;
+
    type String_List_Type is array (Glib.Gint range <>) of Ada.Strings.Unbounded.Unbounded_String;
    type String_List_Access_Type is access String_List_Type;
+
+   function "+" (Right : in String) return String_List_Type;
 
    procedure Check (Label : in String; Computed, Expected : in String_List_Type);
    --  Does AUnit.Assertions.Assert on each element of computed,
@@ -50,17 +58,37 @@ package Test_Books.String_Lists is
       Node_Storage_Pool => System.Storage_Pools.Root_Storage_Pool'Class
         (Ada.Strings.Unbounded.String_Access'Storage_Pool));
 
-   subtype String_Table_Type is String_Tables.List_Type;
-   function "+" (Right : in String) return Ada.Strings.Unbounded.Unbounded_String
-     renames Ada.Strings.Unbounded.To_Unbounded_String;
-   function "-" (Right : in Ada.Strings.Unbounded.Unbounded_String) return String
-     renames Ada.Strings.Unbounded.To_String;
-   function "+" (Right : in String) return String_List_Type;
-   function "+" (Right : in String_List_Type) return String_Table_Type;
+   package String_Alg is new SAL.Gen.Alg
+     (Item_Node_Type => String_List_Access_Type,
+      Container_Type => String_Tables.List_Type,
+      Iterator_Type  => String_Tables.Iterator_Type,
+      Current        => String_Tables.Current,
+      First          => String_Tables.First,
+      Last           => String_Tables.Last,
+      None           => String_Tables.None,
+      Is_Null        => String_Tables.Is_Null,
+      Next_Procedure => String_Tables.Next,
+      Next_Function  => String_Tables.Next);
 
-   procedure Check (Computed, Expected : in String_Table_Type);
+   function Count is new String_Alg.Count;
+
+   subtype String_Table_Type is String_Tables.List_Type;
+   type String_Table_Access_Type is access String_Table_Type;
+
+   Null_String_Table : constant String_Table_Access_Type := new String_Table_Type'(String_Tables.Null_List);
+
+   function "+" (Right : in String_List_Type) return String_Table_Access_Type;
+   function "+" (Left : in String_Table_Access_Type; Right : in String_List_Type) return String_Table_Access_Type;
+
+   procedure Check
+     (Label    : in String;
+      Computed : in String_Table_Type;
+      Expected : in String_Table_Access_Type);
    --  Does AUnit.Assertions.Assert on each element of computed,
    --  expected. Also checks that all elements of Expected are
    --  checked.
+   --
+   --  Expected is _not_ freed, since it can't be in out. So just
+   --  ignore the memory leak; this is only used in tests.
 
 end Test_Books.String_Lists;

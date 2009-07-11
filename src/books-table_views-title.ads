@@ -38,15 +38,7 @@ package Books.Table_Views.Title is
 
    ----------
    --  Override Table_View operations.
-
-   overriding procedure Add_Link
-     (Title_View : access Gtk_Title_View_Record;
-      ID         : in     Books.Database.ID_Type;
-      List       : in     Table_Name_Type);
    overriding procedure Default_Add (Title_View : access Gtk_Title_View_Record);
-   overriding procedure Delete_Link
-     (Title_View : access Gtk_Title_View_Record;
-      ID         : in     Books.Database.ID_Type);
    overriding function Main_Index_Name       (Title_View : access Gtk_Title_View_Record) return String;
    overriding procedure Update_Display_Child (Title_View : access Gtk_Title_View_Record);
    overriding procedure Update_Database      (Title_View : access Gtk_Title_View_Record);

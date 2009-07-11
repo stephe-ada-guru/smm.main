@@ -23,9 +23,13 @@
 --  exception does not however invalidate any other reasons why the
 --  executable file  might be covered by the  GNU Public License.
 
-with AUnit.Assertions;
 with SAL.AUnit;
 package body Test_Books.String_Lists is
+
+   function "+" (Right : in String) return String_List_Type
+   is begin
+      return (0 => +Right);
+   end "+";
 
    procedure Check (Label : in String; Computed, Expected : in String_List_Type)
    is
@@ -38,46 +42,50 @@ package body Test_Books.String_Lists is
       end loop;
    end Check;
 
-   function "+" (Right : in String) return String_List_Type
-   is begin
-      return (0 => +Right);
-   end "+";
-
-   function "+" (Right : in String_List_Type) return String_Table_Type
+   function "+" (Right : in String_List_Type) return String_Table_Access_Type
    is
-      Table : String_Table_Type;
+      Table : constant String_Table_Access_Type := new String_Table_Type;
    begin
-      String_Tables.Add (Table, Right);
+      String_Tables.Add (Table.all, Right);
       return Table;
    end "+";
 
-   procedure Check (Computed, Expected : in String_Table_Type)
+   function "+" (Left : in String_Table_Access_Type; Right : in String_List_Type) return String_Table_Access_Type
+   is begin
+      String_Tables.Add (Left.all, Right);
+      return Left;
+   end "+";
+
+   procedure Check
+     (Label    : in String;
+      Computed : in String_Table_Type;
+      Expected : in String_Table_Access_Type)
    is
-      use AUnit.Assertions;
+      use SAL.AUnit;
       use String_Tables;
       Computed_Iterator : Iterator_Type := First (Computed);
-      Expected_Iterator : Iterator_Type := First (Expected);
+      Expected_Iterator : Iterator_Type := First (Expected.all);
       Row               : Integer       := 0;
    begin
+      Check (Label & ".length", Count (Computed), Count (Expected.all));
+
       loop
          exit when Is_Done (Computed_Iterator);
 
-         Assert (not Is_Done (Expected_Iterator), "not all of Computed compared");
-
          declare
+            use type Glib.Gint;
             Computed : String_List_Access_Type renames Current (Computed_Iterator);
             Expected : String_List_Access_Type renames Current (Expected_Iterator);
-            use type Glib.Gint;
          begin
             for Column in Computed.all'Range loop
                declare
                   Computed_String : constant String := -Computed (Column);
                   Expected_String : constant String := -Expected (Expected'First + Column - Computed'First);
                begin
-                  Assert
-                    (Computed_String = Expected_String,
-                     "(" & Integer'Image (Row) & "," & Glib.Gint'Image (Column) & ") got '" &
-                       Computed_String & "', expected '" & Expected_String & "'");
+                  Check
+                    (Label & "(" & Integer'Image (Row) & "," & Glib.Gint'Image (Column) & ")",
+                     Computed_String,
+                     Expected_String);
                end;
             end loop;
          end;
@@ -85,7 +93,6 @@ package body Test_Books.String_Lists is
          Next (Computed_Iterator);
          Next (Expected_Iterator);
       end loop;
-      Assert (Is_Null (Expected_Iterator), "not all of Expected compared");
    end Check;
 
 end Test_Books.String_Lists;

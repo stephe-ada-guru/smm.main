@@ -155,7 +155,7 @@ package body Test_Books.Errors is
    begin
       GUI_Utils.Empty_Database;
 
-      GUI_Utils.Set_Up_Case (T.Config_File, T.Debug_Level);
+      GUI_Utils.Set_Up_Case (T.Config_File, T.Debug_Level, Books.Event_Handler.Event_Handler'Access);
    end Set_Up_Case;
 
    overriding procedure Tear_Down_Case (T : in out Test_Case)

@@ -16,11 +16,11 @@
 --  the Free Software Foundation, 59 Temple Place - Suite 330, Boston,
 --  MA 02111-1307, USA.
 
+with Ada.Strings.Fixed;
 with Books.Database.Data_Tables.Author;
 with Books.Database.Data_Tables.Collection;
-with Books.Database.Data_Tables.Title;
 with Books.Database.Data_Tables.Series;
-with Gdk.Main;
+with Books.Database.Data_Tables.Title;
 with Glib;
 with Gtk.Clist;
 with Gtk.Enums;
@@ -33,51 +33,8 @@ package body Books.Table_Views.Title is
    procedure Update_Display_CollectionTitle (Title_View : access Gtk_Title_View_Record);
    procedure Update_Display_SeriesTitle (Title_View : access Gtk_Title_View_Record);
 
-
    ----------
    --  Bodies (alphabetical order)
-
-   overriding procedure Add_Link
-     (Title_View : access Gtk_Title_View_Record;
-      ID         : in     Books.Database.ID_Type;
-      List       : in     Table_Name_Type)
-   is
-      use Books.Database;
-   begin
-      case List is
-      when Author =>
-
-         Link_Tables.AuthorTitle.Insert
-           (Title_View.Tables.AuthorTitle.all,
-            (Link_Tables.Title  => Data_Tables.ID (Title_View.Primary_Table.all),
-             Link_Tables.Author => ID));
-
-         Update_Display_AuthorTitle (Title_View);
-
-      when Collection =>
-
-         Books.Database.Link_Tables.CollectionTitle.Insert
-           (Title_View.Tables.CollectionTitle.all,
-            (Link_Tables.Title  => Data_Tables.ID (Title_View.Primary_Table.all),
-             Link_Tables.Collection => ID));
-
-         Update_Display_CollectionTitle (Title_View);
-
-      when Series =>
-
-         Books.Database.Link_Tables.SeriesTitle.Insert
-           (Title_View.Tables.SeriesTitle.all,
-            (Link_Tables.Title  => Data_Tables.ID (Title_View.Primary_Table.all),
-             Link_Tables.Series => ID));
-
-         Update_Display_SeriesTitle (Title_View);
-
-      when Books.Title =>
-         --  not possible
-         Gdk.Main.Beep;
-      end case;
-
-   end Add_Link;
 
    procedure Create_GUI
      (Title_View : access Gtk_Title_View_Record'Class;
@@ -135,46 +92,6 @@ package body Books.Table_Views.Title is
       Gtk.GEntry.Grab_Focus (Title_View.Title_Text);
    end Default_Add;
 
-   overriding procedure Delete_Link (Title_View : access Gtk_Title_View_Record; ID : in Books.Database.ID_Type)
-   is
-      use Books.Database;
-      Title_ID : constant ID_Type := Data_Tables.ID (Title_View.Primary_Table.all);
-   begin
-      case Title_View.Current_List is
-      when Author =>
-
-         Books.Database.Link_Tables.AuthorTitle.Delete
-           (Title_View.Tables.AuthorTitle.all,
-            (Link_Tables.Title  => Title_ID,
-             Link_Tables.Author => ID));
-
-         Update_Display_AuthorTitle (Title_View);
-
-      when Collection =>
-
-         Books.Database.Link_Tables.CollectionTitle.Delete
-           (Title_View.Tables.CollectionTitle.all,
-            (Link_Tables.Title      => Title_ID,
-             Link_Tables.Collection => ID));
-
-         Update_Display_CollectionTitle (Title_View);
-
-      when Series =>
-
-         Books.Database.Link_Tables.SeriesTitle.Delete
-           (Title_View.Tables.SeriesTitle.all,
-            (Link_Tables.Title  => Title_ID,
-             Link_Tables.Series => ID));
-
-         Update_Display_SeriesTitle (Title_View);
-
-      when Books.Title =>
-         --  not possible
-         Gdk.Main.Beep;
-      end case;
-
-   end Delete_Link;
-
    procedure Gtk_New
      (Title_View :    out Gtk_Title_View;
       Parameters : in     Create_Parameters_Type)
@@ -191,6 +108,7 @@ package body Books.Table_Views.Title is
 
       Title_View.Tables := Parameters.Tables;
 
+      Title_View.Primary_Kind  := Books.Title;
       Title_View.Primary_Table := Title_View.Tables.Sibling (Books.Title);
 
       To_Main (Title_View);
@@ -236,6 +154,8 @@ package body Books.Table_Views.Title is
          Comment      => Gtk.GEntry.Get_Text (Title_View.Comment_Text),
          Rating       => Rating,
          Rating_Valid => Rating_Valid);
+
+      Title_View.Displayed_ID := Database.Data_Tables.ID (Title_View.Primary_Table.all);
    end Insert_Database;
 
    overriding function Main_Index_Name (Title_View : access Gtk_Title_View_Record) return String
@@ -281,10 +201,10 @@ package body Books.Table_Views.Title is
       use Database, Interfaces.C.Strings;
       Width    : Glib.Gint;
       pragma Unreferenced (Width);
-      Title_ID : constant ID_Type := Data_Tables.ID (Title_View.Primary_Table.all);
    begin
       begin
-         Link_Tables.AuthorTitle.Fetch_Links_Of (Title_View.Tables.AuthorTitle.all, Link_Tables.Title, Title_ID);
+         Link_Tables.AuthorTitle.Fetch_Links_Of
+           (Title_View.Tables.AuthorTitle.all, Link_Tables.Title, Title_View.Displayed_ID);
       exception
       when Database.No_Data =>
          Gtk.Clist.Clear (Title_View.List_Display (Author));
@@ -330,9 +250,7 @@ package body Books.Table_Views.Title is
    begin
       begin
          Link_Tables.CollectionTitle.Fetch_Links_Of
-           (Title_View.Tables.CollectionTitle.all,
-            Link_Tables.Title,
-            Data_Tables.ID (Title_View.Primary_Table.all));
+           (Title_View.Tables.CollectionTitle.all, Link_Tables.Title, Title_View.Displayed_ID);
       exception
       when Database.No_Data =>
          Gtk.Clist.Clear (Title_View.List_Display (Collection));
@@ -387,9 +305,7 @@ package body Books.Table_Views.Title is
    begin
       begin
          Link_Tables.SeriesTitle.Fetch_Links_Of
-           (Title_View.Tables.SeriesTitle.all,
-            Link_Tables.Title,
-            Data_Tables.ID (Title_View.Primary_Table.all));
+           (Title_View.Tables.SeriesTitle.all, Link_Tables.Title, Title_View.Displayed_ID);
       exception
       when Database.No_Data =>
          Gtk.Clist.Clear (Title_View.List_Display (Series));
@@ -425,38 +341,44 @@ package body Books.Table_Views.Title is
    end Update_Display_SeriesTitle;
 
    overriding procedure Update_Display_Child (Title_View : access Gtk_Title_View_Record)
-   is begin
-      declare
-         use Database.Data_Tables.Title;
-      begin
-         Gtk.GEntry.Set_Text
-           (Title_View.Title_Text,
-            Database.Data_Tables.Title.Title (Title_View.Primary_Table));
+   is
+      use Ada.Strings;
+      use Ada.Strings.Fixed;
+   begin
+      if Database.Data_Tables.Valid (Title_View.Primary_Table.all) then
+         declare
+            use Database.Data_Tables.Title;
+         begin
+            Gtk.GEntry.Set_Text (Title_View.Title_Text, Database.Data_Tables.Title.Title (Title_View.Primary_Table));
 
-         Gtk.GEntry.Set_Text
-           (Title_View.Year_Text,
-            Interfaces.Unsigned_16'Image (Year (Title_View.Primary_Table)));
+            Gtk.GEntry.Set_Text
+              (Title_View.Year_Text,
+               Trim (Interfaces.Unsigned_16'Image (Year (Title_View.Primary_Table)), Left));
 
-         Gtk.GEntry.Set_Text
-           (Title_View.Comment_Text,
-            Comment (Title_View.Primary_Table));
+            Gtk.GEntry.Set_Text (Title_View.Comment_Text, Comment (Title_View.Primary_Table));
 
-         Gtk.GEntry.Set_Text
-           (Title_View.Rating_Text,
-            Interfaces.Unsigned_8'Image (Rating (Title_View.Primary_Table)));
-      end;
+            Gtk.GEntry.Set_Text
+              (Title_View.Rating_Text, Interfaces.Unsigned_8'Image (Rating (Title_View.Primary_Table)));
+         end;
 
-      case Title_View.Current_List is
-      when Author =>
-         Update_Display_AuthorTitle (Title_View);
-      when Collection =>
-         Update_Display_CollectionTitle (Title_View);
-      when Series =>
-         Update_Display_SeriesTitle (Title_View);
-      when Books.Title =>
-         null;
-      end case;
+         case Title_View.Current_List is
+         when Author =>
+            Update_Display_AuthorTitle (Title_View);
+         when Collection =>
+            Update_Display_CollectionTitle (Title_View);
+         when Series =>
+            Update_Display_SeriesTitle (Title_View);
+         when Books.Title =>
+            null;
+         end case;
 
+      else
+         Gtk.GEntry.Set_Text (Title_View.Title_Text, "");
+         Gtk.GEntry.Set_Text (Title_View.Year_Text, "");
+         Gtk.GEntry.Set_Text (Title_View.Comment_Text, "");
+         Gtk.GEntry.Set_Text (Title_View.Rating_Text, "");
+         Gtk.Clist.Clear (Title_View.List_Display (Title_View.Current_List));
+      end if;
    end Update_Display_Child;
 
 end Books.Table_Views.Title;

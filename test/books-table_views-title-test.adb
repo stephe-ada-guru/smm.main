@@ -16,16 +16,15 @@
 --  the Free Software Foundation, 59 Temple Place - Suite 330, Boston,
 --  MA 02111-1307, USA.
 
-with Glib;
 package body Books.Table_Views.Title.Test is
 
    procedure Dump_Title (Table_View : in Gtk_Table_View)
    is
-      use Ada.Strings.Unbounded;
-      Title_View : Gtk_Title_View_Record renames Gtk_Title_View (Table_View).all;
+      use Test_Books.String_Lists;
+      Title_View : Gtk_Title_View_Record renames Gtk_Title_View_Record (Table_View.all);
    begin
-      Title_Contents (1) := To_Unbounded_String (Gtk.Gentry.Get_Text (Title_View.Title_Text));
-      Title_Contents (2) := To_Unbounded_String (Gtk.Gentry.Get_Text (Title_View.Year_Text);
+      Title_Contents (1) := +(Gtk.GEntry.Get_Text (Title_View.Title_Text));
+      Title_Contents (2) := +(Gtk.GEntry.Get_Text (Title_View.Year_Text));
    end Dump_Title;
 
 end Books.Table_Views.Title.Test;

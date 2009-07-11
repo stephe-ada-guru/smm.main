@@ -19,7 +19,6 @@
 with Books.Database.Data_Tables.Author;
 with Books.Database.Data_Tables.Series;
 with Books.Database.Data_Tables.Title;
-with Gdk.Main;
 with Glib;
 with Gtk.Clist;
 with Gtk.Enums;
@@ -32,40 +31,6 @@ package body Books.Table_Views.Series is
 
    ----------
    --  Bodies (alphabetical order)
-
-   overriding procedure Add_Link
-     (Series_View : access Gtk_Series_View_Record;
-      ID          : in     Books.Database.ID_Type;
-      List        : in     Table_Name_Type)
-   is
-      use Database;
-   begin
-      case List is
-      when Author =>
-         --  Not a link table (series only have one author). But see
-         --  Insert_Database below.
-         null;
-
-      when Collection =>
-         --  Collections are not in series.
-         Gdk.Main.Beep;
-
-      when Books.Series =>
-         --  not possible
-         Gdk.Main.Beep;
-
-      when Title =>
-
-         Books.Database.Link_Tables.SeriesTitle.Insert
-           (Series_View.Tables.SeriesTitle.all,
-            (Link_Tables.Series => Data_Tables.ID (Series_View.Primary_Table.all),
-             Link_Tables.Title  => ID));
-
-         Update_Display_SeriesTitle (Series_View);
-
-      end case;
-
-   end Add_Link;
 
    procedure Create_GUI
      (Series_View : access Gtk_Series_View_Record'Class;
@@ -107,29 +72,6 @@ package body Books.Table_Views.Series is
       Gtk.GEntry.Grab_Focus (Series_View.Title_Text);
    end Default_Add;
 
-   overriding procedure Delete_Link
-     (Series_View : access Gtk_Series_View_Record;
-      ID          : in     Books.Database.ID_Type)
-   is
-      use Books.Database;
-      Series_ID : constant ID_Type := Data_Tables.ID (Series_View.Primary_Table.all);
-   begin
-      case Series_View.Current_List is
-      when Title =>
-
-         Link_Tables.SeriesTitle.Delete
-           (Series_View.Tables.SeriesTitle.all,
-            (Link_Tables.Series => Series_ID,
-             Link_Tables.Title  => ID));
-
-         Update_Display_SeriesTitle (Series_View);
-
-      when others =>
-         --  others are not link tables.
-         Gdk.Main.Beep;
-      end case;
-   end Delete_Link;
-
    procedure Gtk_New
      (Series_View :    out Gtk_Series_View;
       Parameters  : in     Create_Parameters_Type)
@@ -146,6 +88,7 @@ package body Books.Table_Views.Series is
 
       Series_View.Tables := Parameters.Tables;
 
+      Series_View.Primary_Kind  := Books.Series;
       Series_View.Primary_Table := Series_View.Tables.Sibling (Books.Series);
 
       Gtk.Radio_Button.Set_Active (Series_View.List_Select (Title), True);
@@ -176,6 +119,8 @@ package body Books.Table_Views.Series is
          Title        => Gtk.GEntry.Get_Text (Series_View.Title_Text),
          Author       => Author,
          Author_Valid => Author_Valid);
+
+      Series_View.Displayed_ID := Database.Data_Tables.ID (Series_View.Primary_Table.all);
    end Insert_Database;
 
    overriding function Main_Index_Name (Series_View : access Gtk_Series_View_Record) return String
@@ -211,6 +156,8 @@ package body Books.Table_Views.Series is
       pragma Unreferenced (Width);
       Author_ID : constant ID_Type := Data_Tables.Series.Author (Series_View.Primary_Table);
    begin
+      --  We display the Editor both in the primary table and in this
+      --  list, to allow using Add_Link and Delete_Link buttons.
       begin
          Data_Tables.Fetch (Series_View.Tables.Sibling (Author).all, Author_ID);
       exception
@@ -240,14 +187,8 @@ package body Books.Table_Views.Series is
       use Database, Interfaces.C.Strings;
       Width : Glib.Gint;
       pragma Unreferenced (Width);
-      Series_ID : constant ID_Type := Data_Tables.ID (Series_View.Primary_Table.all);
+      Series_ID : constant ID_Type := Series_View.Displayed_ID;
    begin
-      Gtk.GEntry.Set_Text
-        (Series_View.Title_Text, Database.Data_Tables.Series.Title (Series_View.Primary_Table));
-      Gtk.GEntry.Set_Text
-        (Series_View.Author_Text,
-         Database.Image (Database.Data_Tables.Series.Author (Series_View.Primary_Table)));
-
       begin
          Link_Tables.SeriesTitle.Fetch_Links_Of (Series_View.Tables.SeriesTitle.all, Link_Tables.Series, Series_ID);
       exception
@@ -289,16 +230,30 @@ package body Books.Table_Views.Series is
 
    overriding procedure Update_Display_Child (Series_View : access Gtk_Series_View_Record)
    is begin
-      case Series_View.Current_List is
-      when Author =>
-         Update_Display_Author (Series_View);
-      when Collection =>
-         null;
-      when Books.Series =>
-         null;
-      when Title =>
-         Update_Display_SeriesTitle (Series_View);
-      end case;
+      if Database.Data_Tables.Valid (Series_View.Primary_Table.all) then
+         declare
+            use Database.Data_Tables.Series;
+         begin
+            Gtk.GEntry.Set_Text (Series_View.Title_Text, Title (Series_View.Primary_Table));
+            Gtk.GEntry.Set_Text (Series_View.Author_Text, Database.Image (Author (Series_View.Primary_Table)));
+         end;
+
+         case Series_View.Current_List is
+         when Author =>
+            Update_Display_Author (Series_View);
+         when Collection =>
+            null;
+         when Books.Series =>
+            null;
+         when Title =>
+            Update_Display_SeriesTitle (Series_View);
+         end case;
+
+      else
+         Gtk.GEntry.Set_Text (Series_View.Title_Text, "");
+         Gtk.GEntry.Set_Text (Series_View.Author_Text, "");
+         Gtk.Clist.Clear (Series_View.List_Display (Series_View.Current_List));
+      end if;
    end Update_Display_Child;
 
 end Books.Table_Views.Series;

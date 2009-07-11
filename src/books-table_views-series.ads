@@ -37,15 +37,7 @@ package Books.Table_Views.Series is
 
    ----------
    --  Override Table_View operations.
-
-   overriding procedure Add_Link
-     (Series_View : access Gtk_Series_View_Record;
-      ID          : in     Books.Database.ID_Type;
-      List        : in     Table_Name_Type);
    overriding procedure Default_Add (Series_View : access Gtk_Series_View_Record);
-   overriding procedure Delete_Link
-     (Series_View : access Gtk_Series_View_Record;
-      ID          : in     Books.Database.ID_Type);
    overriding function Main_Index_Name       (Series_View : access Gtk_Series_View_Record) return String;
    overriding procedure Update_Display_Child (Series_View : access Gtk_Series_View_Record);
    overriding procedure Update_Database      (Series_View : access Gtk_Series_View_Record);

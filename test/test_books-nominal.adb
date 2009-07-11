@@ -18,7 +18,9 @@
 --
 
 with AUnit.Test_Cases.Registration;
+with Books.Table_Views.Author.Test;
 with Books.Table_Views.Test;
+with Books.Table_Views.Title.Test;
 with Gdk.Test_Events;
 with Test_Books.GUI_Utils;
 with Test_Books.String_Lists;
@@ -27,78 +29,123 @@ package body Test_Books.Nominal is
    ----------
    --  Test procedures
 
-   procedure Add_Author (T : in out AUnit.Test_Cases.Test_Case'Class)
+   procedure Nominal (T : in out AUnit.Test_Cases.Test_Case'Class)
    is
       pragma Unreferenced (T);
+      use Books.Table_Views.Test;
+      use GUI_Utils;
+      use Gdk.Test_Events;
+      use Test_Books.String_Lists;
    begin
-      GUI_Utils.Add_Author
+      --  Add two authors and two books. Add author/title links from
+      --  author and title views (not in Add view).
+      Add_Author
         (Last   => "Clarke",
          Middle => "C.",
          First  => "Arthur");
 
-      GUI_Utils.Add_Author
+      Add_Author
         (Last   => "Asimov",
          Middle => "",
          First  => "Isaac");
-   end Add_Author;
 
-   procedure Add_Title (T : in out AUnit.Test_Cases.Test_Case'Class)
-   is
-      pragma Unreferenced (T);
-      use Gdk.Test_Events;
-      use Test_Books.String_Lists;
-      use Test_Books.GUI_Utils;
-   begin
       Add_Title
         (Title   => "2001",
          Year    => "1970",
          Comment => "Obelisk",
          Rating  => "9");
 
-      Mouse_Move (Title_Origin + Title_Add_Link_Entry);
+      Add_Title
+        (Title   => "Foundation",
+         Year    => "1960",
+         Comment => "Hari Seldon",
+         Rating  => "9");
+
+      --  authors
+      --  id    last
+      --  1     clarke
+      --  2     asimov
+      --
+      --  titles
+      --  id    title
+      --  1     2001
+      --  2     foundation
+
+      --  Search for first author of Foundation
+      Find_Author ("clarke");
+
+      Books.Table_Views.Test.Set_Test_Hook (Books.Table_Views.Author.Test.Dump_Author'Access);
+      Alt_Key_Stroke ('t'); -- test
+
+      Check ("author 1", Books.Table_Views.Author.Test.Author_Contents, (+"Arthur", +"C.", +"Clarke"));
+
+      --  add link in author view
+      Mouse_Move (Add_Link_Button (Main_Window.Author_View));
       Mouse_Click;
-      Key_Stroke ("1"); --  Clarke
-      Alt_Key_Stroke ('k'); -- add link
 
       Books.Table_Views.Test.Set_Test_Hook (Books.Table_Views.Test.Dump_Clist'Access);
       Alt_Key_Stroke ('t'); -- test
 
-      Check (Books.Table_Views.Test.Clist_Contents, +(+"00001", +"Arthur", +"C.", +"Clarke"));
-   end Add_Title;
+      Check ("links 1", Books.Table_Views.Test.Clist_Contents, +(+"00002", +"Foundation", +"1960"));
 
-   procedure Search_Author (T : in out AUnit.Test_Cases.Test_Case'Class)
-   is
-      pragma Unreferenced (T);
-      use Gdk.Test_Events;
-      use Test_Books.String_Lists;
-      use Test_Books.GUI_Utils;
-   begin
-      Mouse_Move (Author_Origin + Find_Entry);
-      Mouse_Double_Click;
-      Key_Stroke ("clarke");
+      --  Search for second author of Foundation
+      Find_Author ("asimov");
+
+      Books.Table_Views.Test.Set_Test_Hook (Books.Table_Views.Author.Test.Dump_Author'Access);
+      Alt_Key_Stroke ('t'); -- test
+
+      Check ("author 2", Books.Table_Views.Author.Test.Author_Contents, (+"Isaac", +"", +"Asimov"));
+
+      --  add link in author view
+      Mouse_Move (Add_Link_Button (Main_Window.Author_View));
+      Mouse_Click;
 
       Books.Table_Views.Test.Set_Test_Hook (Books.Table_Views.Test.Dump_Clist'Access);
       Alt_Key_Stroke ('t'); -- test
 
-      Check (Books.Table_Views.Test.Clist_Contents, +(+"00001", +"2001", +"1970"));
-   end Search_Author;
+      Check ("links 1", Books.Table_Views.Test.Clist_Contents, +(+"00002", +"Foundation", +"1960"));
 
-   procedure Search_Title (T : in out AUnit.Test_Cases.Test_Case'Class)
-   is
-      pragma Unreferenced (T);
-      use Gdk.Test_Events;
-      use Test_Books.String_Lists;
-      use Test_Books.GUI_Utils;
-   begin
-      Mouse_Move (Title_Origin + Find_Entry);
-      Mouse_Double_Click;
-      Key_Stroke ("2001");
+      --  add authors of 2001 in title view
+      Find_Title ("2001");
+
+      Books.Table_Views.Test.Set_Test_Hook (Books.Table_Views.Title.Test.Dump_Title'Access);
+      Alt_Key_Stroke ('t'); -- test
+
+      Check ("title 3", Books.Table_Views.Title.Test.Title_Contents, (+"2001", +"1970"));
 
       Books.Table_Views.Test.Set_Test_Hook (Books.Table_Views.Test.Dump_Clist'Access);
       Alt_Key_Stroke ('t'); -- test
 
-      Check (Books.Table_Views.Test.Clist_Contents, +(+"00001", +"Arthur", +"C.", +"Clarke"));
-   end Search_Title;
+      Check
+        ("links 3a",
+         Books.Table_Views.Test.Clist_Contents,
+         Null_String_Table);
+
+      --  Add author asimov (currently showing in author)
+      Mouse_Move (Add_Link_Button (Main_Window.Title_View));
+      Mouse_Click;
+
+      Books.Table_Views.Test.Set_Test_Hook (Books.Table_Views.Test.Dump_Clist'Access);
+      Alt_Key_Stroke ('t'); -- test
+
+      Check ("links 3b", Books.Table_Views.Test.Clist_Contents, +(+"00002", +"Isaac", +"", +"Asimov"));
+
+      --  Add author clark (need to search in author)
+      Find_Author ("clark");
+
+      Mouse_Move (Add_Link_Button (Main_Window.Title_View));
+      Mouse_Click;
+
+      Books.Table_Views.Test.Set_Test_Hook (Books.Table_Views.Test.Dump_Clist'Access);
+      Alt_Key_Stroke ('t'); -- test
+
+      Check
+        ("links 4",
+         Books.Table_Views.Test.Clist_Contents,
+         +(+"00001", +"Arthur", +"C.", +"Clarke") +
+           (+"00002", +"Isaac", +"", +"Asimov"));
+
+   end Nominal;
 
    ----------
    --  Public bodies
@@ -114,11 +161,8 @@ package body Test_Books.Nominal is
    is
       use AUnit.Test_Cases.Registration;
    begin
-      if T.Debug_Level < 2 then
-         Register_Routine (T, Add_Author'Access, "Add_Author");
-         Register_Routine (T, Add_Title'Access, "Add_Title");
-         Register_Routine (T, Search_Author'Access, "Search_Author");
-         Register_Routine (T, Search_Title'Access, "Search_Title");
+      if T.Debug_Level < 3 then
+         Register_Routine (T, Nominal'Access, "Nominal");
       end if;
    end Register_Tests;
 
@@ -135,8 +179,8 @@ package body Test_Books.Nominal is
    is
       pragma Unreferenced (T);
    begin
-      if GUI_Utils.Background.Debug_Level < 2 then
-         GUI_Utils.Background.Close (GUI_Utils.Main_Window);
+      if Gdk.Test_Events.Debug_Level < 2 then
+         Gdk.Test_Events.Close (GUI_Utils.Main_Window);
       end if;
       GUI_Utils.Background.Background_Task.Wait_Shutdown;
    end Tear_Down_Case;

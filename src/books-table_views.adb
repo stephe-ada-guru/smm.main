@@ -80,15 +80,12 @@ package body Books.Table_Views is
       --  Row 0, 1:
       Links_Label   : Gtk.Label.Gtk_Label;
 
-      --  End of Links_Table
-
       List_Select_Hbox       : Gtk.Box.Gtk_Hbox;
       --  Contains List_Select_* in public view.
 
       List_Edit_Hbox          : Gtk.Box.Gtk_Hbox;
       --  Contains add, delete widgets
       List_Edit_Add_Button    : Gtk.Button.Gtk_Button;
-      List_Edit_Add_Entry     : Gtk.GEntry.Gtk_Entry;
       List_Edit_Delete_Button : Gtk.Button.Gtk_Button;
 
       List_Display_Scroll : Table_Array_Scroll_Type;
@@ -136,6 +133,80 @@ package body Books.Table_Views is
 
    ----------
    --  Bodies (alphabetical order)
+
+   procedure Add_Link (Table_View : in Gtk_Table_View; Kind : in Table_Name_Type)
+   is
+      use Books.Database.Link_Tables;
+      Link_ID : constant Database.ID_Type := Table_View.Sibling_Views (Kind).Displayed_ID;
+   begin
+      case Table_View.Primary_Kind is
+      when Author =>
+         case Kind is
+         when Author =>
+            raise SAL.Programmer_Error;
+
+         when Collection =>
+            raise SAL.Programmer_Error;
+
+         when Series =>
+            raise SAL.Programmer_Error;
+
+         when Books.Title =>
+            AuthorTitle.Insert
+              (Table_View.Tables.AuthorTitle.all, (Author => Table_View.Displayed_ID, Title => Link_ID));
+         end case;
+
+      when Collection =>
+         case Kind is
+         when Author =>
+            raise SAL.Programmer_Error;
+
+         when Collection =>
+            raise SAL.Programmer_Error;
+
+         when Series =>
+            raise SAL.Programmer_Error;
+
+         when Books.Title =>
+            CollectionTitle.Insert
+              (Table_View.Tables.CollectionTitle.all, (Collection => Table_View.Displayed_ID, Title => Link_ID));
+         end case;
+
+      when Series =>
+         case Kind is
+         when Author =>
+            raise SAL.Programmer_Error;
+
+         when Collection =>
+            raise SAL.Programmer_Error;
+
+         when Series =>
+            raise SAL.Programmer_Error;
+
+         when Books.Title =>
+            SeriesTitle.Insert
+              (Table_View.Tables.SeriesTitle.all, (Series => Table_View.Displayed_ID, Title => Link_ID));
+         end case;
+
+      when Title =>
+         case Kind is
+         when Author =>
+            AuthorTitle.Insert
+              (Table_View.Tables.AuthorTitle.all, (Title => Table_View.Displayed_ID, Author => Link_ID));
+
+         when Collection =>
+            CollectionTitle.Insert
+              (Table_View.Tables.CollectionTitle.all, (Title => Table_View.Displayed_ID, Collection => Link_ID));
+
+         when Series =>
+            SeriesTitle.Insert
+              (Table_View.Tables.SeriesTitle.all, (Title => Table_View.Displayed_ID, Series => Link_ID));
+
+         when Books.Title =>
+            raise SAL.Programmer_Error;
+         end case;
+      end case;
+   end Add_Link;
 
    procedure Create_GUI
      (Table_View : access Gtk_Table_View_Record'Class;
@@ -298,16 +369,12 @@ package body Books.Table_Views is
       Gtk.Button.Signal.Connect_Clicked
         (Table_View.Private_Stuff.List_Edit_Add_Button, On_List_Edit_Add_Clicked'Access);
 
-      Gtk.GEntry.Gtk_New (Table_View.Private_Stuff.List_Edit_Add_Entry);
-
       Gtk.Button.Gtk_New (Table_View.Private_Stuff.List_Edit_Delete_Button, "Delete Link");
       Gtk.Button.Signal.Connect_Clicked
         (Table_View.Private_Stuff.List_Edit_Delete_Button, On_List_Edit_Delete_Clicked'Access);
 
       Gtk.Box.Pack_Start
         (Table_View.Private_Stuff.List_Edit_Hbox, Table_View.Private_Stuff.List_Edit_Add_Button, Expand => False);
-      Gtk.Box.Pack_Start
-        (Table_View.Private_Stuff.List_Edit_Hbox, Table_View.Private_Stuff.List_Edit_Add_Entry, Expand => False);
       Gtk.Box.Pack_Start
         (Table_View.Private_Stuff.List_Edit_Hbox, Table_View.Private_Stuff.List_Edit_Delete_Button, Expand => False);
       Gtk.Box.Pack_Start (Vbox, Table_View.Private_Stuff.List_Edit_Hbox, Expand => False);
@@ -392,7 +459,7 @@ package body Books.Table_Views is
 
    function ID (Table_View : access Gtk_Table_View_Record'Class) return Books.Database.ID_Type
    is begin
-      return Books.Database.Data_Tables.ID (Table_View.Primary_Table.all);
+      return Table_View.Displayed_ID;
    end ID;
 
    procedure On_Button_Add (Button : access Gtk.Button.Gtk_Button_Record'Class)
@@ -436,12 +503,11 @@ package body Books.Table_Views is
       --  Add links
       for I in Table_Name_Type loop
          if Gtk.Check_Button.Get_Active (Table_View.Links_Buttons (I)) then
-            Add_Link (Table_View, ID (Table_View.Sibling_Views (I)), I);
+            Add_Link (Table_View, I);
          end if;
       end loop;
 
       --  Back to Main view.
-      Update_Display (Table_View);
       To_Main (Table_View);
    end On_Button_Insert;
 
@@ -475,6 +541,7 @@ package body Books.Table_Views is
    begin
       --  FIXME: should check Index.
       Books.Database.Data_Tables.Find (Table_View.Primary_Table.all, Gtk.GEntry.Get_Text (GEntry));
+      Table_View.Displayed_ID := Database.Data_Tables.ID (Table_View.Primary_Table.all);
       Update_Display (Table_View);
    end On_Find_Changed;
 
@@ -483,6 +550,7 @@ package body Books.Table_Views is
       Table_View : constant Gtk_Table_View := Gtk_Table_View (Gtk.Button.Get_Toplevel (Button));
    begin
       Books.Database.Next (Table_View.Primary_Table.all);
+      Table_View.Displayed_ID := Database.Data_Tables.ID (Table_View.Primary_Table.all);
       Update_Display (Table_View);
    exception
    when Books.Database.No_Data =>
@@ -492,24 +560,16 @@ package body Books.Table_Views is
    procedure On_List_Edit_Add_Clicked (Button : access Gtk.Button.Gtk_Button_Record'Class)
    is
       Table_View : constant Gtk_Table_View := Gtk_Table_View (Gtk.Button.Get_Toplevel (Button));
-
-      Text           : constant String                :=
-        Gtk.GEntry.Get_Text (Table_View.Private_Stuff.List_Edit_Add_Entry);
-      ID             : Books.Database.ID_Type;
    begin
-      ID := Books.Database.Value (Text); --  Do this here to catch the exception
+      Add_Link (Table_View, Table_View.Current_List);
+      Update_Display_Child (Table_View);
 
-      Add_Link (Table_View, ID, Table_View.Current_List);
-
-   exception
-   when others =>
-      --  Not a valid ID number
-      Gdk.Main.Beep;
    end On_List_Edit_Add_Clicked;
 
    procedure On_List_Edit_Delete_Clicked (Button : access Gtk.Button.Gtk_Button_Record'Class)
    is
       use Books.Database;
+      use Books.Database.Link_Tables;
       use type Glib.Guint;
       Table_View : constant Gtk_Table_View := Gtk_Table_View (Gtk.Button.Get_Toplevel (Button));
 
@@ -526,11 +586,79 @@ package body Books.Table_Views is
       end if;
 
       declare
-         Row       : constant Glib.Gint := Gtk.Enums.Gint_List.Get_Data (Gtk.Enums.Gint_List.First (Selected));
-         ID_String : constant String    := Gtk.Clist.Get_Text (List_Display, Row, Column => 0);
-         ID        : constant ID_Type   := Value (ID_String);
+         Row            : constant Glib.Gint := Gtk.Enums.Gint_List.Get_Data (Gtk.Enums.Gint_List.First (Selected));
+         Link_ID_String : constant String    := Gtk.Clist.Get_Text (List_Display, Row, Column => 0);
+         Link_ID        : constant ID_Type   := Value (Link_ID_String);
       begin
-         Delete_Link (Table_View, ID);
+         case Table_View.Primary_Kind is
+         when Author =>
+            case Table_View.Current_List is
+            when Author =>
+               raise SAL.Programmer_Error;
+
+            when Collection =>
+               raise SAL.Programmer_Error;
+
+            when Series =>
+               raise SAL.Programmer_Error;
+
+            when Books.Title =>
+               AuthorTitle.Delete
+                 (Table_View.Tables.AuthorTitle.all, (Author => Table_View.Displayed_ID, Title => Link_ID));
+            end case;
+
+         when Collection =>
+            case Table_View.Current_List is
+            when Author =>
+               raise SAL.Programmer_Error;
+
+            when Collection =>
+               raise SAL.Programmer_Error;
+
+            when Series =>
+               raise SAL.Programmer_Error;
+
+            when Books.Title =>
+               CollectionTitle.Delete
+                 (Table_View.Tables.CollectionTitle.all, (Collection => Table_View.Displayed_ID, Title => Link_ID));
+            end case;
+
+         when Series =>
+            case Table_View.Current_List is
+            when Author =>
+               raise SAL.Programmer_Error;
+
+            when Collection =>
+               raise SAL.Programmer_Error;
+
+            when Series =>
+               raise SAL.Programmer_Error;
+
+            when Books.Title =>
+               SeriesTitle.Delete
+                 (Table_View.Tables.SeriesTitle.all, (Series => Table_View.Displayed_ID, Title => Link_ID));
+            end case;
+
+         when Title =>
+            case Table_View.Current_List is
+            when Author =>
+               AuthorTitle.Delete
+                 (Table_View.Tables.AuthorTitle.all, (Title => Table_View.Displayed_ID, Author => Link_ID));
+
+            when Collection =>
+               CollectionTitle.Delete
+                 (Table_View.Tables.CollectionTitle.all, (Title => Table_View.Displayed_ID, Collection => Link_ID));
+
+            when Series =>
+               SeriesTitle.Delete
+                 (Table_View.Tables.SeriesTitle.all, (Title => Table_View.Displayed_ID, Series => Link_ID));
+
+            when Books.Title =>
+               raise SAL.Programmer_Error;
+            end case;
+         end case;
+
+         Update_Display_Child (Table_View);
       end;
    end On_List_Edit_Delete_Clicked;
 
@@ -567,8 +695,8 @@ package body Books.Table_Views is
                      raise SAL.Programmer_Error with "column 0 has no text";
                   end if;
 
-                  Database.Data_Tables.Fetch
-                    (Table_View.Tables.Sibling (Table_View.Current_List).all, Database.ID_Type'Value (ID_String));
+                  Table_View.Sibling_Views (Table_View.Current_List).Displayed_ID :=
+                    Database.ID_Type'Value (ID_String);
 
                   Update_Display (Table_View.Sibling_Views (Table_View.Current_List));
                end;
@@ -689,11 +817,51 @@ package body Books.Table_Views is
    end To_Main;
 
    procedure Update_Display (Table_View : access Gtk_Table_View_Record'class)
-   is
-      ID : constant Books.Database.ID_Type := Books.Database.Data_Tables.ID (Table_View.Primary_Table.all);
-   begin
-      Gtk.Label.Set_Text (Table_View.Private_Stuff.ID_Display, Books.Database.Image (ID));
+   is begin
+      begin
+         Books.Database.Data_Tables.Fetch (Table_View.Primary_Table.all, Table_View.Displayed_ID);
+         Gtk.Label.Set_Text (Table_View.Private_Stuff.ID_Display, Books.Database.Image (Table_View.Displayed_ID));
+      exception
+      when Books.Database.No_Data =>
+         Gtk.Label.Set_Text (Table_View.Private_Stuff.ID_Display, "");
+      end;
+
       Update_Display_Child (Table_View);
    end Update_Display;
+
+   function Find_Entry (Table_View : access Gtk_Table_View_Record'Class) return Gdk.Test_Events.Point_Type
+   is
+      use Gdk.Test_Events;
+   begin
+      --  Window_Position is just wrong for tables, so hard code an
+      --  approximate answer.
+      return Window_Position (Table_View) + (56, 30);
+   end Find_Entry;
+
+   function Add_Link_Button (Table_View : access Gtk_Table_View_Record'Class) return Gdk.Test_Events.Point_Type
+   is
+      use Gdk.Test_Events;
+   begin
+      --  Widget_Position (list_edit_add_button) returns the position
+      --  relative to the top level, not relative to its containing
+      --  hbox, for some reason! So get the position of the HBox, instead.
+      --
+      --  add a small offset so a mouse click will actually hit the button
+      return Window_Position (Table_View) +
+        Widget_Position_Toplevel (Table_View.Private_Stuff.List_Edit_Hbox) +
+        (5, 5);
+   end Add_Link_Button;
+
+   function First_Link (Table_View : access Gtk_Table_View_Record'Class) return Gdk.Test_Events.Point_Type
+   is
+      use Gdk.Test_Events;
+   begin
+      --  List_Display_Scroll includes the column titles; can't get
+      --  that hieght, so kludge an offset for it. Also include a
+      --  small offset so mouse double click works.
+      return Window_Position (Table_View) +
+        Widget_Position_Toplevel (Table_View.Private_Stuff.List_Display_Scroll (Table_View.Current_List)) +
+        (5, 40);
+   end First_Link;
 
 end Books.Table_Views;
