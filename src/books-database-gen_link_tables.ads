@@ -33,7 +33,6 @@ package Books.Database.Gen_Link_Tables is
    --  Override parent operations.
 
    overriding procedure Initialize (T : in out Table);
-   overriding procedure Clear_Data (T : in out Table);
 
    ----------
    --  New operations
@@ -46,6 +45,8 @@ package Books.Database.Gen_Link_Tables is
 
    procedure Fetch_Links_Of (T : in out Table; Source : in Source_Labels_Type; Item : in ID_Type);
    --  Find records with ID (Source) = Item.
+   --
+   --  Marks data invalid if there is no such record.
 
    procedure Insert (T : in out Table; Data : in Source_Array_ID_Type);
    --  Insert a link record containing Data.

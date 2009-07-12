@@ -105,7 +105,7 @@ package body Books.Table_Views.Collection is
 
       To_Main (Collection_View);
 
-      Update_Display (Collection_View);
+      Set_Display (Collection_View, Database.Invalid_ID);
    end Initialize;
 
    overriding procedure Insert_Database (Collection_View : access Gtk_Collection_View_Record)
@@ -192,13 +192,12 @@ package body Books.Table_Views.Collection is
    begin
       --  We display the Editor both in the primary table and in this
       --  list, to allow using Add_Link and Delete_Link buttons.
-      begin
-         Data_Tables.Fetch (Collection_View.Tables.Sibling (Author).all, Editor_ID);
-      exception
-      when No_Data =>
+      Data_Tables.Fetch (Collection_View.Tables.Sibling (Author).all, Editor_ID);
+
+      if not Valid (Collection_View.Tables.Sibling (Author).all) then
          Gtk.Clist.Clear (Collection_View.List_Display (Author));
          return;
-      end;
+      end if;
 
       Gtk.Clist.Freeze (Collection_View.List_Display (Author));
       Gtk.Clist.Clear (Collection_View.List_Display (Author));
@@ -223,16 +222,13 @@ package body Books.Table_Views.Collection is
       pragma Unreferenced (Width);
       Collection_ID : constant ID_Type := Collection_View.Displayed_ID;
    begin
-      begin
-         Link_Tables.CollectionTitle.Fetch_Links_Of
-           (Collection_View.Tables.CollectionTitle.all,
-            Link_Tables.Collection,
-            Collection_ID);
-      exception
-      when Database.No_Data =>
+      Link_Tables.CollectionTitle.Fetch_Links_Of
+        (Collection_View.Tables.CollectionTitle.all, Link_Tables.Collection, Collection_ID);
+
+      if not Valid (Collection_View.Tables.CollectionTitle.all) then
          Gtk.Clist.Clear (Collection_View.List_Display (Title));
          return;
-      end;
+      end if;
 
       Gtk.Clist.Freeze (Collection_View.List_Display (Title));
       Gtk.Clist.Clear (Collection_View.List_Display (Title));
@@ -253,10 +249,8 @@ package body Books.Table_Views.Collection is
                   (Interfaces.Unsigned_16'Image
                      (Data_Tables.Title.Year (Collection_View.Tables.Sibling (Title))))));
 
-            Books.Database.Next (Collection_View.Tables.CollectionTitle.all);
-         exception
-         when Database.No_Data =>
-            exit;
+            Next (Collection_View.Tables.CollectionTitle.all);
+            exit when not Valid (Collection_View.Tables.CollectionTitle.all);
          end;
       end loop;
 
@@ -268,7 +262,7 @@ package body Books.Table_Views.Collection is
 
    overriding procedure Update_Display_Child (Collection_View : access Gtk_Collection_View_Record)
    is begin
-      if Database.Data_Tables.Valid (Collection_View.Primary_Table.all) then
+      if Database.Valid (Collection_View.Primary_Table.all) then
          declare
             use Database.Data_Tables.Collection;
          begin

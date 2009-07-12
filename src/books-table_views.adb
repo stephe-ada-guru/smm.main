@@ -131,6 +131,9 @@ package body Books.Table_Views is
    procedure To_Edit (Table_View : in Gtk_Table_View);
    --  Show controls for Edit display, hide main.
 
+   procedure Update_Display (Table_View : access Gtk_Table_View_Record'class);
+   --  Update common parts of display, call Update_Display_Child.
+
    ----------
    --  Bodies (alphabetical order)
 
@@ -159,7 +162,7 @@ package body Books.Table_Views is
       when Collection =>
          case Kind is
          when Author =>
-            raise SAL.Programmer_Error;
+            null; -- Done by Insert_Database
 
          when Collection =>
             raise SAL.Programmer_Error;
@@ -175,7 +178,7 @@ package body Books.Table_Views is
       when Series =>
          case Kind is
          when Author =>
-            raise SAL.Programmer_Error;
+            null; -- Done by Insert_Database
 
          when Collection =>
             raise SAL.Programmer_Error;
@@ -447,6 +450,13 @@ package body Books.Table_Views is
 
    end Create_GUI;
 
+   procedure Set_Display (Table_View : access Gtk_Table_View_Record'Class; ID : in Books.Database.ID_Type)
+   is begin
+      Books.Database.Data_Tables.Fetch (Table_View.Primary_Table.all, ID);
+      Table_View.Displayed_ID := Books.Database.Data_Tables.ID (Table_View.Primary_Table.all);
+      Update_Display (Table_View);
+   end Set_Display;
+
    procedure Set_Visibility (Table_View : access Gtk_Table_View_Record'class)
    is begin
       for I in Table_Name_Type loop
@@ -482,7 +492,7 @@ package body Books.Table_Views is
       Table_View : constant Gtk_Table_View := Gtk_Table_View (Gtk.Button.Get_Toplevel (Button));
    begin
       Books.Database.Data_Tables.Delete (Table_View.Primary_Table.all);
-
+      Table_View.Displayed_ID := Books.Database.Data_Tables.ID (Table_View.Primary_Table.all);
       Update_Display (Table_View);
    end On_Button_Delete;
 
@@ -540,6 +550,7 @@ package body Books.Table_Views is
       Table_View : constant Gtk_Table_View := Gtk_Table_View (Gtk.GEntry.Get_Toplevel (GEntry));
    begin
       --  FIXME: should check Index.
+      Books.Database.Data_Tables.Set_Find_By_Name (Table_View.Primary_Table.all);
       Books.Database.Data_Tables.Find (Table_View.Primary_Table.all, Gtk.GEntry.Get_Text (GEntry));
       Table_View.Displayed_ID := Database.Data_Tables.ID (Table_View.Primary_Table.all);
       Update_Display (Table_View);
@@ -552,9 +563,6 @@ package body Books.Table_Views is
       Books.Database.Next (Table_View.Primary_Table.all);
       Table_View.Displayed_ID := Database.Data_Tables.ID (Table_View.Primary_Table.all);
       Update_Display (Table_View);
-   exception
-   when Books.Database.No_Data =>
-      null;
    end On_Find_Next;
 
    procedure On_List_Edit_Add_Clicked (Button : access Gtk.Button.Gtk_Button_Record'Class)
@@ -695,10 +703,7 @@ package body Books.Table_Views is
                      raise SAL.Programmer_Error with "column 0 has no text";
                   end if;
 
-                  Table_View.Sibling_Views (Table_View.Current_List).Displayed_ID :=
-                    Database.ID_Type'Value (ID_String);
-
-                  Update_Display (Table_View.Sibling_Views (Table_View.Current_List));
+                  Set_Display (Table_View.Sibling_Views (Table_View.Current_List), Database.ID_Type'Value (ID_String));
                end;
                return True;
             else
@@ -818,13 +823,11 @@ package body Books.Table_Views is
 
    procedure Update_Display (Table_View : access Gtk_Table_View_Record'class)
    is begin
-      begin
-         Books.Database.Data_Tables.Fetch (Table_View.Primary_Table.all, Table_View.Displayed_ID);
+      if Books.Database.Valid (Table_View.Primary_Table.all) then
          Gtk.Label.Set_Text (Table_View.Private_Stuff.ID_Display, Books.Database.Image (Table_View.Displayed_ID));
-      exception
-      when Books.Database.No_Data =>
+      else
          Gtk.Label.Set_Text (Table_View.Private_Stuff.ID_Display, "");
-      end;
+      end if;
 
       Update_Display_Child (Table_View);
    end Update_Display;

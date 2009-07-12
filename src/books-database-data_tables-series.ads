@@ -27,7 +27,6 @@ package Books.Database.Data_Tables.Series is
 
    overriding procedure Initialize (T : in out Table);
    overriding procedure Finalize (T : in out Table);
-   overriding procedure Clear_Data (T : in out Table);
 
    ----------
    --  New operations
@@ -50,7 +49,7 @@ package Books.Database.Data_Tables.Series is
    --  Find records with Author_ID = Author. Fetch
    --  first.
    --
-   --  If there is no match, current data is unchanged.
+   --  If there is no match, data is marked invalid.
 
    procedure Insert
      (T            : in out Table;

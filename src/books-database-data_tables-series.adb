@@ -33,11 +33,6 @@ package body Books.Database.Data_Tables.Series is
    ----------
    --  Subprogram bodies (alphabetical order)
 
-   overriding procedure Clear_Data (T : in out Table)
-   is begin
-      Copy (T, "", 0, False);
-   end Clear_Data;
-
    procedure Copy
      (T            : in out Table;
       Title        : in     String;
@@ -65,7 +60,7 @@ package body Books.Database.Data_Tables.Series is
       use type GNU.DB.SQLCLI.SQLINTEGER;
    begin
       if T.Author_Indicator = GNU.DB.SQLCLI.SQL_NULL_DATA then
-         return 0;
+         raise No_Data;
       else
          return ID_Type (T.Author);
       end if;
@@ -113,13 +108,8 @@ package body Books.Database.Data_Tables.Series is
       T.Find_Pattern_Length := Item'Length + 1;
       GNU.DB.SQLCLI.SQLCloseCursor (T.By_Name_Statement);
       Checked_Execute (T.By_Name_Statement);
-      GNU.DB.SQLCLI.SQLFetch (T.By_Name_Statement);
-
       T.Find_Statement := T.By_Name_Statement;
-   exception
-   when GNU.DB.SQLCLI.No_Data =>
-      GNU.DB.SQLCLI.SQLCloseCursor (T.By_Name_Statement);
-      --  Just keep current data.
+      Next (T);
    end Find_Title;
 
    procedure Find_Title (T : in Data_Tables.Table_Access; Item : in String)

@@ -33,11 +33,6 @@ package body Books.Database.Data_Tables.Author is
    ----------
    --  Subprogram bodies (alphabetical order)
 
-   overriding procedure Clear_Data (T : in out Table)
-   is begin
-      Copy (T, "", "", "");
-   end Clear_Data;
-
    procedure Copy
      (T           : in out Table;
       First_Name  : in     String;
@@ -81,10 +76,6 @@ package body Books.Database.Data_Tables.Author is
       Checked_Execute (T.By_Name_Statement);
       T.Find_Statement := T.By_Name_Statement;
       Next (T);
-   exception
-   when GNU.DB.SQLCLI.No_Data =>
-      GNU.DB.SQLCLI.SQLCloseCursor (T.By_Name_Statement);
-      --  Just keep current data.
    end Find_Name;
 
    procedure Find_Name (T : in Data_Tables.Table_Access; Item : in String)

@@ -35,11 +35,6 @@ package body Books.Database.Data_Tables.Title is
    ----------
    --  Subprogram bodies (alphabetical order)
 
-   overriding procedure Clear_Data (T : in out Table)
-   is begin
-      Copy (T, "", 0, False, "", 0, False);
-   end Clear_Data;
-
    function Comment (T : in Table) return String is
    begin
       return T.Comment (1 .. Integer (T.Comment_Length));
@@ -100,13 +95,8 @@ package body Books.Database.Data_Tables.Title is
       T.Find_Pattern_Length := Item'Length + 1;
       GNU.DB.SQLCLI.SQLCloseCursor (T.By_Name_Statement);
       Checked_Execute (T.By_Name_Statement);
-      GNU.DB.SQLCLI.SQLFetch (T.By_Name_Statement);
-
       T.Find_Statement := T.By_Name_Statement;
-   exception
-   when GNU.DB.SQLCLI.No_Data =>
-      GNU.DB.SQLCLI.SQLCloseCursor (T.By_Name_Statement);
-      --  Just keep current data.
+      Next (T);
    end Find_Title;
 
    procedure Find_Title (T : in Data_Tables.Table_Access; Item : in String)
@@ -225,7 +215,7 @@ package body Books.Database.Data_Tables.Title is
       use type GNU.DB.SQLCLI.SQLINTEGER;
    begin
       if T.Rating_Indicator = GNU.DB.SQLCLI.SQL_NULL_DATA then
-         return 0;
+         raise No_Data;
       else
          return Interfaces.Unsigned_8 (T.Rating);
       end if;
@@ -264,7 +254,7 @@ package body Books.Database.Data_Tables.Title is
       use type GNU.DB.SQLCLI.SQLINTEGER;
    begin
       if T.ID_Indicator = GNU.DB.SQLCLI.SQL_NULL_DATA then
-         return 0;
+         raise No_Data;
       else
          return Interfaces.Unsigned_16 (T.Year);
       end if;

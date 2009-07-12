@@ -109,7 +109,7 @@ package body Books.Table_Views.Author is
 
       To_Main (Author_View);
 
-      Update_Display (Author_View);
+      Set_Display (Author_View, Database.Invalid_ID);
    end Initialize;
 
    overriding procedure Insert_Database (Author_View : access Gtk_Author_View_Record)
@@ -147,14 +147,13 @@ package body Books.Table_Views.Author is
       pragma Unreferenced (Width);
       Author_ID : constant ID_Type := Data_Tables.ID (Author_View.Primary_Table.all);
    begin
-      begin
-         Link_Tables.AuthorTitle.Fetch_Links_Of
-           (Author_View.Tables.AuthorTitle.all, Link_Tables.Author, Author_ID);
-      exception
-      when Database.No_Data =>
+      Link_Tables.AuthorTitle.Fetch_Links_Of
+        (Author_View.Tables.AuthorTitle.all, Link_Tables.Author, Author_ID);
+
+      if not Valid (Author_View.Tables.AuthorTitle.all) then
          Gtk.Clist.Clear (Author_View.List_Display (Title));
          return;
-      end;
+      end if;
 
       Gtk.Clist.Freeze (Author_View.List_Display (Title));
       Gtk.Clist.Clear (Author_View.List_Display (Title));
@@ -177,10 +176,8 @@ package body Books.Table_Views.Author is
                      (Interfaces.Unsigned_16'Image
                         (Data_Tables.Title.Year (Author_View.Tables.Sibling (Title))), Left))));
 
-            Books.Database.Next (Author_View.Tables.AuthorTitle.all);
-         exception
-         when Books.Database.No_Data =>
-            exit;
+            Next (Author_View.Tables.AuthorTitle.all);
+            exit when not Valid (Author_View.Tables.AuthorTitle.all);
          end;
       end loop;
 
@@ -196,14 +193,13 @@ package body Books.Table_Views.Author is
       Width : Glib.Gint;
       pragma Unreferenced (Width);
    begin
-      begin
-         Data_Tables.Collection.Find_Editor
-           (Author_View.Tables.Sibling (Collection), Data_Tables.ID (Author_View.Primary_Table.all));
-      exception
-      when Database.No_Data =>
+      Data_Tables.Collection.Find_Editor
+        (Author_View.Tables.Sibling (Collection), Data_Tables.ID (Author_View.Primary_Table.all));
+
+      if not Valid (Author_View.Tables.Sibling (Collection).all) then
          Gtk.Clist.Clear (Author_View.List_Display (Collection));
          return;
-      end;
+      end if;
 
       Gtk.Clist.Freeze (Author_View.List_Display (Collection));
       Gtk.Clist.Clear (Author_View.List_Display (Collection));
@@ -215,12 +211,8 @@ package body Books.Table_Views.Author is
             (1 => New_String (Image (Data_Tables.ID (Author_View.Tables.Sibling (Collection).all))),
              2 => New_String (Data_Tables.Collection.Name (Author_View.Tables.Sibling (Collection)))));
 
-         begin
-            Books.Database.Next (Author_View.Tables.Sibling (Collection).all);
-         exception
-         when Books.Database.No_Data =>
-            exit;
-         end;
+         Next (Author_View.Tables.Sibling (Collection).all);
+         exit when not Valid (Author_View.Tables.Sibling (Collection).all);
       end loop;
 
       Gtk.Clist.Sort (Author_View.List_Display (Collection));
@@ -235,13 +227,12 @@ package body Books.Table_Views.Author is
       Width : Glib.Gint;
       pragma Unreferenced (Width);
    begin
-      begin
-         Data_Tables.Series.Find_Author (Author_View.Tables.Sibling (Series), Author_View.Displayed_ID);
-      exception
-      when Database.No_Data =>
+      Data_Tables.Series.Find_Author (Author_View.Tables.Sibling (Series), Author_View.Displayed_ID);
+
+      if not Valid (Author_View.Tables.Sibling (Series).all) then
          Gtk.Clist.Clear (Author_View.List_Display (Series));
          return;
-      end;
+      end if;
 
       Gtk.Clist.Freeze (Author_View.List_Display (Series));
       Gtk.Clist.Clear (Author_View.List_Display (Series));
@@ -253,12 +244,8 @@ package body Books.Table_Views.Author is
             (1 => New_String (Image (Data_Tables.ID (Author_View.Tables.Sibling (Series).all))),
              2 => New_String (Data_Tables.Series.Title (Author_View.Tables.Sibling (Series)))));
 
-         begin
-            Books.Database.Next (Author_View.Tables.Sibling (Series).all);
-         exception
-         when Books.Database.No_Data =>
-            exit;
-         end;
+         Next (Author_View.Tables.Sibling (Series).all);
+         exit when not Valid (Author_View.Tables.Sibling (Series).all);
       end loop;
 
       Gtk.Clist.Sort (Author_View.List_Display (Series));
@@ -269,7 +256,7 @@ package body Books.Table_Views.Author is
 
    overriding procedure Update_Display_Child (Author_View : access Gtk_Author_View_Record)
    is begin
-      if Database.Data_Tables.Valid (Author_View.Primary_Table.all) then
+      if Database.Valid (Author_View.Primary_Table.all) then
          declare
             use Database.Data_Tables.Author;
          begin

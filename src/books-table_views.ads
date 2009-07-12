@@ -59,8 +59,8 @@ package Books.Table_Views is
    --  Create common GUI components. Child type must set data table
    --  components, and hide uneeded links, list selectors, lists.
 
-   procedure Update_Display (Table_View : access Gtk_Table_View_Record'class);
-   --  Update common parts of display, call Update_Display_Child.
+   procedure Set_Display (Table_View : access Gtk_Table_View_Record'Class; ID : in Books.Database.ID_Type);
+   --  Display ID
 
    procedure Set_Visibility (Table_View : access Gtk_Table_View_Record'class);
    --  Set visibility of all children, assuming Show_All has been done

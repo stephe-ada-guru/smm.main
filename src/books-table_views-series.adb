@@ -95,7 +95,7 @@ package body Books.Table_Views.Series is
 
       To_Main (Series_View);
 
-      Update_Display (Series_View);
+      Set_Display (Series_View, Database.Invalid_ID);
    end Initialize;
 
    overriding procedure Insert_Database (Series_View : access Gtk_Series_View_Record)
@@ -158,13 +158,12 @@ package body Books.Table_Views.Series is
    begin
       --  We display the Editor both in the primary table and in this
       --  list, to allow using Add_Link and Delete_Link buttons.
-      begin
-         Data_Tables.Fetch (Series_View.Tables.Sibling (Author).all, Author_ID);
-      exception
-      when No_Data =>
+      Data_Tables.Fetch (Series_View.Tables.Sibling (Author).all, Author_ID);
+
+      if not Valid (Series_View.Tables.Sibling (Author).all) then
          Gtk.Clist.Clear (Series_View.List_Display (Author));
          return;
-      end;
+      end if;
 
       Gtk.Clist.Freeze (Series_View.List_Display (Author));
       Gtk.Clist.Clear (Series_View.List_Display (Author));
@@ -189,13 +188,12 @@ package body Books.Table_Views.Series is
       pragma Unreferenced (Width);
       Series_ID : constant ID_Type := Series_View.Displayed_ID;
    begin
-      begin
-         Link_Tables.SeriesTitle.Fetch_Links_Of (Series_View.Tables.SeriesTitle.all, Link_Tables.Series, Series_ID);
-      exception
-      when Database.No_Data =>
+      Link_Tables.SeriesTitle.Fetch_Links_Of (Series_View.Tables.SeriesTitle.all, Link_Tables.Series, Series_ID);
+
+      if not Valid (Series_View.Tables.SeriesTitle.all) then
          Gtk.Clist.Clear (Series_View.List_Display (Title));
          return;
-      end;
+      end if;
 
       Gtk.Clist.Freeze (Series_View.List_Display (Title));
       Gtk.Clist.Clear (Series_View.List_Display (Title));
@@ -215,10 +213,8 @@ package body Books.Table_Views.Series is
                 3 => New_String
                   (Interfaces.Unsigned_16'Image (Data_Tables.Title.Year (Series_View.Tables.Sibling (Title))))));
 
-            Books.Database.Next (Series_View.Tables.SeriesTitle.all);
-         exception
-         when Database.No_Data =>
-            exit;
+            Next (Series_View.Tables.SeriesTitle.all);
+            exit when not Valid (Series_View.Tables.SeriesTitle.all);
          end;
       end loop;
 
@@ -230,7 +226,7 @@ package body Books.Table_Views.Series is
 
    overriding procedure Update_Display_Child (Series_View : access Gtk_Series_View_Record)
    is begin
-      if Database.Data_Tables.Valid (Series_View.Primary_Table.all) then
+      if Database.Valid (Series_View.Primary_Table.all) then
          declare
             use Database.Data_Tables.Series;
          begin

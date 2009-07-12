@@ -119,7 +119,7 @@ package body Books.Table_Views.Title is
       Gtk.Radio_Button.Set_Active (Title_View.List_Select (Series), True);
       Gtk.Radio_Button.Set_Active (Title_View.List_Select (Author), True);
 
-      Update_Display (Title_View);
+      Set_Display (Title_View, Database.Invalid_ID);
    end Initialize;
 
    overriding procedure Insert_Database (Title_View : access Gtk_Title_View_Record)
@@ -202,14 +202,13 @@ package body Books.Table_Views.Title is
       Width    : Glib.Gint;
       pragma Unreferenced (Width);
    begin
-      begin
-         Link_Tables.AuthorTitle.Fetch_Links_Of
-           (Title_View.Tables.AuthorTitle.all, Link_Tables.Title, Title_View.Displayed_ID);
-      exception
-      when Database.No_Data =>
+      Link_Tables.AuthorTitle.Fetch_Links_Of
+        (Title_View.Tables.AuthorTitle.all, Link_Tables.Title, Title_View.Displayed_ID);
+
+      if not Valid (Title_View.Tables.AuthorTitle.all) then
          Gtk.Clist.Clear (Title_View.List_Display (Author));
          return;
-      end;
+      end if;
 
       Gtk.Clist.Freeze (Title_View.List_Display (Author));
       Gtk.Clist.Clear (Title_View.List_Display (Author));
@@ -229,10 +228,8 @@ package body Books.Table_Views.Title is
                 3 => New_String (Data_Tables.Author.Middle_Name (Title_View.Tables.Sibling (Author))),
                 4 => New_String (Data_Tables.Author.Last_Name (Title_View.Tables.Sibling (Author)))));
 
-            Books.Database.Next (Title_View.Tables.AuthorTitle.all);
-         exception
-         when Database.No_Data =>
-            exit;
+            Next (Title_View.Tables.AuthorTitle.all);
+            exit when not Valid (Title_View.Tables.AuthorTitle.all);
          end;
       end loop;
 
@@ -248,31 +245,29 @@ package body Books.Table_Views.Title is
       Width : Glib.Gint;
       pragma Unreferenced (Width);
    begin
-      begin
-         Link_Tables.CollectionTitle.Fetch_Links_Of
-           (Title_View.Tables.CollectionTitle.all, Link_Tables.Title, Title_View.Displayed_ID);
-      exception
-      when Database.No_Data =>
+      Link_Tables.CollectionTitle.Fetch_Links_Of
+        (Title_View.Tables.CollectionTitle.all, Link_Tables.Title, Title_View.Displayed_ID);
+
+      if not Valid (Title_View.Tables.CollectionTitle.all) then
          Gtk.Clist.Clear (Title_View.List_Display (Collection));
          return;
-      end;
+      end if;
 
       Gtk.Clist.Freeze (Title_View.List_Display (Collection));
       Gtk.Clist.Clear (Title_View.List_Display (Collection));
 
       loop
-         begin
-            Data_Tables.Fetch
-              (Title_View.Tables.Sibling (Collection).all,
-               Link_Tables.CollectionTitle.ID (Title_View.Tables.CollectionTitle.all, Link_Tables.Collection));
+         Data_Tables.Fetch
+           (Title_View.Tables.Sibling (Collection).all,
+            Link_Tables.CollectionTitle.ID (Title_View.Tables.CollectionTitle.all, Link_Tables.Collection));
 
+         if Valid (Title_View.Tables.Sibling (Collection).all) then
             Gtk.Clist.Insert
               (Title_View.List_Display (Collection),
                0,
                (1 => New_String (Image (Data_Tables.ID (Title_View.Tables.Sibling (Collection).all))),
                 2 => New_String (Data_Tables.Collection.Name (Title_View.Tables.Sibling (Collection)))));
-         exception
-         when Database.No_Data =>
+         else
             --  bad IDs accidently entered; allow deleting
             Gtk.Clist.Insert
               (Title_View.List_Display (Collection),
@@ -281,14 +276,10 @@ package body Books.Table_Views.Title is
                   (Image
                      (Link_Tables.CollectionTitle.ID (Title_View.Tables.CollectionTitle.all, Link_Tables.Collection))),
                 2 => New_String ("<bad id>")));
-         end;
+         end if;
 
-         begin
-            Books.Database.Next (Title_View.Tables.CollectionTitle.all);
-         exception
-         when Database.No_Data =>
-            exit;
-         end;
+         Next (Title_View.Tables.CollectionTitle.all);
+         exit when not Valid (Title_View.Tables.CollectionTitle.all);
       end loop;
 
       Gtk.Clist.Sort (Title_View.List_Display (Collection));
@@ -303,35 +294,30 @@ package body Books.Table_Views.Title is
       Width : Glib.Gint;
       pragma Unreferenced (Width);
    begin
-      begin
-         Link_Tables.SeriesTitle.Fetch_Links_Of
-           (Title_View.Tables.SeriesTitle.all, Link_Tables.Title, Title_View.Displayed_ID);
-      exception
-      when Database.No_Data =>
+      Link_Tables.SeriesTitle.Fetch_Links_Of
+        (Title_View.Tables.SeriesTitle.all, Link_Tables.Title, Title_View.Displayed_ID);
+
+      if not Valid (Title_View.Tables.SeriesTitle.all) then
          Gtk.Clist.Clear (Title_View.List_Display (Series));
          return;
-      end;
+      end if;
 
       Gtk.Clist.Freeze (Title_View.List_Display (Series));
       Gtk.Clist.Clear (Title_View.List_Display (Series));
 
       loop
-         begin
-            Data_Tables.Fetch
-              (Title_View.Tables.Sibling (Series).all,
-               Link_Tables.SeriesTitle.ID (Title_View.Tables.SeriesTitle.all, Link_Tables.Series));
+         Data_Tables.Fetch
+           (Title_View.Tables.Sibling (Series).all,
+            Link_Tables.SeriesTitle.ID (Title_View.Tables.SeriesTitle.all, Link_Tables.Series));
 
-            Gtk.Clist.Insert
-              (Title_View.List_Display (Series),
-               0,
-               (1 => New_String (Image (Data_Tables.ID (Title_View.Tables.Sibling (Series).all))),
-                2 => New_String (Data_Tables.Series.Title (Title_View.Tables.Sibling (Series)))));
+         Gtk.Clist.Insert
+           (Title_View.List_Display (Series),
+            0,
+            (1 => New_String (Image (Data_Tables.ID (Title_View.Tables.Sibling (Series).all))),
+             2 => New_String (Data_Tables.Series.Title (Title_View.Tables.Sibling (Series)))));
 
-            Books.Database.Next (Title_View.Tables.SeriesTitle.all);
-         exception
-         when Database.No_Data =>
-            exit;
-         end;
+         Books.Database.Next (Title_View.Tables.SeriesTitle.all);
+         exit when not Valid (Title_View.Tables.SeriesTitle.all);
       end loop;
 
       Gtk.Clist.Sort (Title_View.List_Display (Series));
@@ -345,7 +331,7 @@ package body Books.Table_Views.Title is
       use Ada.Strings;
       use Ada.Strings.Fixed;
    begin
-      if Database.Data_Tables.Valid (Title_View.Primary_Table.all) then
+      if Database.Valid (Title_View.Primary_Table.all) then
          declare
             use Database.Data_Tables.Title;
          begin

@@ -28,14 +28,15 @@ package Books.Database.Data_Tables is
    --  current find statement. Calls Clear_Data in case there is no
    --  next.
 
+   procedure Set_Find_By_ID (T : in out Table'Class);
+   procedure Set_Find_By_Name (T : in out Table'Class);
+   --  Set current find statement.
+
    procedure Find (T : in out Table'Class; Item : in String);
    --  Search for records with data starting with String, using
    --  current find statement. Fetch first.
    --
-   --  If there is no match, current data is unchanged.
-
-   function Valid (T : in Table'Class) return Boolean;
-   --  True if current data is valid (Find or Fetch did not raise No_Data)
+   --  If there is no match, current data is marked invalid.
 
    function ID (T : in Table'Class) return ID_Type;
    --  Return ID of current record.
@@ -50,9 +51,6 @@ package Books.Database.Data_Tables is
 
    overriding procedure Finalize (T : in out Table);
    --  Free all statements. Root version frees common statements.
-
-   overriding procedure Clear_Data (T : in out Table) is abstract;
-   --  Erase local data.
 
 private
 

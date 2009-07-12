@@ -64,11 +64,15 @@ package Books.Database is
    --  Set current find statement to return all records ordered by ID.
    --  Fetch first.
 
-   procedure Next (T : in Table'Class);
+   procedure Next (T : in out Table'Class);
    --  Move cursor to next record, according to current find
    --  statement. Fetch data.
    --
-   --  Raises Books.Database.No_Data if there is no next.
+   --  Marks data invalid if there is no next.
+
+   function Valid (T : in Table'Class) return Boolean;
+   --  True if current data is valid (Next, Find or Fetch did not
+   --  raise No_Data)
 
    ----------
    --  Dispatching Table operations
@@ -77,9 +81,6 @@ package Books.Database is
 
    overriding procedure Finalize (T : in out Table);
    --  Free all statements. Root version frees common statements.
-
-   procedure Clear_Data (T : in out Table) is abstract;
-   --  Erase local data.
 
 private
 
@@ -110,6 +111,7 @@ private
       Find_Pattern        : String_Access;
       Find_Pattern_Length : aliased GNU.DB.SQLCLI.SQLINTEGER := 0;
 
+      Valid : Boolean := False;
    end record;
 
    procedure Checked_Execute (Statement : in GNU.DB.SQLCLI.SQLHANDLE);

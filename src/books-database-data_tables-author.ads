@@ -26,7 +26,6 @@ package Books.Database.Data_Tables.Author is
    --  Override parent operations.
 
    overriding procedure Initialize (T : in out Table);
-   overriding procedure Clear_Data (T : in out Table);
 
    ----------
    --  New operations

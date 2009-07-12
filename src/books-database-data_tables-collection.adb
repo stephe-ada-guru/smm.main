@@ -35,11 +35,6 @@ package body Books.Database.Data_Tables.Collection is
    ----------
    --  Subprogram bodies (alphabetical order)
 
-   overriding procedure Clear_Data (T : in out Table)
-   is begin
-      Copy (T, "", 0, False, 0, False);
-   end Clear_Data;
-
    procedure Copy
      (T            : in out Table;
       Name         : in     String;
@@ -75,7 +70,7 @@ package body Books.Database.Data_Tables.Collection is
       use type GNU.DB.SQLCLI.SQLINTEGER;
    begin
       if T.Editor_Indicator = GNU.DB.SQLCLI.SQL_NULL_DATA then
-         return 0;
+         raise No_Data;
       else
          return ID_Type (T.Editor);
       end if;
@@ -271,7 +266,7 @@ package body Books.Database.Data_Tables.Collection is
       use type GNU.DB.SQLCLI.SQLINTEGER;
    begin
       if T.ID_Indicator = GNU.DB.SQLCLI.SQL_NULL_DATA then
-         return 0;
+         raise No_Data;
       else
          return Interfaces.Unsigned_16 (T.Year);
       end if;

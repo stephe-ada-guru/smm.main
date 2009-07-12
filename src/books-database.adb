@@ -171,23 +171,22 @@ package body Books.Database is
       Checked_Execute (T.All_By_ID_Statement);
       T.Find_Statement := T.All_By_ID_Statement;
       Next (T);
-   exception
-   when GNU.DB.SQLCLI.No_Data =>
-      SQLCloseCursor (T.All_By_ID_Statement);
-      Clear_Data (T);
    end Find_All_By_ID;
 
-   procedure Next (T : in Table'Class)
+   procedure Next (T : in out Table'Class)
    is begin
       GNU.DB.SQLCLI.SQLFetch (T.Find_Statement);
+      T.Valid := True;
    exception
-   when GNU.DB.SQLCLI.Database_Error =>
-      --  Next button pushed twice by mistake; cursor already closed
-      raise Books.Database.No_Data;
    when GNU.DB.SQLCLI.No_Data =>
       GNU.DB.SQLCLI.SQLCloseCursor (T.Find_Statement);
-      raise Books.Database.No_Data;
+      T.Valid := False;
    end Next;
+
+   function Valid (T : in Table'Class) return Boolean
+   is begin
+      return T.Valid;
+   end Valid;
 
    function Value (ID : in String) return ID_Type
    is begin

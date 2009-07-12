@@ -28,7 +28,6 @@ package Books.Database.Data_Tables.Collection is
 
    overriding procedure Initialize (T : in out Table);
    overriding procedure Finalize (T : in out Table);
-   overriding procedure Clear_Data (T : in out Table);
 
    ----------
    --  New operations

@@ -21,9 +21,8 @@ with Ada.Command_Line;
 with Ada.Exceptions;
 with Ada.Text_IO;
 with Books.Main_Window;
-with GNAT.Traceback.Symbolic;
 with Gtk.Main;
-with SAL;
+with SAL.Traceback;
 procedure Books.Main
 is
    Main_Window : Books.Main_Window.Gtk_Window;
@@ -47,10 +46,7 @@ begin
    Gtk.Main.Main;
 exception
 when E : SAL.Config_File_Error =>
-   Ada.Text_IO.Put_Line (Ada.Exceptions.Exception_Message (E));
-
-when E : others =>
    Ada.Text_IO.Put_Line
      ("Unhandled exception " & Ada.Exceptions.Exception_Name (E) & ": " & Ada.Exceptions.Exception_Message (E));
-   Ada.Text_IO.Put_Line (GNAT.Traceback.Symbolic.Symbolic_Traceback (E));
+   Ada.Text_IO.Put_Line (SAL.Traceback.Image (E));
 end Books.Main;

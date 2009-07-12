@@ -35,8 +35,8 @@ package Test_Books.GUI_Utils is
    package Background is new Gtk.Gen_Background_Window (Create_Show_Main_Window);
 
    procedure Set_Up_Case
-     (Config_File : access String;
-      Debug_Level : in     Integer;
+     (Config_File   : access String;
+      Debug_Level   : in     Integer;
       Event_Handler : in     Gdk.Event.Event_Handler_Func := null);
    --  Set up Main_Window for typical GUI test
 

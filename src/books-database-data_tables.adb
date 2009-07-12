@@ -24,8 +24,6 @@ package body Books.Database.Data_Tables is
    procedure Delete (T : in out Table'Class)
    is begin
       Checked_Execute (T.Delete_Statement);
-      Clear_Data (T);
-      T.ID_Indicator := GNU.DB.SQLCLI.SQL_NULL_DATA;
       begin
          Next (T);
       exception
@@ -41,14 +39,10 @@ package body Books.Database.Data_Tables is
    begin
       T.ID           := ID;
       T.ID_Indicator := 4; -- That's what Find sets it to on success.
+      GNU.DB.SQLCLI.SQLCloseCursor (T.By_ID_Statement);
       Checked_Execute (T.By_ID_Statement);
-      GNU.DB.SQLCLI.SQLFetch (T.By_ID_Statement);
-      GNU.DB.SQLCLI.SQLCloseCursor (T.By_ID_Statement);
-   exception
-   when GNU.DB.SQLCLI.No_Data =>
-      GNU.DB.SQLCLI.SQLCloseCursor (T.By_ID_Statement);
-      T.ID_Indicator := GNU.DB.SQLCLI.SQL_NULL_DATA;
-      raise Books.Database.No_Data;
+      T.Find_Statement := T.By_ID_Statement;
+      Next (T);
    end Fetch;
 
    overriding procedure Finalize (T : in out Table)
@@ -65,6 +59,16 @@ package body Books.Database.Data_Tables is
       end if;
    end Finalize;
 
+   procedure Set_Find_By_ID (T : in out Table'Class)
+   is begin
+      T.Find_Statement := T.By_ID_Statement;
+   end Set_Find_By_ID;
+
+   procedure Set_Find_By_Name (T : in out Table'Class)
+   is begin
+      T.Find_Statement := T.By_Name_Statement;
+   end Set_Find_By_Name;
+
    procedure Find (T : in out Table'Class; Item : in String)
    is
       use Ada.Strings.Fixed;
@@ -79,25 +83,15 @@ package body Books.Database.Data_Tables is
       T.Find_Pattern_Length := Item'Length + 1;
       GNU.DB.SQLCLI.SQLCloseCursor (T.Find_Statement);
       Checked_Execute (T.Find_Statement);
-      GNU.DB.SQLCLI.SQLFetch (T.Find_Statement);
-   exception
-   when GNU.DB.SQLCLI.No_Data =>
-      GNU.DB.SQLCLI.SQLCloseCursor (T.Find_Statement);
-      --  Just keep current data.
+      Next (T);
    end Find;
-
-   function Valid (T : in Table'Class) return Boolean
-   is
-      use type GNU.DB.SQLCLI.SQLINTEGER;
-   begin
-      return T.ID_Indicator /= GNU.DB.SQLCLI.SQL_NULL_DATA;
-   end Valid;
 
    function ID (T : in Table'Class) return ID_Type
    is
       use type GNU.DB.SQLCLI.SQLINTEGER;
    begin
       if T.ID_Indicator = GNU.DB.SQLCLI.SQL_NULL_DATA then
+         --  We don't raise No_Data here; this is most often called to set Table_View.Displayed_ID
          return Invalid_ID;
       else
          return T.ID;

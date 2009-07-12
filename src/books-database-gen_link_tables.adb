@@ -20,12 +20,6 @@
 with GNU.DB.SQLCLI.Statement_Attribute;
 package body Books.Database.Gen_Link_Tables is
 
-   overriding procedure Clear_Data (T : in out Table)
-   is begin
-      T.Data      := (others      => 0);
-      T.Indicator := (others => SQL_NULL_DATA);
-   end Clear_Data;
-
    procedure Delete (T : in out Table; Data : in Source_Array_ID_Type)
    is begin
       T.Data      := Data;
