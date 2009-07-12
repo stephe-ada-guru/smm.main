@@ -22,10 +22,14 @@ with Test_Books.String_Lists;
 package Books.Table_Views.Title.Test is
 
    Title_Contents : Test_Books.String_Lists.String_List_Type (1 .. 2);
+   Title_Contents_Full : Test_Books.String_Lists.String_List_Type (1 .. 4);
 
    --  use Books.Table_Views.Test.Set_Test_Hook
 
    procedure Dump_Title (Table_View : in Gtk_Table_View);
    --  Dump the currently displayed title, year to Title_Contents.
+
+   procedure Dump_Title_Full (Table_View : in Gtk_Table_View);
+   --  Dump the currently displayed title, year, comment, rating to Title_Contents_Full.
 
 end Books.Table_Views.Title.Test;

@@ -22,6 +22,7 @@ with Ada.Strings.Unbounded;
 with Books.Main_Window;
 with Gdk.Event;
 with Gtk.Gen_Background_Window;
+with Test_Books.String_Lists;
 package Test_Books.GUI_Utils is
 
    procedure Empty_Database;
@@ -43,6 +44,9 @@ package Test_Books.GUI_Utils is
    procedure Create_Some_Data;
    --  standard set of data for tests
 
+   procedure Check_Clist (Label : in String; Expected : in Test_Books.String_Lists.String_Table_Access_Type);
+   --  Check Clist of current window.
+
    procedure Add_Author
      (First  : in String;
       Middle : in String;
@@ -55,6 +59,15 @@ package Test_Books.GUI_Utils is
    --  Use Mouse & Keyboard events to search for author, assuming Last
    --  is unique. Assumes Author window is showing main display. Last
    --  is typed into the Find window.
+
+   procedure Check_Author (Label : in String; Expected : in Test_Books.String_Lists.String_List_Type);
+   --  Check that Author window is showing Expected. Makes Author window
+   --  current.
+
+   procedure Find_Collection (Title : in String);
+   --  Use Mouse & Keyboard events to search for title, assuming Title
+   --  is unique. Assumes Collection window is showing main display.
+   --  Title is typed into the Find window.
 
    procedure Add_Title
      (Title   : in String;
@@ -69,5 +82,13 @@ package Test_Books.GUI_Utils is
    --  Use Mouse & Keyboard events to search for title, assuming Title
    --  is unique. Assumes Title window is showing main display. Title
    --  is typed into the Find window.
+
+   procedure Check_Title (Label : in String; Expected : in Test_Books.String_Lists.String_List_Type);
+   --  Check that Title window is showing Expected. Makes Title window
+   --  current.
+
+   procedure Check_Title_Full (Label : in String; Expected : in Test_Books.String_Lists.String_List_Type);
+   --  Check that all fields of Title window are showing Expected.
+   --  Makes Title window current.
 
 end Test_Books.GUI_Utils;

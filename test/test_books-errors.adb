@@ -130,6 +130,18 @@ package body Test_Books.Errors is
 
    end Long_Title;
 
+   procedure Missing_Title (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      use Gdk.Test_Events;
+   begin
+      GUI_Utils.Find_Title ("no such title");
+
+      --  Just silently show blank data.
+      Check_No_Exception ("Missing_Title");
+
+   end Missing_Title;
+
    ----------
    --  Public bodies
 
@@ -144,9 +156,19 @@ package body Test_Books.Errors is
    is
       use AUnit.Test_Cases.Registration;
    begin
-      Register_Routine (T, Duplicate_Author'Access, "Duplicate_Author");
-      Register_Routine (T, Duplicate_Title'Access, "Duplicate_Title");
-      Register_Routine (T, Long_Title'Access, "Long_Title");
+      case T.Debug_Level is
+      when 0 =>
+         Register_Routine (T, Duplicate_Author'Access, "Duplicate_Author");
+         Register_Routine (T, Duplicate_Title'Access, "Duplicate_Title");
+         Register_Routine (T, Long_Title'Access, "Long_Title");
+         Register_Routine (T, Missing_Title'Access, "Missing_Title");
+      when 1 =>
+         Register_Routine (T, Missing_Title'Access, "Missing_Title");
+      when 2 =>
+         null;
+      when others =>
+         null;
+      end case;
    end Register_Tests;
 
    overriding procedure Set_Up_Case (T : in out Test_Case)
@@ -162,18 +184,18 @@ package body Test_Books.Errors is
    is
       pragma Unreferenced (T);
    begin
-      if GUI_Utils.Background.Debug_Level < 2 then
-         GUI_Utils.Background.Close (GUI_Utils.Main_Window);
+      if Gdk.Test_Events.Debug_Level < 2 then
+         Gdk.Test_Events.Close (GUI_Utils.Main_Window);
       end if;
 
       GUI_Utils.Background.Background_Task.Wait_Shutdown;
    end Tear_Down_Case;
 
-   overriding procedure Set_up (T : in out Test_Case)
+   overriding procedure Set_Up (T : in out Test_Case)
    is
       pragma Unreferenced (T);
    begin
       Reset_Exception;
-   end Set_up;
+   end Set_Up;
 
 end Test_Books.Errors;

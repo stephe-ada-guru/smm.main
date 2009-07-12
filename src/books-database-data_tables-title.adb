@@ -226,6 +226,13 @@ package body Books.Database.Data_Tables.Title is
       return Rating (Table (T.all));
    end Rating;
 
+   function Is_Rating_Valid (T : in Data_Tables.Table_Access) return Boolean
+   is
+      use type GNU.DB.SQLCLI.SQLINTEGER;
+   begin
+      return Table (T.all).Rating_Indicator /= GNU.DB.SQLCLI.SQL_NULL_DATA;
+   end Is_Rating_Valid;
+
    function Title (T : in Table) return String is
    begin
       return T.Title (1 .. Integer (T.Title_Length));

@@ -34,10 +34,15 @@ package Books.Database.Data_Tables.Collection is
 
    function Name (T : in Table) return String;
    function Name (T : in Data_Tables.Table_Access) return String;
+
    function Editor (T : in Table) return ID_Type;
    function Editor (T : in Data_Tables.Table_Access) return ID_Type;
+   function Is_Editor_Valid (T : in Data_Tables.Table_Access) return Boolean;
+
    function Year (T : in Table) return Interfaces.Unsigned_16;
    function Year (T : in Data_Tables.Table_Access) return Interfaces.Unsigned_16;
+   function Is_Year_Valid (T : in Data_Tables.Table_Access) return Boolean;
+
    --  Retrieve data from current record
 
    procedure Find_Name (T : in out Table; Item : in String);

@@ -33,6 +33,6 @@ package Test_Books.Errors is
 
    overriding procedure Tear_Down_Case (T : in out Test_Case);
 
-   overriding procedure Set_up (T : in out Test_Case);
+   overriding procedure Set_Up (T : in out Test_Case);
 
 end Test_Books.Errors;

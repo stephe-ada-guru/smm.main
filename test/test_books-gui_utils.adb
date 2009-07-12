@@ -17,9 +17,11 @@
 --  MA 02111-1307, USA.
 
 with AUnit.Assertions;
+with Books.Table_Views.Author.Test;
 with Books.Table_Views.Test;
-with Gdk.Test_Events;
+with Books.Table_Views.Title.Test;
 with GNAT.OS_Lib;
+with Gdk.Test_Events;
 package body Test_Books.GUI_Utils is
 
    procedure Empty_Database
@@ -84,6 +86,15 @@ package body Test_Books.GUI_Utils is
 
    end Create_Some_Data;
 
+   procedure Check_Clist (Label : in String; Expected : in Test_Books.String_Lists.String_Table_Access_Type)
+   is begin
+      Books.Table_Views.Test.Set_Test_Hook (Books.Table_Views.Test.Dump_Clist'Access);
+
+      Gdk.Test_Events.Alt_Key_Stroke ('t'); -- test
+
+      Test_Books.String_Lists.Check (Label, Books.Table_Views.Test.Clist_Contents, Expected);
+   end Check_Clist;
+
    procedure Add_Author
      (First  : in String;
       Middle : in String;
@@ -109,9 +120,33 @@ package body Test_Books.GUI_Utils is
    begin
       Mouse_Move (Books.Table_Views.Test.Find_Entry (Main_Window.Author_View));
       Mouse_Click;
-      Ctrl_Key_Stroke ('a'); -- select all current
+      Ctrl_Key_Stroke ('a'); -- select all current; beeps if empty
       Key_Stroke (Last);
    end Find_Author;
+
+   procedure Check_Author (Label : in String; Expected : in Test_Books.String_Lists.String_List_Type)
+   is
+      use Gdk.Test_Events;
+   begin
+      Books.Table_Views.Test.Set_Test_Hook (Books.Table_Views.Author.Test.Dump_Author'Access);
+
+      Mouse_Move (Books.Table_Views.Test.Find_Entry (Main_Window.Author_View));
+      Mouse_Click;
+      delay 0.1;
+      Alt_Key_Stroke ('t'); -- test
+
+      Test_Books.String_Lists.Check (Label, Books.Table_Views.Author.Test.Author_Contents, Expected);
+   end Check_Author;
+
+   procedure Find_Collection (Title : in String)
+   is
+      use Gdk.Test_Events;
+   begin
+      Mouse_Move (Books.Table_Views.Test.Find_Entry (Main_Window.Collection_View));
+      Mouse_Click;
+      Ctrl_Key_Stroke ('a'); -- select all current; beeps if empty
+      Key_Stroke (Title);
+   end Find_Collection;
 
    procedure Add_Title
      (Title   : in String;
@@ -144,5 +179,33 @@ package body Test_Books.GUI_Utils is
       Ctrl_Key_Stroke ('a'); -- select all current
       Key_Stroke (Title);
    end Find_Title;
+
+   procedure Check_Title (Label : in String; Expected : in Test_Books.String_Lists.String_List_Type)
+   is
+      use Gdk.Test_Events;
+   begin
+      Books.Table_Views.Test.Set_Test_Hook (Books.Table_Views.Title.Test.Dump_Title'Access);
+
+      Mouse_Move (Books.Table_Views.Test.Find_Entry (Main_Window.Title_View));
+      Mouse_Click;
+      delay 0.1;
+      Alt_Key_Stroke ('t'); -- test
+
+      Test_Books.String_Lists.Check (Label, Books.Table_Views.Title.Test.Title_Contents, Expected);
+   end Check_Title;
+
+   procedure Check_Title_Full (Label : in String; Expected : in Test_Books.String_Lists.String_List_Type)
+   is
+      use Gdk.Test_Events;
+   begin
+      Books.Table_Views.Test.Set_Test_Hook (Books.Table_Views.Title.Test.Dump_Title_Full'Access);
+
+      Mouse_Move (Books.Table_Views.Test.Find_Entry (Main_Window.Title_View));
+      Mouse_Click;
+      delay 0.1;
+      Alt_Key_Stroke ('t'); -- test
+
+      Test_Books.String_Lists.Check (Label, Books.Table_Views.Title.Test.Title_Contents_Full, Expected);
+   end Check_Title_Full;
 
 end Test_Books.GUI_Utils;

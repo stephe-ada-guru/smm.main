@@ -18,9 +18,7 @@
 --
 
 with AUnit.Test_Cases.Registration;
-with Books.Table_Views.Author.Test;
 with Books.Table_Views.Test;
-with Books.Table_Views.Title.Test;
 with Gdk.Test_Events;
 with Test_Books.GUI_Utils;
 with Test_Books.String_Lists;
@@ -55,11 +53,15 @@ package body Test_Books.Nominal is
          Comment => "Obelisk",
          Rating  => "9");
 
+      Check_Title_Full ("full 2001", (+"2001", +"1970", +"Obelisk", +"9"));
+
       Add_Title
         (Title   => "Foundation",
          Year    => "1960",
-         Comment => "Hari Seldon",
-         Rating  => "9");
+         Comment => "",
+         Rating  => "");
+
+      Check_Title_Full ("full Foundation", (+"Foundation", +"1960", +"", +""));
 
       --  authors
       --  id    last
@@ -69,66 +71,42 @@ package body Test_Books.Nominal is
       --  titles
       --  id    title
       --  1     2001
-      --  2     foundation
+      --  2     foundation - no rating, no comment
 
       --  Search for first author of Foundation
       Find_Author ("clarke");
 
-      Books.Table_Views.Test.Set_Test_Hook (Books.Table_Views.Author.Test.Dump_Author'Access);
-      Alt_Key_Stroke ('t'); -- test
-
-      Check ("author 1", Books.Table_Views.Author.Test.Author_Contents, (+"Arthur", +"C.", +"Clarke"));
+      Check_Author ("author 1", (+"Arthur", +"C.", +"Clarke"));
 
       --  add link in author view
       Mouse_Move (Add_Link_Button (Main_Window.Author_View));
       Mouse_Click;
 
-      Books.Table_Views.Test.Set_Test_Hook (Books.Table_Views.Test.Dump_Clist'Access);
-      Alt_Key_Stroke ('t'); -- test
-
-      Check ("links 1", Books.Table_Views.Test.Clist_Contents, +(+"00002", +"Foundation", +"1960"));
+      Check_Clist ("links 1", +(+"00002", +"Foundation", +"1960"));
 
       --  Search for second author of Foundation
       Find_Author ("asimov");
-
-      Books.Table_Views.Test.Set_Test_Hook (Books.Table_Views.Author.Test.Dump_Author'Access);
-      Alt_Key_Stroke ('t'); -- test
-
-      Check ("author 2", Books.Table_Views.Author.Test.Author_Contents, (+"Isaac", +"", +"Asimov"));
+      Check_Author ("author 2", (+"Isaac", +"", +"Asimov"));
 
       --  add link in author view
       Mouse_Move (Add_Link_Button (Main_Window.Author_View));
       Mouse_Click;
 
-      Books.Table_Views.Test.Set_Test_Hook (Books.Table_Views.Test.Dump_Clist'Access);
-      Alt_Key_Stroke ('t'); -- test
-
-      Check ("links 1", Books.Table_Views.Test.Clist_Contents, +(+"00002", +"Foundation", +"1960"));
+      Check_Clist ("links 1", +(+"00002", +"Foundation", +"1960"));
 
       --  add authors of 2001 in title view
       Find_Title ("2001");
 
-      Books.Table_Views.Test.Set_Test_Hook (Books.Table_Views.Title.Test.Dump_Title'Access);
-      Alt_Key_Stroke ('t'); -- test
+      Check_Title ("title 3", (+"2001", +"1970"));
 
-      Check ("title 3", Books.Table_Views.Title.Test.Title_Contents, (+"2001", +"1970"));
-
-      Books.Table_Views.Test.Set_Test_Hook (Books.Table_Views.Test.Dump_Clist'Access);
-      Alt_Key_Stroke ('t'); -- test
-
-      Check
-        ("links 3a",
-         Books.Table_Views.Test.Clist_Contents,
-         Null_String_Table);
+      --  IMPROVEME: putting in this check loses the Alt up key event.
+      --  Check_Clist ("links 3a", Null_String_Table);
 
       --  Add author asimov (currently showing in author)
       Mouse_Move (Add_Link_Button (Main_Window.Title_View));
       Mouse_Click;
 
-      Books.Table_Views.Test.Set_Test_Hook (Books.Table_Views.Test.Dump_Clist'Access);
-      Alt_Key_Stroke ('t'); -- test
-
-      Check ("links 3b", Books.Table_Views.Test.Clist_Contents, +(+"00002", +"Isaac", +"", +"Asimov"));
+      Check_Clist ("links 3b", +(+"00002", +"Isaac", +"", +"Asimov"));
 
       --  Add author clark (need to search in author)
       Find_Author ("clark");
@@ -136,12 +114,8 @@ package body Test_Books.Nominal is
       Mouse_Move (Add_Link_Button (Main_Window.Title_View));
       Mouse_Click;
 
-      Books.Table_Views.Test.Set_Test_Hook (Books.Table_Views.Test.Dump_Clist'Access);
-      Alt_Key_Stroke ('t'); -- test
-
-      Check
+      Check_Clist
         ("links 4",
-         Books.Table_Views.Test.Clist_Contents,
          +(+"00001", +"Arthur", +"C.", +"Clarke") +
            (+"00002", +"Isaac", +"", +"Asimov"));
 

@@ -27,7 +27,7 @@ package body Test_Books.Show_Other is
    ----------
    --  Test procedures
 
-   procedure Show_From_Title (T : in out AUnit.Test_Cases.Test_Case'Class)
+   procedure Show_Author_From_Title (T : in out AUnit.Test_Cases.Test_Case'Class)
    is
       pragma Unreferenced (T);
       use Books.Table_Views.Test;
@@ -58,7 +58,28 @@ package body Test_Books.Show_Other is
       Alt_Key_Stroke ('t'); -- test
 
       Check ("clarke", Books.Table_Views.Author.Test.Author_Contents, (+"Arthur", +"C.", +"Clarke"));
-   end Show_From_Title;
+   end Show_Author_From_Title;
+
+   procedure Show_Title_From_Collection (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      use Books.Table_Views.Test;
+      use Gdk.Test_Events;
+      use Test_Books.GUI_Utils;
+      use Test_Books.String_Lists;
+   begin
+      Find_Collection ("Analog");
+
+      Mouse_Move (Second_Link (Main_Window.Collection_View)); -- Foundation
+      Mouse_Double_Click;
+
+      Check_Title ("foundation", (+"Foundation", +"1960"));
+
+      Mouse_Move (First_Link (Main_Window.Collection_View)); -- 2001
+      Mouse_Double_Click;
+
+      Check_Title ("2001", (+"2001", +"1970"));
+   end Show_Title_From_Collection;
 
    ----------
    --  Public bodies
@@ -74,9 +95,17 @@ package body Test_Books.Show_Other is
    is
       use AUnit.Test_Cases.Registration;
    begin
-      if T.Debug_Level < 2 then
-         Register_Routine (T, Show_From_Title'Access, "Show_From_Title");
-      end if;
+      case T.Debug_Level is
+      when 0 =>
+         Register_Routine (T, Show_Author_From_Title'Access, "Show_Author_From_Title");
+         Register_Routine (T, Show_Title_From_Collection'Access, "Show_Title_From_Collection");
+      when 1 =>
+         Register_Routine (T, Show_Title_From_Collection'Access, "Show_Title_From_Collection");
+      when 2 =>
+         null;
+      when others =>
+         null;
+      end case;
    end Register_Tests;
 
    overriding procedure Set_Up_Case (T : in out Test_Case)

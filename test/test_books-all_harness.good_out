@@ -10,9 +10,9 @@ Disconnecting from database ... done.
 using config file C:\Projects\books.main\test\test.config
 Connected to database.
 Disconnecting from database ... done.
-   Total Tests Run:  9
+   Total Tests Run:  10
 
-   Successful Tests: 9
+   Successful Tests: 10
 
    Failed Tests: 0
 

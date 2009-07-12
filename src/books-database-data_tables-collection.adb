@@ -81,6 +81,13 @@ package body Books.Database.Data_Tables.Collection is
       return Editor (Table (T.all));
    end Editor;
 
+   function Is_Editor_Valid (T : in Data_Tables.Table_Access) return Boolean
+   is
+      use type GNU.DB.SQLCLI.SQLINTEGER;
+   begin
+      return Table (T.all).Editor_Indicator = GNU.DB.SQLCLI.SQL_NULL_DATA;
+   end Is_Editor_Valid;
+
    overriding procedure Finalize (T : in out Table)
    is
       use type GNU.DB.SQLCLI.SQLHANDLE;
@@ -276,5 +283,12 @@ package body Books.Database.Data_Tables.Collection is
    is begin
       return Year (Table (T.all));
    end Year;
+
+   function Is_Year_Valid (T : in Data_Tables.Table_Access) return Boolean
+   is
+      use type GNU.DB.SQLCLI.SQLINTEGER;
+   begin
+      return Table (T.all).Year_Indicator = GNU.DB.SQLCLI.SQL_NULL_DATA;
+   end Is_Year_Valid;
 
 end Books.Database.Data_Tables.Collection;

@@ -35,6 +35,7 @@ package Books.Database.Data_Tables.Series is
    function Title (T : in Data_Tables.Table_Access) return String;
    function Author (T : in Table) return ID_Type;
    function Author (T : in Data_Tables.Table_Access) return ID_Type;
+   function Is_Author_Valid (T : in Data_Tables.Table_Access) return Boolean;
    --  Retrieve data from current record
 
    procedure Find_Title (T : in out Table; Item : in String);

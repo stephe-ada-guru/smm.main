@@ -27,4 +27,15 @@ package body Books.Table_Views.Title.Test is
       Title_Contents (2) := +(Gtk.GEntry.Get_Text (Title_View.Year_Text));
    end Dump_Title;
 
+   procedure Dump_Title_Full (Table_View : in Gtk_Table_View)
+   is
+      use Test_Books.String_Lists;
+      Title_View : Gtk_Title_View_Record renames Gtk_Title_View_Record (Table_View.all);
+   begin
+      Title_Contents_Full (1) := +(Gtk.GEntry.Get_Text (Title_View.Title_Text));
+      Title_Contents_Full (2) := +(Gtk.GEntry.Get_Text (Title_View.Year_Text));
+      Title_Contents_Full (3) := +(Gtk.GEntry.Get_Text (Title_View.Comment_Text));
+      Title_Contents_Full (4) := +(Gtk.GEntry.Get_Text (Title_View.Rating_Text));
+   end Dump_Title_Full;
+
 end Books.Table_Views.Title.Test;

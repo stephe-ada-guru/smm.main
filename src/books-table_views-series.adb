@@ -231,7 +231,12 @@ package body Books.Table_Views.Series is
             use Database.Data_Tables.Series;
          begin
             Gtk.GEntry.Set_Text (Series_View.Title_Text, Title (Series_View.Primary_Table));
-            Gtk.GEntry.Set_Text (Series_View.Author_Text, Database.Image (Author (Series_View.Primary_Table)));
+
+            if Is_Author_Valid (Series_View.Primary_Table) then
+               Gtk.GEntry.Set_Text (Series_View.Author_Text, Database.Image (Author (Series_View.Primary_Table)));
+            else
+               Gtk.GEntry.Set_Text (Series_View.Author_Text, "");
+            end if;
          end;
 
          case Series_View.Current_List is

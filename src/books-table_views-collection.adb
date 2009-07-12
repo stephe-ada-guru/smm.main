@@ -265,12 +265,23 @@ package body Books.Table_Views.Collection is
       if Database.Valid (Collection_View.Primary_Table.all) then
          declare
             use Database.Data_Tables.Collection;
+            use Gtk.GEntry;
          begin
-            Gtk.GEntry.Set_Text (Collection_View.Name_Text, Name (Collection_View.Primary_Table));
-            Gtk.GEntry.Set_Text (Collection_View.Editor_Text, Database.Image (Editor (Collection_View.Primary_Table)));
-            Gtk.GEntry.Set_Text
-              (Collection_View.Year_Text,
-               Interfaces.Unsigned_16'Image (Year (Collection_View.Primary_Table)));
+            Set_Text (Collection_View.Name_Text, Name (Collection_View.Primary_Table));
+
+            if Is_Editor_Valid (Collection_View.Primary_Table) then
+               Set_Text (Collection_View.Editor_Text, Database.Image (Editor (Collection_View.Primary_Table)));
+            else
+               Set_Text (Collection_View.Editor_Text, "");
+            end if;
+
+            if Is_Year_Valid (Collection_View.Primary_Table) then
+               Set_Text
+                 (Collection_View.Year_Text,
+                  Interfaces.Unsigned_16'Image (Year (Collection_View.Primary_Table)));
+            else
+               Set_Text (Collection_View.Year_Text, "");
+            end if;
          end;
 
          case Collection_View.Current_List is
