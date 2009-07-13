@@ -334,7 +334,7 @@ arg; root. Result is of the form:
          ,(format "Base   %s" base-revision-hash-id)
          ,(case (length heads)
             (1 "branch is merged")
-            (t "branch is not merged"))
+            (t (dvc-face-add (format "branch has %s heads; need merge" (length heads)) 'dvc-conflict)))
          nil
          ,(case (length difference)
             (0 "No revisions that are not in base revision")

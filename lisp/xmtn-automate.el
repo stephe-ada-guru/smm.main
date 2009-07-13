@@ -351,7 +351,8 @@ options, cdr is command. Insert result into BUFFER."
          (xmtn-automate-command-buffer handle))))))
 
 (defun xmtn-automate-command-output-lines (handle)
-  ;; Return list of lines of output
+  ;; Return list of lines of output; first line output is first in
+  ;; list.
   (xmtn-automate-command-check-for-and-report-error handle)
   (xmtn-automate-command-wait-until-finished handle)
   (save-excursion
@@ -364,7 +365,7 @@ options, cdr is command. Insert result into BUFFER."
                             (progn (end-of-line) (point)))
                            result))
         (forward-line 1))
-      result)))
+      (nreverse result))))
 
 (defun xmtn-automate-simple-command-output-lines (root command)
   "Return list of strings containing output of COMMAND, one line per string."

@@ -913,8 +913,7 @@ Prompt if the last two conditions are not satisfied."
         (error "%s has multiple heads; can't propagate" work))
 
     (if (not (string= base (nth 0 heads)))
-        (if (not (yes-or-no-p (format "%s base is not head; really propagate? " work)))
-            (error "aborting due to not at head")))
+            (error "Aborting due to %s not at head" work))
 
     ;; check for local changes
     (message "checking %s for local changes" work)
