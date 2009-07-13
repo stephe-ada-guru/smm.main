@@ -37,11 +37,11 @@ package Books.Database.Data_Tables.Collection is
 
    function Editor (T : in Table) return ID_Type;
    function Editor (T : in Data_Tables.Table_Access) return ID_Type;
-   function Is_Editor_Valid (T : in Data_Tables.Table_Access) return Boolean;
+   function Editor_Valid (T : in Data_Tables.Table_Access) return Boolean;
 
    function Year (T : in Table) return Interfaces.Unsigned_16;
    function Year (T : in Data_Tables.Table_Access) return Interfaces.Unsigned_16;
-   function Is_Year_Valid (T : in Data_Tables.Table_Access) return Boolean;
+   function Year_Valid (T : in Data_Tables.Table_Access) return Boolean;
 
    --  Retrieve data from current record
 

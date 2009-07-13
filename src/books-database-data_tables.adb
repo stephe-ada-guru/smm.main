@@ -39,9 +39,9 @@ package body Books.Database.Data_Tables is
    begin
       T.ID           := ID;
       T.ID_Indicator := 4; -- That's what Find sets it to on success.
-      GNU.DB.SQLCLI.SQLCloseCursor (T.By_ID_Statement);
-      Checked_Execute (T.By_ID_Statement);
+      GNU.DB.SQLCLI.SQLCloseCursor (T.Find_Statement);
       T.Find_Statement := T.By_ID_Statement;
+      Checked_Execute (T.Find_Statement);
       Next (T);
    end Fetch;
 
@@ -91,8 +91,7 @@ package body Books.Database.Data_Tables is
       use type GNU.DB.SQLCLI.SQLINTEGER;
    begin
       if T.ID_Indicator = GNU.DB.SQLCLI.SQL_NULL_DATA then
-         --  We don't raise No_Data here; this is most often called to set Table_View.Displayed_ID
-         return Invalid_ID;
+         raise No_Data;
       else
          return T.ID;
       end if;

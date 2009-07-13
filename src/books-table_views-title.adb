@@ -343,7 +343,7 @@ package body Books.Table_Views.Title is
 
             Gtk.GEntry.Set_Text (Title_View.Comment_Text, Comment (Title_View.Primary_Table));
 
-            if Is_Rating_Valid (Title_View.Primary_Table) then
+            if Rating_Valid (Title_View.Primary_Table) then
                Gtk.GEntry.Set_Text
                  (Title_View.Rating_Text, Interfaces.Unsigned_8'Image (Rating (Title_View.Primary_Table)));
             else

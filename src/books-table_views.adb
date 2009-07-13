@@ -454,6 +454,7 @@ package body Books.Table_Views is
    is begin
       Books.Database.Data_Tables.Fetch (Table_View.Primary_Table.all, ID);
       Table_View.Displayed_ID := Books.Database.Data_Tables.ID (Table_View.Primary_Table.all);
+      Gtk.GEntry.Set_Text (Table_View.Find_Text, "");
       Update_Display (Table_View);
    end Set_Display;
 
@@ -558,11 +559,17 @@ package body Books.Table_Views is
 
    procedure On_Find_Next (Button : access Gtk.Button.Gtk_Button_Record'Class)
    is
+      use Books.Database;
       Table_View : constant Gtk_Table_View := Gtk_Table_View (Gtk.Button.Get_Toplevel (Button));
    begin
-      Books.Database.Next (Table_View.Primary_Table.all);
-      Table_View.Displayed_ID := Database.Data_Tables.ID (Table_View.Primary_Table.all);
-      Update_Display (Table_View);
+      Next (Table_View.Primary_Table.all);
+      if Valid (Table_View.Primary_Table.all) then
+         Table_View.Displayed_ID := Data_Tables.ID (Table_View.Primary_Table.all);
+         Update_Display (Table_View);
+      else
+         --  restart search
+         On_Find_Changed (Table_View.Find_Text);
+      end if;
    end On_Find_Next;
 
    procedure On_List_Edit_Add_Clicked (Button : access Gtk.Button.Gtk_Button_Record'Class)

@@ -41,7 +41,7 @@ package Books.Database.Data_Tables.Title is
    function Rating (T : in Data_Tables.Table_Access) return Interfaces.Unsigned_8;
    --  Retrieve data from current record
 
-   function Is_Rating_Valid (T : in Data_Tables.Table_Access) return Boolean;
+   function Rating_Valid (T : in Data_Tables.Table_Access) return Boolean;
 
    procedure Find_Title (T : in out Table; Item : in String);
    procedure Find_Title (T : in Data_Tables.Table_Access; Item : in String);

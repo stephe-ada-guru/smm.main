@@ -71,12 +71,12 @@ package body Books.Database.Data_Tables.Series is
       return Author (Table (T.all));
    end Author;
 
-   function Is_Author_Valid (T : in Data_Tables.Table_Access) return Boolean
+   function Author_Valid (T : in Data_Tables.Table_Access) return Boolean
    is
       use type GNU.DB.SQLCLI.SQLINTEGER;
    begin
-      return Table (T.all).Author_Indicator = GNU.DB.SQLCLI.SQL_NULL_DATA;
-   end Is_Author_Valid;
+      return Table (T.all).Author_Indicator /= GNU.DB.SQLCLI.SQL_NULL_DATA;
+   end Author_Valid;
 
    overriding procedure Finalize (T : in out Table)
    is
