@@ -31,10 +31,8 @@ package body Books.Database.Gen_Link_Tables is
    is begin
       T.Data (Source)      := Item;
       T.Indicator (Source) := Source_Labels_Type'Size / 8;
-      SQLCloseCursor (T.By_Source_Statement (Source));
-      Checked_Execute (T.By_Source_Statement (Source));
-      T.Find_Statement     := T.By_Source_Statement (Source);
-      Next (T);
+
+      Find (T, T.By_Source_Statement (Source));
    end Fetch_Links_Of;
 
    function ID (T : in Table; Source : in Source_Labels_Type) return ID_Type is

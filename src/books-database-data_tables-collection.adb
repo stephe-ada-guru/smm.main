@@ -105,34 +105,14 @@ package body Books.Database.Data_Tables.Collection is
    begin
       T.Editor           := Editor;
       T.Editor_Indicator := ID_Type'Size / 8;
-      GNU.DB.SQLCLI.SQLCloseCursor (T.By_Editor_Statement);
-      Checked_Execute (T.By_Editor_Statement);
-      T.Find_Statement   := T.By_Editor_Statement;
-      Next (T);
+
+      Find (T, T.By_Editor_Statement);
    end Find_Editor;
 
    procedure Find_Editor (T : in Data_Tables.Table_Access; Editor : in ID_Type)
    is begin
       Find_Editor (Table (T.all), Editor);
    end Find_Editor;
-
-   procedure Find_Name (T : in out Table; Item : in String)
-   is
-      use type GNU.DB.SQLCLI.SQLINTEGER;
-   begin
-      T.Find_Pattern (1 .. Item'Length) := Item;
-      T.Find_Pattern (Item'Length + 1) := '%';
-      T.Find_Pattern_Length := Item'Length + 1;
-      GNU.DB.SQLCLI.SQLCloseCursor (T.By_Name_Statement);
-      Checked_Execute (T.By_Name_Statement);
-      T.Find_Statement := T.By_Name_Statement;
-      Next (T);
-   end Find_Name;
-
-   procedure Find_Name (T : in Data_Tables.Table_Access; Item : in String)
-   is begin
-      Find_Name (Table (T.all), Item);
-   end Find_Name;
 
    overriding procedure Initialize (T : in out Table)
    is
@@ -243,7 +223,7 @@ package body Books.Database.Data_Tables.Collection is
    is begin
       Copy (T, Name, Editor, Editor_Valid, Year, Year_Valid);
       Checked_Execute (T.Insert_Statement);
-      Find_Name (T, Name);
+      Find (T, Name);
    end Insert;
 
    function Name (T : in Table) return String is

@@ -451,10 +451,16 @@ package body Books.Table_Views is
    end Create_GUI;
 
    procedure Set_Display (Table_View : access Gtk_Table_View_Record'Class; ID : in Books.Database.ID_Type)
-   is begin
-      Books.Database.Data_Tables.Fetch (Table_View.Primary_Table.all, ID);
-      Table_View.Displayed_ID := Books.Database.Data_Tables.ID (Table_View.Primary_Table.all);
+   is
+      use Books.Database;
+   begin
       Gtk.GEntry.Set_Text (Table_View.Find_Text, "");
+      Data_Tables.Fetch (Table_View.Primary_Table.all, ID);
+      if Valid (Table_View.Primary_Table.all) then
+         Table_View.Displayed_ID := Books.Database.Data_Tables.ID (Table_View.Primary_Table.all);
+      else
+         Table_View.Displayed_ID := Invalid_ID;
+      end if;
       Update_Display (Table_View);
    end Set_Display;
 
@@ -548,12 +554,17 @@ package body Books.Table_Views is
 
    procedure On_Find_Changed (GEntry : access Gtk.GEntry.Gtk_Entry_Record'Class)
    is
+      use Books.Database;
       Table_View : constant Gtk_Table_View := Gtk_Table_View (Gtk.GEntry.Get_Toplevel (GEntry));
    begin
       --  FIXME: should check Index.
-      Books.Database.Data_Tables.Set_Find_By_Name (Table_View.Primary_Table.all);
-      Books.Database.Data_Tables.Find (Table_View.Primary_Table.all, Gtk.GEntry.Get_Text (GEntry));
-      Table_View.Displayed_ID := Database.Data_Tables.ID (Table_View.Primary_Table.all);
+      Data_Tables.Set_Find_By_Name (Table_View.Primary_Table.all);
+      Data_Tables.Find (Table_View.Primary_Table.all, Gtk.GEntry.Get_Text (GEntry));
+      if Valid (Table_View.Primary_Table.all) then
+         Table_View.Displayed_ID := Data_Tables.ID (Table_View.Primary_Table.all);
+      else
+         Table_View.Displayed_ID := Invalid_ID;
+      end if;
       Update_Display (Table_View);
    end On_Find_Changed;
 

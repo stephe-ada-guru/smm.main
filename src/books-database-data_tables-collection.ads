@@ -45,13 +45,6 @@ package Books.Database.Data_Tables.Collection is
 
    --  Retrieve data from current record
 
-   procedure Find_Name (T : in out Table; Item : in String);
-   procedure Find_Name (T : in Data_Tables.Table_Access; Item : in String);
-   --  Search for records with Name starting with String. Fetch
-   --  first.
-   --
-   --  If there is no match, current data is unchanged.
-
    procedure Find_Editor (T : in out Table; Editor : in ID_Type);
    procedure Find_Editor (T : in Data_Tables.Table_Access; Editor : in ID_Type);
    --  Find records with Editor_ID = Editor.

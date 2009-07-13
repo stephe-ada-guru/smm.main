@@ -62,27 +62,6 @@ package body Books.Database.Data_Tables.Author is
       end if;
    end Copy;
 
-   procedure Find_Name (T : in out Table; Item : in String)
-   is
-      use type GNU.DB.SQLCLI.SQLINTEGER;
-   begin
-      Ada.Strings.Fixed.Move
-        (Source => Item,
-         Target => T.Find_Pattern.all (1 .. Name_Field_Length),
-         Drop   => Ada.Strings.Right);
-      T.Find_Pattern (Integer'Min (T.Find_Pattern'Last, Item'Length + 1)) := '%';
-      T.Find_Pattern_Length := Item'Length + 1;
-      GNU.DB.SQLCLI.SQLCloseCursor (T.By_Name_Statement);
-      Checked_Execute (T.By_Name_Statement);
-      T.Find_Statement := T.By_Name_Statement;
-      Next (T);
-   end Find_Name;
-
-   procedure Find_Name (T : in Data_Tables.Table_Access; Item : in String)
-   is begin
-      Find_Name (Table (T.all), Item);
-   end Find_Name;
-
    function First_Name (T : in Table) return String is
    begin
       return T.First (1 .. Integer (T.First_Length));
@@ -193,7 +172,7 @@ package body Books.Database.Data_Tables.Author is
    is begin
       Copy (T, First_Name, Middle_Name, Last_Name);
       Checked_Execute (T.Insert_Statement);
-      Find_Name (T, Last_Name);
+      Find (T, Last_Name);
    end Insert;
 
    function Last_Name (T : in Table) return String is

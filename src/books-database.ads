@@ -107,7 +107,9 @@ private
       Insert_Statement    : GNU.DB.SQLCLI.SQLHANDLE := GNU.DB.SQLCLI.SQL_NULL_HANDLE;
       Delete_Statement    : GNU.DB.SQLCLI.SQLHANDLE := GNU.DB.SQLCLI.SQL_NULL_HANDLE;
       All_By_ID_Statement : GNU.DB.SQLCLI.SQLHANDLE := GNU.DB.SQLCLI.SQL_NULL_HANDLE;
-      Find_Statement      : GNU.DB.SQLCLI.SQLHANDLE; --  Copy of actual handle; not freed.
+      Find_Statement      : GNU.DB.SQLCLI.SQLHANDLE := GNU.DB.SQLCLI.SQL_NULL_HANDLE;
+      --  Copy of actual handle; not freed.
+
       Find_Pattern        : String_Access;
       Find_Pattern_Length : aliased GNU.DB.SQLCLI.SQLINTEGER := 0;
 
@@ -117,5 +119,9 @@ private
    procedure Checked_Execute (Statement : in GNU.DB.SQLCLI.SQLHANDLE);
    --  Execute Statement, catch GNU.DB.SQLCLI.Database_Error, check
    --  error message, convert to Entry_Error if recognized.
+
+   procedure Find (T : in out Table'Class; Statement : in GNU.DB.SQLCLI.SQLHANDLE);
+   --  Close appropriate cursors, set T.Find_Statement, execute
+   --  statement, call Next.
 
 end Books.Database;

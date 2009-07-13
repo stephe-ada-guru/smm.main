@@ -208,4 +208,21 @@ package body Books.Database is
       end if;
    end Checked_Execute;
 
+   procedure Find (T : in out Table'Class; Statement : in GNU.DB.SQLCLI.SQLHANDLE)
+   is
+      use type GNU.DB.SQLCLI.SQLHANDLE;
+   begin
+      --  We may not have followed a search to its end, so this is the
+      --  logical place to close the cursor opened by a search. It
+      --  doesn't hurt to close a cursor that is not open, but it does
+      --  hurt to execute a statement that has an open cursor.
+      if T.Find_Statement /= Statement and T.Find_Statement /= GNU.DB.SQLCLI.SQL_NULL_HANDLE then
+         GNU.DB.SQLCLI.SQLCloseCursor (T.Find_Statement);
+      end if;
+      GNU.DB.SQLCLI.SQLCloseCursor (Statement);
+      T.Find_Statement := Statement;
+      Checked_Execute (T.Find_Statement);
+      Next (T);
+   end Find;
+
 end Books.Database;

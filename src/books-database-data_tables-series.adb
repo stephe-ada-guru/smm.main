@@ -95,34 +95,14 @@ package body Books.Database.Data_Tables.Series is
    begin
       T.Author           := Author;
       T.Author_Indicator := ID_Type'Size / 8;
-      GNU.DB.SQLCLI.SQLCloseCursor (T.By_Author_Statement);
-      Checked_Execute (T.By_Author_Statement);
-      T.Find_Statement   := T.By_Author_Statement;
-      Next (T);
+
+      Find (T, T.By_Author_Statement);
    end Find_Author;
 
    procedure Find_Author (T : in Data_Tables.Table_Access; Author : in ID_Type)
    is begin
       Find_Author (Table (T.all), Author);
    end Find_Author;
-
-   procedure Find_Title (T : in out Table; Item : in String)
-   is
-      use type GNU.DB.SQLCLI.SQLINTEGER;
-   begin
-      T.Find_Pattern (1 .. Item'Length) := Item;
-      T.Find_Pattern (Item'Length + 1) := '%';
-      T.Find_Pattern_Length := Item'Length + 1;
-      GNU.DB.SQLCLI.SQLCloseCursor (T.By_Name_Statement);
-      Checked_Execute (T.By_Name_Statement);
-      T.Find_Statement := T.By_Name_Statement;
-      Next (T);
-   end Find_Title;
-
-   procedure Find_Title (T : in Data_Tables.Table_Access; Item : in String)
-   is begin
-      Find_Title (Table (T.all), Item);
-   end Find_Title;
 
    overriding procedure Initialize (T : in out Table)
    is
@@ -225,7 +205,7 @@ package body Books.Database.Data_Tables.Series is
    is begin
       Copy (T, Title, Author, Author_Valid);
       Checked_Execute (T.Insert_Statement);
-      Find_Title (T, Title);
+      Find (T, Title);
    end Insert;
 
    function Title (T : in Table) return String

@@ -38,19 +38,12 @@ package Books.Database.Data_Tables.Author is
    function Last_Name (T : in Data_Tables.Table_Access) return String;
    --  Retrieve data from current record
 
-   procedure Find_Name (T : in out Table; Item : in String);
-   procedure Find_Name (T : in Data_Tables.Table_Access; Item : in String);
-   --  Search for records with names starting with String. Fetch
-   --  first.
-   --
-   --  If there is no match, current data is unchanged.
-
    procedure Insert
      (T           : in out Table;
       First_Name  : in     String;
       Middle_Name : in     String;
       Last_Name   : in     String);
-   --  Insert a new record, fetch it using Find_Name.
+   --  Insert a new record, fetch it using Find.
 
    procedure Update
      (T           : in out Table;

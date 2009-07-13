@@ -35,14 +35,12 @@ package body Books.Database.Data_Tables is
 
    procedure Fetch (T : in out Table'Class; ID : in ID_Type)
    is
-      use type GNU.DB.SQLCLI.SQLINTEGER;
+      use type GNU.DB.SQLCLI.SQLHANDLE;
    begin
       T.ID           := ID;
       T.ID_Indicator := 4; -- That's what Find sets it to on success.
-      GNU.DB.SQLCLI.SQLCloseCursor (T.Find_Statement);
-      T.Find_Statement := T.By_ID_Statement;
-      Checked_Execute (T.Find_Statement);
-      Next (T);
+
+      Find (T, T.By_ID_Statement);
    end Fetch;
 
    overriding procedure Finalize (T : in out Table)
@@ -73,17 +71,17 @@ package body Books.Database.Data_Tables is
    is
       use Ada.Strings.Fixed;
       use type GNU.DB.SQLCLI.SQLINTEGER;
+      Field_Length : constant Integer := T.Find_Pattern'Length - 1; -- for '%'
    begin
       Move
         (Source => Item,
-         Target => T.Find_Pattern.all,
+         Target => T.Find_Pattern (1 .. Field_Length),
          Drop   => Ada.Strings.Right);
 
-      T.Find_Pattern (Integer'Min (Item'Length + 1, T.Find_Pattern'Length)) := '%';
-      T.Find_Pattern_Length := Item'Length + 1;
-      GNU.DB.SQLCLI.SQLCloseCursor (T.Find_Statement);
-      Checked_Execute (T.Find_Statement);
-      Next (T);
+      T.Find_Pattern_Length := GNU.DB.SQLCLI.SQLINTEGER (Integer'Min (Item'Length + 1, Field_Length));
+      T.Find_Pattern (Integer (T.Find_Pattern_Length)) := '%';
+
+      Find (T, T.By_Name_Statement);
    end Find;
 
    function ID (T : in Table'Class) return ID_Type

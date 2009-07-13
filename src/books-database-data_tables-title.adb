@@ -82,28 +82,6 @@ package body Books.Database.Data_Tables.Title is
       end if;
    end Copy;
 
-   procedure Find_Title (T : in out Table; Item : in String)
-   is
-      use type GNU.DB.SQLCLI.SQLINTEGER;
-   begin
-      Ada.Strings.Fixed.Move
-        (Source => Item,
-         Target => T.Find_Pattern.all (1 .. Field_Length),
-         Drop   => Ada.Strings.Right);
-
-      T.Find_Pattern (Integer'Min (T.Find_Pattern'Last, Item'Length + 1)) := '%';
-      T.Find_Pattern_Length := Item'Length + 1;
-      GNU.DB.SQLCLI.SQLCloseCursor (T.By_Name_Statement);
-      Checked_Execute (T.By_Name_Statement);
-      T.Find_Statement := T.By_Name_Statement;
-      Next (T);
-   end Find_Title;
-
-   procedure Find_Title (T : in Data_Tables.Table_Access; Item : in String)
-   is begin
-      Find_Title (Table (T.all), Item);
-   end Find_Title;
-
    overriding procedure Initialize (T : in out Table)
    is
       use GNU.DB.SQLCLI;
@@ -207,7 +185,7 @@ package body Books.Database.Data_Tables.Title is
    is begin
       Copy (T, Title, Year, Year_Valid, Comment, Rating, Rating_Valid);
       Checked_Execute (T.Insert_Statement);
-      Find_Title (T, Title);
+      Find (T, Title);
    end Insert;
 
    function Rating (T : in Table) return Interfaces.Unsigned_8

@@ -43,13 +43,6 @@ package Books.Database.Data_Tables.Title is
 
    function Rating_Valid (T : in Data_Tables.Table_Access) return Boolean;
 
-   procedure Find_Title (T : in out Table; Item : in String);
-   procedure Find_Title (T : in Data_Tables.Table_Access; Item : in String);
-   --  Search for records with titles starting with String. Fetch
-   --  first.
-   --
-   --  If there is no match, current data is unchanged.
-
    procedure Insert
      (T            : in out Table;
       Title        : in     String;
@@ -58,7 +51,7 @@ package Books.Database.Data_Tables.Title is
       Comment      : in     String;
       Rating       : in     Interfaces.Unsigned_8;
       Rating_Valid : in     Boolean);
-   --  Insert a new record, fetch it using Find_Title.
+   --  Insert a new record, fetch it using Find.
 
    procedure Update
      (T            : in out Table;
