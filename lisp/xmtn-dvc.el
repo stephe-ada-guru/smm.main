@@ -585,7 +585,15 @@ the file before saving."
 If FROM is non-nil, RESOLVED-REV is assumed older than workspace;
 otherwise newer."
   (ecase (car resolved)
-    ('local-tree (if from "--reverse" ""))
+    ('local-tree
+     (if from
+         (progn
+           ;; FIXME: --reverse is not in mtn 0.44; bump overall
+           ;; required version on new mtn release
+           (let ((xmtn--minimum-required-command-version '(0 45)))
+             (xmtn--check-cached-command-version)
+             "--reverse"))
+       ""))
     ('revision (concat "--revision=" (cadr resolved)))))
 
 ;;;###autoload
