@@ -352,30 +352,40 @@ from the merge."
   ;; would be better if we had a read-only version of it. And a way to
   ;; compare to the actual result.
   (interactive)
-  (let ((changelog (car (xmtn--revlist-entry-changelogs (dvc-revlist-entry-patch-struct (dvc-revlist-current-patch))))))
+  (let ((changelog (car (xmtn--revlist-entry-changelogs (dvc-revlist-entry-patch-struct (dvc-revlist-current-patch)))))
+        left-start left-end left-rev right-start right-end right-rev)
     ;; string-match does _not_ set up match-strings properly, so we do this instead
-    (if (not (string= (substring changelog 0 9) "propagate"))
-        ;; IMPROVEME: There are two-parent revisions that are not the results of propagate
-        (error "not on a propagate revision"))
+    (cond
+     ((string= (substring changelog 0 9) "propagate")
+      (setq left-start (+ 6 (string-match "(head" changelog)))
+      (setq left-end (string-match ")" changelog left-start))
+      (setq right-start (+ 6 (string-match "(head .*)" changelog left-start)))
+      (setq right-end (string-match ")" changelog right-start)))
+     
+     ((string= (substring changelog 0 5) "merge")
+      (setq left-start (+ 4 (string-match "of" changelog)))
+      (setq left-end (string-match "'" changelog left-start))
+      (setq right-start (+ 5 (string-match "and" changelog left-start)))
+      (setq right-end (string-match "'" changelog right-start)))
+      
+     (t
+      (error "not on a two parent revision")))
 
-    (let* ((left-start (+ 6 (string-match "(head" changelog)))
-           (left-end (string-match ")" changelog left-start))
-           (left-rev (substring changelog left-start (1- left-end)))
-           (right-start (+ 6 (string-match "(head .*)" changelog left-start)))
-           (right-end (string-match ")" changelog right-start))
-           (right-rev (substring changelog right-start (1- right-end))))
-      (dvc-run-dvc-async
-       'xmtn
-       (list "conflicts" "store" left-rev right-rev)
-       :finished (lambda (output error status arguments)
-                   (let ((conflicts-buffer (dvc-get-buffer-create 'xmtn 'conflicts default-directory)))
-                     (pop-to-buffer conflicts-buffer)
-                     (set (make-local-variable 'after-insert-file-functions) '(xmtn-conflicts-after-insert-file))
-                     (insert-file-contents "_MTN/conflicts" t)))
+    (setq left-rev (substring changelog left-start (1- left-end)))
+    (setq right-rev (substring changelog right-start (1- right-end)))
 
-       :error (lambda (output error status arguments)
-                (xmtn-dvc-log-clean)
-                (pop-to-buffer error))) )))
+    (dvc-run-dvc-async
+     'xmtn
+     (list "conflicts" "store" left-rev right-rev)
+     :finished (lambda (output error status arguments)
+                 (let ((conflicts-buffer (dvc-get-buffer-create 'xmtn 'conflicts default-directory)))
+                   (pop-to-buffer conflicts-buffer)
+                   (set (make-local-variable 'after-insert-file-functions) '(xmtn-conflicts-after-insert-file))
+                   (insert-file-contents "_MTN/conflicts" t)))
+     
+     :error (lambda (output error status arguments)
+              (xmtn-dvc-log-clean)
+              (pop-to-buffer error)))))
 
 ;;;###autoload
 (defvar xmtn-revlist-mode-map
