@@ -140,8 +140,6 @@ package body Books.Table_Views.Collection is
          Editor_Valid => Editor_Valid,
          Year         => Year,
          Year_Valid   => Year_Valid);
-
-      Collection_View.Displayed_ID := Database.Data_Tables.ID (Collection_View.Primary_Table.all);
    end Insert_Database;
 
    overriding function Main_Index_Name
@@ -188,13 +186,21 @@ package body Books.Table_Views.Collection is
       use Database, Interfaces.C.Strings;
       Width     : Glib.Gint;
       pragma Unreferenced (Width);
-      Editor_ID : constant ID_Type := Data_Tables.Collection.Editor (Collection_View.Primary_Table);
+      Editor_ID : ID_Type;
    begin
+      if not Database.Data_Tables.Collection.Editor_Valid (Collection_View.Primary_Table) then
+         Gtk.Clist.Clear (Collection_View.List_Display (Author));
+         return;
+      end if;
+
+      Editor_ID := Data_Tables.Collection.Editor (Collection_View.Primary_Table);
+
       --  We display the Editor both in the primary table and in this
       --  list, to allow using Add_Link and Delete_Link buttons.
       Data_Tables.Fetch (Collection_View.Tables.Sibling (Author).all, Editor_ID);
 
       if not Valid (Collection_View.Tables.Sibling (Author).all) then
+         --  FIXME: allow user to delete bad link
          Gtk.Clist.Clear (Collection_View.List_Display (Author));
          return;
       end if;

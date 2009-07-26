@@ -120,7 +120,6 @@ package body Books.Table_Views.Series is
          Author       => Author,
          Author_Valid => Author_Valid);
 
-      Series_View.Displayed_ID := Database.Data_Tables.ID (Series_View.Primary_Table.all);
    end Insert_Database;
 
    overriding function Main_Index_Name (Series_View : access Gtk_Series_View_Record) return String

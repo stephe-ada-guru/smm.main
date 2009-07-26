@@ -517,6 +517,8 @@ package body Books.Table_Views is
       --  Add main data
       Insert_Database (Table_View);
 
+      Table_View.Displayed_ID := Database.Data_Tables.ID (Table_View.Primary_Table.all);
+
       --  Add links
       for I in Table_Name_Type loop
          if Gtk.Check_Button.Get_Active (Table_View.Links_Buttons (I)) then
@@ -524,8 +526,9 @@ package body Books.Table_Views is
          end if;
       end loop;
 
-      --  Back to Main view.
       To_Main (Table_View);
+
+      Update_Display (Table_View);
    end On_Button_Insert;
 
    procedure On_Button_Test (Button : access Gtk.Button.Gtk_Button_Record'Class)
@@ -588,7 +591,7 @@ package body Books.Table_Views is
       Table_View : constant Gtk_Table_View := Gtk_Table_View (Gtk.Button.Get_Toplevel (Button));
    begin
       Add_Link (Table_View, Table_View.Current_List);
-      Update_Display_Child (Table_View);
+      Update_Display (Table_View);
 
    end On_List_Edit_Add_Clicked;
 
@@ -684,7 +687,7 @@ package body Books.Table_Views is
             end case;
          end case;
 
-         Update_Display_Child (Table_View);
+         Update_Display (Table_View);
       end;
    end On_List_Edit_Delete_Clicked;
 
@@ -748,7 +751,7 @@ package body Books.Table_Views is
             Gtk.Scrolled_Window.Show (Table_View.Private_Stuff.List_Display_Scroll (I));
          end if;
       end loop;
-      Update_Display_Child (Table_View);
+      Update_Display (Table_View);
    end On_List_Select_Clicked;
 
    function On_Window_Configure_Event
@@ -840,8 +843,19 @@ package body Books.Table_Views is
    end To_Main;
 
    procedure Update_Display (Table_View : access Gtk_Table_View_Record'class)
-   is begin
-      if Books.Database.Valid (Table_View.Primary_Table.all) then
+   is
+      use type Books.Database.ID_Type;
+   begin
+      --  Fetch changes find statement, so only call it if we have to.
+      if Database.Valid (Table_View.Primary_Table.all) then
+         if Table_View.Displayed_ID /= Database.Data_Tables.ID (Table_View.Primary_Table.all) then
+            Database.Data_Tables.Fetch (Table_View.Primary_Table.all, Table_View.Displayed_ID);
+         end if;
+      else
+         Database.Data_Tables.Fetch (Table_View.Primary_Table.all, Table_View.Displayed_ID);
+      end if;
+
+      if Database.Valid (Table_View.Primary_Table.all) then
          Gtk.Label.Set_Text (Table_View.Private_Stuff.ID_Display, Books.Database.Image (Table_View.Displayed_ID));
       else
          Gtk.Label.Set_Text (Table_View.Private_Stuff.ID_Display, "");

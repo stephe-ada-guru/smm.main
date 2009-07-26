@@ -45,7 +45,7 @@ begin
    Books.Main_Window.Show (Main_Window);
    Gtk.Main.Main;
 exception
-when E : SAL.Config_File_Error =>
+when E : others =>
    Ada.Text_IO.Put_Line
      ("Unhandled exception " & Ada.Exceptions.Exception_Name (E) & ": " & Ada.Exceptions.Exception_Message (E));
    Ada.Text_IO.Put_Line (SAL.Traceback.Image (E));

@@ -155,7 +155,6 @@ package body Books.Table_Views.Title is
          Rating       => Rating,
          Rating_Valid => Rating_Valid);
 
-      Title_View.Displayed_ID := Database.Data_Tables.ID (Title_View.Primary_Table.all);
    end Insert_Database;
 
    overriding function Main_Index_Name (Title_View : access Gtk_Title_View_Record) return String
@@ -201,6 +200,8 @@ package body Books.Table_Views.Title is
       use Database, Interfaces.C.Strings;
       Width    : Glib.Gint;
       pragma Unreferenced (Width);
+
+      Author_ID : ID_Type;
    begin
       Link_Tables.AuthorTitle.Fetch_Links_Of
         (Title_View.Tables.AuthorTitle.all, Link_Tables.Title, Title_View.Displayed_ID);
@@ -214,12 +215,11 @@ package body Books.Table_Views.Title is
       Gtk.Clist.Clear (Title_View.List_Display (Author));
 
       loop
-         declare
-            Author_ID : constant ID_Type :=
-              Link_Tables.AuthorTitle.ID (Title_View.Tables.AuthorTitle.all, Link_Tables.Author);
-         begin
-            Data_Tables.Fetch (Title_View.Tables.Sibling (Author).all, Author_ID);
+         Author_ID := Link_Tables.AuthorTitle.ID (Title_View.Tables.AuthorTitle.all, Link_Tables.Author);
 
+         Data_Tables.Fetch (Title_View.Tables.Sibling (Author).all, Author_ID);
+
+         if Valid (Title_View.Tables.Sibling (Author).all) then
             Gtk.Clist.Insert
               (Title_View.List_Display (Author),
                0,
@@ -227,10 +227,19 @@ package body Books.Table_Views.Title is
                 2 => New_String (Data_Tables.Author.First_Name (Title_View.Tables.Sibling (Author))),
                 3 => New_String (Data_Tables.Author.Middle_Name (Title_View.Tables.Sibling (Author))),
                 4 => New_String (Data_Tables.Author.Last_Name (Title_View.Tables.Sibling (Author)))));
+         else
+            --  bad IDs accidently entered; allow deleting
+            Gtk.Clist.Insert
+              (Title_View.List_Display (Author),
+               0,
+               (1 => New_String (Image (Author_ID)),
+                2 => New_String ("<bad id>"),
+                3 => Null_Ptr,
+                4 => Null_Ptr));
+         end if;
 
-            Next (Title_View.Tables.AuthorTitle.all);
-            exit when not Valid (Title_View.Tables.AuthorTitle.all);
-         end;
+         Next (Title_View.Tables.AuthorTitle.all);
+         exit when not Valid (Title_View.Tables.AuthorTitle.all);
       end loop;
 
       Gtk.Clist.Sort (Title_View.List_Display (Author));
@@ -345,7 +354,7 @@ package body Books.Table_Views.Title is
 
             if Rating_Valid (Title_View.Primary_Table) then
                Gtk.GEntry.Set_Text
-                 (Title_View.Rating_Text, Interfaces.Unsigned_8'Image (Rating (Title_View.Primary_Table)));
+                 (Title_View.Rating_Text, Trim (Interfaces.Unsigned_8'Image (Rating (Title_View.Primary_Table)), Left));
             else
                Gtk.GEntry.Set_Text (Title_View.Rating_Text, "");
             end if;

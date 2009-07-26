@@ -164,13 +164,8 @@ package body Books.Database is
    end Finalize;
 
    procedure Find_All_By_ID (T : in out Table'Class)
-   is
-      use GNU.DB.SQLCLI;
-   begin
-      SQLCloseCursor (T.All_By_ID_Statement);
-      Checked_Execute (T.All_By_ID_Statement);
-      T.Find_Statement := T.All_By_ID_Statement;
-      Next (T);
+   is begin
+      Find (T, T.All_By_ID_Statement);
    end Find_All_By_ID;
 
    procedure Next (T : in out Table'Class)
@@ -179,7 +174,6 @@ package body Books.Database is
       T.Valid := True;
    exception
    when GNU.DB.SQLCLI.No_Data =>
-      GNU.DB.SQLCLI.SQLCloseCursor (T.Find_Statement);
       T.Valid := False;
    end Next;
 

@@ -121,7 +121,6 @@ package body Books.Table_Views.Author is
          Middle_Name => Gtk.GEntry.Get_Text (Author_View.Middle_Text),
          Last_Name   => Gtk.GEntry.Get_Text (Author_View.Last_Text));
 
-      Author_View.Displayed_ID := Database.Data_Tables.ID (Author_View.Primary_Table.all);
    end Insert_Database;
 
    overriding function Main_Index_Name (Author_View : access Gtk_Author_View_Record) return String
