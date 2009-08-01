@@ -38,7 +38,7 @@ is
      (SAL.Time_Conversions.To_Time (Ada.Real_Time.Clock));
 
 begin
-   Least_Recent_Songs (Db, Category, Song_Count => 30, Songs => Songs);
+   Least_Recent_Songs (Db, Category, Song_Count => Download_File_Count, Songs => Songs);
 
    I := First (Songs);
    loop

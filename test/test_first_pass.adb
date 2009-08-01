@@ -22,7 +22,7 @@ with AUnit.Test_Cases.Registration;
 with Ada.Directories;
 with Ada.Text_IO;
 with SMM.First_Pass;
-with SAL;
+with SAL.AUnit;
 with Test_Utils; use Test_Utils;
 package body Test_First_Pass is
 
@@ -30,12 +30,16 @@ package body Test_First_Pass is
    is
       use Ada.Directories;
       use Ada.Text_IO;
+      use SAL.AUnit;
 
       pragma Unreferenced (T);
 
       Playlist : File_Type;
 
       Start_Dir : constant String := Current_Directory;
+
+      File_Count : Integer;
+
    begin
       --  Create the test environment; a playlist, corresponding
       --  directory with files not in playlist.
@@ -52,7 +56,9 @@ package body Test_First_Pass is
       Put_Line (Playlist, "Vocal/file_6.mp3");
       Close (Playlist);
 
-      SMM.First_Pass (Category => "Vocal", Root_Dir => "tmp/");
+      SMM.First_Pass (Category => "Vocal", Root_Dir => "tmp/", File_Count => File_Count);
+
+      Check ("File_Count", File_Count, 1);
 
       --  Check that the extra files are deleted, but the others are not.
       Set_Directory (Start_Dir);
@@ -65,12 +71,15 @@ package body Test_First_Pass is
    is
       use Ada.Directories;
       use Ada.Text_IO;
+      use SAL.AUnit;
 
       Test : Test_Case renames Test_Case (T);
 
       Playlist : File_Type;
 
       Start_Dir : constant String := Current_Directory;
+
+      File_Count : Integer;
    begin
       --  test an empty playlist
 
@@ -88,7 +97,9 @@ package body Test_First_Pass is
       Create (Playlist, Out_File, "tmp/Vocal.m3u");
       Close (Playlist);
 
-      SMM.First_Pass (Category => "Vocal", Root_Dir => "tmp");
+      SMM.First_Pass (Category => "Vocal", Root_Dir => "tmp", File_Count => File_Count);
+
+      Check ("File_Count", File_Count, 0);
 
       --  Check that the extra files are deleted
       Set_Directory (Start_Dir);

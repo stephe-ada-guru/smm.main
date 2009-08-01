@@ -18,4 +18,8 @@
 
 pragma License (GPL);
 
-procedure SMM.First_Pass (Category, Root_Dir : in String);
+procedure SMM.First_Pass
+  (Category   : in     String;
+   Root_Dir   : in     String;
+   File_Count :    out Integer);
+--  Return count of files remaining in playlist.

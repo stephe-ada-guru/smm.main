@@ -21,7 +21,10 @@ pragma License (GPL);
 with Ada.Characters.Handling;
 with Ada.Directories; use Ada.Directories;
 with Ada.Text_IO;     use Ada.Text_IO;
-procedure SMM.First_Pass (Category, Root_Dir : in String)
+procedure SMM.First_Pass
+  (Category   : in     String;
+   Root_Dir   : in     String;
+   File_Count :    out Integer)
 is
    Playlist_File_Name : constant String := Category & ".m3u";
    Target_Dir : constant String := Category;
@@ -72,5 +75,7 @@ begin
       --  deleted.
       Ada.Text_IO.Put_Line (Target_Dir & " does not exist");
    end if;
+
+   File_Count := Integer (String_Lists.Length (Mentioned_Files));
 
 end SMM.First_Pass;

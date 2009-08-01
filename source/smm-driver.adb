@@ -103,12 +103,18 @@ begin
 
    when Download_Playlist =>
       declare
-         Category    : constant String := Argument (Next_Arg);
-         Root_Dir : constant String := As_Directory (Argument (Next_Arg + 1));
+         Category   : constant String := Argument (Next_Arg);
+         Root_Dir   : constant String := As_Directory (Argument (Next_Arg + 1));
+         File_Count : Integer;
       begin
-         SMM.First_Pass (Category, Root_Dir);
-         SMM.Download (Db, Category, Root_Dir & Category);
-         SMM.Second_Pass (Category, Root_Dir);
+         Verbosity := Verbosity + 1;
+         SMM.First_Pass (Category, Root_Dir, File_Count);
+         if File_Count < Download_File_Count then
+            Verbosity := Verbosity - 1;
+            SMM.Download (Db, Category, Root_Dir & Category & '/');
+            Verbosity := Verbosity + 1;
+            SMM.Second_Pass (Category, Root_Dir);
+         end if;
       end;
 
    when Playlist =>

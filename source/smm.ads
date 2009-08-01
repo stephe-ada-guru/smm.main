@@ -30,6 +30,8 @@ package SMM is
 
    Playlist_Error : exception;
 
+   Download_File_Count : constant := 30;
+
    function Relative_Name_Sans_Extension (Root : in String; Full_Name : in String) return String;
 
    function As_Directory (Path : in String) return String;
