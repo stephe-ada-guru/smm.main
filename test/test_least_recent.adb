@@ -164,14 +164,14 @@ package body Test_Least_Recent is
    ----------
    --  Public bodies
 
-   function Name (T : Test_Case) return Ada.Strings.Unbounded.String_Access
+   overriding function Name (T : Test_Case) return Ada.Strings.Unbounded.String_Access
    is
       pragma Unreferenced (T);
    begin
       return new String'("Test_Least_Recent");
    end Name;
 
-   procedure Register_Tests (T : in out Test_Case)
+   overriding procedure Register_Tests (T : in out Test_Case)
    is
       use Standard.AUnit.Test_Cases.Registration;
    begin
