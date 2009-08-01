@@ -102,11 +102,11 @@ begin
    when Download_Playlist =>
       declare
          Category    : constant String := Argument (Next_Arg);
-         Destination : constant String := As_Directory (Argument (Next_Arg + 1));
+         Root_Dir : constant String := As_Directory (Argument (Next_Arg + 1));
       begin
-         Playlists.First_Pass (Category, Destination);
-         SMM.Download (Db, Category, Destination);
-         Playlists.Second_Pass (Category, Destination);
+         Playlists.First_Pass (Category, Root_Dir);
+         SMM.Download (Db, Category, Root_Dir & Category);
+         Playlists.Second_Pass (Category, Root_Dir);
       end;
 
    when Playlist =>

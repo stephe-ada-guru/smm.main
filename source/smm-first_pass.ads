@@ -1,8 +1,8 @@
 --  Abstract :
 --
---  Root of Playlists application
+--  First pass of playlists.
 --
---  Copyright (C) 2007 - 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007, 2009 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -18,14 +18,4 @@
 
 pragma License (GPL);
 
-with Ada.Containers.Indefinite_Doubly_Linked_Lists;
-package Playlists is
-   pragma Elaborate_Body; --  Ada.Text_IO
-   Verbosity : Integer := 0;
-
-   package String_Lists is new Ada.Containers.Indefinite_Doubly_Linked_Lists (String);
-
-   procedure Read_Playlist (File_Name : in String; Files : out String_Lists.List);
-   --  Read playlist File_name, build list of files in it.
-
-end Playlists;
+procedure SMM.First_Pass (Category, Root_Dir : in String);

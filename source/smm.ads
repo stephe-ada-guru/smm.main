@@ -18,6 +18,7 @@
 
 pragma License (GPL);
 
+with Ada.Containers.Indefinite_Doubly_Linked_Lists;
 with SAL.Aux.Definite_Private_Items;
 with SAL.Config_Files;
 with SAL.Gen.Alg.Count;
@@ -26,6 +27,8 @@ with SAL.Storage_Pools;
 package SMM is
 
    Verbosity : Integer;
+
+   Playlist_Error : exception;
 
    function Relative_Name_Sans_Extension (Root : in String; Full_Name : in String) return String;
 
@@ -70,5 +73,16 @@ package SMM is
       Song_Count : in     Integer;
       Seed       : in     Integer                             := 0);
    --  Return randomized list of Song_Count least-recently downloaded songs in Category.
+
+   package String_Lists is new Ada.Containers.Indefinite_Doubly_Linked_Lists (String);
+
+   procedure Read_Playlist
+     (File_Name  : in     String;
+      Target_Dir : in     String;
+      Files      :    out String_Lists.List);
+   --  Read playlist File_name, build list of files (sans directories,
+   --  lowercase) in it.
+   --
+   --  Raise Playlist_Error if any entry is not in Target_Dir
 
 end SMM;

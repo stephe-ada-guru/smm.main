@@ -21,9 +21,10 @@ pragma License (GPL);
 with Ada.Characters.Handling;
 with Ada.Directories;
 with Ada.Text_IO; use Ada.Text_IO;
-procedure Playlists.First_Pass (Category, Target_Dir : in String)
+procedure SMM.First_Pass (Category, Root_Dir : in String)
 is
-   Playlist_File_Name : constant String := Target_Dir & "../" & Category & ".m3u";
+   Playlist_File_Name : constant String := Category & ".m3u";
+   Target_Dir : constant String := Category;
 
    Mentioned_Files : String_Lists.List;
 
@@ -35,24 +36,20 @@ is
    begin
       if String_Lists.Contains (Mentioned_Files, Name) then
          if Verbosity > 1 then
-            Put_Line ("keeping  " & Name);
+            Put_Line ("keeping " & Name);
          end if;
       else
-         if Extension (Name) = "m3u" then
-            --  don't delete playlists!
-            null;
-         else
-            if Verbosity > 0 then
-               Put_Line ("deleting " & Name);
-            end if;
-            Delete_File (Full_Name (Dir_Entry));
+         if Verbosity > 0 then
+            Put_Line ("deleting " & Name);
          end if;
+         Delete_File (Full_Name (Dir_Entry));
       end if;
    end Process_Dir_Entry;
-begin
-   Ada.Directories.Set_Directory (Target_Dir);
 
-   Read_Playlist (Playlist_File_Name, Mentioned_Files);
+begin
+   Ada.Directories.Set_Directory (Root_Dir);
+
+   Read_Playlist (Playlist_File_Name, Target_Dir, Mentioned_Files);
 
    if Verbosity > 1 then
       Put_Line ("processing directory (phase 1) " & Target_Dir);
@@ -78,4 +75,4 @@ begin
       Ada.Text_IO.Put_Line (Target_Dir & " does not exist");
    end if;
 
-end Playlists.First_Pass;
+end SMM.First_Pass;

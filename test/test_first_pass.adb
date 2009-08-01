@@ -21,13 +21,10 @@ pragma License (GPL);
 with AUnit.Test_Cases.Registration;
 with Ada.Directories;
 with Ada.Text_IO;
-with Playlists.First_Pass;
+with SMM.First_Pass;
 with SAL;
 with Test_Utils; use Test_Utils;
 package body Test_First_Pass is
-
-   ----------
-   --  Test procedures
 
    procedure Nominal (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
    is
@@ -38,9 +35,10 @@ package body Test_First_Pass is
 
       Playlist : File_Type;
 
+      Start_Dir : constant String := Current_Directory;
    begin
       --  Create the test environment; a playlist, corresponding
-      --  target directory with files not in playlist.
+      --  directory with files not in playlist.
 
       Cleanup;
       if Test.Verbosity > 0 then
@@ -57,10 +55,10 @@ package body Test_First_Pass is
       Put_Line (Playlist, "Vocal/file_6.mp3");
       Close (Playlist);
 
-      Playlists.First_Pass (Category => "Vocal", Target_Dir => "tmp/");
+      SMM.First_Pass (Category => "Vocal", Root_Dir => "tmp/");
 
       --  Check that the extra files are deleted, but the others are not.
-
+      Set_Directory (Start_Dir);
       Check_Exists ("tmp/Vocal/file_4.mp3", False);
       Check_Exists ("tmp/Vocal/file_5.mp3", False);
       Check_Exists ("tmp/Vocal/file_6.mp3", True);
@@ -75,6 +73,7 @@ package body Test_First_Pass is
 
       Playlist : File_Type;
 
+      Start_Dir : constant String := Current_Directory;
    begin
       --  Various cases of empty playlists
 
@@ -92,10 +91,10 @@ package body Test_First_Pass is
       Create (Playlist, Out_File, "tmp/Vocal.m3u");
       Close (Playlist);
 
-      Playlists.First_Pass (Category => "Vocal", Target_Dir => "tmp/");
+      SMM.First_Pass (Category => "Vocal", Root_Dir => "tmp");
 
       --  Check that the extra files are deleted
-
+      Set_Directory (Start_Dir);
       Check_Exists ("tmp/Vocal/file_4.mp3", False);
       Check_Exists ("tmp/Vocal/file_5.mp3", False);
       Check_Exists ("tmp/Vocal/file_6.mp3", False);
@@ -132,5 +131,10 @@ package body Test_First_Pass is
       end case;
 
    end Register_Tests;
+
+   overriding procedure Set_Up_Case (T : in out Test_Case)
+   is begin
+      SMM.Verbosity := T.Verbosity;
+   end Set_Up_Case;
 
 end Test_First_Pass;

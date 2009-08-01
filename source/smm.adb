@@ -16,7 +16,10 @@
 --  the Free Software Foundation, 59 Temple Place - Suite 330, Boston,
 --  MA 02111-1307, USA.
 
+with Ada.Characters.Handling;
+with Ada.Directories;
 with Ada.Strings.Fixed;
+with Ada.Text_IO;
 with SAL.Aux.Indefinite_Private_Items;
 with SAL.Gen.Alg.Find_Linear.Sorted;
 with SAL.Poly.Lists.Double.Gen_Randomize;
@@ -250,5 +253,53 @@ package body SMM is
       end if;
 
    end Least_Recent_Songs;
+
+   procedure Read_Playlist
+     (File_Name  : in     String;
+      Target_Dir : in     String;
+      Files      :    out String_Lists.List)
+   is
+      use Ada.Text_IO;
+      File : File_Type;
+   begin
+      if Verbosity > 1 then
+         Put_Line ("processing playlist " & File_Name);
+      end if;
+
+      begin
+         Open (File, In_File, File_Name);
+      exception
+      when Name_Error =>
+         Put_Line ("playlist file " & File_Name & " cannot be opened");
+         raise;
+      end;
+
+      --  special case; empty file
+      if End_Of_Line (File) then
+         if End_Of_File (File) then
+            Close (File);
+
+            Files := String_Lists.Empty_List;
+
+            return;
+         end if;
+      end if;
+
+      loop -- exit on End_Error
+         declare
+            use Ada.Directories;
+            Name : constant String := Get_Line (File);
+         begin
+            if Containing_Directory (Name) /= Target_Dir then
+               raise Playlist_Error with "found " & Name & "; expecting " & Target_Dir;
+            end if;
+
+            String_Lists.Append (Files, Ada.Characters.Handling.To_Lower (Simple_Name (Name)));
+         end;
+      end loop;
+   exception
+   when End_Error =>
+      Close (File);
+   end Read_Playlist;
 
 end SMM;

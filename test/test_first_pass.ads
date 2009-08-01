@@ -32,4 +32,6 @@ package Test_First_Pass is
 
    overriding function Name (T : Test_Case) return Ada.Strings.Unbounded.String_Access;
 
+   overriding procedure Set_Up_Case (T : in out Test_Case);
+
 end Test_First_Pass;

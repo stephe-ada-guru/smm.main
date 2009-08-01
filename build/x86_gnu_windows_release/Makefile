@@ -7,7 +7,8 @@ include ../common.make
 
 export ADA_PROJECT_PATH = $(GDS_ROOT)/main/makerules;$(GDS_ROOT)/main/sal/Build/x86_gnu_windows_release
 
-one : test_all_harness.run
+# ../../test/test_one_harness.adb
+one : test_one_harness.run
 
 install : smm.exe
 	strip smm.exe -o ~/bin/smm.exe
