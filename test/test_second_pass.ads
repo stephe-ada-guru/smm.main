@@ -1,8 +1,8 @@
 --  Abstract :
 --
---  Run all AUnit tests.
+--  Test playlists --second
 --
---  Copyright (C) 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007, 2008, 2009 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -18,26 +18,19 @@
 
 pragma License (GPL);
 
-with AUnit.Test_Results.Text_Reporter;
-with AUnit.Test_Suites;
-with Test_First_Pass;
-with Test_Least_Recent;
-with Test_Second_Pass;
-procedure Test_All_Harness
-is
-   use AUnit.Test_Suites;
+with Ada.Strings.Unbounded;
+with AUnit.Test_Cases; use AUnit.Test_Cases;
+package Test_Second_Pass is
 
-   Suite  : constant Access_Test_Suite := new Test_Suite;
+   type Test_Case
+     (Verbosity : Integer;
+      Debug     : Integer)
+      is new Standard.AUnit.Test_Cases.Test_Case with null record;
 
-   Result : AUnit.Test_Results.Result;
+   overriding procedure Register_Tests (T : in out Test_Case);
 
-begin
-   Add_Test (Suite, new Test_First_Pass.Test_Case (Verbosity => 0, Debug => 0));
-   Add_Test (Suite, new Test_Least_Recent.Test_Case);
-   Add_Test (Suite, new Test_Second_Pass.Test_Case (Verbosity => 0, Debug => 0));
+   overriding function Name (T : Test_Case) return Ada.Strings.Unbounded.String_Access;
 
-   Run (Suite.all, Result);
+   overriding procedure Set_Up_Case (T : in out Test_Case);
 
-   AUnit.Test_Results.Text_Reporter.Report (Result);
-
-end Test_All_Harness;
+end Test_Second_Pass;

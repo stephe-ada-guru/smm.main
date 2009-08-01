@@ -23,9 +23,8 @@ with AUnit.Test_Cases; use AUnit.Test_Cases;
 package Test_First_Pass is
 
    type Test_Case
-     (Verbosity  : Integer;
-      Setup_Only : Boolean;
-      Debug      : Integer)
+     (Verbosity : Integer;
+      Debug     : Integer)
       is new Standard.AUnit.Test_Cases.Test_Case with null record;
 
    overriding procedure Register_Tests (T : in out Test_Case);

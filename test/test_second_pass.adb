@@ -21,15 +21,16 @@ pragma License (GPL);
 with AUnit.Test_Cases.Registration;
 with Ada.Directories;
 with Ada.Text_IO;
-with SMM.First_Pass;
-with SAL;
+with SAL.AUnit.Text_IO;
+with SMM.Second_Pass;
 with Test_Utils; use Test_Utils;
-package body Test_First_Pass is
+package body Test_Second_Pass is
 
    procedure Nominal (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
    is
       use Ada.Directories;
       use Ada.Text_IO;
+      use SAL.AUnit.Text_IO;
 
       pragma Unreferenced (T);
 
@@ -43,58 +44,65 @@ package body Test_First_Pass is
       Cleanup;
 
       Create_Directory ("tmp");
-      Create_Directory ("tmp/Vocal");
-      Create_Test_File ("tmp/Vocal/file_4.mp3");
-      Create_Test_File ("tmp/Vocal/file_5.mp3");
-      Create_Test_File ("tmp/Vocal/file_6.mp3");
+      Create_Directory ("tmp/vocal");
+      Create_Test_File ("tmp/vocal/file_6.mp3");
+      Create_Test_File ("tmp/vocal/file_7.mp3");
+      Create_Test_File ("tmp/vocal/file_8.mp3");
 
-      Create (Playlist, Out_File, "tmp/Vocal.m3u");
-      Put_Line (Playlist, "Vocal/file_6.mp3");
+      Create (Playlist, Out_File, "tmp/vocal.m3u");
+      Put_Line (Playlist, "vocal/file_6.mp3");
       Close (Playlist);
 
-      SMM.First_Pass (Category => "Vocal", Root_Dir => "tmp/");
+      SMM.Second_Pass (Category => "vocal", Root_Dir => "tmp/");
 
-      --  Check that the extra files are deleted, but the others are not.
       Set_Directory (Start_Dir);
-      Check_Exists ("tmp/Vocal/file_4.mp3", False);
-      Check_Exists ("tmp/Vocal/file_5.mp3", False);
-      Check_Exists ("tmp/Vocal/file_6.mp3", True);
+      Open (Playlist, In_File, "tmp/vocal.m3u");
+      Check (Playlist, "vocal/file_6.mp3");
+      Check (Playlist, "vocal/file_7.mp3");
+      Check (Playlist, "vocal/file_8.mp3");
+      Check_End (Playlist);
+      Close (Playlist);
+
    end Nominal;
 
    procedure Empty_Playlist (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
    is
       use Ada.Directories;
       use Ada.Text_IO;
+      use SAL.AUnit.Text_IO;
 
-      Test : Test_Case renames Test_Case (T);
+      pragma Unreferenced (T);
 
       Playlist : File_Type;
 
       Start_Dir : constant String := Current_Directory;
    begin
-      --  test an empty playlist
+      --  An empty playlist
 
       Cleanup;
-      if Test.Verbosity > 0 then
-         Ada.Text_IO.Put_Line ("Starting Empty_Playlist");
-      end if;
 
       Create_Directory ("tmp");
-      Create_Directory ("tmp/Vocal");
-      Create_Test_File ("tmp/Vocal/file_4.mp3");
-      Create_Test_File ("tmp/Vocal/file_5.mp3");
-      Create_Test_File ("tmp/Vocal/file_6.mp3");
+      Create_Directory ("tmp/vocal");
+      Create_Test_File ("tmp/vocal/file_6.mp3");
+      Create_Test_File ("tmp/vocal/file_7.mp3");
+      Create_Test_File ("tmp/vocal/file_8.mp3");
 
-      Create (Playlist, Out_File, "tmp/Vocal.m3u");
+      Create (Playlist, Out_File, "tmp/vocal.m3u");
       Close (Playlist);
 
-      SMM.First_Pass (Category => "Vocal", Root_Dir => "tmp");
+      SMM.Second_Pass (Category => "vocal", Root_Dir => "tmp");
 
-      --  Check that the extra files are deleted
       Set_Directory (Start_Dir);
-      Check_Exists ("tmp/Vocal/file_4.mp3", False);
-      Check_Exists ("tmp/Vocal/file_5.mp3", False);
-      Check_Exists ("tmp/Vocal/file_6.mp3", False);
+
+      --  WORKAROUND; Ada.Directories.Search returns files in
+      --  different order on Windows than on GNU/Linux.
+      Open (Playlist, In_File, "tmp/vocal.m3u");
+      Check (Playlist, ""); --  Create inserts one empty line, append doesn't delete it.
+      Check (Playlist, "vocal/file_6.mp3");
+      Check (Playlist, "vocal/file_7.mp3");
+      Check (Playlist, "vocal/file_8.mp3");
+      Check_End (Playlist);
+      Close (Playlist);
 
    end Empty_Playlist;
 
@@ -105,7 +113,7 @@ package body Test_First_Pass is
    is
       pragma Unreferenced (T);
    begin
-      return new String'("Test_First_Pass");
+      return new String'("Test_Second_Pass");
    end Name;
 
    overriding procedure Register_Tests (T : in out Test_Case)
@@ -126,7 +134,6 @@ package body Test_First_Pass is
       when others =>
          raise SAL.Programmer_Error;
       end case;
-
    end Register_Tests;
 
    overriding procedure Set_Up_Case (T : in out Test_Case)
@@ -134,4 +141,4 @@ package body Test_First_Pass is
       SMM.Verbosity := T.Verbosity;
    end Set_Up_Case;
 
-end Test_First_Pass;
+end Test_Second_Pass;

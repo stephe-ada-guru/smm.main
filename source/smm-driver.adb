@@ -25,8 +25,10 @@ with Ada.Text_IO; use Ada.Text_IO;
 with SAL.Command_Line_IO;
 with SAL.Config_Files;
 with SMM.Download;
+with SMM.First_Pass;
 with SMM.Import;
 with SMM.Playlist;
+with SMM.Second_Pass;
 procedure SMM.Driver
 is
    procedure Put_Usage
@@ -97,16 +99,16 @@ begin
 
    case Command is
    when Download =>
-      SMM.Download (Db, Argument (Next_Arg), As_Directory (Next_Arg + 1));
+      SMM.Download (Db, Argument (Next_Arg), As_Directory (Argument (Next_Arg + 1)));
 
    when Download_Playlist =>
       declare
          Category    : constant String := Argument (Next_Arg);
          Root_Dir : constant String := As_Directory (Argument (Next_Arg + 1));
       begin
-         Playlists.First_Pass (Category, Root_Dir);
+         SMM.First_Pass (Category, Root_Dir);
          SMM.Download (Db, Category, Root_Dir & Category);
-         Playlists.Second_Pass (Category, Root_Dir);
+         SMM.Second_Pass (Category, Root_Dir);
       end;
 
    when Playlist =>
