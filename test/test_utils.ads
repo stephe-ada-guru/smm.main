@@ -1,8 +1,8 @@
 --  Abstract :
 --
---  Run all AUnit tests.
+--  Utilities for unit tests
 --
---  Copyright (C) 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007, 2009 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -18,26 +18,16 @@
 
 pragma License (GPL);
 
-with AUnit.Test_Results.Text_Reporter;
-with AUnit.Test_Suites;
-with Test_First_Pass;
-with Test_Least_Recent;
-with Test_Second_Pass;
-procedure Test_All_Harness
-is
-   use AUnit.Test_Suites;
+package Test_Utils is
+   pragma Elaborate_Body; -- Ada.Text_IO
 
-   Suite  : constant Access_Test_Suite := new Test_Suite;
+   procedure Cleanup;
+   --  Delete tmp/
 
-   Result : AUnit.Test_Results.Result;
+   procedure Create_Test_File (Path : in String);
+   --  File contains one line.
 
-begin
-   Add_Test (Suite, new Test_First_Pass.Test_Case (Verbosity => 0, Setup_Only => False, Debug => 0));
-   Add_Test (Suite, new Test_Least_Recent.Test_Case);
-   Add_Test (Suite, new Test_Second_Pass.Test_Case (Verbosity => 0, Setup_Only => False, Debug => 0));
+   procedure Check_Exists (Path : in String; Expected_Exists : in Boolean);
+   --  Assertion
 
-   Run (Suite.all, Result);
-
-   AUnit.Test_Results.Text_Reporter.Report (Result);
-
-end Test_All_Harness;
+end Test_Utils;

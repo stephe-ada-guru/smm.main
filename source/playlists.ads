@@ -1,8 +1,8 @@
 --  Abstract :
 --
---  Run all AUnit tests.
+--  Root of Playlists application
 --
---  Copyright (C) 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007 - 2009 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -18,26 +18,14 @@
 
 pragma License (GPL);
 
-with AUnit.Test_Results.Text_Reporter;
-with AUnit.Test_Suites;
-with Test_First_Pass;
-with Test_Least_Recent;
-with Test_Second_Pass;
-procedure Test_All_Harness
-is
-   use AUnit.Test_Suites;
+with Ada.Containers.Indefinite_Doubly_Linked_Lists;
+package Playlists is
+   pragma Elaborate_Body; --  Ada.Text_IO
+   Verbosity : Integer := 0;
 
-   Suite  : constant Access_Test_Suite := new Test_Suite;
+   package String_Lists is new Ada.Containers.Indefinite_Doubly_Linked_Lists (String);
 
-   Result : AUnit.Test_Results.Result;
+   procedure Read_Playlist (File_Name : in String; Files : out String_Lists.List);
+   --  Read playlist File_name, build list of files in it.
 
-begin
-   Add_Test (Suite, new Test_First_Pass.Test_Case (Verbosity => 0, Setup_Only => False, Debug => 0));
-   Add_Test (Suite, new Test_Least_Recent.Test_Case);
-   Add_Test (Suite, new Test_Second_Pass.Test_Case (Verbosity => 0, Setup_Only => False, Debug => 0));
-
-   Run (Suite.all, Result);
-
-   AUnit.Test_Results.Text_Reporter.Report (Result);
-
-end Test_All_Harness;
+end Playlists;

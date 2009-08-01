@@ -39,6 +39,12 @@ is
       Put_Line ("    downloads default amount of music to target_dir");
       Put_Line ("    music is drawn from least-recently downloaded songs in category");
       New_Line;
+      Put_Line ("  download_playlist <category> <target_dir>");
+      Put_Line ("    manage downloaded files and playlist:");
+      Put_Line ("    1) delete files in target_dir not in playlist target_dir/../category.m3u");
+      Put_Line ("    2) download default amount of music to target_dir");
+      Put_Line ("    3) add new files to playlist");
+      New_Line;
       Put_Line ("  playlist <category> <file>");
       Put_Line ("    create a playlist in <file> (same songs as 'download' would do)");
       New_Line;
@@ -50,7 +56,7 @@ is
    Db           : SAL.Config_Files.Configuration_Type;
    Next_Arg     : Integer := 1;
 
-   type Command_Type is (Download, Playlist, Import);
+   type Command_Type is (Download, Download_Playlist, Playlist, Import);
 
    procedure Get_Command is new SAL.Command_Line_IO.Gen_Get_Discrete (Command_Type, "command", Next_Arg);
 
@@ -91,14 +97,16 @@ begin
 
    case Command is
    when Download =>
+      SMM.Download (Db, Argument (Next_Arg), As_Directory (Next_Arg + 1));
+
+   when Download_Playlist =>
       declare
-         Destination : constant String := Argument (Next_Arg + 1);
+         Category    : constant String := Argument (Next_Arg);
+         Destination : constant String := As_Directory (Argument (Next_Arg + 1));
       begin
-         if Destination (Destination'Last) /= '/' then
-            SMM.Download (Db, Argument (Next_Arg), Destination & '/');
-         else
-            SMM.Download (Db, Argument (Next_Arg), Destination);
-         end if;
+         Playlists.First_Pass (Category, Destination);
+         SMM.Download (Db, Category, Destination);
+         Playlists.Second_Pass (Category, Destination);
       end;
 
    when Playlist =>

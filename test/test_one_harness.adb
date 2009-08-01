@@ -2,7 +2,7 @@
 --
 --  Run one test
 --
---  Copyright (C) 2007 - 2008 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007 - 2009 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -21,7 +21,7 @@ pragma License (GPL);
 with Ada.Command_Line;
 with AUnit.Test_Results.Text_Reporter;
 with AUnit.Test_Suites;
-with Test_Second_Pass;
+with Test_First_Pass;
 procedure Test_One_Harness
 is
    use AUnit.Test_Suites;
@@ -38,7 +38,7 @@ begin
       end if;
    end if;
 
-   Add_Test (Suite, new Test_Second_Pass.Test_Case (Verbosity => 2, Setup_Only => Setup_Only, Debug => 2));
+   Add_Test (Suite, new Test_First_Pass.Test_Case (Verbosity => 2, Setup_Only => Setup_Only, Debug => 0));
 
    Run (Suite.all, Result);
 

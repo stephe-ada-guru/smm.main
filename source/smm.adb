@@ -48,6 +48,15 @@ package body SMM is
       end if;
    end Relative_Name_Sans_Extension;
 
+   function As_Directory (Path : in String) return String
+   is begin
+      if Path (Path'Last) = '/' then
+         return Path;
+      else
+         return Path & '/';
+      end if;
+   end As_Directory;
+
    procedure Randomize is new Song_Lists.Gen_Randomize;
 
    type Time_List_Element_Type is record

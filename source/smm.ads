@@ -29,6 +29,9 @@ package SMM is
 
    function Relative_Name_Sans_Extension (Root : in String; Full_Name : in String) return String;
 
+   function As_Directory (Path : in String) return String;
+   --  append '/' if needed.
+
    --  database keys
    Category_Key        : constant String := "Category";
    File_Key            : constant String := "File";
