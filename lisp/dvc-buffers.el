@@ -651,9 +651,10 @@ just bury it."
     (message "Killed %d buffer%s" number
              (if (> number 1) "s" ""))))
 
-(defun dvc-kill-all-last-revision ()
-  "Kill all buffers showing previous revisions."
+(defun dvc-kill-all-review ()
+  "Kill all buffers used in reviews; showing previous revisions."
   (interactive)
+  (dvc-kill-all-type 'revision)
   (dvc-kill-all-type 'last-revision))
 
 (defvar dvc-save-some-buffers-ignored-modes '(dvc-log-edit-mode))
