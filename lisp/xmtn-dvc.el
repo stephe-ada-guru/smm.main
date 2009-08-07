@@ -1238,7 +1238,7 @@ finished."
   (check-type target-revision-hash-id xmtn--hash-id)
   (lexical-let ((progress-message (format "Updating tree %s to revision %s"
                                           root target-revision-hash-id)))
-    (let ((command `("update" ,(concat "--revision=" target-revision-hash-id)))
+    (let ((command `("update" "--move-conflicting-paths" ,(concat "--revision=" target-revision-hash-id)))
           (post-process
            (lambda ()
              (message "%s... done" progress-message)
