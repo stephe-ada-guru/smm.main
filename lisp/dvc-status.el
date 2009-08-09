@@ -1,12 +1,12 @@
 ;;; dvc-status.el --- A generic status mode for DVC
 
-;; Copyright (C) 2007, 2008 by all contributors
+;; Copyright (C) 2007 - 2009 by all contributors
 
 ;; Author: Stephen Leake, <stephen_leake@stephe-leake.org>
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 2, or (at your option)
+;; the Free Software Foundation; either version 3, or (at your option)
 ;; any later version.
 
 ;; This file is distributed in the hope that it will be useful,
@@ -134,7 +134,6 @@
   (setq dvc-buffer-current-active-dvc (dvc-current-active-dvc))
   (setq dvc-fileinfo-ewoc (ewoc-create 'dvc-fileinfo-printer))
   (set (make-local-variable 'dvc-get-file-info-at-point-function) 'dvc-fileinfo-current-file)
-  (setq dvc-buffer-marked-file-list nil)
   (use-local-map dvc-status-mode-map)
   (easy-menu-add dvc-status-mode-menu)
   (dvc-install-buffer-menu)
@@ -182,7 +181,7 @@ conflicts, and/or ediff current files."
   (let (status)
     ;; Note that message elements cannot be marked. Make sure all
     ;; selected files need the same action.
-    (if (< 1 (length dvc-buffer-marked-file-list))
+    (if (< 1 (length (dvc-fileinfo-marked-files)))
         (ewoc-map (lambda (fileinfo)
                     (etypecase fileinfo
                       (dvc-fileinfo-message
@@ -219,7 +218,7 @@ conflicts, and/or ediff current files."
       (modified
        ;; Don't offer undo here; not a common action
        ;; Assume user has started the commit log frame
-       (if (< 1 (length dvc-buffer-marked-file-list))
+       (if (< 1 (length (dvc-fileinfo-marked-files)))
            (error "cannot diff more than one file"))
        (dvc-status-ediff))
 
@@ -268,7 +267,7 @@ but not recursively."
 
   ;; Update the ewoc status of each added file to 'added'; this avoids
   ;; the need to run the backend again.
-  (if (= 0 (length dvc-buffer-marked-file-list))
+  (if (= 0 (length (dvc-fileinfo-marked-files)))
       ;; no marked files
       (let ((fileinfo (dvc-fileinfo-current-fileinfo)))
         (setf (dvc-fileinfo-file-status fileinfo) 'added)
@@ -290,7 +289,7 @@ but not recursively."
 
   ;; kill the files from the ewoc, since we are ignoring them; this
   ;; avoids the need to run the backend again.
-  (if (= 0 (length dvc-buffer-marked-file-list))
+  (if (= 0 (length (dvc-fileinfo-marked-files)))
       ;; no marked files
       (progn
         ;; binding inhibit-read-only doesn't seem to work here
@@ -298,7 +297,6 @@ but not recursively."
         (dvc-ewoc-delete dvc-fileinfo-ewoc (ewoc-locate dvc-fileinfo-ewoc))
         (toggle-read-only 1))
     ;; marked files
-    (setq dvc-buffer-marked-file-list nil)
     (ewoc-filter dvc-fileinfo-ewoc
                  (lambda (fileinfo)
                      (not (dvc-fileinfo-file-mark fileinfo)))
@@ -311,12 +309,11 @@ but not recursively."
 
   ;; kill the files from the ewoc, since they are now up-to-date; this
   ;; avoids the need to run the backend again.
-  (if (= 0 (length dvc-buffer-marked-file-list))
+  (if (= 0 (length (dvc-fileinfo-marked-files)))
       ;; no marked files
       (let ((inhibit-read-only t))
         (dvc-ewoc-delete dvc-fileinfo-ewoc (ewoc-locate dvc-fileinfo-ewoc)))
     ;; marked files
-    (setq dvc-buffer-marked-file-list nil)
     (ewoc-filter dvc-fileinfo-ewoc
                  (lambda (fileinfo)
                    (etypecase fileinfo
