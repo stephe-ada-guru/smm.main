@@ -194,7 +194,8 @@ Otherwise return the buffer file name."
 (defun dvc-current-file-list (&optional selection-mode)
   "Return a list of currently active files.
 When in dired mode, return the marked files or the file under point.
-In a DVC mode, return `dvc-buffer-marked-file-list' if non-nil;
+In a legacy DVC mode, return `dvc-buffer-marked-file-list' if non-nil.
+In a fileinfo DVC mode, return `dvc-fileinfo-marked-files'.
 otherwise the result depends on SELECTION-MODE:
 * When 'nil-if-none-marked, return nil.
 * When 'all-if-none-marked, return all files.
@@ -205,6 +206,7 @@ otherwise the result depends on SELECTION-MODE:
 
    ((dvc-derived-mode-p 'dvc-diff-mode)
     (or (remove nil dvc-buffer-marked-file-list)
+        (dvc-fileinfo-marked-files)
         (cond
          ((eq selection-mode 'nil-if-none-marked)
           nil)
