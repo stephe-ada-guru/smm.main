@@ -1,6 +1,6 @@
 ;;; dvc-core.el --- Core functions for distributed version control
 
-;; Copyright (C) 2005-2008 by all contributors
+;; Copyright (C) 2005-2009 by all contributors
 
 ;; Author: Stefan Reichoer, <stefan@xsteve.at>
 ;; Contributions From:
@@ -8,7 +8,7 @@
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 2, or (at your option)
+;; the Free Software Foundation; either version 3, or (at your option)
 ;; any later version.
 
 ;; This file is distributed in the hope that it will be useful,
@@ -204,7 +204,7 @@ otherwise the result depends on SELECTION-MODE:
    ((eq major-mode 'dired-mode)
     (dired-get-marked-files))
 
-   ((dvc-derived-mode-p 'dvc-diff-mode)
+   ((dvc-derived-mode-p 'dvc-diff-mode 'dvc-status-mode)
     (or (remove nil dvc-buffer-marked-file-list)
         (dvc-fileinfo-marked-files)
         (cond

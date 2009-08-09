@@ -426,7 +426,6 @@ If you wish to disable the prefix key, set this variable to nil."
  (and (boundp 'menu-bar-tools-menu) (dvc-do-in-gnu-emacs menu-bar-tools-menu))
  (dvc-do-in-xemacs '("Tools"))
  '("DVC"
-   ;; ["Browse Archives" tla-archives t] ;; obsolete
    ["Show Bookmarks" dvc-bookmarks t]
    "---"
    "Tree Commands:"
@@ -435,9 +434,6 @@ If you wish to disable the prefix key, set this variable to nil."
    ["View Missing" dvc-missing t]
    ["View Log" dvc-log t]
    ["View ChangeLog" dvc-changelog t]
-   ;; ["View Inventory" tla-inventory t]
-   ;; ["View Tree Lint" tla-tree-lint t]
-   ;; ["Show Tree Revisions" tla-tree-revisions t]
    ["Edit Commit Log" dvc-log-edit t]
    "---"
    "File Commands:"
@@ -452,25 +448,6 @@ If you wish to disable the prefix key, set this variable to nil."
    ;; ["View Conflicts" tla-view-conflicts t]
    "---"
    ["Initialize repository" dvc-init t]
-   "---"
-   ("Tla Goto Buffer"
-    ["View Changes" tla-changes-goto t]
-    ["View Status"  baz-status-goto t]
-    ["View Inventory" tla-inventory-goto t]
-    ["View Tree Lint" tla-tree-lint-goto t]
-    ["Show Tree Revisions" tla-tree-revisions-goto t])
-   ("Tla Quick Configuration"
-    ["Three Way Merge" tla-toggle-three-way-merge
-     :style toggle :selected tla-three-way-merge]
-    ["Show Ancestor in Conflicts" tla-toggle-show-ancestor
-     :style toggle :selected tla-show-ancestor]
-    ["Non Recursive Inventory" tla-toggle-non-recursive-inventory
-     :style toggle :selected tla-non-recursive-inventory]
-    ;; ["Use --forward" tla-toggle-use-forward-option
-    ;;  :style toggle :selected tla-use-forward-option]
-    ["Use --skip-present" tla-toggle-use-skip-present-option
-     :style toggle :selected tla-use-skip-present-option]
-    )
    )
  "PCL-CVS")
 
