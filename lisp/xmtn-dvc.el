@@ -45,6 +45,7 @@
   (require 'xmtn-minimal)
   (require 'dvc-log)
   (require 'dvc-diff)
+  (require 'dvc-status)
   (require 'dvc-core)
   (require 'ewoc))
 
@@ -321,6 +322,13 @@ the file before saving."
     ;; Saving the buffer will automatically delete any log edit hints.
     (save-buffer)
     (dvc-save-some-buffers root)
+
+    ;; check that the first line says something; it should be a summary of the rest
+    (goto-char (point-min))
+    (forward-line)
+    (if (= (point) (1+ (point-min)))
+        (error "Please put a summary comment on the first line"))
+
     ;; We used to check for things that would make commit fail;
     ;; missing files, nothing to commit. But that just slows things
     ;; down in the typical case; better to just handle the error
@@ -521,8 +529,30 @@ the file before saving."
 
 
 ;;;###autoload
-(defun xmtn-dvc-diff (&optional base-rev path dont-switch)
-  (xmtn-dvc-delta base-rev (list 'xmtn (list 'local-tree (xmtn-tree-root path))) dont-switch))
+(defun xmtn-dvc-diff (&optional rev path dont-switch)
+  ;; If rev is an ancestor of base-rev of path, then rev is from, path
+  ;; is 'to', and vice versa.
+  ;;
+  ;; Note rev might be a string mtn selector, so we have to use
+  ;; resolve-revision-id to process it.
+  (let ((workspace (list 'xmtn (list 'local-tree (xmtn-tree-root path))))
+        (base (xmtn--get-base-revision-hash-id-or-null path))
+        (rev-string (cadr (xmtn--resolve-revision-id path rev))))
+    (if (string= rev-string base)
+        ;; local changes in workspace are 'to'
+        (xmtn-dvc-delta rev workspace dont-switch)
+      (let ((descendents (xmtn-automate-simple-command-output-lines path (list "descendents" base)))
+            (done nil))
+        (while descendents
+          (if (string= rev-string (car descendents))
+              ;; rev is newer than workspace; rev is 'to'
+              (progn
+                (xmtn-dvc-delta workspace rev dont-switch)
+                (setq done t)))
+          (setq descendents (cdr descendents)))
+        (if (not done)
+            ;; rev is ancestor of workspace; workspace is 'to'
+            (xmtn-dvc-delta rev workspace dont-switch))))))
 
 (defvar xmtn-diff-mode-map
   (let ((map (make-sparse-keymap)))
@@ -550,71 +580,75 @@ the file before saving."
 
 (dvc-add-uniquify-directory-mode 'xmtn-diff-mode)
 
+(defun xmtn--rev-to-option (resolved from)
+  "Return a string contaiing the mtn diff command-line option for RESOLVED-REV.
+If FROM is non-nil, RESOLVED-REV is assumed older than workspace;
+otherwise newer."
+  (ecase (car resolved)
+    ('local-tree
+     (if from
+         (progn
+           ;; FIXME: --reverse is not in mtn 0.44; bump overall
+           ;; required version on new mtn release
+           (let ((xmtn--minimum-required-command-version '(0 45)))
+             (xmtn--check-cached-command-version)
+             "--reverse"))
+       ""))
+    ('revision (concat "--revision=" (cadr resolved)))))
+
 ;;;###autoload
 (defun xmtn-dvc-delta (from-revision-id to-revision-id &optional dont-switch)
   ;; See dvc-unified.el dvc-delta for doc string. If strings, they must be mtn selectors.
   (let* ((root (dvc-tree-root))
-         (from-resolved (if (listp from-revision-id)
-                            (xmtn--resolve-revision-id root from-revision-id)
-                          (xmtn--resolve-revision-id
-                           root
-                           (list 'xmtn (list 'revision (car (xmtn--expand-selector root from-revision-id)))))))
-         (to-resolved (if (listp to-revision-id)
-                          (xmtn--resolve-revision-id root to-revision-id)
-                        (xmtn--resolve-revision-id
-                         root
-                         (list 'xmtn (list 'revision (car (xmtn--expand-selector root to-revision-id))))))))
-    (lexical-let ((buffer
-                   (dvc-prepare-changes-buffer `(xmtn ,from-resolved) `(xmtn ,to-resolved) 'diff root 'xmtn))
-                  (dont-switch dont-switch))
-      (buffer-disable-undo buffer)
+         (from-resolved (xmtn--resolve-revision-id root from-revision-id))
+         (to-resolved (xmtn--resolve-revision-id root to-revision-id)))
+    (let ((diff-buffer
+           (dvc-prepare-changes-buffer `(xmtn ,from-resolved) `(xmtn ,to-resolved) 'diff root 'xmtn))
+          (rev-specs (list (xmtn--rev-to-option from-resolved t)
+                           (xmtn--rev-to-option to-resolved nil))))
+      (buffer-disable-undo diff-buffer)
       (dvc-save-some-buffers root)
-      (let ((rev-specs
-             `(,(xmtn-match
-                    from-resolved
-                  ((local-tree $path)
-                   ;; FROM-REVISION-ID is not a committed revision, but the
-                   ;; workspace.  mtn diff can't directly handle
-                   ;; this case.
-                   (error "not implemented"))
-
-                  ((revision $hash-id)
-                   (concat "--revision=" hash-id)))
-
-               ,@(xmtn-match
-                     to-resolved
-                   ((local-tree $path)
-                    (assert (xmtn--same-tree-p root path))
-
-                    ;; mtn diff will abort if there are missing
-                    ;; files. But checking for that is a slow
-                    ;; operation, so allow user to bypass it. We use
-                    ;; dvc-confirm-update rather than a separate
-                    ;; option, because dvc-confirm-update will be
-                    ;; set t for the same reason this would.
-                    (if dvc-confirm-update
-                        (unless (funcall (xmtn--tree-consistent-p-future root))
-                          (error "There are missing files in local tree; unable to diff. Try dvc-status.")))
-                    `())
-
-                   ((revision $hash-id)
-                    `(,(concat "--revision=" hash-id)))))))
-
-        ;; IMPROVEME: Could use automate content_diff and get_revision.
+      (lexical-let* ((diff-buffer diff-buffer))
         (xmtn--run-command-async
          root `("diff" ,@rev-specs)
-         :related-buffer buffer
+         :related-buffer diff-buffer
          :finished
          (lambda (output error status arguments)
            (with-current-buffer output
              (xmtn--remove-content-hashes-from-diff))
            (dvc-show-changes-buffer output 'xmtn--parse-diff-for-dvc
-                                    buffer dont-switch "^="))))
+                                    diff-buffer t "^="))))
 
-      (xmtn--display-buffer-maybe buffer dont-switch)
+      (xmtn--display-buffer-maybe diff-buffer dont-switch)
 
       ;; The call site in `dvc-revlist-diff' needs this return value.
-      buffer)))
+      diff-buffer)))
+
+(defvar xmtn-status-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map "CM" 'xmtn-conflicts-merge)
+    (define-key map "CP" 'xmtn-conflicts-propagate)
+    (define-key map "CR" 'xmtn-conflicts-review)
+    (define-key map "CC" 'xmtn-conflicts-clean)
+    (define-key map "MP" 'xmtn-propagate-from)
+    (define-key map "MH" 'xmtn-view-heads-revlist)
+    map))
+
+(easy-menu-define xmtn-status-mode-menu xmtn-status-mode-map
+  "Mtn specific status menu."
+  `("DVC-Mtn"
+    ["View Heads" xmtn-view-heads-revlist t]
+    ["Show merge conflicts" xmtn-conflicts-merge t]
+    ["Show propagate conflicts" xmtn-conflicts-propagate t]
+    ["Review conflicts" xmtn-conflicts-review t]
+    ["Propagate branch" xmtn-propagate-from t]
+    ["Clean conflicts resolutions" xmtn-conflicts-clean t]
+    ))
+
+(define-derived-mode xmtn-status-mode dvc-status-mode "xmtn-status"
+  "Add back-end-specific commands for dvc-status.")
+
+(add-to-list 'uniquify-list-buffers-directory-modes 'xmtn-status-mode)
 
 (defun xmtn--remove-content-hashes-from-diff ()
   ;; Hack: Remove mtn's file content hashes from diff headings since
@@ -833,32 +867,31 @@ the file before saving."
   ;; command execution yet.
   (let*
       ((base-revision (xmtn--get-base-revision-hash-id-or-null root))
+       (branch (xmtn--tree-default-branch root))
+       (head-revisions (xmtn--heads root branch))
+       (head-count (length head-revisions))
        (status-buffer
-        (dvc-prepare-changes-buffer
-         `(xmtn (revision ,base-revision))
-         `(xmtn (local-tree ,root))
-         'status
+        (dvc-status-prepare-buffer
+         'xmtn
          root
-         'xmtn)))
+         ;; FIXME: just pass header
+         ;; base-revision
+         (if base-revision (format "%s" base-revision) "none")
+         ;; branch
+         (format "%s" branch)
+         ;; header-more
+         (lambda ()
+           (concat
+            (case head-count
+              (0 "  branch is empty\n")
+              (1 "  branch is merged\n")
+              (t (dvc-face-add (format "  branch has %s heads; need merge\n" head-count) 'dvc-conflict)))
+            (if (member base-revision head-revisions)
+                "  base revision is a head revision\n"
+              (dvc-face-add "  base revision is not a head revision; need update\n" 'dvc-conflict))))
+         ;; refresh
+         'xmtn-dvc-status)))
     (dvc-save-some-buffers root)
-    (dvc-switch-to-buffer-maybe status-buffer)
-    (dvc-kill-process-maybe status-buffer)
-    ;; Attempt to make sure the sentinels have a chance to run.
-    (accept-process-output)
-    (let ((processes (dvc-processes-related-to-buffer status-buffer)))
-      (when processes
-        (error "Process still running in buffer %s" status-buffer)))
-
-    (with-current-buffer status-buffer
-      (setq buffer-read-only t)
-      (buffer-disable-undo)
-      (setq dvc-buffer-refresh-function 'xmtn-dvc-status)
-      (ewoc-set-hf dvc-fileinfo-ewoc
-                   (xmtn--status-header root base-revision)
-                   "")
-      (ewoc-enter-last dvc-fileinfo-ewoc (make-dvc-fileinfo-message :text "Running monotone..."))
-      (ewoc-refresh dvc-fileinfo-ewoc))
-
     (lexical-let* ((status-buffer status-buffer))
       (xmtn--run-command-async
        root `("automate" "inventory"
@@ -869,14 +902,8 @@ the file before saving."
                      (not dvc-status-display-ignored)
                      '("--no-ignored")))
        :finished (lambda (output error status arguments)
-                   ;; Don't use `dvc-show-changes-buffer' here because
-                   ;; it attempts to do some regexp stuff for us that we
-                   ;; don't need to be done.
+                   (dvc-status-inventory-done status-buffer)
                    (with-current-buffer status-buffer
-                     (ewoc-enter-last dvc-fileinfo-ewoc (make-dvc-fileinfo-message :text "Parsing inventory..."))
-                     (ewoc-refresh dvc-fileinfo-ewoc)
-                     (dvc-redisplay t)
-                     (dvc-fileinfo-delete-messages)
                      (let ((excluded-files (dvc-default-excluded-files)))
                        (xmtn-basic-io-with-stanza-parser
                            (parser output)
@@ -897,6 +924,7 @@ the file before saving."
                                            :text (concat " no changes in workspace")))
                          (ewoc-refresh dvc-fileinfo-ewoc)))))
        :error (lambda (output error status arguments)
+                ;; FIXME: need `dvc-status-error-in-process', or change name.
                 (dvc-diff-error-in-process
                  status-buffer
                  (format "Error running mtn with arguments %S" arguments)
@@ -1296,7 +1324,6 @@ finished."
        (resolve-conflicts
         (if (file-exists-p (concat root "/_MTN/conflicts"))
             (progn
-              (xmtn-conflicts-check-mtn-version)
               "--resolve-conflicts-file=_MTN/conflicts")))
        (cmd (list "propagate" other local-branch resolve-conflicts
                   (xmtn-dvc-log-message)))
@@ -1329,7 +1356,6 @@ finished."
            (resolve-conflicts
             (if (file-exists-p (concat root "/_MTN/conflicts"))
                 (progn
-                  (xmtn-conflicts-check-mtn-version)
                   "--resolve-conflicts-file=_MTN/conflicts"))))
       (lexical-let
           ((display-buffer (current-buffer)))

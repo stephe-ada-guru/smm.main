@@ -129,7 +129,8 @@ to (dvc-current-file-list)."
 
 ;;;###autoload
 (defun dvc-remove-files (&rest files)
-  "Remove FILES for the currently active dvc."
+  "Remove FILES for the currently active dvc.
+Return t if files removed, nil if not (due to user confirm or error)."
   (interactive (dvc-current-file-list))
   (when (setq files (dvc-confirm-file-op "remove" files t))
     (dvc-apply "dvc-remove-files" files)))
