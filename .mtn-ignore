@@ -6,10 +6,12 @@
 ^config\.log$
 ^config\.status$
 ^dvc-load-install\.el$
+^dvc-load-install\.el$
 ^dvc-load\.el$
 ^lisp/Makefile$
 ^lisp/dvc-autoloads\.el$
 ^lisp/dvc-site\.el$
+^lisp/dvc-version\.el$
 ^lisp/dvc-version\.el$
 ^lisp/tests/xmtn-tests-one\.el$
 ^texinfo/Makefile$
