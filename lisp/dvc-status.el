@@ -45,7 +45,7 @@
   (let ((map (make-sparse-keymap)))
     ;; grouped by major function, then alphabetical by dvc-keyvec name
     ;; workspace operations
-    (define-key map dvc-keyvec-add                  'dvc-status-add-files)
+    (define-key map dvc-keyvec-add                  'dvc-fileinfo-add-files)
     (define-key map dvc-keyvec-commit               'dvc-log-edit)
     (define-key map [?=]                            'dvc-diff-diff)
     (define-key map "E"                             'dvc-fileinfo-toggle-exclude)
@@ -62,10 +62,10 @@
     (define-key map dvc-keyvec-previous             'dvc-fileinfo-prev)
     (define-key map dvc-keyvec-quit                 'dvc-buffer-quit)
     (define-key map dvc-keyvec-refresh              'dvc-generic-refresh)
-    (define-key map dvc-keyvec-revert               'dvc-status-revert-files)
+    (define-key map dvc-keyvec-revert               'dvc-fileinfo-revert-files)
     (define-key map dvc-keyvec-unmark               'dvc-fileinfo-unmark-file)
     (define-key map dvc-keyvec-unmark-all           'dvc-fileinfo-unmark-all)
-    (define-key map [?i]                            'dvc-status-ignore-files)
+    (define-key map [?i]                            'dvc-fileinfo-ignore-files)
     (define-key map [?I]                            'dvc-ignore-file-extensions-in-dir)
     (define-key map "\M-I"                          'dvc-ignore-file-extensions)
     (define-key map (dvc-prefix-tagging-method ?e)  'dvc-edit-ignore-files)
@@ -100,7 +100,7 @@
      ["Unmark all"                 dvc-fileinfo-unmark-all           t]
      )
     ("Ignore"
-     ["Ignore Files"               dvc-status-ignore-files           t]
+     ["Ignore Files"               dvc-fileinfo-ignore-files         t]
      ["Ignore Extensions in dir"   dvc-ignore-file-extensions-in-dir t]
      ["Ignore Extensions globally" dvc-ignore-file-extensions        t]
      ["Edit Ignore File"           dvc-edit-ignore-files             t]
@@ -110,13 +110,13 @@
      ["Edit Exclude File"          dvc-edit-exclude t]
      )
     ["Do the Right Thing"          dvc-status-dtrt                   t]
-    ["Add File"                    dvc-status-add-files              t]
+    ["Add File"                    dvc-fileinfo-add-files            t]
     ["Ediff File"                  dvc-status-ediff                  t]
     ["diff File"                   dvc-diff-diff                     t]
     ["Delete File"                 dvc-fileinfo-remove-files         t]
     ["Kill File"                   dvc-fileinfo-kill                 t]
     ["Rename File"                 dvc-fileinfo-rename               t]
-    ["Revert File"                 dvc-status-revert-files           t]
+    ["Revert File"                 dvc-fileinfo-revert-files         t]
     ["Edit File"                   dvc-find-file-other-window        t]
     ["Add log entry"               dvc-fileinfo-add-log-entry        t]
     ["Log (single file)"           dvc-diff-log-single               t]
@@ -211,7 +211,7 @@ conflicts, and/or ediff current files."
        ;; File is in database, but not in workspace
        (ding)
        (dvc-offer-choices (concat (dvc-fileinfo-current-file) " does not exist in working directory")
-                          '((dvc-status-revert-files "revert")
+                          '((dvc-fileinfo-revert-files "revert")
                             (dvc-fileinfo-remove-files "remove")
                             (dvc-fileinfo-rename "rename"))))
 
@@ -224,8 +224,8 @@ conflicts, and/or ediff current files."
 
       (unknown
        (dvc-offer-choices nil
-                          '((dvc-status-add-files "add")
-                            (dvc-status-ignore-files "ignore")
+                          '((dvc-fileinfo-add-files "add")
+                            (dvc-fileinfo-ignore-files "ignore")
                             (dvc-fileinfo-remove-files "remove")
                             (dvc-fileinfo-rename "rename"))))
       )))
@@ -239,17 +239,6 @@ conflicts, and/or ediff current files."
     ;; refresh until the status is displayed
     (dvc-fileinfo-delete-messages)))
 
-;; diff operations. FIXME: move these to dvc-fileinfo
-(defun dvc-status-diff ()
-  "Run diff of the current workspace file against the database version."
-  (interactive)
-  (let* ((fileinfo (dvc-fileinfo-current-fileinfo))
-         (file (concat (dvc-fileinfo-file-dir fileinfo) (dvc-fileinfo-file-file fileinfo))))
-    ;; FIXME: need user interface to specify other revision to diff against
-    ;; FIXME: dvc-file-diff defaults to buffer-file; change to default to (dvc-get-file-info-at-point)
-    ;; default dvc-get-file-info-at-point to (buffer-file-name) for non-dvc buffers
-    (dvc-file-diff file)))
-
 (defun dvc-status-ediff ()
   "Run ediff on the current workspace file, against the database version."
   (interactive)
@@ -257,72 +246,6 @@ conflicts, and/or ediff current files."
   ;; against. At least BASE and HEAD.
   (let ((dvc-temp-current-active-dvc dvc-buffer-current-active-dvc))
     (dvc-file-ediff (dvc-fileinfo-current-file))))
-
-;; database operations. FIXME: move these to dvc-fileinfo
-(defun dvc-status-add-files ()
-  "Add current files to the database. Directories are also added,
-but not recursively."
-  (interactive)
-  (apply 'dvc-add-files (dvc-current-file-list))
-
-  ;; Update the ewoc status of each added file to 'added'; this avoids
-  ;; the need to run the backend again.
-  (if (= 0 (length (dvc-fileinfo-marked-files)))
-      ;; no marked files
-      (let ((fileinfo (dvc-fileinfo-current-fileinfo)))
-        (setf (dvc-fileinfo-file-status fileinfo) 'added)
-        (ewoc-invalidate dvc-fileinfo-ewoc (ewoc-locate dvc-fileinfo-ewoc)))
-    ;; marked files
-    (ewoc-map (lambda (fileinfo)
-                (etypecase fileinfo
-                  (dvc-fileinfo-message
-                   nil)
-
-                  (dvc-fileinfo-file ; also matches dvc-fileinfo-dir
-                   (if (dvc-fileinfo-file-mark fileinfo) (setf (dvc-fileinfo-file-status fileinfo) 'added)))))
-              dvc-fileinfo-ewoc)))
-
-(defun dvc-status-ignore-files ()
-  "Ignore current files."
-  (interactive)
-  (dvc-ignore-files (dvc-current-file-list))
-
-  ;; kill the files from the ewoc, since we are ignoring them; this
-  ;; avoids the need to run the backend again.
-  (if (= 0 (length (dvc-fileinfo-marked-files)))
-      ;; no marked files
-      (progn
-        ;; binding inhibit-read-only doesn't seem to work here
-        (toggle-read-only 0)
-        (dvc-ewoc-delete dvc-fileinfo-ewoc (ewoc-locate dvc-fileinfo-ewoc))
-        (toggle-read-only 1))
-    ;; marked files
-    (ewoc-filter dvc-fileinfo-ewoc
-                 (lambda (fileinfo)
-                     (not (dvc-fileinfo-file-mark fileinfo)))
-                 )))
-
-(defun dvc-status-revert-files ()
-  "Revert current files."
-  (interactive)
-  (apply 'dvc-revert-files (dvc-current-file-list))
-
-  ;; kill the files from the ewoc, since they are now up-to-date; this
-  ;; avoids the need to run the backend again.
-  (if (= 0 (length (dvc-fileinfo-marked-files)))
-      ;; no marked files
-      (let ((inhibit-read-only t))
-        (dvc-ewoc-delete dvc-fileinfo-ewoc (ewoc-locate dvc-fileinfo-ewoc)))
-    ;; marked files
-    (ewoc-filter dvc-fileinfo-ewoc
-                 (lambda (fileinfo)
-                   (etypecase fileinfo
-                     (dvc-fileinfo-message
-                      nil)
-
-                     (dvc-fileinfo-file ; also matches dvc-fileinfo-dir
-                      (not (dvc-fileinfo-file-mark fileinfo)))))
-                 )))
 
 (provide 'dvc-status)
 ;;; end of file
