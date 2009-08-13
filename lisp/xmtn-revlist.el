@@ -361,13 +361,13 @@ from the merge."
       (setq left-end (string-match ")" changelog left-start))
       (setq right-start (+ 6 (string-match "(head .*)" changelog left-start)))
       (setq right-end (string-match ")" changelog right-start)))
-     
+
      ((string= (substring changelog 0 5) "merge")
       (setq left-start (+ 4 (string-match "of" changelog)))
       (setq left-end (string-match "'" changelog left-start))
       (setq right-start (+ 5 (string-match "and" changelog left-start)))
       (setq right-end (string-match "'" changelog right-start)))
-      
+
      (t
       (error "not on a two parent revision")))
 
@@ -382,7 +382,7 @@ from the merge."
                    (pop-to-buffer conflicts-buffer)
                    (set (make-local-variable 'after-insert-file-functions) '(xmtn-conflicts-after-insert-file))
                    (insert-file-contents "_MTN/conflicts" t)))
-     
+
      :error (lambda (output error status arguments)
               (xmtn-dvc-log-clean)
               (pop-to-buffer error)))))
@@ -424,8 +424,14 @@ from the merge."
     (xmtn--setup-revlist
      root
      'xmtn--revlist--missing-get-info
-     ;; Passing nil as first-line-only-p, last-n is arbitrary here.
-     nil nil))
+     ;; Passing nil as first-line-only-p is arbitrary here.
+     ;;
+     ;; When the missing revs are due to a propagate, there can be a
+     ;; lot of them, but we only really need to see the revs since the
+     ;; propagate. So dvc-log-last-n is appropriate. We use
+     ;; dvc-log-last-n, not dvc-revlist-last-n, because -log is user
+     ;; customizable.
+     nil dvc-log-last-n))
   nil)
 
 ;;;###autoload
