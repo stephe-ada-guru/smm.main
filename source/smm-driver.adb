@@ -35,7 +35,7 @@ is
    is begin
       Put_Line ("smm [--db=<db_file>] [--verbosity=<int>] <operation> [arg]...");
       Put_Line ("  <db_file> : defaults to ~/.smm/smm.db");
-      Put_Line ("  categories: {instrumental | vocal}");
+      Put_Line ("  categories: {instrumental | vocal | ...}");
       Put_Line ("  operations:");
       Put_Line ("  download <category> <target_dir>");
       Put_Line ("    downloads default amount of music to target_dir");
@@ -47,8 +47,9 @@ is
       Put_Line ("    2) download default amount of music to target_dir");
       Put_Line ("    3) add new files to playlist");
       New_Line;
-      Put_Line ("  playlist <category> <file>");
+      Put_Line ("  playlist <category> [<file>]");
       Put_Line ("    create a playlist in <file> (same songs as 'download' would do)");
+      Put_Line ("    <file> defaults to ~/.smm/<file>.m3u");
       New_Line;
       Put_Line ("  import <dir>");
       Put_Line ("    scan <dir> for new music; dir must be relative to database root dir");
@@ -57,6 +58,8 @@ is
    Db_File_Name : access String;
    Db           : SAL.Config_Files.Configuration_Type;
    Next_Arg     : Integer := 1;
+
+   Home : constant String := Ada.Environment_Variables.Value ("HOME");
 
    type Command_Type is (Download, Download_Playlist, Playlist, Import);
 
@@ -70,7 +73,7 @@ begin
       Db_File_Name := new String'(Argument (Next_Arg)(6 .. Argument (Next_Arg)'Last));
       Next_Arg := Next_Arg + 1;
    else
-      Db_File_Name := new String'(Ada.Environment_Variables.Value ("HOME") & "/.smm/smm.db");
+      Db_File_Name := new String'(Home & "/.smm/smm.db");
    end if;
 
    if Argument (Next_Arg)'Length > 12 and then
@@ -118,7 +121,15 @@ begin
       end;
 
    when Playlist =>
-      SMM.Playlist (Db, Argument (Next_Arg), Argument (Next_Arg + 1));
+      if Next_Arg + 1 > Argument_Count then
+         declare
+            File_Name : constant String := Home & "/.smm/" & Argument (Next_Arg) & ".m3u";
+         begin
+            SMM.Playlist (Db, Argument (Next_Arg), File_Name);
+         end;
+      else
+         SMM.Playlist (Db, Argument (Next_Arg), Argument (Next_Arg + 1));
+      end if;
 
    when Import =>
       declare
