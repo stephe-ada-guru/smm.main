@@ -911,10 +911,26 @@ non-nil, show log-edit buffer in other frame."
   (save-some-buffers t); log buffer
   (xmtn-dvc-merge))
 
+(defun xmtn-conflicts-ediff-resolution-ws ()
+  "Ediff current resolution file against workspace."
+  (interactive)
+  (let* ((elem (ewoc-locate xmtn-conflicts-ewoc))
+         (conflict (ewoc-data elem)))
+    (etypecase conflict
+      (xmtn-conflicts-content
+       (if (xmtn-conflicts-content-resolution conflict)
+           (ediff (cadr (xmtn-conflicts-content-resolution conflict))
+                  ;; propagate target is right
+                  (xmtn-conflicts-content-right_name conflict))))
+      (xmtn-conflicts-duplicate_name
+       (error "not supported"))
+      )))
+
 (defvar xmtn-conflicts-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map [?C]  'xmtn-conflicts-clean)
     (define-key map [?c]  'xmtn-conflicts-clear-resolution)
+    (define-key map [?e]  'xmtn-conflicts-ediff-resolution-ws)
     (define-key map [?n]  'xmtn-conflicts-next)
     (define-key map [?N]  'xmtn-conflicts-next-unresolved)
     (define-key map [?p]  'xmtn-conflicts-prev)
@@ -940,7 +956,7 @@ non-nil, show log-edit buffer in other frame."
     ["Clean"                xmtn-conflicts-clean t]
     ))
 
-(define-derived-mode xmtn-conflicts-mode fundamental-mode "xmtn-conflicts"
+(define-derived-mode xmtn-conflicts-mode nil "xmtn-conflicts"
   "Major mode to specify conflict resolutions."
   (setq dvc-buffer-current-active-dvc 'xmtn)
   (setq buffer-read-only nil)
@@ -984,7 +1000,8 @@ root where options file is stored."
   (let ((opts-file (concat default-directory xmtn-conflicts-opts-file)))
     (if (file-exists-p opts-file)
         (load opts-file)
-      (error "%s options file not found" opts-file))))
+      ;; When reviewing conflicts after a merge is complete, the options file is not present
+      (message "%s options file not found" opts-file))))
 
 (defun xmtn-conflicts-1 (left-work left-rev right-work right-rev)
   "List conflicts between LEFT-REV and RIGHT-REV
