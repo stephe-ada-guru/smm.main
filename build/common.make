@@ -1,14 +1,9 @@
 # common parts of makefiles
 
-all : dirs smm.exe test_all_harness.diff
+all : smm.exe test_all_harness.diff
 
 include $(GDS_ROOT)/main/makerules/common_rules.make
 include $(GDS_ROOT)/main/makerules/gnat_project_rules.make
-
-dirs : objects
-
-objects :
-	mkdir objects
 
 # smm.adb is not the main program, so we need this rule
 smm.exe : force

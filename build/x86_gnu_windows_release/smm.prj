@@ -1,5 +1,5 @@
 ada_project_path=$GDS_ROOT/main/makerules
-ada_project_path=$GDS_ROOT/main/sal/Build/x86_gnu_windows_release
+ada_project_path=$GDS_ROOT/main/sal/build/x86_gnu_windows_release
 gpr_file=smm.gpr
 
 casing=../smm.casing

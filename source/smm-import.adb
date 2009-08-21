@@ -74,13 +74,15 @@ is
 
          when Ordinary_File =>
             --  FIXME: read filenames into sorted tree for duplicate detection
-            if Verbosity > 0 then
-               Ada.Text_IO.Put_Line ("adding file " & Name);
+            if Extension (Full_Name (Dir_Entry)) = ".mp3" then
+               if Verbosity > 0 then
+                  Ada.Text_IO.Put_Line ("adding file " & Name);
+               end if;
+               Write_String
+                 (Db, Songs_Key & "." & Index_Image & "." & File_Key, Name & "." & Extension (Full_Name (Dir_Entry)));
+               Write_String (Db, Songs_Key & "." & Index_Image & "." & Last_Downloaded_Key, Time_Type'Image (0.0));
+               Index := Index + 1;
             end if;
-            Write_String
-              (Db, Songs_Key & "." & Index_Image & "." & File_Key, Name & "." & Extension (Full_Name (Dir_Entry)));
-            Write_String (Db, Songs_Key & "." & Index_Image & "." & Last_Downloaded_Key, Time_Type'Image (0.0));
-            Index := Index + 1;
 
          when Special_File =>
             raise SAL.Programmer_Error with "found special file";
