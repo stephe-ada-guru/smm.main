@@ -115,7 +115,7 @@
   right_resolution)
 
 (defun xmtn-conflicts-printer (conflict)
-  "Print an ewoc element; CONFLICT must be of class xmtn-conflicts-root."
+  "Print an ewoc element; CONFLICT must be of type xmtn-conflicts-conflict."
   (ecase (xmtn-conflicts-conflict-conflict_type conflict)
     ('content
      (insert (dvc-face-add "content\n" 'dvc-keyword))
@@ -177,7 +177,7 @@
 (defvar xmtn-conflicts-ewoc nil
   "Buffer-local ewoc for displaying conflicts.
 All xmtn-conflicts functions operate on this ewoc.
-The elements must all be of class xmtn-conflicts.")
+The elements must all be of type xmtn-conflicts-conflict.")
 (make-variable-buffer-local 'xmtn-conflicts-ewoc)
 
 (defun xmtn-conflicts-parse-header ()
@@ -653,6 +653,26 @@ header."
                t
                nil
                nil))
+
+(defun xmtn-conflicts-update-counts ()
+  "Update total, resolved counts."
+  (setq xmtn-conflicts-total-count 0)
+  (setq xmtn-conflicts-resolved-count 0)
+  
+  (ewoc-map
+   (lambda (conflict)
+     (setq xmtn-conflicts-total-count xmtn-conflicts-total-count + 1)
+     (ecase (xmtn-conflicts-conflict-conflict_type conflict)
+       ((content orphaned_node)
+        (if (xmtn-conflicts-conflict-left_resolution conflict)
+            (setq xmtn-conflicts-resolved-count (+ 1 xmtn-conflicts-resolved-count))))
+       
+       (duplicate_name
+        (if (and (xmtn-conflicts-conflict-left_resolution conflict)
+                 (xmtn-conflicts-conflict-right_resolution conflict))
+            (setq xmtn-conflicts-resolved-count (+ 1 xmtn-conflicts-resolved-count))))
+       ))
+   xmtn-conflicts-ewoc))
 
 (dvc-make-ewoc-next xmtn-conflicts-next xmtn-conflicts-ewoc)
 (dvc-make-ewoc-prev xmtn-conflicts-prev xmtn-conflicts-ewoc)
@@ -1133,8 +1153,7 @@ to right.  Stores conflict file in RIGHT-WORK/_MTN."
 
 (defun xmtn-check-workspace-for-propagate (work)
   "Check that workspace WORK is ready for propagate.
-It must be merged, and should be at the head revision, and have no local changes.
-Prompt if the last two conditions are not satisfied."
+It must be merged, and should be at the head revision, and have no local changes."
   (let* ((default-directory work)
          (heads (xmtn--heads default-directory nil))
          (base (xmtn--get-base-revision-hash-id-or-null default-directory)))
@@ -1232,12 +1251,10 @@ workspace."
         (error "conflicts file not found"))
 
     (let ((conflicts-buffer (dvc-get-buffer-create 'xmtn 'conflicts default-directory)))
-      (pop-to-buffer conflicts-buffer)
+      (dvc-switch-to-buffer-maybe conflicts-buffer)
       (setq buffer-read-only nil)
       (xmtn-conflicts-load-opts)
       (set (make-local-variable 'after-insert-file-functions) '(xmtn-conflicts-after-insert-file))
-
-      ;; this calls xmtn-conflicts-after-insert-file via after-insert-file-functions hook
       (insert-file-contents "_MTN/conflicts" t nil nil t))))
 
 ;;;###autoload
