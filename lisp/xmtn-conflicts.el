@@ -1070,10 +1070,26 @@ non-nil, show log-edit buffer in other frame."
   (save-some-buffers t); log buffer
   (xmtn-dvc-merge))
 
+(defun xmtn-conflicts-ediff-resolution-ws ()
+  "Ediff current resolution file against workspace."
+  (interactive)
+  (let* ((elem (ewoc-locate xmtn-conflicts-ewoc))
+         (conflict (ewoc-data elem)))
+    (etypecase conflict
+      (xmtn-conflicts-content
+       (if (xmtn-conflicts-content-resolution conflict)
+           (ediff (cadr (xmtn-conflicts-content-resolution conflict))
+                  ;; propagate target is right
+                  (xmtn-conflicts-content-right_name conflict))))
+      (xmtn-conflicts-duplicate_name
+       (error "not supported"))
+      )))
+
 (defvar xmtn-conflicts-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map [?C]  (lambda () (interactive) (xmtn-conflicts-clean xmtn-conflicts-right-work)))
     (define-key map [?c]  'xmtn-conflicts-clear-resolution)
+    (define-key map [?e]  'xmtn-conflicts-ediff-resolution-ws)
     (define-key map [?n]  'xmtn-conflicts-next)
     (define-key map [?N]  'xmtn-conflicts-next-unresolved)
     (define-key map [?p]  'xmtn-conflicts-prev)
@@ -1081,7 +1097,7 @@ non-nil, show log-edit buffer in other frame."
     (define-key map [?q]  'dvc-buffer-quit)
     (define-key map [?r]  xmtn-conflicts-resolve-map)
     (define-key map [?t]  'xmtn-conflicts-add-log-entry)
-    (define-key map "\M-d"  xmtn-conflicts-resolve-map)
+    (define-key map "\M-d" xmtn-conflicts-resolve-map)
     (define-key map "MM" 'xmtn-conflicts-do-merge)
     (define-key map "MP" 'xmtn-conflicts-do-propagate)
     (define-key map "MU" 'dvc-update)
@@ -1105,8 +1121,6 @@ non-nil, show log-edit buffer in other frame."
   (setq dvc-buffer-current-active-dvc 'xmtn)
   (setq buffer-read-only nil)
   (setq xmtn-conflicts-ewoc (ewoc-create 'xmtn-conflicts-printer))
-  (use-local-map xmtn-conflicts-mode-map)
-  (easy-menu-add xmtn-conflicts-mode-menu)
   (setq dvc-buffer-refresh-function nil)
   (add-to-list 'buffer-file-format 'xmtn-conflicts-format)
 
@@ -1148,7 +1162,8 @@ root where options file is stored."
   (let ((opts-file (concat default-directory xmtn-conflicts-opts-file)))
     (if (file-exists-p opts-file)
         (load opts-file)
-      (error "%s options file not found" opts-file))))
+      ;; When reviewing conflicts after a merge is complete, the options file is not present
+      (message "%s options file not found" opts-file))))
 
 (defun xmtn-conflicts-1 (left-work left-rev right-work right-rev)
   "List conflicts between LEFT-REV and RIGHT-REV
