@@ -250,8 +250,9 @@ header."
                (setq xmtn-conflicts-resolved-internal-count (+ 1 xmtn-conflicts-resolved-internal-count))
                (setf (xmtn-conflicts-conflict-left_resolution conflict) (list 'resolved_internal)))
 
-              ((string= "resolved_user_left" symbol)
-               (setf (xmtn-conflicts-conflict-left_resolution conflict) (list 'resolved_left_user (cadar value))))
+               ;; dvc.stephe still paired with mtn that puts resolved_user here
+              ((string= "resolved_user" symbol)
+               (setf (xmtn-conflicts-conflict-left_resolution conflict) (list 'resolved_user (cadar value))))
 
               (t
                (error "found %s" symbol)))))))
@@ -522,7 +523,8 @@ header."
            (insert "resolved_keep_left \n"))
 
           (resolved_user
-           (xmtn-basic-io-write-str "resolved_user_left" (cadr (xmtn-conflicts-conflict-left_resolution conflict))))
+           ;; dvc.stephe still paired with mtn that puts resolved_user here
+           (xmtn-basic-io-write-str "resolved_user" (cadr (xmtn-conflicts-conflict-left_resolution conflict))))
           ))))
 
 (defun xmtn-conflicts-write-duplicate_name (conflict)
