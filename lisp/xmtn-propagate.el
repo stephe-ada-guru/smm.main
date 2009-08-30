@@ -49,7 +49,7 @@
   (from-local-changes
    'need-scan)       ; 'need-scan | 'need-status | 'ok
   (to-local-changes
-   'need-scan)       ;    once this is set to 'ok, no action changes it.
+   'need-scan)       ;    once these are changed from 'need-scan, no action changes it.
   (conflicts
    'need-scan)       ; 'need-scan | 'need-resolve | 'need-review-resolve-internal | 'ok
   )
@@ -108,12 +108,23 @@
                 (need-resolve
                  (insert (dvc-face-add "  need resolve conflicts\n" 'dvc-conflict)))
                 (need-review-resolve-internal
-                 (insert (dvc-face-add "  need review resolve internal\n" 'dvc-header)))
+                 (insert (dvc-face-add "  need review resolve internal\n" 'dvc-header))
+                 (insert (dvc-face-add "  need propagate\n" 'dvc-conflict)))
                 (ok
                  (insert (dvc-face-add "  need propagate\n" 'dvc-conflict)))))
           )
 
       ;; propagate not needed
+      (ecase (xmtn-propagate-data-from-local-changes data)
+        (need-scan (insert "  local changes unknown\n"))
+        (need-status (insert (dvc-face-add "  need dvc-status from\n" 'dvc-header)))
+        (ok nil))
+
+      (ecase (xmtn-propagate-data-to-local-changes data)
+        (need-scan (insert "  local changes unknown\n"))
+        (need-status (insert (dvc-face-add "  need dvc-status to\n" 'dvc-header)))
+        (ok nil))
+
       (ecase (xmtn-propagate-data-to-heads data)
        (at-head nil)
        (need-update (insert (dvc-face-add "  need dvc-update to\n" 'dvc-conflict)))
@@ -225,6 +236,7 @@ The elements must all be of class xmtn-propagate-data.")
   (interactive)
   (let* ((elem (ewoc-locate xmtn-propagate-ewoc))
          (data (ewoc-data elem)))
+    (xmtn-propagate-need-refresh elem data)
     (setf (xmtn-propagate-data-to-local-changes data) 'ok)
     (ewoc-invalidate xmtn-propagate-ewoc elem)))
 
@@ -232,8 +244,8 @@ The elements must all be of class xmtn-propagate-data.")
   "Non-nil if xmtn-status is appropriate for current `to' workspace."
   (let* ((data (ewoc-data (ewoc-locate xmtn-propagate-ewoc))))
     (and (not (xmtn-propagate-data-need-refresh data))
-         (xmtn-propagate-data-propagate-needed data)
-         (eq 'need-status (xmtn-propagate-data-to-local-changes data)))))
+         (member (xmtn-propagate-data-to-local-changes data)
+                 '(need-scan need-status)))))
 
 (defun xmtn-propagate-status-from ()
   "Run xmtn-status on current `from' workspace."
@@ -241,6 +253,7 @@ The elements must all be of class xmtn-propagate-data.")
   (let* ((elem (ewoc-locate xmtn-propagate-ewoc))
          (data (ewoc-data elem)))
     (xmtn-propagate-need-refresh elem data)
+    (setf (xmtn-propagate-data-from-local-changes data) 'ok)
     (xmtn-status (xmtn-propagate-from-work data))))
 
 (defun xmtn-propagate-status-from-ok ()
@@ -255,8 +268,8 @@ The elements must all be of class xmtn-propagate-data.")
   "Non-nil if xmtn-status is appropriate for current `from' workspace."
   (let* ((data (ewoc-data (ewoc-locate xmtn-propagate-ewoc))))
     (and (not (xmtn-propagate-data-need-refresh data))
-         (xmtn-propagate-data-propagate-needed data)
-         (eq 'need-status (xmtn-propagate-data-from-local-changes data)))))
+         (member (xmtn-propagate-data-from-local-changes data)
+                 '(need-scan need-status)))))
 
 (defun xmtn-propagate-missing-to ()
   "Run xmtn-missing on current `to' workspace."
@@ -431,7 +444,7 @@ The elements must all be of class xmtn-propagate-data.")
           (while (and descendents (not done))
             (if (string= to-rev (car descendents))
                 (progn
-                  (setq result t)
+                  (setq result nil)
                   (setq done t)))
             (setq descendents (cdr descendents))))))
     result
@@ -542,16 +555,6 @@ The elements must all be of class xmtn-propagate-data.")
                 (xmtn-propagate-conflicts data)))
 
       ;; propagate not needed
-      (ecase (xmtn-propagate-data-from-local-changes data)
-        (need-status
-         (setf (xmtn-propagate-data-from-local-changes data) 'need-scan))
-        ((need-scan ok nil)))
-
-      (ecase (xmtn-propagate-data-to-local-changes data)
-        (need-status
-         (setf (xmtn-propagate-data-to-local-changes data) 'need-scan))
-        ((need-scan ok nil)))
-
       (setf (xmtn-propagate-data-conflicts data) 'need-scan))
 
     (setf (xmtn-propagate-data-need-refresh data) nil))

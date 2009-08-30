@@ -1075,15 +1075,12 @@ non-nil, show log-edit buffer in other frame."
   (interactive)
   (let* ((elem (ewoc-locate xmtn-conflicts-ewoc))
          (conflict (ewoc-data elem)))
-    (etypecase conflict
-      (xmtn-conflicts-content
-       (if (xmtn-conflicts-content-resolution conflict)
-           (ediff (cadr (xmtn-conflicts-content-resolution conflict))
-                  ;; propagate target is right
-                  (xmtn-conflicts-content-right_name conflict))))
-      (xmtn-conflicts-duplicate_name
-       (error "not supported"))
-      )))
+    (if (and (member (xmtn-conflicts-conflict-conflict_type conflict)
+                     '(content orphaned_node))
+             (xmtn-conflicts-conflict-left_resolution conflict))
+        (ediff (cadr (xmtn-conflicts-conflict-left_resolution conflict))
+               ;; propagate target is right
+               (xmtn-conflicts-conflict-right_name conflict)))))
 
 (defvar xmtn-conflicts-mode-map
   (let ((map (make-sparse-keymap)))
