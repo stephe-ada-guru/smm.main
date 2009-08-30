@@ -488,7 +488,8 @@ header."
     (xmtn-conflicts-read (point-min) text-end))
 
   (set-buffer-modified-p nil)
-  (point-max))
+  (point-max)
+  (xmtn-conflicts-next nil t))
 
 (defun xmtn-conflicts-write-header (ewoc-buffer)
   "Write EWOC-BUFFER header info in basic-io format to current buffer."

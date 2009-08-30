@@ -40,7 +40,7 @@
   from-work          ; directory name relative to xmtn-propagate-from-root
   to-work            ; directory name relative to xmtn-propagate-to-root
   need-refresh       ; nil | t; if an async process was started that invalidates state data
-  from-rev           ; mtn rev string
+  from-rev           ; mtn rev string; current workspace revision
   to-rev             ; mtn rev string
   conflicts-buffer   ; *xmtn-conflicts* buffer for this propagation
   propagate-needed   ; nil | t
