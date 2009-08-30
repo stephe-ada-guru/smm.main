@@ -51,7 +51,7 @@
   (to-local-changes
    'need-scan)       ;    once this is set to 'ok, no action changes it.
   (conflicts
-   'need-scan)       ; 'need-scan | 'need-resolve | 'ok
+   'need-scan)       ; 'need-scan | 'need-resolve | 'need-review-resolve-internal | 'ok
   )
 
 (defun xmtn-propagate-from-work (data)
@@ -103,9 +103,14 @@
           (if (and (eq 'at-head (xmtn-propagate-data-from-heads data))
                    (eq 'at-head (xmtn-propagate-data-to-heads data)))
               (ecase (xmtn-propagate-data-conflicts data)
-                (need-scan (insert "conflicts need scan\n"))
-                (need-resolve (insert (dvc-face-add "  need resolve conflicts\n" 'dvc-conflict)))
-                (ok (insert (dvc-face-add "  need propagate\n" 'dvc-conflict)))))
+                (need-scan
+                 (insert "conflicts need scan\n"))
+                (need-resolve
+                 (insert (dvc-face-add "  need resolve conflicts\n" 'dvc-conflict)))
+                (need-review-resolve-internal
+                 (insert (dvc-face-add "  need review resolve internal\n" 'dvc-header)))
+                (ok
+                 (insert (dvc-face-add "  need propagate\n" 'dvc-conflict)))))
           )
 
       ;; propagate not needed
@@ -174,7 +179,8 @@ The elements must all be of class xmtn-propagate-data.")
          (data (ewoc-data elem)))
     (xmtn-propagate-need-refresh elem data)
     (with-current-buffer (xmtn-propagate-data-conflicts-buffer data)
-      (xmtn-conflicts-do-propagate))
+      (let ((xmtn-confirm-operation nil))
+        (xmtn-conflicts-do-propagate)))
     (xmtn-propagate-refresh-one data)
     (ewoc-invalidate xmtn-propagate-ewoc elem)))
 
@@ -185,7 +191,8 @@ The elements must all be of class xmtn-propagate-data.")
          (xmtn-propagate-data-propagate-needed data)
          (eq 'at-head (xmtn-propagate-data-from-heads data))
          (eq 'at-head (xmtn-propagate-data-to-heads data))
-         (eq 'ok (xmtn-propagate-data-conflicts data)))))
+         (member (xmtn-propagate-data-conflicts data)
+                 '(ok need-review-resolve-internal)))))
 
 (defun xmtn-propagate-resolve-conflicts ()
   "Resolve conflicts for current workspace."
@@ -202,7 +209,8 @@ The elements must all be of class xmtn-propagate-data.")
          (xmtn-propagate-data-propagate-needed data)
          (eq 'at-head (xmtn-propagate-data-from-heads data))
          (eq 'at-head (xmtn-propagate-data-to-heads data))
-         (eq 'need-resolve (xmtn-propagate-data-conflicts data)))))
+         (member (xmtn-propagate-data-conflicts data)
+                 '(need-resolve need-review-resolve-internal)))))
 
 (defun xmtn-propagate-status-to ()
   "Run xmtn-status on current `to' workspace."
@@ -458,28 +466,33 @@ The elements must all be of class xmtn-propagate-data.")
   "Return value for xmtn-propagate-data-conflicts for DATA."
   ;; if conflicts-buffer is nil, this does the right thing.
   (let ((revs-current
-         (and (xmtn-propagate-data-conflicts-buffer data)
+         (and (buffer-live-p (xmtn-propagate-data-conflicts-buffer data))
               (with-current-buffer (xmtn-propagate-data-conflicts-buffer data)
-                (and xmtn-conflicts-left-revision
-                     (string= (xmtn-propagate-data-from-rev data) xmtn-conflicts-left-revision)
-                     xmtn-conflicts-right-revision
+                (and (string= (xmtn-propagate-data-from-rev data) xmtn-conflicts-left-revision)
                      (string= (xmtn-propagate-data-to-rev data) xmtn-conflicts-right-revision))))))
     (if revs-current
         (with-current-buffer (xmtn-propagate-data-conflicts-buffer data)
           (xmtn-conflicts-update-counts))
+
       ;; recreate conflicts
-      (if (xmtn-propagate-data-conflicts-buffer data)
+      (if (buffer-live-p (xmtn-propagate-data-conflicts-buffer data))
           (kill-buffer (xmtn-propagate-data-conflicts-buffer data)))
+
+      (xmtn-conflicts-clean (xmtn-propagate-to-work data))
+
       (setf (xmtn-propagate-data-conflicts-buffer data)
             (xmtn-propagate-conflicts-buffer
              (xmtn-propagate-from-work data)
              (xmtn-propagate-data-from-rev data)
              (xmtn-propagate-to-work data)
-             (xmtn-propagate-data-to-rev data))))
+             (xmtn-propagate-data-to-rev data)))
+      )
 
     (with-current-buffer (xmtn-propagate-data-conflicts-buffer data)
       (if (= xmtn-conflicts-total-count xmtn-conflicts-resolved-count)
-          'ok
+          (if (< 0 xmtn-conflicts-resolved-internal-count)
+              'need-review-resolve-internal
+            'ok)
         'need-resolve))))
 
 (defun xmtn-propagate-refresh-one (data)
