@@ -1334,18 +1334,25 @@ finished."
 
     (save-some-buffers t); conflicts file may be open.
 
-    (if (not (yes-or-no-p prompt))
-        (error "user abort"))
+    (if xmtn-confirm-operation
+        (if (not (yes-or-no-p prompt))
+            (error "user abort")))
 
     (lexical-let
         ((display-buffer (current-buffer))
          (msg (mapconcat (lambda (item) item) cmd " ")))
       (message "%s..." msg)
-      (xmtn--run-command-that-might-invoke-merger
-       root cmd
-       (lambda ()
-         (xmtn--refresh-status-header display-buffer)
-         (message "%s... done" msg))))))
+      (if xmtn-confirm-operation
+          (xmtn--run-command-that-might-invoke-merger
+           root cmd
+           (lambda ()
+             (xmtn--refresh-status-header display-buffer)
+             (message "%s... done" msg)))
+        (xmtn--run-command-async
+           root cmd
+           :finished (lambda (output error status arguments)
+                       (xmtn--refresh-status-header display-buffer)
+                       (message "%s... done" msg)))))))
 
 ;;;###autoload
 (defun xmtn-dvc-merge (&optional other)

@@ -78,6 +78,7 @@
 
 ;;; Code:
 
+(require 'dired-x)
 (require 'dvc-register)
 (require 'dvc-core)
 (require 'dvc-defs)
