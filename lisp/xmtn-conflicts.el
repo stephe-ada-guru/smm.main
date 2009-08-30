@@ -661,7 +661,7 @@ header."
   
   (ewoc-map
    (lambda (conflict)
-     (setq xmtn-conflicts-total-count xmtn-conflicts-total-count + 1)
+     (setq xmtn-conflicts-total-count (+ 1 xmtn-conflicts-total-count))
      (ecase (xmtn-conflicts-conflict-conflict_type conflict)
        ((content orphaned_node)
         (if (xmtn-conflicts-conflict-left_resolution conflict)
@@ -1067,7 +1067,7 @@ non-nil, show log-edit buffer in other frame."
     (define-key map "MP" 'xmtn-conflicts-do-propagate)
     (define-key map "MU" 'dvc-update)
     map)
-  "Keymap used in `xmtn-conflict-mode'.")
+  "Keymap used in `xmtn-conflicts-mode'.")
 
 (easy-menu-define xmtn-conflicts-mode-menu xmtn-conflicts-mode-map
   "`xmtn-conflicts' menu"
