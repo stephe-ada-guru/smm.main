@@ -144,7 +144,8 @@ The elements must all be of class xmtn-propagate-data.")
          (data (ewoc-data elem)))
     (with-current-buffer (xmtn-propagate-data-conflicts-buffer data)
       (xmtn-conflicts-clean (xmtn-propagate-from-work data)))
-    (ewoc-delete xmtn-propagate-ewoc elem)))
+    (let ((inhibit-read-only t))
+      (ewoc-delete xmtn-propagate-ewoc elem))))
 
 (defun xmtn-propagate-cleanp ()
   "Non-nil if clean is appropriate for current workspace."
@@ -335,7 +336,7 @@ The elements must all be of class xmtn-propagate-data.")
 
 (defvar xmtn-propagate-actions-map
   (let ((map (make-sparse-keymap "actions")))
-    (define-key map [?c]  '(menu-item "c) clean/quit"
+    (define-key map [?c]  '(menu-item "c) clean/delete"
                                       xmtn-propagate-clean
                                       :visible (xmtn-propagate-cleanp)))
     (define-key map [?g]  '(menu-item "g) refresh"
