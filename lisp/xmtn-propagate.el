@@ -80,12 +80,12 @@
     (if (xmtn-propagate-data-propagate-needed data)
         (progn
           (ecase (xmtn-propagate-data-from-local-changes data)
-            (need-scan (insert "  local changes unknown\n"))
+            (need-scan (insert "  from local changes unknown\n"))
             (need-status (insert (dvc-face-add "  need dvc-status from\n" 'dvc-header)))
             (ok nil))
 
           (ecase (xmtn-propagate-data-to-local-changes data)
-            (need-scan (insert "  local changes unknown\n"))
+            (need-scan (insert "  to local changes unknown\n"))
             (need-status (insert (dvc-face-add "  need dvc-status to\n" 'dvc-header)))
             (ok nil))
 
@@ -116,12 +116,12 @@
 
       ;; propagate not needed
       (ecase (xmtn-propagate-data-from-local-changes data)
-        (need-scan (insert "  local changes unknown\n"))
+        (need-scan (insert "  from local changes unknown\n"))
         (need-status (insert (dvc-face-add "  need dvc-status from\n" 'dvc-header)))
         (ok nil))
 
       (ecase (xmtn-propagate-data-to-local-changes data)
-        (need-scan (insert "  local changes unknown\n"))
+        (need-scan (insert "  to local changes unknown\n"))
         (need-status (insert (dvc-face-add "  need dvc-status to\n" 'dvc-header)))
         (ok nil))
 
@@ -229,6 +229,7 @@ The elements must all be of class xmtn-propagate-data.")
   (let* ((elem (ewoc-locate xmtn-propagate-ewoc))
          (data (ewoc-data elem)))
     (xmtn-propagate-need-refresh elem data)
+    (setf (xmtn-propagate-data-to-local-changes data) 'ok)
     (xmtn-status (xmtn-propagate-to-work data))))
 
 (defun xmtn-propagate-status-to-ok ()
@@ -236,7 +237,6 @@ The elements must all be of class xmtn-propagate-data.")
   (interactive)
   (let* ((elem (ewoc-locate xmtn-propagate-ewoc))
          (data (ewoc-data elem)))
-    (xmtn-propagate-need-refresh elem data)
     (setf (xmtn-propagate-data-to-local-changes data) 'ok)
     (ewoc-invalidate xmtn-propagate-ewoc elem)))
 
