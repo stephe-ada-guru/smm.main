@@ -40,8 +40,8 @@
   from-work          ; directory name relative to xmtn-propagate-from-root
   to-work            ; directory name relative to xmtn-propagate-to-root
   need-refresh       ; nil | t; if an async process was started that invalidates state data
-  from-rev           ; mtn rev string; current workspace revision
-  to-rev             ; mtn rev string
+  from-head-rev      ; nil | mtn rev string; current head revision; nil if multiple heads
+  to-head-rev        ;
   conflicts-buffer   ; *xmtn-conflicts* buffer for this propagation
   propagate-needed   ; nil | t
   from-heads         ; 'at-head | 'need-update | 'need-merge)
@@ -49,7 +49,7 @@
   (from-local-changes
    'need-scan)       ; 'need-scan | 'need-status | 'ok
   (to-local-changes
-   'need-scan)       ;    once these are changed from 'need-scan, no action changes it.
+   'need-scan)       ;    once these are changed from 'need-scan, no action changes it .
   (conflicts
    'need-scan)       ; 'need-scan | 'need-resolve | 'need-review-resolve-internal | 'ok
   )
@@ -143,7 +143,7 @@ The elements must all be of class xmtn-propagate-data.")
   (let* ((elem (ewoc-locate xmtn-propagate-ewoc))
          (data (ewoc-data elem)))
     (with-current-buffer (xmtn-propagate-data-conflicts-buffer data)
-      (xmtn-conflicts-clean))
+      (xmtn-conflicts-clean (xmtn-propagate-from-work data)))
     (ewoc-delete xmtn-propagate-ewoc elem)))
 
 (defun xmtn-propagate-cleanp ()
@@ -430,19 +430,27 @@ The elements must all be of class xmtn-propagate-data.")
               (pop-to-buffer error))))
   )
 
-(defun xmtn-propagate-needed (from-work from-rev to-rev)
-  "t if branch in workspace FROM-WORK needs to be propagated to TO-WORK."
-  (let ((result nil))
+(defun xmtn-propagate-needed (data)
+  "t if DATA needs propagate."
+  (let ((result t)
+        (from-work (xmtn-propagate-from-work data))
+        (from-head-rev (xmtn-propagate-data-from-head-rev data))
+        (to-head-rev   (xmtn-propagate-data-to-head-rev data)))
 
-    (if (string= from-rev to-rev)
-        nil
-      ;; check for to descendant of from
-      (let ((descendents (xmtn-automate-simple-command-output-lines from-work (list "descendents" from-rev)))
-            (done nil))
+    ;; If from has no descendants, then:
+    ;; 1) to branched off earlier, and propagate is needed
+    ;; 2) propagate was just done but required no changes; no propagate needed
+    ;;
+    (if (string= from-head-rev to-head-rev)
+        ;; case 2
+        (setq result nil)
+      (let ((descendents (xmtn-automate-simple-command-output-lines from-work (list "descendents" from-head-rev)))
+            done)
         (if (not descendents)
+            ;; case 1
             (setq result t)
           (while (and descendents (not done))
-            (if (string= to-rev (car descendents))
+            (if (string= to-head-rev (car descendents))
                 (progn
                   (setq result nil)
                   (setq done t)))
@@ -450,7 +458,7 @@ The elements must all be of class xmtn-propagate-data.")
     result
   ))
 
-(defun xmtn-propagate-conflicts-buffer (from-work from-rev to-work to-rev)
+(defun xmtn-propagate-conflicts-buffer (from-work from-head-rev to-work to-head-rev)
   "Return a conflicts buffer for FROM-WORK, TO-WORK (absolute paths)."
   (let ((conflicts-buffer (dvc-get-buffer 'xmtn 'conflicts to-work)))
 
@@ -462,7 +470,7 @@ The elements must all be of class xmtn-propagate-data.")
                 (xmtn-conflicts-save-opts from-work to-work)
                 (dvc-run-dvc-sync
                  'xmtn
-                 (list "conflicts" "store" from-rev to-rev)
+                 (list "conflicts" "store" from-head-rev to-head-rev)
                  :finished (lambda (output error status arguments)
                              (xmtn-dvc-log-clean)
 
@@ -481,8 +489,8 @@ The elements must all be of class xmtn-propagate-data.")
   (let ((revs-current
          (and (buffer-live-p (xmtn-propagate-data-conflicts-buffer data))
               (with-current-buffer (xmtn-propagate-data-conflicts-buffer data)
-                (and (string= (xmtn-propagate-data-from-rev data) xmtn-conflicts-left-revision)
-                     (string= (xmtn-propagate-data-to-rev data) xmtn-conflicts-right-revision))))))
+                (and (string= (xmtn-propagate-data-from-head-rev data) xmtn-conflicts-left-revision)
+                     (string= (xmtn-propagate-data-to-head-rev data) xmtn-conflicts-right-revision))))))
     (if revs-current
         (with-current-buffer (xmtn-propagate-data-conflicts-buffer data)
           (xmtn-conflicts-update-counts))
@@ -496,9 +504,9 @@ The elements must all be of class xmtn-propagate-data.")
       (setf (xmtn-propagate-data-conflicts-buffer data)
             (xmtn-propagate-conflicts-buffer
              (xmtn-propagate-from-work data)
-             (xmtn-propagate-data-from-rev data)
+             (xmtn-propagate-data-from-head-rev data)
              (xmtn-propagate-to-work data)
-             (xmtn-propagate-data-to-rev data)))
+             (xmtn-propagate-data-to-head-rev data)))
       )
 
     (with-current-buffer (xmtn-propagate-data-conflicts-buffer data)
@@ -513,30 +521,32 @@ The elements must all be of class xmtn-propagate-data.")
   (let ((from-work (xmtn-propagate-from-work data))
         (to-work (xmtn-propagate-to-work data)))
 
-    (setf (xmtn-propagate-data-from-rev data) (xmtn--get-base-revision-hash-id-or-null from-work))
-    (setf (xmtn-propagate-data-to-rev data) (xmtn--get-base-revision-hash-id-or-null to-work))
-
     (setf (xmtn-propagate-data-propagate-needed data)
-          (xmtn-propagate-needed
-           from-work
-           (xmtn-propagate-data-from-rev data)
-           (xmtn-propagate-data-to-rev data)))
+          (xmtn-propagate-needed data))
 
-    (let ((heads (xmtn--heads from-work nil)))
+    (let ((heads (xmtn--heads from-work nil))
+          (from-base-rev (xmtn--get-base-revision-hash-id-or-null from-work)))
       (case (length heads)
-        (1 (if (string= (xmtn-propagate-data-from-rev data) (nth 0 heads))
+        (1
+         (setf (xmtn-propagate-data-from-head-rev data) (nth 0 heads))
+         (if (string= (xmtn-propagate-data-from-head-rev data) from-base-rev)
                (setf (xmtn-propagate-data-from-heads data) 'at-head)
              (setf (xmtn-propagate-data-from-heads data) 'need-update)))
+        (t
+         (setf (xmtn-propagate-data-from-head-rev data) nil)
+         (setf (xmtn-propagate-data-from-heads data) 'need-merge))))
 
-        (t (setf (xmtn-propagate-data-from-heads data) 'need-merge))))
-
-    (let ((heads (xmtn--heads to-work nil)))
+    (let ((heads (xmtn--heads to-work nil))
+          (to-base-rev (xmtn--get-base-revision-hash-id-or-null to-work)))
       (case (length heads)
-        (1 (if (string= (xmtn-propagate-data-to-rev data) (nth 0 heads))
+        (1
+         (setf (xmtn-propagate-data-to-head-rev data) (nth 0 heads))
+         (if (string= (xmtn-propagate-data-to-head-rev data) to-base-rev)
                (setf (xmtn-propagate-data-to-heads data) 'at-head)
              (setf (xmtn-propagate-data-to-heads data) 'need-update)))
-
-        (t (setf (xmtn-propagate-data-to-heads data) 'need-merge))))
+        (t
+         (setf (xmtn-propagate-data-to-head-rev data) nil)
+         (setf (xmtn-propagate-data-to-heads data) 'need-merge))))
 
     (if (xmtn-propagate-data-propagate-needed data)
         ;; these checks are slow, so don't do them if they probably are not needed.
