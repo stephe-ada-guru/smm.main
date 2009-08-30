@@ -522,9 +522,6 @@ The elements must all be of class xmtn-propagate-data.")
   (let ((from-work (xmtn-propagate-from-work data))
         (to-work (xmtn-propagate-to-work data)))
 
-    (setf (xmtn-propagate-data-propagate-needed data)
-          (xmtn-propagate-needed data))
-
     (let ((heads (xmtn--heads from-work nil))
           (from-base-rev (xmtn--get-base-revision-hash-id-or-null from-work)))
       (case (length heads)
@@ -548,6 +545,9 @@ The elements must all be of class xmtn-propagate-data.")
         (t
          (setf (xmtn-propagate-data-to-head-rev data) nil)
          (setf (xmtn-propagate-data-to-heads data) 'need-merge))))
+
+    (setf (xmtn-propagate-data-propagate-needed data)
+          (xmtn-propagate-needed data))
 
     (if (xmtn-propagate-data-propagate-needed data)
         ;; these checks are slow, so don't do them if they probably are not needed.
