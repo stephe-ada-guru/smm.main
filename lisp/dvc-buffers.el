@@ -51,6 +51,7 @@ Used to keep track of all the dvc related buffers.")
     (alog       "log*"      path)
     ;; alog for "absolute log", i.e., assume path supplied is already
     ;; the root path
+    (add-patch "add-patch*" path)
     (annotate  "annotate*"  path)
     (archives  "archives*"  single)
     (bookmark  "bookmarks*" single)
@@ -201,6 +202,7 @@ If DVC is nil, it matches any back-end. TYPE must match exactly.
 PATH matches if the entry in dvc-buffers-tree is a prefix of
 PATH."
   (let ((result nil)
+        (true-path (file-truename path))
         tree)
 
     (if dvc
@@ -216,7 +218,7 @@ PATH."
     ;; Filter for path
     (while tree
       (let* ((root (caar tree))
-             (index (string-match root path)))
+             (index (string-match root true-path)))
         (if (and index (= 0 index))
             (setq result (cons (car tree) result)))
         (setq tree (cdr tree))))
