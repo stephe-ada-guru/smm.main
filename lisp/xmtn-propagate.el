@@ -641,8 +641,8 @@ The elements must all be of class xmtn-propagate-data.")
    "")
   (ewoc-enter-last xmtn-propagate-ewoc
                    (make-xmtn-propagate-data
-                    :from-work (file-name-nondirectory from-work)
-                    :to-work (file-name-nondirectory to-work)
+                    :from-work (file-name-nondirectory (directory-file-name from-work))
+                    :to-work (file-name-nondirectory (directory-file-name to-work))
                     :need-refresh t))
 
   (xmtn-propagate-refresh)
