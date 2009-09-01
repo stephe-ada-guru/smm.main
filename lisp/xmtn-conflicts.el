@@ -1176,11 +1176,9 @@ to right.  Stores conflict file in RIGHT-WORK/_MTN."
      'xmtn
      (list "conflicts" "store" left-rev right-rev)
      :finished (lambda (output error status arguments)
-                 (xmtn-dvc-log-clean)
                  (xmtn-conflicts-review default-directory))
 
      :error (lambda (output error status arguments)
-              (xmtn-dvc-log-clean)
               (pop-to-buffer error))
      )))
 
@@ -1306,6 +1304,8 @@ workspace."
 
     (if (file-exists-p "_MTN/resolutions")
         (dired-delete-file "_MTN/resolutions" 'always))
+
+    (message "conflicts cleaned")
     ))
 
 (provide 'xmtn-conflicts)

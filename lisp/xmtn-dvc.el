@@ -285,12 +285,6 @@ the file before saving."
     (if (file-exists-p log-edit-file)
         (concat "--message-file=" log-edit-file))))
 
-(defun xmtn-dvc-log-clean ()
-  "Delete xmtn log file."
-  (let ((log-edit-file "_MTN/log"))
-    (if (file-exists-p log-edit-file)
-        (delete-file log-edit-file))))
-
 ;;;###autoload
 (defun xmtn-dvc-log-edit-done ()
   (let* ((root default-directory)
@@ -351,11 +345,9 @@ the file before saving."
                  "--depth=0"
                  "--" normalized-files))))
        :error (lambda (output error status arguments)
-                (xmtn-dvc-log-clean)
                 (dvc-default-error-function output error
                                             status arguments))
        :killed (lambda (output error status arguments)
-                 (xmtn-dvc-log-clean)
                  (dvc-default-killed-function output error
                                               status arguments))
        :finished (lambda (output error status arguments)
@@ -363,7 +355,6 @@ the file before saving."
                    ;; Monotone creates an empty log file when the
                    ;; commit was successful.  Let's not interfere with
                    ;; that.  (Calling `dvc-log-close' would.)
-                   (xmtn-dvc-log-clean)
                    (dvc-diff-clear-buffers 'xmtn
                                            default-directory
                                            "* Just committed! Please refresh buffer"
@@ -1328,21 +1319,20 @@ finished."
             (if (file-exists-p (concat root "/_MTN/conflicts"))
                 (progn
                   "--resolve-conflicts-file=_MTN/conflicts"))))
-      (lexical-let
-          ((display-buffer (current-buffer)))
-        (xmtn-automate-with-session
-            (nil root)
-          (let* ((branch (xmtn--tree-default-branch root))
-                 (heads (xmtn--heads root branch)))
-            (case (length heads)
-              (0 (assert nil))
-              (1
-               (message "already merged"))
-              (t
-               (xmtn--run-command-that-might-invoke-merger
-                root
-                (list "merge" resolve-conflicts (xmtn-dvc-log-message))
-                (lambda () (xmtn--refresh-status-header display-buffer))))))))))
+      (xmtn-automate-with-session
+          (nil root)
+        (let* ((branch (xmtn--tree-default-branch root))
+               (heads (xmtn--heads root branch)))
+          (case (length heads)
+            (0 (assert nil))
+            (1
+             (message "already merged"))
+            (t
+             (xmtn--run-command-async
+              root
+              (list "merge" resolve-conflicts (xmtn-dvc-log-message))
+              :finished (lambda (output error status arguments)
+                          (xmtn--refresh-status-header (current-buffer))))))))))
   nil)
 
 ;;;###autoload

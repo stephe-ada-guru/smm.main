@@ -384,7 +384,6 @@ from the merge."
                    (insert-file-contents "_MTN/conflicts" t)))
 
      :error (lambda (output error status arguments)
-              (xmtn-dvc-log-clean)
               (pop-to-buffer error)))))
 
 ;;;###autoload

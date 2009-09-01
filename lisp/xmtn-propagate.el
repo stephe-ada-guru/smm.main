@@ -26,6 +26,7 @@
 
 (eval-when-compile
   ;; these have functions we use
+  (require 'xmtn-base)
   (require 'xmtn-conflicts))
 
 (defvar xmtn-propagate-from-root ""
@@ -149,8 +150,7 @@ The elements must all be of class xmtn-propagate-data.")
   (interactive)
   (let* ((elem (ewoc-locate xmtn-propagate-ewoc))
          (data (ewoc-data elem)))
-    (with-current-buffer (xmtn-propagate-data-conflicts-buffer data)
-      (xmtn-conflicts-clean (xmtn-propagate-from-work data)))
+    (xmtn-conflicts-clean (xmtn-propagate-from-work data))
     (let ((inhibit-read-only t))
       (ewoc-delete xmtn-propagate-ewoc elem))))
 
@@ -481,16 +481,13 @@ The elements must all be of class xmtn-propagate-data.")
                 (dvc-run-dvc-sync
                  'xmtn
                  (list "conflicts" "store" from-head-rev to-head-rev)
-                 :finished (lambda (output error status arguments)
-                             (xmtn-dvc-log-clean)
 
-                             :error (lambda (output error status arguments)
-                                      (xmtn-dvc-log-clean)
-                                      (pop-to-buffer error))))))
+                 :error (lambda (output error status arguments)
+                          (pop-to-buffer error)))))
           ;; create conflicts buffer
           (save-excursion
             (let ((dvc-switch-to-buffer-first nil))
-              (xmtn-conflicts-review default-directory)
+              (xmtn-conflicts-review to-work)
               (current-buffer)))))))
 
 (defun xmtn-propagate-conflicts (data)
@@ -594,19 +591,6 @@ The elements must all be of class xmtn-propagate-data.")
   (interactive)
   (ewoc-map 'xmtn-propagate-refresh-one xmtn-propagate-ewoc current-prefix-arg)
   (message "done"))
-
-(defun xmtn--filter-non-dir (dir)
-  "Return list of all directories in DIR, excluding '.', '..'."
-  (let ((default-directory dir)
-        (subdirs (directory-files dir)))
-    (setq subdirs
-          (mapcar (lambda (filename)
-                    (if (and (file-directory-p filename)
-                             (not (string= "." filename))
-                             (not (string= ".." filename)))
-                        filename))
-                  subdirs))
-    (delq nil subdirs)))
 
 ;;;###autoload
 (defun xmtn-propagate-multiple (from-dir to-dir)
