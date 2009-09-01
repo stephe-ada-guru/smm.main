@@ -113,8 +113,11 @@
     (ecase (xmtn-propagate-data-to-heads data)
       (at-head     nil)
       (need-update
-       (insert (dvc-face-add (concat "  need dvc-missing " (xmtn-propagate-data-to-name data) "\n")
-                             'dvc-conflict)))
+       (if (xmtn-propagate-data-propagate-needed data)
+           (insert (dvc-face-add (concat "  need dvc-update " (xmtn-propagate-data-to-name data) "\n")
+                                 'dvc-conflict))
+         (insert (dvc-face-add (concat "  need dvc-missing " (xmtn-propagate-data-to-name data) "\n")
+                               'dvc-conflict))))
       (need-merge
        (insert (dvc-face-add (concat "  need xmtn-heads " (xmtn-propagate-data-to-name data) "\n")
                                    'dvc-conflict))))
@@ -133,16 +136,7 @@
                (insert (dvc-face-add "  need propagate\n" 'dvc-conflict)))
               (ok
                (insert (dvc-face-add "  need propagate\n" 'dvc-conflict)))))
-      )
-
-      ;; propagate not needed
-      (ecase (xmtn-propagate-data-to-heads data)
-        (at-head nil)
-        (need-update
-         (insert (dvc-face-add (concat "  need dvc-update " (xmtn-propagate-data-to-name data) "\n")
-                               'dvc-conflict)))
-        (need-merge (insert (dvc-face-add "  programmer error!\n" 'dvc-conflict))))
-      ))
+      )))
 
 (defvar xmtn-propagate-ewoc nil
   "Buffer-local ewoc for displaying propagations.
