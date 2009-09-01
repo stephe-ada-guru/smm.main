@@ -114,9 +114,9 @@
       (at-head     nil)
       (need-update
        (if (xmtn-propagate-data-propagate-needed data)
-           (insert (dvc-face-add (concat "  need dvc-update " (xmtn-propagate-data-to-name data) "\n")
+           (insert (dvc-face-add (concat "  need dvc-missing " (xmtn-propagate-data-to-name data) "\n")
                                  'dvc-conflict))
-         (insert (dvc-face-add (concat "  need dvc-missing " (xmtn-propagate-data-to-name data) "\n")
+         (insert (dvc-face-add (concat "  need dvc-update " (xmtn-propagate-data-to-name data) "\n")
                                'dvc-conflict))))
       (need-merge
        (insert (dvc-face-add (concat "  need xmtn-heads " (xmtn-propagate-data-to-name data) "\n")
