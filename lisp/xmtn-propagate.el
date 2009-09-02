@@ -118,22 +118,19 @@ The elements must all be of class xmtn-propagate-data.")
     (ecase (xmtn-propagate-data-from-heads data)
       (at-head     nil)
       (need-update
-       (insert (dvc-face-add (concat "  need dvc-missing " (xmtn-propagate-data-from-name data) "\n")
+       (insert (dvc-face-add (concat "  need update " (xmtn-propagate-data-from-name data) "\n")
                              'dvc-conflict)))
       (need-merge
-       (insert (dvc-face-add (concat "  need xmtn-heads " (xmtn-propagate-data-from-name data) "\n")
+       (insert (dvc-face-add (concat "  need merge " (xmtn-propagate-data-from-name data) "\n")
                              'dvc-conflict))))
 
     (ecase (xmtn-propagate-data-to-heads data)
       (at-head     nil)
       (need-update
-       (if (xmtn-propagate-data-propagate-needed data)
-           (insert (dvc-face-add (concat "  need dvc-missing " (xmtn-propagate-data-to-name data) "\n")
-                                 'dvc-conflict))
-         (insert (dvc-face-add (concat "  need dvc-update " (xmtn-propagate-data-to-name data) "\n")
-                               'dvc-conflict))))
+       (insert (dvc-face-add (concat "  need update " (xmtn-propagate-data-to-name data) "\n")
+                             'dvc-conflict)))
       (need-merge
-       (insert (dvc-face-add (concat "  need xmtn-heads " (xmtn-propagate-data-to-name data) "\n")
+       (insert (dvc-face-add (concat "  need merge " (xmtn-propagate-data-to-name data) "\n")
                                    'dvc-conflict))))
 
     (if (xmtn-propagate-data-propagate-needed data)
@@ -150,6 +147,9 @@ The elements must all be of class xmtn-propagate-data.")
                (insert (dvc-face-add "  need propagate\n" 'dvc-conflict)))
               (ok
                (insert (dvc-face-add "  need propagate\n" 'dvc-conflict)))))
+
+      (if (eq 'at-head (xmtn-propagate-data-to-heads data))
+          (insert "  need clean\n"))
       ))
   ;; ewoc ought to do this, but it doesn't
   (redisplay))
@@ -165,8 +165,8 @@ The elements must all be of class xmtn-propagate-data.")
     (if (buffer-live-p (xmtn-propagate-data-conflicts-buffer data))
         (kill-buffer (xmtn-propagate-data-conflicts-buffer data)))
 
-    (xmtn-automate--close-session (xmtn-propagate-data-from-session data))
-    (xmtn-automate--close-session (xmtn-propagate-data-to-session data))
+    ;; (xmtn-automate--close-session (xmtn-propagate-data-from-session data))
+    ;; (xmtn-automate--close-session (xmtn-propagate-data-to-session data))
 
     (let ((inhibit-read-only t))
       (ewoc-delete xmtn-propagate-ewoc elem))))
@@ -182,13 +182,16 @@ The elements must all be of class xmtn-propagate-data.")
   (interactive)
   (let* ((elem (ewoc-locate xmtn-propagate-ewoc))
          (data (ewoc-data elem)))
-    (xmtn-propagate-refresh-one data current-prefix-arg)
+    (xmtn-propagate-refresh-one data (or current-prefix-arg
+                                         (not (xmtn-propagate-data-need-refresh data))))
     (ewoc-invalidate xmtn-propagate-ewoc elem)))
 
 (defun xmtn-propagate-refreshp ()
   "Non-nil if refresh is appropriate for current workspace."
   (let ((data (ewoc-data (ewoc-locate xmtn-propagate-ewoc))))
-    (xmtn-propagate-data-need-refresh data)))
+    (or (xmtn-propagate-data-need-refresh data)
+        (eq 'need-scan (xmtn-propagate-data-from-local-changes data))
+        (eq 'need-scan (xmtn-propagate-data-to-local-changes data)))))
 
 (defun xmtn-propagate-update-to ()
   "Update current workspace."
@@ -242,6 +245,7 @@ The elements must all be of class xmtn-propagate-data.")
   (let* ((elem (ewoc-locate xmtn-propagate-ewoc))
          (data (ewoc-data elem)))
     (xmtn-propagate-need-refresh elem data)
+    (setf (xmtn-propagate-data-conflicts data) 'ok)
     (pop-to-buffer (xmtn-propagate-data-conflicts-buffer data))))
 
 (defun xmtn-propagate-resolve-conflictsp ()
@@ -375,36 +379,36 @@ The elements must all be of class xmtn-propagate-data.")
     (define-key map [?g]  '(menu-item "g) refresh"
                                       xmtn-propagate-do-refresh-one
                                       :visible (xmtn-propagate-refreshp)))
-    (define-key map [?b]  '(menu-item (concat "b) update " (xmtn-propagate-to-name))
-                                      xmtn-propagate-update-to
-                                      :visible (xmtn-propagate-missing-top)))
-    (define-key map [?a]  '(menu-item (concat "a) update " (xmtn-propagate-from-name))
-                                      xmtn-propagate-update-from
-                                      :visible (xmtn-propagate-missing-fromp)))
-    (define-key map [?9]  '(menu-item "9) propagate"
+    (define-key map [?b]  '(menu-item "b) propagate"
                                       xmtn-propagate-propagate
                                       :visible (xmtn-propagate-propagatep)))
-    (define-key map [?8]  '(menu-item "8) resolve conflicts"
+    (define-key map [?a]  '(menu-item "a) resolve conflicts"
                                       xmtn-propagate-resolve-conflicts
                                       :visible (xmtn-propagate-resolve-conflictsp)))
-    (define-key map [?7]  '(menu-item (concat "7) ignore local changes " (xmtn-propagate-to-name))
+    (define-key map [?9]  '(menu-item (concat "9) ignore local changes " (xmtn-propagate-to-name))
                                       xmtn-propagate-status-to-ok
                                       :visible (xmtn-propagate-status-top)))
-    (define-key map [?6]  '(menu-item (concat "6) ignore local changes " (xmtn-propagate-from-name))
+    (define-key map [?8]  '(menu-item (concat "8) ignore local changes " (xmtn-propagate-from-name))
                                       xmtn-propagate-status-from-ok
                                       :visible (xmtn-propagate-status-fromp)))
-    (define-key map [?5]  '(menu-item (concat "5) status " (xmtn-propagate-to-name))
-                                      xmtn-propagate-status-to
-                                      :visible (xmtn-propagate-status-top)))
-    (define-key map [?4]  '(menu-item (concat "4) status " (xmtn-propagate-from-name))
-                                      xmtn-propagate-status-from
-                                      :visible (xmtn-propagate-status-fromp)))
-    (define-key map [?3]  '(menu-item (concat "3) dvc-missing " (xmtn-propagate-to-name))
+    (define-key map [?7]  '(menu-item (concat "7) dvc-missing " (xmtn-propagate-to-name))
                                       xmtn-propagate-missing-to
                                       :visible (xmtn-propagate-missing-top)))
-    (define-key map [?2]  '(menu-item (concat "2) dvc-missing " (xmtn-propagate-from-name))
+    (define-key map [?6]  '(menu-item (concat "6) dvc-missing " (xmtn-propagate-from-name))
                                       xmtn-propagate-missing-from
                                       :visible (xmtn-propagate-missing-fromp)))
+    (define-key map [?5]  '(menu-item (concat "5) update " (xmtn-propagate-to-name))
+                                      xmtn-propagate-update-to
+                                      :visible (xmtn-propagate-missing-top)))
+    (define-key map [?4]  '(menu-item (concat "4) update " (xmtn-propagate-from-name))
+                                      xmtn-propagate-update-from
+                                      :visible (xmtn-propagate-missing-fromp)))
+    (define-key map [?3]  '(menu-item (concat "3) status " (xmtn-propagate-to-name))
+                                      xmtn-propagate-status-to
+                                      :visible (xmtn-propagate-status-top)))
+    (define-key map [?2]  '(menu-item (concat "2) status " (xmtn-propagate-from-name))
+                                      xmtn-propagate-status-from
+                                      :visible (xmtn-propagate-status-fromp)))
     (define-key map [?1]  '(menu-item (concat "1) xmtn-heads " (xmtn-propagate-to-name))
                                       xmtn-propagate-heads-to
                                       :visible (xmtn-propagate-heads-top)))
