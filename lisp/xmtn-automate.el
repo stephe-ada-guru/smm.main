@@ -257,6 +257,15 @@
 
 (defvar xmtn-automate--*sessions* '())
 
+(defun xmtn-automate-cache-session (root)
+  "Create a mtn automate session for workspace ROOT, store it in
+session cache, return it (for later kill)."
+  (let* ((key (file-truename root))
+         (session (xmtn-automate--make-session root key)))
+    (setq xmtn-automate--*sessions*
+          (acons key session xmtn-automate--*sessions*))
+    session))
+
 (defmacro* xmtn-automate-with-session ((session-var-or-null root-form &key)
                                        &body body)
   "Call BODY, after ensuring an automate session for ROOT-FORM is active."
@@ -286,6 +295,10 @@
              (progn
                (setq ,session (xmtn-automate--make-session ,root ,key))
                (let ((xmtn-automate--*sessions*
+               ;; note the let-binding here; these sessions are _not_
+               ;; available for later commands. use
+               ;; xmtn-automate-cache-session to get a persistent
+               ;; session.
                       (acons ,key ,session xmtn-automate--*sessions*)))
                  (funcall ,thunk)))
            (when ,session (xmtn-automate--close-session ,session)))))))
@@ -446,6 +459,7 @@ Signals an error if output contains zero lines or more than one line."
   nil)
 
 (defun xmtn-automate--make-session (root key)
+  (dvc-trace "new session %s" key)
   (let* ((name (format "xmtn automate session for %s" key)))
     (let ((session (xmtn-automate--%make-raw-session)))
       (xmtn-automate--initialize-session session :root root :name name)
@@ -479,8 +493,7 @@ Signals an error if output contains zero lines or more than one line."
       ;; Process died for some reason - most likely 'mtn not found in
       ;; path'. Don't warn if buffer hasn't been deleted; that
       ;; obscures the real error message
-      ;; FIXME: if that is the reason, this assert fails. Disable assertions for now, fix later
-      (xmtn--assert-optional (null (xmtn-automate--session-buffer session))))
+      nil)
      ((ecase (process-status process)
         (run nil)
         (exit t)
@@ -576,7 +589,7 @@ Signals an error if output contains zero lines or more than one line."
                  (exit nil)
                  (signal nil))
           (accept-process-output process))
-        ;;(dvc-trace "Process in root %s terminated" root)
+        (dvc-trace "Process in root %s terminated" root)
         ))
     (xmtn-automate--initialize-session
      session

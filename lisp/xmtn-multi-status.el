@@ -1,4 +1,4 @@
-;;; xmtn-status.el --- query status of multiple projects
+;;; xmtn-status.el --- manage actions for multiple projects
 
 ;; Copyright (C) 2009 Stephen Leake
 
@@ -43,12 +43,13 @@ The elements must all be of class xmtn-status-data.")
 
 (defstruct (xmtn-status-data (:copier nil))
   work             ; directory name relative to xmtn-status-root
+  branch           ; branch name (assumed never changes)
   need-refresh     ; nil | t : if an async process was started that invalidates state data
   head-rev         ; nil | mtn rev string : current head revision, nil if multiple heads
   conflicts-buffer ; *xmtn-conflicts* buffer for merge
   heads            ; 'at-head | 'need-update | 'need-merge)
   (local-changes
-   'need-scan)     ; 'need-scan | 'need-status | 'ok
+   'need-scan)     ; 'need-scan | 'need-commit | 'ok
   (conflicts
    'need-scan)     ; 'need-scan | 'need-resolve | 'need-review-resolve-internal | 'resolved | 'none
   )
@@ -69,7 +70,7 @@ The elements must all be of class xmtn-status-data.")
 
     (ecase (xmtn-status-data-local-changes data)
       (need-scan (insert "  from local changes unknown\n"))
-      (need-status (insert (dvc-face-add "  need dvc-status\n" 'dvc-header)))
+      (need-commit (insert (dvc-face-add "  need dvc-status\n" 'dvc-header)))
       (ok nil))
 
     (ecase (xmtn-status-data-conflicts data)
@@ -178,7 +179,7 @@ The elements must all be of class xmtn-status-data.")
   (let* ((data (ewoc-data (ewoc-locate xmtn-status-ewoc))))
     (and (not (xmtn-status-data-need-refresh data))
          (member (xmtn-status-data-local-changes data)
-                 '(need-scan need-status)))))
+                 '(need-scan need-commit)))))
 
 (defun xmtn-status-missing ()
   "Run xmtn-missing on current workspace."
@@ -201,7 +202,7 @@ The elements must all be of class xmtn-status-data.")
          (data (ewoc-data elem))
          (default-directory (xmtn-status-work data)))
     (xmtn-status-need-refresh elem data)
-    (xmtn-dvc-merge)))
+    (xmtn-dvc-merge-1 default-directory nil)))
 
 (defun xmtn-status-heads ()
   "Run xmtn-heads on current workspace."
@@ -298,7 +299,7 @@ The elements must all be of class xmtn-status-data.")
                  (set-buffer output)
                  (goto-char (point-min))
                  (if (search-forward "patch" (point-max) t)
-                     'need-status
+                     'need-commit
                    'ok))
 
      :error (lambda (output error status arguments)
@@ -317,7 +318,7 @@ The elements must all be of class xmtn-status-data.")
 
     ;; create conflicts file
     (xmtn-conflicts-clean work)
-    (xmtn-conflicts-save-opts work work)
+    (xmtn-conflicts-save-opts work work (xmtn-status-data-branch data) (xmtn-status-data-branch data))
     (dvc-run-dvc-sync
      'xmtn
      (list "conflicts" "store")
@@ -345,7 +346,7 @@ The elements must all be of class xmtn-status-data.")
 
     (message "checking heads for %s " work)
 
-    (let ((heads (xmtn--heads work nil))
+    (let ((heads (xmtn--heads work (xmtn-status-data-branch data)))
           (base-rev (xmtn--get-base-revision-hash-id-or-null work)))
       (case (length heads)
         (1
@@ -404,6 +405,7 @@ The elements must all be of class xmtn-status-data.")
       (ewoc-enter-last xmtn-status-ewoc
                        (make-xmtn-status-data
                         :work workspace
+                        :branch (xmtn--tree-default-branch (concat xmtn-status-root workspace))
                         :need-refresh t))))
     (xmtn-multiple-status-mode))
 
@@ -420,6 +422,7 @@ The elements must all be of class xmtn-status-data.")
     (ewoc-enter-last xmtn-status-ewoc
                      (make-xmtn-status-data
                       :work (file-name-nondirectory (directory-file-name work))
+                      :branch (xmtn--tree-default-branch default-directory)
                       :need-refresh t))
     (xmtn-multiple-status-mode)))
 

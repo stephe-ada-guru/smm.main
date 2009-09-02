@@ -1060,17 +1060,17 @@ non-nil, show log-edit buffer in other frame."
     (insert ": ")
     ))
 
-(defun xmtn-conflicts-do-propagate ()
+(defun xmtn-conflicts-do-propagate (&optional cached-branch)
   "Perform propagate on revisions in current conflict buffer."
   (interactive)
   (save-some-buffers t); log buffer
-  (xmtn-propagate-from xmtn-conflicts-left-branch))
+  (xmtn-propagate-from xmtn-conflicts-left-branch cached-branch))
 
 (defun xmtn-conflicts-do-merge ()
   "Perform merge on revisions in current conflict buffer."
   (interactive)
   (save-some-buffers t); log buffer
-  (xmtn-dvc-merge))
+  (xmtn-dvc-merge-1 default-directory nil))
 
 (defun xmtn-conflicts-ediff-resolution-ws ()
   "Ediff current resolution file against workspace."
@@ -1139,13 +1139,15 @@ non-nil, show log-edit buffer in other frame."
 
 (defconst xmtn-conflicts-opts-file "_MTN/dvc-conflicts-opts")
 
-(defun xmtn-conflicts-save-opts (left-work right-work)
+(defun xmtn-conflicts-save-opts (left-work right-work &optional left-branch right-branch)
   "Store LEFT-WORK, RIGHT-WORK in `xmtn-conflicts-opts-file', for
 retrieval by `xmtn-conflicts-load-opts'."
   (let ((xmtn-conflicts-left-work left-work)
         (xmtn-conflicts-right-work right-work)
-        (xmtn-conflicts-left-branch (xmtn--tree-default-branch left-work))
-        (xmtn-conflicts-right-branch (xmtn--tree-default-branch right-work)))
+        (xmtn-conflicts-left-branch (or left-branch
+                                        (xmtn--tree-default-branch left-work)))
+        (xmtn-conflicts-right-branch (or right-branch
+                                         (xmtn--tree-default-branch right-work))))
 
   (dvc-save-state (list 'xmtn-conflicts-left-work
                         'xmtn-conflicts-left-branch
@@ -1182,11 +1184,11 @@ to right.  Stores conflict file in RIGHT-WORK/_MTN."
               (pop-to-buffer error))
      )))
 
-(defun xmtn-check-workspace-for-propagate (work)
+(defun xmtn-check-workspace-for-propagate (work cached-branch)
   "Check that workspace WORK is ready for propagate.
 It must be merged, and should be at the head revision, and have no local changes."
   (let* ((default-directory work)
-         (heads (xmtn--heads default-directory nil))
+         (heads (xmtn--heads default-directory cached-branch))
          (base (xmtn--get-base-revision-hash-id-or-null default-directory)))
 
     (message "checking %s for multiple heads, base not head" work)
@@ -1250,17 +1252,20 @@ workspace."
   (setq left-work (dvc-read-project-tree-maybe "Propagate from (workspace directory): " left-work))
   (setq right-work (dvc-read-project-tree-maybe "to (workspace directory): " right-work))
 
-  (xmtn-check-workspace-for-propagate left-work)
-  (xmtn-check-workspace-for-propagate right-work)
+  (let ((left-branch (xmtn--tree-default-branch left-work))
+        (right-branch (xmtn--tree-default-branch right-work)))
 
-  (xmtn-check-propagate-needed left-work right-work)
+    (xmtn-check-workspace-for-propagate left-work left-branch)
+    (xmtn-check-workspace-for-propagate right-work right-branch)
 
-  (message "computing conflicts")
+    (xmtn-check-propagate-needed left-work right-work)
 
-  (xmtn-conflicts-1 left-work
-                    (car (xmtn--heads left-work nil))
+    (message "computing conflicts")
+
+    (xmtn-conflicts-1 left-work
+                    (car (xmtn--heads left-work left-branch))
                     right-work
-                    (car (xmtn--heads right-work nil))))
+                    (car (xmtn--heads right-work right-branch)))))
 
 ;;;###autoload
 (defun xmtn-conflicts-merge ()

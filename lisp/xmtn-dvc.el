@@ -1215,22 +1215,25 @@ finished."
   (check-type revision-hash-id xmtn--hash-id)
   (xmtn--command-output-lines-future root `("disapprove" ,revision-hash-id)))
 
-(defun xmtn--do-update (root target-revision-hash-id)
+(defun xmtn--do-update (root target-revision-hash-id post-update-p)
   (check-type root string)
   (check-type target-revision-hash-id xmtn--hash-id)
   (lexical-let ((progress-message (format "Updating tree %s to revision %s"
-                                          root target-revision-hash-id)))
+                                          root target-revision-hash-id))
+                (post-update-p post-update-p))
     (let ((command `("update" "--move-conflicting-paths" ,(concat "--revision=" target-revision-hash-id)))
           (post-process
            (lambda ()
              (message "%s... done" progress-message)
-             (dvc-revert-some-buffers default-directory)
-             (dvc-diff-clear-buffers 'xmtn
-                                     default-directory
-                                     "* Just updated; please refresh buffer"
-                                     (xmtn--status-header
-                                      default-directory
-                                      (xmtn--get-base-revision-hash-id-or-null default-directory)))))
+             (if post-update-p
+                 (progn
+                   (dvc-revert-some-buffers default-directory)
+                   (dvc-diff-clear-buffers 'xmtn
+                                           default-directory
+                                           "* Just updated; please refresh buffer"
+                                           (xmtn--status-header
+                                            default-directory
+                                            (xmtn--get-base-revision-hash-id-or-null default-directory)))))))
           )
 
       (message "%s..." progress-message)
@@ -1239,28 +1242,29 @@ finished."
       (funcall post-process))
     nil))
 
-(defun xmtn--update (root target-revision-hash-id)
+(defun xmtn--update (root target-revision-hash-id check-id-p)
   ;; mtn will just give an innocuous message if already updated, which
   ;; the user won't see. So check that here - it's fast.
-  (when (equal (xmtn--get-base-revision-hash-id root) target-revision-hash-id)
-    (error "Tree %s is already based on target revision %s"
-           root target-revision-hash-id))
+  (if check-id-p
+      (when (equal (xmtn--get-base-revision-hash-id root) target-revision-hash-id)
+        (error "Tree %s is already based on target revision %s"
+               root target-revision-hash-id)))
   (dvc-save-some-buffers root)
-  (xmtn--do-update root target-revision-hash-id))
+  (xmtn--do-update root target-revision-hash-id check-id-p))
 
 ;;;###autoload
 (defun xmtn-dvc-update (&optional revision-id)
   (let ((root (dvc-tree-root)))
     (xmtn-automate-with-session (nil root)
       (if revision-id
-          (xmtn--update root (xmtn--revision-hash-id revision-id))
+          (xmtn--update root (xmtn--revision-hash-id revision-id) t)
 
         (let* ((branch (xmtn--tree-default-branch root))
                (heads (xmtn--heads root branch)))
           (case (length heads)
             (0 (assert nil))
             (1
-             (xmtn--update root (first heads)))
+             (xmtn--update root (first heads) t))
 
             (t
              ;; User can choose one head from a revlist, or merge them.
@@ -1270,12 +1274,13 @@ finished."
                     branch (length heads))))))))
   nil)
 
-(defun xmtn-propagate-from (other)
+(defun xmtn-propagate-from (other &optional cached-branch)
   "Propagate from OTHER branch to local tree branch."
   (interactive "MPropagate from branch: ")
   (let*
       ((root (dvc-tree-root))
-       (local-branch (xmtn--tree-default-branch root))
+       (local-branch (or cached-branch
+                         (xmtn--tree-default-branch root)))
        (resolve-conflicts
         (if (file-exists-p (concat root "/_MTN/conflicts"))
             (progn
@@ -1309,30 +1314,35 @@ finished."
                        (xmtn--refresh-status-header display-buffer)
                        (message "%s... done" msg)))))))
 
+(defun xmtn-dvc-merge-1 (root refresh-status)
+  (lexical-let ((refresh-status refresh-status))
+    (xmtn-automate-with-session
+        (nil root)
+      (xmtn--run-command-async
+       root
+       (list
+        "merge"
+        (if (file-exists-p (concat root "/_MTN/conflicts"))
+            "--resolve-conflicts-file=_MTN/conflicts")
+        (xmtn-dvc-log-message))
+       :finished (lambda (output error status arguments)
+                   (if refresh-status
+                       (xmtn--refresh-status-header (current-buffer))))))))
+
 ;;;###autoload
 (defun xmtn-dvc-merge (&optional other)
   (if other
       (xmtn-propagate-from other)
     ;; else merge heads
     (let* ((root (dvc-tree-root))
-           (resolve-conflicts
-            (if (file-exists-p (concat root "/_MTN/conflicts"))
-                (progn
-                  "--resolve-conflicts-file=_MTN/conflicts"))))
-      (xmtn-automate-with-session
-          (nil root)
-        (let* ((branch (xmtn--tree-default-branch root))
-               (heads (xmtn--heads root branch)))
-          (case (length heads)
-            (0 (assert nil))
-            (1
-             (message "already merged"))
-            (t
-             (xmtn--run-command-async
-              root
-              (list "merge" resolve-conflicts (xmtn-dvc-log-message))
-              :finished (lambda (output error status arguments)
-                          (xmtn--refresh-status-header (current-buffer))))))))))
+           (branch (xmtn--tree-default-branch root))
+           (heads (xmtn--heads root branch)))
+      (case (length heads)
+        (0 (assert nil))
+        (1
+         (message "already merged"))
+        (t
+         (xmtn-dvc-merge-1 root t)))))
   nil)
 
 ;;;###autoload
