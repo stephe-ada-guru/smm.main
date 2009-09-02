@@ -260,6 +260,13 @@ The elements must all be of class xmtn-propagate-data.")
   (let* ((elem (ewoc-locate xmtn-propagate-ewoc))
          (data (ewoc-data elem)))
     (xmtn-propagate-need-refresh elem data)
+
+    (if (buffer-live-p (xmtn-propagate-data-conflicts-buffer data))
+        ;; can't create log-edit buffer with both conflicts and status
+        ;; buffer open, and we'll be killing this as part of the
+        ;; refresh anyway.
+        (kill-buffer (xmtn-propagate-data-conflicts-buffer data)))
+
     (setf (xmtn-propagate-data-to-local-changes data) 'ok)
     (xmtn-status (xmtn-propagate-to-work data))))
 
@@ -624,29 +631,41 @@ The elements must all be of class xmtn-propagate-data.")
   (xmtn-propagate-next)
   (message "done"))
 
-(defun xmtn-propagate-make-data (from-workspace to-workspace from-name to-name from-branch to-branch)
-    (let ((from-session (xmtn-automate-cache-session (concat xmtn-propagate-from-root from-workspace)))
-          (to-session (xmtn-automate-cache-session (concat xmtn-propagate-from-root to-workspace))))
-      (ewoc-enter-last xmtn-propagate-ewoc
-                       (make-xmtn-propagate-data
-                        :from-work from-workspace
-                        :to-work to-workspace
-                        :from-name from-name
-                        :to-name to-name
-                        :from-branch from-branch
-                        :to-branch to-branch
-                        :from-session from-session
-                        :to-session to-session
-                        :need-refresh t))))
+(defun xmtn-propagate-make-data (from-workspace to-workspace from-name to-name)
+  "FROM-WORKSPACE, TO-WORKSPACE are relative names"
+    (let* ((from-work (concat xmtn-propagate-from-root from-workspace))
+           ;; cached sessions not working (yet)
+           ;;(from-session (xmtn-automate-cache-session from-work))
+           (to-work (concat xmtn-propagate-to-root to-workspace))
+           ;;(to-session (xmtn-automate-cache-session to-work))
+           )
+
+      (ewoc-enter-last
+       xmtn-propagate-ewoc
+       (make-xmtn-propagate-data
+        :from-work from-workspace
+        :to-work to-workspace
+        :from-name from-name
+        :to-name to-name
+        :from-branch (xmtn--tree-default-branch from-work)
+        :to-branch (xmtn--tree-default-branch to-work)
+        :from-session nil ;; from-session
+        :to-session nil ;; to-session
+        :need-refresh t))))
 
 ;;;###autoload
-(defun xmtn-propagate-multiple (from-dir to-dir)
-  "Show all actions needed to propagate all projects under FROM-DIR to TO-DIR."
+(defun xmtn-propagate-multiple (from-dir to-dir &optional workspaces)
+  "Show all actions needed to propagate projects under FROM-DIR
+to TO-DIR. WORKSPACES (default nil) is a list of workspaces
+common to from-dir and to-dir; if nil, the directories are
+scanned and all common ones found are used."
   (interactive "DPropagate all from (root directory): \nDto (root directory): ")
   (setq from-dir (substitute-in-file-name from-dir))
   (setq to-dir (substitute-in-file-name to-dir))
-  (let ((from-workspaces (xmtn--filter-non-dir from-dir))
-        (to-workspaces (xmtn--filter-non-dir to-dir)))
+  (let ((from-workspaces (or workspaces
+                             (xmtn--filter-non-dir from-dir)))
+        (to-workspaces (or workspaces
+                           (xmtn--filter-non-dir to-dir))))
 
     (pop-to-buffer (get-buffer-create "*xmtn-propagate*"))
     (setq xmtn-propagate-from-root (file-name-as-directory from-dir))
@@ -666,9 +685,8 @@ The elements must all be of class xmtn-propagate-data.")
            workspace
            workspace
            (file-name-nondirectory (directory-file-name xmtn-propagate-from-root))
-           (file-name-nondirectory (directory-file-name xmtn-propagate-to-root))
-           (xmtn--tree-default-branch (concat xmtn-propagate-from-root workspace))
-           (xmtn--tree-default-branch (concat xmtn-propagate-to-root workspace)))))
+           (file-name-nondirectory (directory-file-name xmtn-propagate-to-root)))))
+    (redisplay)
     (xmtn-propagate-mode)))
 
 ;;;###autoload
@@ -696,9 +714,7 @@ The elements must all be of class xmtn-propagate-data.")
      (file-name-nondirectory (directory-file-name from-work))
      (file-name-nondirectory (directory-file-name to-work))
      (file-name-nondirectory (directory-file-name from-work))
-     (file-name-nondirectory (directory-file-name to-work))
-     (xmtn--tree-default-branch from-work)
-     (xmtn--tree-default-branch to-work))
+     (file-name-nondirectory (directory-file-name to-work)))
     (xmtn-propagate-mode)))
 
 (provide 'xmtn-propagate)

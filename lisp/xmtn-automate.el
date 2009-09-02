@@ -260,11 +260,17 @@
 (defun xmtn-automate-cache-session (root)
   "Create a mtn automate session for workspace ROOT, store it in
 session cache, return it (for later kill)."
-  (let* ((key (file-truename root))
+  (let* ((default-directory (file-name-as-directory root))
+         (key (file-truename default-directory))
          (session (xmtn-automate--make-session root key)))
     (setq xmtn-automate--*sessions*
           (acons key session xmtn-automate--*sessions*))
     session))
+
+(defun xmtn-automate-get-cached-session (key)
+  "Return a session from the cache, or nil."
+  ;; separate function so we can debug it
+  (cdr (assoc key xmtn-automate--*sessions*)))
 
 (defmacro* xmtn-automate-with-session ((session-var-or-null root-form &key)
                                        &body body)
@@ -285,7 +291,7 @@ session cache, return it (for later kill)."
         (thunk (gensym)))
     `(let* ((,root (file-name-as-directory ,root-form))
             (,key (file-truename ,root))
-            (,session (cdr (assoc ,key xmtn-automate--*sessions*)))
+            (,session (xmtn-automate-get-cached-session ,key))
             (,thunk (lambda ()
                       (let ((,session-var ,session))
                         ,@body))))
