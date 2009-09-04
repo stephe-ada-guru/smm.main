@@ -174,9 +174,13 @@ The elements must all be of class xmtn-propagate-data.")
 (defun xmtn-propagate-cleanp ()
   "Non-nil if clean is appropriate for current workspace."
   (let ((data (ewoc-data (ewoc-locate xmtn-propagate-ewoc))))
-    (and (not (xmtn-propagate-data-need-refresh data))
+    ;; don't check need-refresh here; allow deleting after just doing
+    ;; final required action in another buffer. Or we've just started,
+    ;; but the user knows it's ok.
+    (and (member (xmtn-propagate-data-from-local-changes data) '(need-scan ok))
+         (member (xmtn-propagate-data-to-local-changes data) '(need-scan ok))
          (not (xmtn-propagate-data-propagate-needed data))
-         (eq 'at-head (xmtn-propagate-data-to-heads data)))))
+         (member (xmtn-propagate-data-to-heads data) '(need-scan 'at-head)))))
 
 (defun xmtn-propagate-do-refresh-one ()
   (interactive)

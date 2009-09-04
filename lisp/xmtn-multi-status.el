@@ -47,7 +47,7 @@ The elements must all be of class xmtn-status-data.")
   need-refresh     ; nil | t : if an async process was started that invalidates state data
   head-rev         ; nil | mtn rev string : current head revision, nil if multiple heads
   conflicts-buffer ; *xmtn-conflicts* buffer for merge
-  heads            ; 'at-head | 'need-update | 'need-merge)
+  heads            ; 'need-scan | 'at-head | 'need-update | 'need-merge)
   (local-changes
    'need-scan)     ; 'need-scan | 'need-commit | 'ok
   (conflicts
@@ -86,9 +86,9 @@ The elements must all be of class xmtn-status-data.")
 
     (ecase (xmtn-status-data-heads data)
       (at-head     nil)
-      (need-update (insert (dvc-face-add "  need dvc-missing\n" 'dvc-conflict)))
+      (need-update (insert (dvc-face-add "  need update\n" 'dvc-conflict)))
       (need-merge
-       (insert (dvc-face-add "  need dvc-merge\n" 'dvc-conflict)))
+       (insert (dvc-face-add "  need merge\n" 'dvc-conflict)))
       )))
 
 (defun xmtn-status-clean ()
@@ -103,9 +103,10 @@ The elements must all be of class xmtn-status-data.")
 (defun xmtn-status-cleanp ()
   "Non-nil if clean & quit is appropriate for current workspace."
   (let ((data (ewoc-data (ewoc-locate xmtn-status-ewoc))))
-    (and (not (xmtn-status-data-need-refresh data))
-         (eq 'ok (xmtn-status-data-local-changes data))
-         (eq 'at-head (xmtn-status-data-heads data)))))
+    ;; don't check need-refresh here; allow deleting after just doing
+    ;; final required action in another buffer.
+    (and (member (xmtn-status-data-local-changes data) '(need-scan ok))
+         (member (xmtn-status-data-heads data) '(need-scan at-head)))))
 
 (defun xmtn-status-do-refresh-one ()
   (interactive)
@@ -117,7 +118,11 @@ The elements must all be of class xmtn-status-data.")
 (defun xmtn-status-refreshp ()
   "Non-nil if refresh is appropriate for current workspace."
   (let ((data (ewoc-data (ewoc-locate xmtn-status-ewoc))))
-    (xmtn-status-data-need-refresh data)))
+    (or (xmtn-status-data-need-refresh data)
+        ;; everything's done, but the user just did mtn sync, and more
+        ;; stuff showed up
+        (eq 'ok (xmtn-status-data-local-changes data))
+        (eq 'at-head (xmtn-status-data-heads data)))))
 
 (defun xmtn-status-update ()
   "Update current workspace."
@@ -277,9 +282,7 @@ The elements must all be of class xmtn-status-data.")
   (setq buffer-read-only t)
   (buffer-disable-undo)
 
-  (set-buffer-modified-p nil)
-  (xmtn-status-refresh)
-  (xmtn-status-next))
+  (set-buffer-modified-p nil))
 
 (defun xmtn-status-local-changes (work)
   "Value for xmtn-status-data-local-changes for WORK."
@@ -390,9 +393,9 @@ The elements must all be of class xmtn-status-data.")
   (message "done"))
 
 ;;;###autoload
-(defun xmtn-status-multiple (dir)
+(defun xmtn-status-multiple (dir &optional skip-initial-scan)
   "Show actions to update all projects under DIR."
-  (interactive "DStatus for all (root directory): ")
+  (interactive "DStatus for all (root directory): \nP")
   (let* ((default-directory (substitute-in-file-name dir))
          (workspaces (xmtn--filter-non-dir default-directory)))
 
@@ -406,13 +409,18 @@ The elements must all be of class xmtn-status-data.")
                        (make-xmtn-status-data
                         :work workspace
                         :branch (xmtn--tree-default-branch (concat xmtn-status-root workspace))
-                        :need-refresh t))))
-    (xmtn-multiple-status-mode))
+                        :need-refresh t
+                        :heads 'need-scan))))
+  (xmtn-multiple-status-mode)
+  (when (not skip-initial-scan)
+    (progn
+      (xmtn-status-refresh)
+      (xmtn-status-next))))
 
 ;;;###autoload
 (defun xmtn-status-one (work)
   "Show actions to update WORK."
-  (interactive "DStatus for (workspace): \n")
+  (interactive "DStatus for (workspace): ")
   (let ((default-directory work))
     (pop-to-buffer (get-buffer-create "*xmtn-multi-status*"))
     (setq xmtn-status-root (expand-file-name (concat (file-name-as-directory work) "../")))
@@ -423,8 +431,11 @@ The elements must all be of class xmtn-status-data.")
                      (make-xmtn-status-data
                       :work (file-name-nondirectory (directory-file-name work))
                       :branch (xmtn--tree-default-branch default-directory)
-                      :need-refresh t))
-    (xmtn-multiple-status-mode)))
+                      :need-refresh t
+                      :heads 'need-scan))
+    (xmtn-multiple-status-mode)
+    (xmtn-status-refresh)
+    (xmtn-status-next)))
 
 (provide 'xmtn-multi-status)
 
