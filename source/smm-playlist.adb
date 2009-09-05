@@ -25,7 +25,8 @@ with SAL.Time_Conversions;
 procedure SMM.Playlist
   (Db          : in out SAL.Config_Files.Configuration_Type;
    Category    : in String;
-   Destination : in String)
+   Destination : in String;
+   Replace     : in Boolean)
 is
    use Song_Lists;
 
@@ -42,9 +43,16 @@ begin
    declare
       use Ada.Directories;
       use Ada.Text_IO;
+      Mode : File_Mode;
    begin
+      if Replace then
+         Mode := Out_File;
+      else
+         Mode := Append_File;
+      end if;
+
       if Exists (Destination) then
-         Open (Playlist_File, Append_File, Destination);
+         Open (Playlist_File, Mode, Destination);
       else
          Create (Playlist_File, Out_File, Destination);
       end if;

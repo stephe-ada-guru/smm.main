@@ -74,7 +74,7 @@ is
 
          when Ordinary_File =>
             --  FIXME: read filenames into sorted tree for duplicate detection
-            if Extension (Full_Name (Dir_Entry)) = ".mp3" then
+            if Extension (Full_Name (Dir_Entry)) = "mp3" then
                if Verbosity > 0 then
                   Ada.Text_IO.Put_Line ("adding file " & Name);
                end if;

@@ -47,9 +47,10 @@ is
       Put_Line ("    2) download default amount of music to target_dir");
       Put_Line ("    3) add new files to playlist");
       New_Line;
-      Put_Line ("  playlist <category> [<file>]");
+      Put_Line ("  playlist <category> [<file>] [--replace]");
       Put_Line ("    create a playlist in <file> (same songs as 'download' would do)");
       Put_Line ("    <file> defaults to ~/.smm/<file>.m3u");
+      Put_Line ("    --replace - overwrite file; otherwise append");
       New_Line;
       Put_Line ("  import <dir>");
       Put_Line ("    scan <dir> for new music; dir must be relative to database root dir");
@@ -121,15 +122,30 @@ begin
       end;
 
    when Playlist =>
-      if Next_Arg + 1 > Argument_Count then
-         declare
-            File_Name : constant String := Home & "/.smm/" & Argument (Next_Arg) & ".m3u";
-         begin
-            SMM.Playlist (Db, Argument (Next_Arg), File_Name);
-         end;
-      else
-         SMM.Playlist (Db, Argument (Next_Arg), Argument (Next_Arg + 1));
-      end if;
+      declare
+         Replace   : Boolean         := False;
+         Category  : constant String := Argument (Next_Arg);
+         File_Name : access String;
+      begin
+         Next_Arg := Next_Arg + 1;
+         if Next_Arg <= Argument_Count then
+            if Argument (Next_Arg) = "--replace" then
+               Replace := True;
+            else
+               File_Name := new String'(Argument (Next_Arg));
+               Next_Arg := Next_Arg + 1;
+               if Argument (Next_Arg) = "--replace" then
+                  Replace := True;
+               end if;
+            end if;
+         end if;
+
+         if File_Name = null then
+            File_Name := new String'(Home & "/.smm/" & Category & ".m3u");
+         end if;
+
+         SMM.Playlist (Db, Category, File_Name.all, Replace);
+      end;
 
    when Import =>
       declare
