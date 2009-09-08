@@ -393,11 +393,25 @@ The elements must all be of class xmtn-status-data.")
   (message "done"))
 
 ;;;###autoload
-(defun xmtn-status-multiple (dir &optional skip-initial-scan)
+(defun xmtn-update-multiple (dir &optional workspaces)
+  "Update all projects under DIR."
+  (interactive "DUpdate all in (root directory): ")
+  (let ((root (file-name-as-directory (substitute-in-file-name dir))))
+
+    (if (not workspaces) (setq workspaces (xmtn--filter-non-dir root)))
+
+    (dolist (workspace workspaces)
+      (let ((default-directory (concat root workspace)))
+        (xmtn-dvc-update)))
+    (message "Update %s done" root)))
+
+;;;###autoload
+(defun xmtn-status-multiple (dir &optional workspaces skip-initial-scan)
   "Show actions to update all projects under DIR."
-  (interactive "DStatus for all (root directory): \nP")
-  (let* ((default-directory (substitute-in-file-name dir))
-         (workspaces (xmtn--filter-non-dir default-directory)))
+  (interactive "DStatus for all (root directory): \ni\nP")
+  (let ((default-directory (file-name-as-directory (substitute-in-file-name dir))))
+
+    (if (not workspaces) (setq workspaces (xmtn--filter-non-dir default-directory)))
 
     (pop-to-buffer (get-buffer-create "*xmtn-multi-status*"))
     (setq xmtn-status-root (file-name-as-directory default-directory))

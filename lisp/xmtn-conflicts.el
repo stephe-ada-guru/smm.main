@@ -855,19 +855,21 @@ header."
     (setf (xmtn-conflicts-conflict-right_resolution conflict) (list 'resolved_drop))
     (ewoc-invalidate xmtn-conflicts-ewoc elem)))
 
-(defun xmtn-conflicts-resolve-user (side)
-  "Resolve the current conflict by user_SIDE."
+(defun xmtn-conflicts-resolve-user (resolve-side default-side)
+  "Resolve the current conflict by user_RESOLVE-SIDE. Default to file from DEFAULT-SIDE."
   (interactive)
-  ;; Right is the target workspace in a propagate, and also the current
-  ;; workspace in a merge. So default to right_name.
   (let* ((elem (ewoc-locate xmtn-conflicts-ewoc))
          (conflict (ewoc-data elem))
          (result-file (read-file-name "resolution file: " "./" nil t
-                                      (xmtn-conflicts-conflict-right_name conflict))))
-    (ecase side
-      ('left
+                                      (ecase default-side
+                                        (left
+                                         (xmtn-conflicts-conflict-right_name conflict))
+                                        (right
+                                         (xmtn-conflicts-conflict-right_name conflict))))))
+    (ecase resolve-side
+      (left
        (setf (xmtn-conflicts-conflict-left_resolution conflict) (list 'resolved_user result-file)))
-      ('right
+      (right
         (setf (xmtn-conflicts-conflict-right_resolution conflict) (list 'resolved_user result-file)))
       )
     (ewoc-invalidate xmtn-conflicts-ewoc elem)))
@@ -990,32 +992,42 @@ header."
     ;; Don't need 'left' or 'right' in menu, since only one is
     ;; visible; then this works better for single file conflicts.
 
-    (define-key map [?9]  '(menu-item "9) drop"
+    (define-key map [?b]  '(menu-item "b) drop"
                                       xmtn-conflicts-resolve-drop_right
                                       :visible (xmtn-conflicts-resolve-drop_rightp)))
-    (define-key map [?8]  '(menu-item "8) rename"
+    (define-key map [?a]  '(menu-item "a) rename"
                                       (lambda ()
                                         (interactive)
                                         (xmtn-conflicts-resolve-rename 'right))
                                       :visible (xmtn-conflicts-resolve-rename_rightp)))
-    (define-key map [?7]  '(menu-item "7) file"
+    (define-key map [?9]  '(menu-item "9) right file"
                                       (lambda ()
                                         (interactive)
-                                        (xmtn-conflicts-resolve-user 'right))
+                                        (xmtn-conflicts-resolve-user 'right 'right))
                                       :visible (xmtn-conflicts-resolve-user_rightp)))
-    (define-key map [?6]  '(menu-item "6) keep"
+    (define-key map [?8]  '(menu-item "8) left file"
+                                      (lambda ()
+                                        (interactive)
+                                        (xmtn-conflicts-resolve-user 'right 'left))
+                                      :visible (xmtn-conflicts-resolve-user_rightp)))
+    (define-key map [?7]  '(menu-item "7) keep"
                                       xmtn-conflicts-resolve-keep_right
                                       :visible (xmtn-conflicts-resolve-keep_rightp)))
-    (define-key map [?5]  '(menu-item "5) ediff"
+    (define-key map [?6]  '(menu-item "6) ediff"
                                       (lambda ()
                                         (interactive)
                                         (xmtn-conflicts-resolve-ediff 'right))
                                       :visible (xmtn-conflicts-resolve-user_rightp)))
 
-    (define-key map [?4]  '(menu-item "4) file"
+    (define-key map [?5]  '(menu-item "5) right file"
                                       (lambda ()
                                         (interactive)
-                                        (xmtn-conflicts-resolve-user 'left))
+                                        (xmtn-conflicts-resolve-user 'left 'right))
+                                      :visible (xmtn-conflicts-resolve-user_leftp)))
+    (define-key map [?4]  '(menu-item "4) left file"
+                                      (lambda ()
+                                        (interactive)
+                                        (xmtn-conflicts-resolve-user 'left 'left))
                                       :visible (xmtn-conflicts-resolve-user_leftp)))
     (define-key map [?3]  '(menu-item "3) drop"
                                       xmtn-conflicts-resolve-drop_left

@@ -3,6 +3,7 @@
 ^\.bzr$
 ^\.bzrignore$
 ^\.tmp-bzr-log-edit\.txt$
+^confdefs\.h$
 ^config\.log$
 ^config\.status$
 ^dvc-load-install\.el$
