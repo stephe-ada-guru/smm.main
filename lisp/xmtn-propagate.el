@@ -154,6 +154,12 @@ The elements must all be of class xmtn-propagate-data.")
   ;; ewoc ought to do this, but it doesn't
   (redisplay))
 
+(defun xmtn-kill-conflicts-buffer (data)
+  (if (buffer-live-p (xmtn-propagate-data-conflicts-buffer data))
+      (let ((buffer (xmtn-propagate-data-conflicts-buffer data)))
+        (with-current-buffer buffer (save-buffer))
+        (kill-buffer buffer))))
+
 (defun xmtn-propagate-clean ()
   "Clean current workspace, delete from ewoc"
   (interactive)
@@ -162,11 +168,7 @@ The elements must all be of class xmtn-propagate-data.")
 
     ;; only one conflicts file and buffer
     (xmtn-conflicts-clean (xmtn-propagate-to-work data))
-    (if (buffer-live-p (xmtn-propagate-data-conflicts-buffer data))
-        (kill-buffer (xmtn-propagate-data-conflicts-buffer data)))
-
-    ;; (xmtn-automate--close-session (xmtn-propagate-data-from-session data))
-    ;; (xmtn-automate--close-session (xmtn-propagate-data-to-session data))
+    (xmtn-kill-conflicts-buffer data)
 
     (let ((inhibit-read-only t))
       (ewoc-delete xmtn-propagate-ewoc elem))))
@@ -269,11 +271,10 @@ The elements must all be of class xmtn-propagate-data.")
          (data (ewoc-data elem)))
     (xmtn-propagate-need-refresh elem data)
 
-    (if (buffer-live-p (xmtn-propagate-data-conflicts-buffer data))
-        ;; can't create log-edit buffer with both conflicts and status
-        ;; buffer open, and we'll be killing this as part of the
-        ;; refresh anyway.
-        (kill-buffer (xmtn-propagate-data-conflicts-buffer data)))
+    ;; can't create log-edit buffer with both conflicts and status
+    ;; buffer open, and we'll be killing this as part of the refresh
+    ;; anyway.
+    (xmtn-kill-conflicts-buffer data)
 
     (setf (xmtn-propagate-data-to-local-changes data) 'ok)
     (xmtn-status (xmtn-propagate-to-work data))))
@@ -407,10 +408,10 @@ The elements must all be of class xmtn-propagate-data.")
     (define-key map [?4]  '(menu-item (concat "4) update " (xmtn-propagate-from-name))
                                       xmtn-propagate-update-from
                                       :visible (xmtn-propagate-missing-fromp)))
-    (define-key map [?3]  '(menu-item (concat "3) status " (xmtn-propagate-to-name))
+    (define-key map [?3]  '(menu-item (concat "3) commit " (xmtn-propagate-to-name))
                                       xmtn-propagate-status-to
                                       :visible (xmtn-propagate-status-top)))
-    (define-key map [?2]  '(menu-item (concat "2) status " (xmtn-propagate-from-name))
+    (define-key map [?2]  '(menu-item (concat "2) commit " (xmtn-propagate-from-name))
                                       xmtn-propagate-status-from
                                       :visible (xmtn-propagate-status-fromp)))
     (define-key map [?1]  '(menu-item (concat "1) xmtn-heads " (xmtn-propagate-to-name))
@@ -454,7 +455,8 @@ The elements must all be of class xmtn-propagate-data.")
 (defun xmtn-propagate-local-changes (work)
   "Value for xmtn-propagate-data-local-changes for WORK."
   (message "checking %s for local changes" work)
-  (let ((default-directory work))
+  (let ((default-directory work)
+        result)
 
     (dvc-run-dvc-sync
      'xmtn
@@ -469,11 +471,28 @@ The elements must all be of class xmtn-propagate-data.")
                  (set-buffer output)
                  (goto-char (point-min))
                  (if (search-forward "patch" (point-max) t)
-                     'need-commit
-                   'ok))
+                     (setq result 'need-commit)
+                   (setq result 'ok)))
 
      :error (lambda (output error status arguments)
-              (pop-to-buffer error))))
+              (pop-to-buffer error)))
+
+    (if (eq result 'ok)
+        ;; check for unknown
+        (dvc-run-dvc-sync
+         'xmtn
+         (list "ls" "unknown")
+         :finished (lambda (output error status arguments)
+                 (message "") ; clear minibuffer
+                 (set-buffer output)
+                 (if (not (= (point-min) (point-max)))
+                     (setq result 'need-commit)
+                   (setq result 'ok)))
+
+         :error (lambda (output error status arguments)
+                  (pop-to-buffer error))))
+
+    result)
   )
 
 (defun xmtn-propagate-needed (data)
@@ -550,8 +569,7 @@ The elements must all be of class xmtn-propagate-data.")
           (xmtn-conflicts-update-counts))
 
       ;; recreate conflicts
-      (if (buffer-live-p (xmtn-propagate-data-conflicts-buffer data))
-          (kill-buffer (xmtn-propagate-data-conflicts-buffer data)))
+      (xmtn-kill-conflicts-buffer data)
 
       (xmtn-conflicts-clean (xmtn-propagate-to-work data))
 
@@ -636,7 +654,7 @@ The elements must all be of class xmtn-propagate-data.")
   (interactive)
   (ewoc-map 'xmtn-propagate-refresh-one xmtn-propagate-ewoc current-prefix-arg)
   ;; leaves point at (point-min)
-  (xmtn-propagate-next)
+  (xmtn-propagate-next t)
   (message "done"))
 
 (defun xmtn-propagate-make-data (from-workspace to-workspace from-name to-name)

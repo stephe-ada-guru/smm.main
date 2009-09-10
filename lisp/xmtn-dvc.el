@@ -360,7 +360,8 @@ the file before saving."
                                            "* Just committed! Please refresh buffer"
                                            (xmtn--status-header
                                             default-directory
-                                            (xmtn--get-base-revision-hash-id-or-null default-directory)))))
+                                            (xmtn--get-base-revision-hash-id-or-null default-directory)))
+                   (kill-buffer (current-buffer))))
        ;; Show message _after_ spawning command to override DVC's
        ;; debugging message.
        (message "%s... " progress-message))
