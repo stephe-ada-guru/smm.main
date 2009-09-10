@@ -58,7 +58,13 @@ The elements must all be of class xmtn-status-data.")
   (concat xmtn-status-root (xmtn-status-data-work data)))
 
 (defun xmtn-status-need-refresh (elem data)
+  ;; The user has selected an action that will change the state of the
+  ;; workspace via mtn actions; set our data to reflect that. We
+  ;; assume the user will not be creating new files or editing
+  ;; existing ones.
   (setf (xmtn-status-data-need-refresh data) t)
+  (setf (xmtn-status-data-heads data) 'need-scan)
+  (setf (xmtn-status-data-conflicts data) 'need-scan)
   (ewoc-invalidate xmtn-status-ewoc elem))
 
 (defun xmtn-status-printer (data)
@@ -112,7 +118,7 @@ The elements must all be of class xmtn-status-data.")
   (interactive)
   (let* ((elem (ewoc-locate xmtn-status-ewoc))
          (data (ewoc-data elem)))
-    (xmtn-status-refresh-one data)
+    (xmtn-status-refresh-one data current-prefix-arg)
     (ewoc-invalidate xmtn-status-ewoc elem)))
 
 (defun xmtn-status-refreshp ()
@@ -132,7 +138,7 @@ The elements must all be of class xmtn-status-data.")
     (xmtn-status-need-refresh elem data)
     (let ((default-directory (xmtn-status-work data)))
       (xmtn-dvc-update))
-    (xmtn-status-refresh-one data)
+    (xmtn-status-refresh-one data nil)
     (ewoc-invalidate xmtn-status-ewoc elem)))
 
 (defun xmtn-status-updatep ()
@@ -343,7 +349,7 @@ The elements must all be of class xmtn-status-data.")
              'need-review-resolve-internal
            'need-resolve))))))
 
-(defun xmtn-status-refresh-one (data)
+(defun xmtn-status-refresh-one (data refresh-local-changes)
   "Refresh DATA."
   (let ((work (xmtn-status-work data)))
 
@@ -370,6 +376,9 @@ The elements must all be of class xmtn-status-data.")
 
     (message "")
 
+    (if refresh-local-changes
+        (setf (xmtn-status-data-local-changes data) 'need-scan))
+
     (case (xmtn-status-data-local-changes data)
       (need-scan
        (setf (xmtn-status-data-local-changes data) (xmtn-status-local-changes work)))
@@ -387,9 +396,9 @@ The elements must all be of class xmtn-status-data.")
   t)
 
 (defun xmtn-status-refresh ()
-  "Refresh status of each ewoc element."
+  "Refresh status of each ewoc element. With prefix arg, reset local changes status to `unknown'."
   (interactive)
-  (ewoc-map 'xmtn-status-refresh-one xmtn-status-ewoc)
+  (ewoc-map 'xmtn-status-refresh-one xmtn-status-ewoc current-prefix-arg)
   (message "done"))
 
 ;;;###autoload

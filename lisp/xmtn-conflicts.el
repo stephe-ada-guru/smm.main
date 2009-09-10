@@ -860,12 +860,14 @@ header."
   (interactive)
   (let* ((elem (ewoc-locate xmtn-conflicts-ewoc))
          (conflict (ewoc-data elem))
-         (result-file (read-file-name "resolution file: " "./" nil t
+         (result-file (read-file-name "resolution file: "
                                       (ecase default-side
-                                        (left
-                                         (xmtn-conflicts-conflict-right_name conflict))
-                                        (right
-                                         (xmtn-conflicts-conflict-right_name conflict))))))
+                                        (left (file-name-as-directory xmtn-conflicts-left-work))
+                                        (right (file-name-as-directory xmtn-conflicts-right-work)))
+                                      nil t
+                                      (ecase default-side
+                                        (left (xmtn-conflicts-conflict-left_name conflict))
+                                        (right (xmtn-conflicts-conflict-right_name conflict))))))
     (ecase resolve-side
       (left
        (setf (xmtn-conflicts-conflict-left_resolution conflict) (list 'resolved_user result-file)))
@@ -1120,6 +1122,7 @@ non-nil, show log-edit buffer in other frame."
   "`xmtn-conflicts' menu"
   `("Mtn-conflicts"
     ["Clear resolution"     xmtn-conflicts-clear-resolution t]
+    ["Ediff resolution to ws" xmtn-conflicts-ediff-resolution-ws t]
     ["Propagate"            xmtn-conflicts-do-propagate t]
     ["Merge"                xmtn-conflicts-do-merge t]
     ["Update"               dvc-update t]
