@@ -411,7 +411,7 @@ The elements must all be of class xmtn-status-data.")
 
     (dolist (workspace workspaces)
       (let ((default-directory (concat root workspace)))
-        (xmtn-dvc-update)))
+        (xmtn-dvc-update nil t)))
     (message "Update %s done" root)))
 
 ;;;###autoload

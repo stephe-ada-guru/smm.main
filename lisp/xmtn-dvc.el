@@ -1243,32 +1243,32 @@ finished."
       (funcall post-process))
     nil))
 
-(defun xmtn--update (root target-revision-hash-id check-id-p)
+(defun xmtn--update (root target-revision-hash-id check-id-p no-ding)
   ;; mtn will just give an innocuous message if already updated, which
   ;; the user won't see. So check that here - it's fast.
   ;; Don't throw an error; upper level might be doing other directories as well.
   (if check-id-p
       (if (equal (xmtn--get-base-revision-hash-id root) target-revision-hash-id)
           (progn
-            (ding)
+            (unless no-ding (ding))
             (message "Tree %s is already based on target revision %s"
                      root target-revision-hash-id))
         (dvc-save-some-buffers root)
         (xmtn--do-update root target-revision-hash-id check-id-p))))
 
 ;;;###autoload
-(defun xmtn-dvc-update (&optional revision-id)
+(defun xmtn-dvc-update (&optional revision-id no-ding)
   (let ((root (dvc-tree-root)))
     (xmtn-automate-with-session (nil root)
       (if revision-id
-          (xmtn--update root (xmtn--revision-hash-id revision-id) t)
+          (xmtn--update root (xmtn--revision-hash-id revision-id) t no-ding)
 
         (let* ((branch (xmtn--tree-default-branch root))
                (heads (xmtn--heads root branch)))
           (case (length heads)
             (0 (assert nil))
             (1
-             (xmtn--update root (first heads) t))
+             (xmtn--update root (first heads) t no-ding))
 
             (t
              ;; User can choose one head from a revlist, or merge them.
