@@ -26,6 +26,18 @@ with SAL.Poly.Lists.Double.Gen_Randomize;
 with SAL.Time_Conversions.Config;
 package body SMM is
 
+   function Normalize (Path : in String) return String
+   is
+      Result : String := Path;
+   begin
+      for I in Result'Range loop
+         if Result (I) = '\' then
+            Result (I) := '/';
+         end if;
+      end loop;
+      return Result;
+   end Normalize;
+
    function Relative_Name_Sans_Extension
      (Root      : in String;
       Full_Name : in String)
@@ -52,11 +64,13 @@ package body SMM is
    end Relative_Name_Sans_Extension;
 
    function As_Directory (Path : in String) return String
-   is begin
-      if Path (Path'Last) = '/' then
-         return Path;
+   is
+      Temp : constant String := Normalize (Path);
+   begin
+      if Temp (Temp'Last) = '/' then
+         return Temp;
       else
-         return Path & '/';
+         return Temp & '/';
       end if;
    end As_Directory;
 

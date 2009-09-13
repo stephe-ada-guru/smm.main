@@ -32,10 +32,13 @@ package SMM is
 
    Download_File_Count : constant := 30;
 
+   function Normalize (Path : in String) return String;
+   --  convert '\' to '/'
+
    function Relative_Name_Sans_Extension (Root : in String; Full_Name : in String) return String;
 
    function As_Directory (Path : in String) return String;
-   --  append '/' if needed.
+   --  normalize, append '/' if needed.
 
    --  database keys
    Category_Key        : constant String := "Category";
