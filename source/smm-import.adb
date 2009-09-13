@@ -29,6 +29,10 @@ procedure SMM.Import
 is
    Index : Interfaces.Unsigned_32;
 
+   Song_Files : String_Maps.Map;
+   Pos        : String_Maps.Cursor;
+   Inserted   : Boolean;
+
    procedure Get_Initial_Index
    is
       use SAL.Config_Files;
@@ -50,6 +54,19 @@ is
       end loop;
    end Get_Initial_Index;
 
+   procedure Fill_Song_Files
+   is
+      use SAL.Config_Files;
+      I : Iterator_Type := First (Db, Songs_Key);
+   begin
+      loop
+         exit when Is_Null (I);
+         String_Maps.Insert (Song_Files, Normalize (Read (Db, I, File_Key)), I, Pos, Inserted);
+         Next (I);
+      end loop;
+
+   end Fill_Song_Files;
+
    procedure Import_Dir (Root : in String; Dir : in String)
    is
       use Ada.Directories;
@@ -59,7 +76,7 @@ is
       procedure Process_Dir_Entry (Dir_Entry : in Directory_Entry_Type)
       is
          use type Interfaces.Unsigned_32;
-         Name        : constant String := Relative_Name_Sans_Extension (Root, Full_Name (Dir_Entry));
+         Name        : constant String := Relative_Name (Root, Normalize (Full_Name (Dir_Entry)));
          Index_Image : constant String := Interfaces.Unsigned_32'Image (Index);
       begin
          case Kind (Dir_Entry) is
@@ -73,15 +90,20 @@ is
             Import_Dir (Root, Name);
 
          when Ordinary_File =>
-            --  FIXME: read filenames into sorted tree for duplicate detection
-            if Extension (Full_Name (Dir_Entry)) = "mp3" then
-               if Verbosity > 0 then
-                  Ada.Text_IO.Put_Line ("adding file " & Name);
+            if Extension (Name) = "mp3" then
+               String_Maps.Insert (Song_Files, Name, Null_Iterator, Pos, Inserted);
+               if not Inserted then
+                  if Verbosity > 1 then
+                     Ada.Text_IO.Put_Line ("duplicate: " & Name);
+                  end if;
+               else
+                  if Verbosity > 0 then
+                     Ada.Text_IO.Put_Line ("adding file " & Name);
+                  end if;
+                  Write_String (Db, Songs_Key & "." & Index_Image & "." & File_Key, Name);
+                  Write_String (Db, Songs_Key & "." & Index_Image & "." & Last_Downloaded_Key, Time_Type'Image (0.0));
+                  Index := Index + 1;
                end if;
-               Write_String
-                 (Db, Songs_Key & "." & Index_Image & "." & File_Key, Name & "." & Extension (Full_Name (Dir_Entry)));
-               Write_String (Db, Songs_Key & "." & Index_Image & "." & Last_Downloaded_Key, Time_Type'Image (0.0));
-               Index := Index + 1;
             end if;
 
          when Special_File =>
@@ -109,6 +131,9 @@ is
 
 begin
    Get_Initial_Index;
+
+   Fill_Song_Files;
+
    if not SAL.Config_Files.Is_Present (Db, Root_Key) then
       SAL.Config_Files.Write_String (Db, Root_Key, Dir);
    end if;

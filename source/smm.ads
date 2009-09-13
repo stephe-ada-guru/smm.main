@@ -19,6 +19,8 @@
 pragma License (GPL);
 
 with Ada.Containers.Indefinite_Doubly_Linked_Lists;
+with Ada.Containers.Indefinite_Hashed_Maps;
+with Ada.Strings.Hash;
 with SAL.Aux.Definite_Private_Items;
 with SAL.Config_Files;
 with SAL.Gen.Alg.Count;
@@ -35,7 +37,7 @@ package SMM is
    function Normalize (Path : in String) return String;
    --  convert '\' to '/'
 
-   function Relative_Name_Sans_Extension (Root : in String; Full_Name : in String) return String;
+   function Relative_Name (Root : in String; Full_Name : in String) return String;
 
    function As_Directory (Path : in String) return String;
    --  normalize, append '/' if needed.
@@ -80,6 +82,13 @@ package SMM is
    --  Return randomized list of Song_Count least-recently downloaded songs in Category.
 
    package String_Lists is new Ada.Containers.Indefinite_Doubly_Linked_Lists (String);
+
+   package String_Maps is new Ada.Containers.Indefinite_Hashed_Maps
+     (Key_Type        => Standard.String,
+      Element_Type    => SAL.Config_Files.Iterator_Type,
+      Hash            => Ada.Strings.Hash,
+      Equivalent_Keys => Standard."=",
+      "="             => SAL.Config_Files."=");
 
    procedure Read_Playlist
      (File_Name  : in     String;

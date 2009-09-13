@@ -1,6 +1,4 @@
-with Ada.Containers.Indefinite_Hashed_Maps;
 with Ada.Directories;
-with Ada.Strings.Hash;
 with Ada.Text_IO;      use Ada.Text_IO;
 with SAL.Config_Files; use SAL.Config_Files;
 with SAL.Time_Conversions.Config;
@@ -12,11 +10,6 @@ is
    I         : Iterator_Type;
    To_Delete : Iterator_Type;
 
-   package String_Maps is new Ada.Containers.Indefinite_Hashed_Maps
-     (Key_Type        => String,
-      Element_Type    => Iterator_Type,
-      Hash            => Ada.Strings.Hash,
-      Equivalent_Keys => "=");
    use String_Maps;
 
    Song_Files : String_Maps.Map;
@@ -25,7 +18,7 @@ is
 begin
    Open (Db, Db_File_Name, Read_Only => False);
 
-   I := First (Db, "Songs");
+   I := First (Db, Songs_Key);
 
    loop
       exit when Is_Null (I);

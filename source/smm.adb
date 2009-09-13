@@ -18,7 +18,6 @@
 
 with Ada.Characters.Handling;
 with Ada.Directories;
-with Ada.Strings.Fixed;
 with Ada.Text_IO;
 with SAL.Aux.Indefinite_Private_Items;
 with SAL.Gen.Alg.Find_Linear.Sorted;
@@ -38,30 +37,17 @@ package body SMM is
       return Result;
    end Normalize;
 
-   function Relative_Name_Sans_Extension
+   function Relative_Name
      (Root      : in String;
       Full_Name : in String)
       return String
-   is
-   begin
+   is begin
       if Root = Full_Name (Full_Name'First .. Full_Name'First + Root'Length - 1) then
-         declare
-            Temp            : constant String  := Full_Name (Full_Name'First + Root'Length .. Full_Name'Last);
-            Extension_First : constant Integer := Ada.Strings.Fixed.Index
-              (Source  => Temp,
-               Pattern => ".",
-               Going   => Ada.Strings.Backward);
-         begin
-            if Extension_First = 0 then
-               return Temp;
-            else
-               return Temp (Temp'First .. Extension_First - 1);
-            end if;
-         end;
+         return Full_Name (Full_Name'First + Root'Length .. Full_Name'Last);
       else
          raise SAL.Programmer_Error with Full_Name & " not relative to root " & Root;
       end if;
-   end Relative_Name_Sans_Extension;
+   end Relative_Name;
 
    function As_Directory (Path : in String) return String
    is
