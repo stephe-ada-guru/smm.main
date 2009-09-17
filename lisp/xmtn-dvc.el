@@ -1247,14 +1247,14 @@ finished."
   ;; mtn will just give an innocuous message if already updated, which
   ;; the user won't see. So check that here - it's fast.
   ;; Don't throw an error; upper level might be doing other directories as well.
-  (if check-id-p
-      (if (equal (xmtn--get-base-revision-hash-id root) target-revision-hash-id)
-          (progn
-            (unless no-ding (ding))
-            (message "Tree %s is already based on target revision %s"
-                     root target-revision-hash-id))
-        (dvc-save-some-buffers root)
-        (xmtn--do-update root target-revision-hash-id check-id-p))))
+  (if (and check-id-p
+           (equal (xmtn--get-base-revision-hash-id root) target-revision-hash-id))
+      (progn
+        (unless no-ding (ding))
+        (message "Tree %s is already based on target revision %s"
+                 root target-revision-hash-id))
+    (dvc-save-some-buffers root)
+    (xmtn--do-update root target-revision-hash-id check-id-p)))
 
 ;;;###autoload
 (defun xmtn-dvc-update (&optional revision-id no-ding)

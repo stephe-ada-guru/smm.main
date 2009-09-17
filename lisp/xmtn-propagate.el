@@ -182,7 +182,7 @@ The elements must all be of class xmtn-propagate-data.")
     (and (member (xmtn-propagate-data-from-local-changes data) '(need-scan ok))
          (member (xmtn-propagate-data-to-local-changes data) '(need-scan ok))
          (not (xmtn-propagate-data-propagate-needed data))
-         (member (xmtn-propagate-data-to-heads data) '(need-scan 'at-head)))))
+         (member (xmtn-propagate-data-to-heads data) '(need-scan at-head)))))
 
 (defun xmtn-propagate-do-refresh-one ()
   (interactive)
