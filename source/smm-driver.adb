@@ -134,7 +134,9 @@ begin
             else
                File_Name := new String'(Argument (Next_Arg));
                Next_Arg := Next_Arg + 1;
-               if Argument (Next_Arg) = "--replace" then
+               if Next_Arg <= Argument_Count and then
+                 Argument (Next_Arg) = "--replace"
+               then
                   Replace := True;
                end if;
             end if;
