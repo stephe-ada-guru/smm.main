@@ -860,14 +860,16 @@ header."
   (interactive)
   (let* ((elem (ewoc-locate xmtn-conflicts-ewoc))
          (conflict (ewoc-data elem))
-         (result-file (read-file-name "resolution file: "
-                                      (ecase default-side
-                                        (left (file-name-as-directory xmtn-conflicts-left-work))
-                                        (right (file-name-as-directory xmtn-conflicts-right-work)))
-                                      nil t
-                                      (ecase default-side
-                                        (left (xmtn-conflicts-conflict-left_name conflict))
-                                        (right (xmtn-conflicts-conflict-right_name conflict))))))
+         (result-file
+          (expand-file-name
+           (read-file-name "resolution file: "
+                           (ecase default-side
+                             (left (file-name-as-directory xmtn-conflicts-left-work))
+                             (right (file-name-as-directory xmtn-conflicts-right-work)))
+                           nil t
+                           (ecase default-side
+                             (left (xmtn-conflicts-conflict-left_name conflict))
+                             (right (xmtn-conflicts-conflict-right_name conflict)))))))
     (ecase resolve-side
       (left
        (setf (xmtn-conflicts-conflict-left_resolution conflict) (list 'resolved_user result-file)))

@@ -355,13 +355,20 @@ the file before saving."
                    ;; Monotone creates an empty log file when the
                    ;; commit was successful.  Let's not interfere with
                    ;; that.  (Calling `dvc-log-close' would.)
+
+                   ;; current-buffer is log-edit-buffer here, but
+                   ;; apparently dvc-diff-clear-buffers screws that up
+                   (kill-buffer (current-buffer))
+
                    (dvc-diff-clear-buffers 'xmtn
                                            default-directory
                                            "* Just committed! Please refresh buffer"
                                            (xmtn--status-header
                                             default-directory
                                             (xmtn--get-base-revision-hash-id-or-null default-directory)))
-                   (kill-buffer (current-buffer))))
+
+                   ))
+
        ;; Show message _after_ spawning command to override DVC's
        ;; debugging message.
        (message "%s... " progress-message))
