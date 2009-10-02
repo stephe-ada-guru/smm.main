@@ -356,9 +356,8 @@ the file before saving."
                    ;; commit was successful.  Let's not interfere with
                    ;; that.  (Calling `dvc-log-close' would.)
 
-                   ;; current-buffer is log-edit-buffer here, but
-                   ;; apparently dvc-diff-clear-buffers screws that up
-                   (kill-buffer (current-buffer))
+                   ;; we'd like to delete log-edit-buffer here, but
+                   ;; apparently that screws up emacs
 
                    (dvc-diff-clear-buffers 'xmtn
                                            default-directory
