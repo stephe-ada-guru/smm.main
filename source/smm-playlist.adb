@@ -36,6 +36,7 @@ is
 
    I           : Iterator_Type;
    Source_Root : constant String := SAL.Config_Files.Read (Db, Root_Key);
+   Relative    : Boolean;
 
    Output_Time : constant String := SAL.Time_Conversions.Time_Type'Image
      (SAL.Time_Conversions.To_Time (Ada.Real_Time.Clock));
@@ -56,6 +57,8 @@ begin
       else
          Create (Playlist_File, Out_File, Destination);
       end if;
+
+      Relative := Containing_Directory (Destination) = Full_Name (Source_Root);
    end;
 
    Least_Recent_Songs (Db, Category, Song_Count => 30, Songs => Songs);
@@ -64,9 +67,13 @@ begin
    loop
       exit when Is_Null (I);
       declare
-         Source : constant String := Source_Root & SAL.Config_Files.Read (Db, Current (I), File_Key);
+         Source : constant String := SAL.Config_Files.Read (Db, Current (I), File_Key);
       begin
-         Ada.Text_IO.Put_Line (Playlist_File, Source);
+         if Relative then
+            Ada.Text_IO.Put_Line (Playlist_File, Source);
+         else
+            Ada.Text_IO.Put_Line (Playlist_File, Source_Root & Source);
+         end if;
 
          SAL.Config_Files.Write (Db, Current (I), Last_Downloaded_Key, Output_Time);
 

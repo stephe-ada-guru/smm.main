@@ -19,6 +19,7 @@
 pragma License (GPL);
 
 with Ada.Command_Line; use Ada.Command_Line;
+with Ada.Directories;
 with Ada.Environment_Variables;
 with Ada.Exceptions;
 with Ada.Text_IO; use Ada.Text_IO;
@@ -51,6 +52,7 @@ is
       Put_Line ("    create a playlist in <file> (same songs as 'download' would do)");
       Put_Line ("    <file> defaults to ~/.smm/<file>.m3u");
       Put_Line ("    --replace - overwrite file; otherwise append");
+      Put_Line ("    if <file> is in database root, paths in playlist are relative");
       New_Line;
       Put_Line ("  import <dir>");
       Put_Line ("    scan <dir> for new music; dir must be relative to database root dir");
@@ -132,7 +134,7 @@ begin
             if Argument (Next_Arg) = "--replace" then
                Replace := True;
             else
-               File_Name := new String'(Argument (Next_Arg));
+               File_Name := new String'(Ada.Directories.Full_Name (Argument (Next_Arg)));
                Next_Arg := Next_Arg + 1;
                if Next_Arg <= Argument_Count and then
                  Argument (Next_Arg) = "--replace"
