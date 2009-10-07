@@ -1081,6 +1081,8 @@ non-nil, show log-edit buffer in other frame."
   "Perform propagate on revisions in current conflict buffer."
   (interactive)
   (save-some-buffers t); log buffer
+  ;; save-some-buffers does not save the conflicts buffer, which is the current buffer
+  (save-buffer)
   (xmtn-propagate-from xmtn-conflicts-left-branch cached-branch))
 
 (defun xmtn-conflicts-do-merge ()

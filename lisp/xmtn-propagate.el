@@ -149,7 +149,7 @@ The elements must all be of class xmtn-propagate-data.")
                (insert (dvc-face-add "  need propagate\n" 'dvc-conflict)))))
 
       (if (eq 'at-head (xmtn-propagate-data-to-heads data))
-          (insert "  need clean\n"))
+          (insert (dvc-face-add "  need clean\n" 'dvc-conflict)))
       ))
   ;; ewoc ought to do this, but it doesn't
   (redisplay))
