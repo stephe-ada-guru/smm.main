@@ -152,8 +152,8 @@ The elements must all be of class xmtn-status-data.")
   (interactive)
   (let* ((elem (ewoc-locate xmtn-status-ewoc))
          (data (ewoc-data elem)))
-    (setf (xmtn-status-data-conflicts data) 'resolved)
     (xmtn-status-need-refresh elem data)
+    (setf (xmtn-status-data-conflicts data) 'resolved)
     (pop-to-buffer (xmtn-status-data-conflicts-buffer data))))
 
 (defun xmtn-status-resolve-conflictsp ()
@@ -213,6 +213,8 @@ The elements must all be of class xmtn-status-data.")
          (data (ewoc-data elem))
          (default-directory (xmtn-status-work data)))
     (xmtn-status-need-refresh elem data)
+    (with-current-buffer (xmtn-status-data-conflicts-buffer data)
+      (save-buffer))
     (xmtn-dvc-merge-1 default-directory nil)))
 
 (defun xmtn-status-heads ()
@@ -444,21 +446,21 @@ The elements must all be of class xmtn-status-data.")
 (defun xmtn-status-one (work)
   "Show actions to update WORK."
   (interactive "DStatus for (workspace): ")
-  (let ((default-directory work))
-    (pop-to-buffer (get-buffer-create "*xmtn-multi-status*"))
-    (setq xmtn-status-root (expand-file-name (concat (file-name-as-directory work) "../")))
-    (setq xmtn-status-ewoc (ewoc-create 'xmtn-status-printer))
-    (let ((inhibit-read-only t)) (delete-region (point-min) (point-max)))
-    (ewoc-set-hf xmtn-status-ewoc (format "Root : %s\n" xmtn-status-root) "")
-    (ewoc-enter-last xmtn-status-ewoc
-                     (make-xmtn-status-data
-                      :work (file-name-nondirectory (directory-file-name work))
-                      :branch (xmtn--tree-default-branch default-directory)
-                      :need-refresh t
-                      :heads 'need-scan))
-    (xmtn-multiple-status-mode)
-    (xmtn-status-refresh)
-    (xmtn-status-next)))
+  (pop-to-buffer (get-buffer-create "*xmtn-multi-status*"))
+  (setq default-directory work)
+  (setq xmtn-status-root (expand-file-name (concat (file-name-as-directory work) "../")))
+  (setq xmtn-status-ewoc (ewoc-create 'xmtn-status-printer))
+  (let ((inhibit-read-only t)) (delete-region (point-min) (point-max)))
+  (ewoc-set-hf xmtn-status-ewoc (format "Root : %s\n" xmtn-status-root) "")
+  (ewoc-enter-last xmtn-status-ewoc
+                   (make-xmtn-status-data
+                    :work (file-name-nondirectory (directory-file-name work))
+                    :branch (xmtn--tree-default-branch default-directory)
+                    :need-refresh t
+                    :heads 'need-scan))
+  (xmtn-multiple-status-mode)
+  (xmtn-status-refresh)
+  (xmtn-status-next))
 
 (provide 'xmtn-multi-status)
 

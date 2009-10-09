@@ -1089,6 +1089,8 @@ non-nil, show log-edit buffer in other frame."
   "Perform merge on revisions in current conflict buffer."
   (interactive)
   (save-some-buffers t); log buffer
+  ;; save-some-buffers does not save the conflicts buffer, which is the current buffer
+  (save-buffer)
   (xmtn-dvc-merge-1 default-directory nil))
 
 (defun xmtn-conflicts-ediff-resolution-ws ()

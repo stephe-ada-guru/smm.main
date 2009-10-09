@@ -725,6 +725,8 @@ scanned and all common ones found are used."
         (from-session (xmtn-automate-cache-session from-work))
         (to-session (xmtn-automate-cache-session to-work)))
     (pop-to-buffer (get-buffer-create "*xmtn-propagate*"))
+    ;; default-directory is wrong if buffer is reused
+    (setq default-directory to-work)
     (setq xmtn-propagate-from-root (expand-file-name (concat (file-name-as-directory from-work) "../")))
     (setq xmtn-propagate-to-root (expand-file-name (concat (file-name-as-directory to-work) "../")))
     (setq xmtn-propagate-ewoc (ewoc-create 'xmtn-propagate-printer))
