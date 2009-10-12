@@ -357,7 +357,7 @@ the file before saving."
                    ;; that.  (Calling `dvc-log-close' would.)
 
                    ;; we'd like to delete log-edit-buffer here, but
-                   ;; apparently that screws up emacs
+                   ;; we can't do that from a process sentinel
 
                    (dvc-diff-clear-buffers 'xmtn
                                            default-directory
@@ -365,7 +365,6 @@ the file before saving."
                                            (xmtn--status-header
                                             default-directory
                                             (xmtn--get-base-revision-hash-id-or-null default-directory)))
-
                    ))
 
        ;; Show message _after_ spawning command to override DVC's
