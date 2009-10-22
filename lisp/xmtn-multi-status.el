@@ -97,12 +97,23 @@ The elements must all be of class xmtn-status-data.")
        (insert (dvc-face-add "  need merge\n" 'dvc-conflict)))
       )))
 
+(defun xmtn-status-kill-conflicts-buffer (data)
+  (if (buffer-live-p (xmtn-status-data-conflicts-buffer data))
+      (let ((buffer (xmtn-status-data-conflicts-buffer data)))
+        (with-current-buffer buffer (save-buffer))
+        (kill-buffer buffer))))
+
+(defun xmtn-status-save-conflicts-buffer (data)
+  (if (buffer-live-p (xmtn-status-data-conflicts-buffer data))
+      (with-current-buffer (xmtn-status-data-conflicts-buffer data) (save-buffer))))
+
 (defun xmtn-status-clean ()
   "Clean current workspace, delete from ewoc"
   (interactive)
   (let* ((elem (ewoc-locate xmtn-status-ewoc))
          (data (ewoc-data elem))
          (inhibit-read-only t))
+    (xmtn-status-kill-conflicts-buffer data)
     (xmtn-conflicts-clean (xmtn-status-work data))
     (ewoc-delete xmtn-status-ewoc elem)))
 
@@ -213,8 +224,7 @@ The elements must all be of class xmtn-status-data.")
          (data (ewoc-data elem))
          (default-directory (xmtn-status-work data)))
     (xmtn-status-need-refresh elem data)
-    (with-current-buffer (xmtn-status-data-conflicts-buffer data)
-      (save-buffer))
+    (xmtn-status-save-conflicts-buffer data)
     (xmtn-dvc-merge-1 default-directory nil)))
 
 (defun xmtn-status-heads ()
@@ -386,7 +396,7 @@ The elements must all be of class xmtn-status-data.")
        (setf (xmtn-status-data-local-changes data) (xmtn-status-local-changes work)))
       (t nil))
 
-    (ecase (xmtn-status-data-conflicts data)
+    (case (xmtn-status-data-conflicts data)
       (need-scan
        (setf (xmtn-status-data-conflicts data)
              (xmtn-status-conflicts data)))
@@ -420,22 +430,20 @@ The elements must all be of class xmtn-status-data.")
 (defun xmtn-status-multiple (dir &optional workspaces skip-initial-scan)
   "Show actions to update all projects under DIR."
   (interactive "DStatus for all (root directory): \ni\nP")
-  (let ((default-directory (file-name-as-directory (substitute-in-file-name dir))))
-
-    (if (not workspaces) (setq workspaces (xmtn--filter-non-dir default-directory)))
-
-    (pop-to-buffer (get-buffer-create "*xmtn-multi-status*"))
-    (setq xmtn-status-root (file-name-as-directory default-directory))
-    (setq xmtn-status-ewoc (ewoc-create 'xmtn-status-printer))
-    (let ((inhibit-read-only t)) (delete-region (point-min) (point-max)))
-    (ewoc-set-hf xmtn-status-ewoc (format "Root : %s\n" xmtn-status-root) "")
-    (dolist (workspace workspaces)
-      (ewoc-enter-last xmtn-status-ewoc
-                       (make-xmtn-status-data
-                        :work workspace
-                        :branch (xmtn--tree-default-branch (concat xmtn-status-root workspace))
-                        :need-refresh t
-                        :heads 'need-scan))))
+  (pop-to-buffer (get-buffer-create "*xmtn-multi-status*"))
+  (setq default-directory (file-name-as-directory (substitute-in-file-name dir)))
+  (if (not workspaces) (setq workspaces (xmtn--filter-non-dir default-directory)))
+  (setq xmtn-status-root (file-name-as-directory default-directory))
+  (setq xmtn-status-ewoc (ewoc-create 'xmtn-status-printer))
+  (let ((inhibit-read-only t)) (delete-region (point-min) (point-max)))
+  (ewoc-set-hf xmtn-status-ewoc (format "Root : %s\n" xmtn-status-root) "")
+  (dolist (workspace workspaces)
+    (ewoc-enter-last xmtn-status-ewoc
+                     (make-xmtn-status-data
+                      :work workspace
+                      :branch (xmtn--tree-default-branch (concat xmtn-status-root workspace))
+                      :need-refresh t
+                      :heads 'need-scan)))
   (xmtn-multiple-status-mode)
   (when (not skip-initial-scan)
     (progn
