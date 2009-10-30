@@ -654,10 +654,16 @@ The elements must all be of class xmtn-propagate-data.")
             (ok nil))))
 
     (if (xmtn-propagate-data-propagate-needed data)
-        ;; can't compute conflicts if propagate not needed
-        (setf (xmtn-propagate-data-conflicts data)
-              (xmtn-propagate-conflicts data))
+        (progn
+          (if refresh-local-changes
+              (progn
+                (xmtn-propagate-kill-conflicts-buffer data)
+                (xmtn-conflicts-clean (xmtn-propagate-to-work data))))
 
+          (setf (xmtn-propagate-data-conflicts data)
+                (xmtn-propagate-conflicts data)))
+
+      ;; can't compute conflicts if propagate not needed
       (setf (xmtn-propagate-data-conflicts data) 'need-scan))
 
     (setf (xmtn-propagate-data-need-refresh data) nil))
