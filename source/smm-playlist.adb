@@ -23,10 +23,11 @@ with Ada.Real_Time;
 with Ada.Text_IO;
 with SAL.Time_Conversions;
 procedure SMM.Playlist
-  (Db          : in out SAL.Config_Files.Configuration_Type;
-   Category    : in String;
-   Destination : in String;
-   Replace     : in Boolean)
+  (Db             : in out SAL.Config_Files.Configuration_Type;
+   Category       : in String;
+   Destination    : in String;
+   Replace        : in Boolean;
+   Max_Song_Count : in Integer)
 is
    use Song_Lists;
 
@@ -61,7 +62,7 @@ begin
       Relative := Containing_Directory (Destination) = Full_Name (Source_Root);
    end;
 
-   Least_Recent_Songs (Db, Category, Song_Count => 30, Songs => Songs);
+   Least_Recent_Songs (Db, Category, Song_Count => Max_Song_Count, Songs => Songs);
 
    I := First (Songs);
    loop

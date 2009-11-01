@@ -148,7 +148,7 @@ begin
             File_Name := new String'(Home & "/.smm/" & Category & ".m3u");
          end if;
 
-         SMM.Playlist (Db, Category, File_Name.all, Replace);
+         SMM.Playlist (Db, Category, File_Name.all, Replace, Max_Song_Count => 30);
       end;
 
    when Import =>

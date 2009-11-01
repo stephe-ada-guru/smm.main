@@ -22,6 +22,7 @@ with AUnit.Test_Results.Text_Reporter;
 with AUnit.Test_Suites;
 with Test_First_Pass;
 with Test_Least_Recent;
+with Test_Play_Before;
 with Test_Second_Pass;
 procedure Test_All_Harness
 is
@@ -34,6 +35,7 @@ is
 begin
    Add_Test (Suite, new Test_First_Pass.Test_Case (Verbosity => 0, Debug => 0));
    Add_Test (Suite, new Test_Least_Recent.Test_Case);
+   Add_Test (Suite, new Test_Play_Before.Test_Case);
    Add_Test (Suite, new Test_Second_Pass.Test_Case (Verbosity => 0, Debug => 0));
 
    Run (Suite.all, Result);

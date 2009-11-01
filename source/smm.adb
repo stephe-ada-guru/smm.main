@@ -20,6 +20,7 @@ with Ada.Characters.Handling;
 with Ada.Directories;
 with Ada.Text_IO;
 with SAL.Aux.Indefinite_Private_Items;
+with SAL.Config_Files.Integer;
 with SAL.Gen.Alg.Find_Linear.Sorted;
 with SAL.Poly.Lists.Double.Gen_Randomize;
 with SAL.Time_Conversions.Config;
@@ -247,7 +248,8 @@ package body SMM is
             end loop;
 
             Randomize (Songs, Seed);
-            Truncate (Songs, Song_Count);
+            Truncate (Songs, Integer'Min (Song_Count, Count (Songs)));
+            Play_Before (Db, Songs);
 
          end;
       end if;
@@ -301,5 +303,106 @@ package body SMM is
    when End_Error =>
       Close (File);
    end Read_Playlist;
+
+   procedure Play_Before
+     (Db    : in     SAL.Config_Files.Configuration_Type;
+      Songs : in out Song_Lists.List_Type)
+   is
+      type Item_Type is record
+         First_Song_Songs  : Song_Lists.Iterator_Type;
+         First_Song_db     : SAL.Config_Files.Iterator_Type;
+         Second_Song_Id    : Integer;
+         Second_Song_Songs : Song_Lists.Iterator_Type;
+      end record;
+
+      type Item_Access_Type is access Item_Type;
+
+      package Item_Lists_Aux is new SAL.Aux.Indefinite_Private_Items (Item_Type, Item_Access_Type);
+
+      package Item_Lists is new SAL.Poly.Lists.Double
+        (Item_Type         => Item_Type,
+         Item_Node_Type    => Item_Access_Type,
+         To_Item_Node      => Item_Lists_Aux.To_Item_Node,
+         Free_Item         => Item_Lists_Aux.Free_Item,
+         Copy              => Item_Lists_Aux.Copy_Item_Node,
+         Node_Storage_Pool => SAL.Storage_Pools.Integer_Access_Type'Storage_Pool);
+
+      Have_Play_Before : Item_Lists.List_Type;
+      Item_I           : Item_Lists.Iterator_Type;
+
+      use Item_Lists;
+      use Song_Lists;
+      use SAL.Config_Files;
+      use SAL.Config_Files.Integer;
+
+      Songs_I : Song_Lists.Iterator_Type := First (Songs);
+
+   begin
+      Fill_Have_Play_Before :
+      loop
+         exit Fill_Have_Play_Before when Is_Done (Songs_I);
+
+         if Is_Present (Db, Current (Songs_I), "Play_Before") then
+            Append
+              (Have_Play_Before,
+               (First_Song_Songs  => Songs_I,
+                First_Song_Db     => Current (Songs_I),
+                Second_Song_Id    => Read (Db, Current (Songs_I), "Play_Before"),
+                Second_Song_Songs => Song_Lists.Null_Iterator));
+         end if;
+
+         Next (Songs_I);
+      end loop Fill_Have_Play_Before;
+
+      Item_I := First (Have_Play_Before);
+      Find_Second_Song :
+      loop
+         exit Find_Second_Song when Is_Done (Item_I);
+
+         declare
+            Item : Item_Type renames Current (Item_I).all;
+         begin
+            Songs_I := First (Songs);
+            Find_Song :
+            loop
+               exit Find_Song when Is_Done (Songs_I);
+               if Item.Second_Song_Id = Integer'Value (Current (Current (Songs_I))) then
+                  Item.Second_Song_Songs := Songs_I;
+                  exit Find_Song;
+               end if;
+
+               Next (Songs_I);
+
+            end loop Find_Song;
+         end;
+
+         Next (Item_I);
+      end loop Find_Second_Song;
+
+      Item_I := First (Have_Play_Before);
+      Place_Second_Song :
+      loop
+         exit Place_Second_Song when Is_Done (Item_I);
+
+         declare
+            Item : Item_Type renames Current (Item_I).all;
+         begin
+            if Song_Lists.Is_Null (Item.Second_Song_Songs) then
+               --  not in Songs yet
+               Insert_After (Songs, Item.First_Song_Songs, Find (Db, "Songs", Integer'Image (Item.Second_Song_Id)));
+            else
+               Splice_After
+                 (Source => Songs,
+                  First  => Item.Second_Song_Songs,
+                  Last   => Item.Second_Song_Songs,
+                  Dest   => Songs,
+                  After  => Item.First_Song_Songs);
+            end if;
+         end;
+
+         Next (Item_I);
+      end loop Place_Second_Song;
+
+   end Play_Before;
 
 end SMM;

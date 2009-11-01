@@ -79,7 +79,9 @@ package SMM is
       Songs      :    out Song_Lists.List_Type;
       Song_Count : in     Integer;
       Seed       : in     Integer                             := 0);
-   --  Return randomized list of Song_Count least-recently downloaded songs in Category.
+   --  Return randomized list of Song_Count least-recently downloaded
+   --  songs in Category. If any Songs have .Play_Before attribute,
+   --  enforce it.
 
    package String_Lists is new Ada.Containers.Indefinite_Doubly_Linked_Lists (String);
 
@@ -98,5 +100,10 @@ package SMM is
    --  lowercase) in it.
    --
    --  Raise Playlist_Error if any entry is not in Target_Dir
+
+   procedure Play_Before
+     (Db    : in     SAL.Config_Files.Configuration_Type;
+      Songs : in out Song_Lists.List_Type);
+   --  If any Songs have .Play_Before attribute, enforce it.
 
 end SMM;
