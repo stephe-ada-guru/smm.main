@@ -618,29 +618,6 @@ To be invoked from an xmtn revlist buffer."
          (target-hash-id (xmtn--revlist-entry-revision-hash-id entry)))
     (xmtn--update root target-hash-id nil nil)))
 
-;; Being able to conveniently disapprove whole batches of revisions
-;; is going to be a lot of fun.
-(defun xmtn-revlist-disapprove ()
-  "Disapprove the marked revisions, or the revision at point if none marked.
-
-To be invoked from an xmtn revlist buffer."
-  (interactive)
-  (let* ((root (dvc-tree-root))
-         (entries (or (dvc-revision-marked-revisions)
-                      (list (dvc-revlist-current-patch-struct))))
-         (hash-ids (map 'vector #'xmtn--revlist-entry-revision-hash-id entries))
-         (description (case (length hash-ids)
-                        (0 (xmtn--assert-nil))
-                        (1 (format "revision %s" (elt hash-ids 0)))
-                        (t (format "%s revisions" (length hash-ids))))))
-    (assert (every #'xmtn--hash-id-p hash-ids))
-    (unless (yes-or-no-p (format "Disapprove %s? " description))
-      (error "Aborted disapprove"))
-    (xmtn--dotimes-with-progress-reporter (i (length hash-ids))
-        (format "Disapproving %s..." description)
-      (let ((hash-id (aref hash-ids i)))
-        (funcall (xmtn--do-disapprove-future root hash-id))))))
-
 (provide 'xmtn-revlist)
 
 ;;; xmtn-revlist.el ends here
