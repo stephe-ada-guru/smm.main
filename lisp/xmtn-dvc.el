@@ -1258,7 +1258,7 @@ finished."
           (let ((temp-dir nil))
             (unwind-protect
                 (progn
-                  (setq temp-dir (xmtn--make-temp-file
+                  (setq temp-dir (make-temp-file
                                   "xmtn--revision-get-file-" t))
                   ;; Going through a temporary file and using
                   ;; `insert-file-contents' in conjunction with as
@@ -1273,7 +1273,7 @@ finished."
                   (let ((temp-file (concat temp-dir "/" corresponding-file)))
                     (make-directory (file-name-directory temp-file) t)
                     (with-temp-file temp-file
-                      (xmtn--set-buffer-multibyte nil)
+                      (set-buffer-multibyte nil)
                       (setq buffer-file-coding-system 'binary)
                       (xmtn--insert-file-contents-by-name root backend-id corresponding-file (current-buffer)))
                     (let ((output-buffer (current-buffer)))
@@ -1290,7 +1290,7 @@ finished."
   (xmtn-automate-with-session
    (nil root)
    (with-temp-file save-as
-     (xmtn--set-buffer-multibyte nil)
+     (set-buffer-multibyte nil)
      (setq buffer-file-coding-system 'binary)
      (xmtn--insert-file-contents root file-id (current-buffer)))))
 

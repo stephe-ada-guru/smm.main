@@ -155,7 +155,7 @@ arg; root. Result is of the form:
           (if (> len last-n)
               (setq revision-hash-ids (nthcdr (- len last-n) revision-hash-ids)))))
     (setq revision-hash-ids (coerce revision-hash-ids 'vector))
-    (xmtn--dotimes-with-progress-reporter (i (length revision-hash-ids))
+    (dotimes-with-progress-reporter (i (length revision-hash-ids))
         (case (length revision-hash-ids)
           (1 "Setting up revlist buffer (1 revision)...")
           (t (format "Setting up revlist buffer (%s revisions)..."
