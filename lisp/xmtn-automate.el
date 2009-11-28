@@ -212,7 +212,9 @@ workspace root."
 (defun xmtn-automate--command-output-as-string-ignoring-exit-code (handle)
   (xmtn-automate-command-wait-until-finished handle)
   (with-current-buffer (xmtn-automate-command-buffer handle)
-    (buffer-substring-no-properties (point-min) (point-max))))
+    (prog1
+        (buffer-substring-no-properties (point-min) (point-max))
+      (xmtn-automate--cleanup-command handle))))
 
 (defun xmtn-automate-command-check-for-and-report-error (handle)
   (unless (eql (xmtn-automate-command-error-code handle) 0)
@@ -223,30 +225,27 @@ workspace root."
   nil)
 
 (defun xmtn-automate-simple-command-output-string (root command)
-  "Send COMMAND (a list of strings, or cons of lists of strings)
-to current session. If car COMMAND is a list, car COMMAND is
-options, cdr is command. Return result as a string."
-  (xmtn-automate-with-session (session root)
-    (xmtn-automate-with-command (handle session command)
-      (xmtn-automate-command-check-for-and-report-error handle)
-      (xmtn-automate--command-output-as-string-ignoring-exit-code handle))))
+  "Send COMMAND to session for ROOT. Return result as a string."
+  (let* ((session (xmtn-automate-cache-session root))
+         (command-handle (xmtn-automate--new-command session command nil)))
+    (xmtn-automate-command-check-for-and-report-error command-handle)
+    (xmtn-automate--command-output-as-string-ignoring-exit-code command-handle)))
 
 (defun xmtn-automate-simple-command-output-insert-into-buffer
   (root buffer command)
-  "Send COMMAND (a list of strings, or cons of lists of strings)
-to current session. If car COMMAND is a list, car COMMAND is
-options, cdr is command. Insert result into BUFFER."
-  (xmtn-automate-with-session (session root)
-    (xmtn-automate-with-command (handle session command)
-      (xmtn-automate-command-check-for-and-report-error handle)
-      (xmtn-automate-command-wait-until-finished handle)
-      (with-current-buffer buffer
-        (insert-buffer-substring-no-properties
-         (xmtn-automate-command-buffer handle))))))
+  "Send COMMAND to session for ROOT, insert result into BUFFER."
+  (let* ((session (xmtn-automate-cache-session root))
+         (command-handle (xmtn-automate--new-command session command nil)))
+    (xmtn-automate-command-check-for-and-report-error command-handle)
+    (xmtn-automate-command-wait-until-finished command-handle)
+    (with-current-buffer buffer
+      (insert-buffer-substring-no-properties
+       (xmtn-automate-command-buffer command-handle)))
+    (xmtn-automate--cleanup-command command-handle)))
 
 (defun xmtn-automate-command-output-lines (handle)
-  ;; Return list of lines of output; first line output is first in
-  ;; list.
+  "Return list of lines of output in HANDLE; first line output is
+first in list."
   (xmtn-automate-command-check-for-and-report-error handle)
   (xmtn-automate-command-wait-until-finished handle)
   (save-excursion
@@ -269,8 +268,6 @@ string."
          (command-handle (xmtn-automate--new-command session command nil)))
     (xmtn-automate-command-output-lines command-handle)))
 
-;; This one is used twice.  I think the error checking it provides is
-;; a reasonable simplification for its callers.
 (defun xmtn-automate-simple-command-output-line (root command)
   "Return the one line output from mtn automate as a string.
 
@@ -282,7 +279,6 @@ Signals an error if output contains zero lines or more than one line."
              xmtn-executable
              command))
     (first lines)))
-
 
 (defun xmtn-automate--set-process-session (process session)
   (process-put process 'xmtn-automate--session session))
@@ -305,7 +301,7 @@ Signals an error if output contains zero lines or more than one line."
   (process nil)
   (decoder-state)
   (next-mtn-command-number)
-  (next-session-command-number 0)
+  (next-command-number 0)
   (must-not-kill-counter)
   (remaining-command-handles)
   (sent-kill-p)
@@ -359,6 +355,7 @@ Signals an error if output contains zero lines or more than one line."
   nil)
 
 (defun xmtn-automate--close-session (session)
+  "Kill session process, buffer."
   (setf (xmtn-automate--session-closed-p session) t)
   (let ((process (xmtn-automate--session-process session)))
     (cond
@@ -452,23 +449,6 @@ Signals an error if output contains zero lines or more than one line."
     (setf (xmtn-automate--session-buffer session) buffer)
     buffer))
 
-(defun xmtn-automate-terminate-processes-in-root (root)
-  (xmtn-automate-with-session (session root)
-    (xmtn-automate--close-session session)
-    (let ((process (xmtn-automate--session-process session)))
-      (when process
-        (while (ecase (process-status process)
-                 (run t)
-                 (exit nil)
-                 (signal nil))
-          (accept-process-output process))
-        (dvc-trace "Process in root %s terminated" root)
-        ))
-    (xmtn-automate--initialize-session
-     session
-     :root (xmtn-automate--session-root session)
-     :name (xmtn-automate--session-name session))))
-
 (defun xmtn-automate--append-encoded-strings (strings)
   "Encode STRINGS (a list of strings or nil) in automate stdio format,
 insert into current buffer.  Assumes that point is at the end of
@@ -527,7 +507,7 @@ the buffer."
   (let* ((mtn-number (1- (incf (xmtn-automate--session-next-mtn-command-number
                                 session))))
          (command-number
-          (1- (incf (xmtn-automate--session-next-session-command-number
+          (1- (incf (xmtn-automate--session-next-command-number
                      session))))
          (buffer-name (format "*%s: output for command %s(%s)*"
                               (xmtn-automate--session-name session)
