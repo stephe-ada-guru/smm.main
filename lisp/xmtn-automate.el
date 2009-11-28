@@ -530,9 +530,8 @@ Signals an error if output contains zero lines or more than one line."
     (let ((process-connection-type nil)
           (default-directory root))
       (let ((process
-             (xmtn--with-environment-for-subprocess ()
-               (apply #'start-process name buffer xmtn-executable
-                      "automate" "stdio" xmtn-additional-arguments))))
+             (apply 'start-process name buffer xmtn-executable
+                    "automate" "stdio" xmtn-additional-arguments)))
         (xmtn-automate--set-process-session process session)
         (set-process-filter process 'xmtn-automate--process-filter)
         (set-process-sentinel process 'xmtn-automate--process-sentinel)

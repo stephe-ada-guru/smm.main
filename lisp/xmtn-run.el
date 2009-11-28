@@ -43,31 +43,19 @@
 
 (define-coding-system-alias 'xmtn--monotone-normal-form 'utf-8-unix)
 
-(defun xmtn--call-with-environment-for-subprocess (xmtn--thunk)
-  (let ((process-environment (list* "LC_ALL="
-                                    "LC_CTYPE=en_US.UTF-8"
-                                    "LC_MESSAGES=C"
-                                    process-environment)))
-    (funcall xmtn--thunk)))
-
-(defmacro* xmtn--with-environment-for-subprocess (() &body body)
-  (declare (indent 1) (debug (sexp body)))
-  `(xmtn--call-with-environment-for-subprocess (lambda () ,@body)))
-
 (defun* xmtn--run-command-sync (root arguments &rest dvc-run-keys &key)
   (xmtn--check-cached-command-version)
   (let ((default-directory (file-truename (or root default-directory))))
     (let ((coding-system-for-write 'xmtn--monotone-normal-form))
-      (xmtn--with-environment-for-subprocess ()
-        (apply #'dvc-run-dvc-sync
-               'xmtn
-               `(,@xmtn-additional-arguments
-                 ;; We don't pass the --root argument here; it is not
-                 ;; necessary since default-directory is set, and it
-                 ;; confuses the Cygwin version of mtn when run with a
-                 ;; non-Cygwin Emacs.
-                 ,@arguments)
-               dvc-run-keys)))))
+      (dvc-run-dvc-sync
+       'xmtn
+       `(,@xmtn-additional-arguments
+         ;; We don't pass the --root argument here; it is not
+         ;; necessary since default-directory is set, and it
+         ;; confuses the Cygwin version of mtn when run with a
+         ;; non-Cygwin Emacs.
+         ,@arguments)
+       dvc-run-keys))))
 
 ;;; The `dvc-run-dvc-*' functions use `call-process', which, for some
 ;;; reason, spawns the subprocess with a working directory with all
@@ -81,16 +69,15 @@
   (xmtn--check-cached-command-version)
   (let ((default-directory (file-truename (or root default-directory))))
     (let ((coding-system-for-write 'xmtn--monotone-normal-form))
-      (xmtn--with-environment-for-subprocess ()
-        (apply #'dvc-run-dvc-async
-               'xmtn
-               `(,@xmtn-additional-arguments
-                 ;; We don't pass the --root argument here; it is not
-                 ;; necessary since default-directory is set, and it
-                 ;; confuses the Cygwin version of mtn when run with a
-                 ;; non-Cygwin Emacs.
-                 ,@arguments)
-               dvc-run-keys)))))
+      (apply #'dvc-run-dvc-async
+             'xmtn
+             `(,@xmtn-additional-arguments
+               ;; We don't pass the --root argument here; it is not
+               ;; necessary since default-directory is set, and it
+               ;; confuses the Cygwin version of mtn when run with a
+               ;; non-Cygwin Emacs.
+               ,@arguments)
+             dvc-run-keys))))
 
 (defun xmtn--command-output-lines (root arguments)
   "Run mtn in ROOT with ARGUMENTS and return its output as a list of strings."
@@ -98,22 +85,21 @@
   (let ((accu (list)))
     (let ((default-directory (file-truename (or root default-directory))))
       (let ((coding-system-for-write 'xmtn--monotone-normal-form))
-        (xmtn--with-environment-for-subprocess ()
-          (dvc-run-dvc-sync
-           'xmtn
-           `(,@xmtn-additional-arguments
-             ,@(if root `(,(concat "--root=" (file-truename root))))
-             ,@arguments)
-           :finished (lambda (output error status arguments)
-                       (with-current-buffer output
-                         (save-excursion
-                           (goto-char (point-min))
-                           (while (not (eobp))
-                             (push (buffer-substring-no-properties
-                                    (point)
-                                    (progn (end-of-line) (point)))
-                                   accu)
-                             (forward-line 1)))))))))
+        (dvc-run-dvc-sync
+         'xmtn
+         `(,@xmtn-additional-arguments
+           ,@(if root `(,(concat "--root=" (file-truename root))))
+           ,@arguments)
+         :finished (lambda (output error status arguments)
+                     (with-current-buffer output
+                       (save-excursion
+                         (goto-char (point-min))
+                         (while (not (eobp))
+                           (push (buffer-substring-no-properties
+                                  (point)
+                                  (progn (end-of-line) (point)))
+                                 accu)
+                           (forward-line 1))))))))
     (setq accu (nreverse accu))
     accu))
 
