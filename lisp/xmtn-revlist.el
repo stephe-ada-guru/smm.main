@@ -257,14 +257,14 @@ arg; root. Result is of the form:
 (defun xmtn--setup-revlist (root info-generator-fn first-line-only-p last-n)
   ;; Adapted from `dvc-build-revision-list'.
   ;; info-generator-fn must return a list of back-end revision ids (strings)
-  (xmtn-automate-with-session (nil root)
-    (let ((dvc-temp-current-active-dvc 'xmtn)
-          (buffer (dvc-revlist-create-buffer
-                   'xmtn 'log root 'xmtn--revlist-refresh first-line-only-p last-n)))
-      (with-current-buffer buffer
-        (setq xmtn--revlist-*info-generator-fn* info-generator-fn)
-        (xmtn--revlist-refresh))
-      (xmtn--display-buffer-maybe buffer nil)))
+  (xmtn-automate-cache-session root)
+  (let ((dvc-temp-current-active-dvc 'xmtn)
+        (buffer (dvc-revlist-create-buffer
+                 'xmtn 'log root 'xmtn--revlist-refresh first-line-only-p last-n)))
+    (with-current-buffer buffer
+      (setq xmtn--revlist-*info-generator-fn* info-generator-fn)
+      (xmtn--revlist-refresh))
+    (xmtn--display-buffer-maybe buffer nil))
   nil)
 
 ;;;###autoload
@@ -293,23 +293,21 @@ arg; root. Result is of the form:
     (xmtn--setup-revlist
      root
      (lambda (root)
-       (xmtn-automate-with-session
-           (nil root)
-         (let ((branch (xmtn--tree-default-branch root)))
-           (list branch
-                 (list
-                  (if dvc-revlist-last-n
-                      (format "Log for branch %s (last %d entries):" branch dvc-revlist-last-n)
-                    (format "Log for branch %s (all entries):" branch)))
-                 '()
-                 (xmtn--expand-selector
-                  root
-                  ;; This restriction to current branch is completely
-                  ;; arbitrary.
-                  (concat
-                   "b:" ;; returns all revs for current branch
-                   (xmtn--escape-branch-name-for-selector
-                    branch)))))))
+       (let ((branch (xmtn--tree-default-branch root)))
+         (list branch
+               (list
+                (if dvc-revlist-last-n
+                    (format "Log for branch %s (last %d entries):" branch dvc-revlist-last-n)
+                  (format "Log for branch %s (all entries):" branch)))
+               '()
+               (xmtn--expand-selector
+                root
+                ;; This restriction to current branch is completely
+                ;; arbitrary.
+                (concat
+                 "b:" ;; returns all revs for current branch
+                 (xmtn--escape-branch-name-for-selector
+                  branch))))))
      first-line-only-p
      last-n)))
 
