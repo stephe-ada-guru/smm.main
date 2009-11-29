@@ -83,16 +83,14 @@
     `(let ((,root ,root-form)
            (,command ,command-form)
            (,may-kill-p ,may-kill-p-form))
-       (xmtn-automate-with-session (,session ,root)
-         (xmtn-automate-with-command (,handle
-                                      ,session ,command
-                                      :may-kill-p ,may-kill-p)
-           (xmtn-automate-command-check-for-and-report-error ,handle)
-           (xmtn-automate-command-wait-until-finished ,handle)
-           (xmtn-basic-io-with-stanza-parser (,parser
-                                              (xmtn-automate-command-buffer
-                                               ,handle))
-             ,@body))))))
+       (let* ((,session (xmtn-automate-cache-session ,root))
+              (,handle (xmtn-automate--new-command ,session ,command ,may-kill-p)))
+         (xmtn-automate-command-check-for-and-report-error ,handle)
+         (xmtn-automate-command-wait-until-finished ,handle)
+         (xmtn-basic-io-with-stanza-parser (,parser
+                                            (xmtn-automate-command-buffer
+                                             ,handle))
+           ,@body)))))
 
 ;;;###autoload
 (defun xmtn-dvc-log-edit-file-name-func (&optional root)
@@ -913,20 +911,6 @@ otherwise newer."
   (xmtn--run-command-sync root
                           `("add" "--" ,@file-names)))
 
-(defun xmtn--file-registered-p (root file-name)
-  ;; FIXME: need a better way to implement this
-  (let ((normalized-file-name (xmtn--normalize-file-name root file-name)))
-    (block parse
-      (xmtn--with-automate-command-output-basic-io-parser
-          (parser root `("inventory"))
-        (xmtn--parse-inventory parser
-                               (lambda (path status changes old-path new-path
-                                             old-type new-type fs-type)
-                                 (when (equal normalized-file-name path)
-                                   (return-from parse
-                                     t)))))
-      nil)))
-
 ;;;###autoload
 (defun xmtn-dvc-add-files (&rest files)
   (xmtn--add-files (dvc-tree-root) files))
@@ -1490,30 +1474,6 @@ finished."
   clear-attr
   set-attr
   )
-
-
-(defun xmtn--get-revision (root backend-id)
-  (let ((resolved-id (xmtn--resolve-backend-id root backend-id)))
-    (xmtn--with-automate-command-output-basic-io-parser
-        (parser root `("get_revision"
-                       ,@(xmtn-match resolved-id
-                           ((local-tree $path)
-                            ;; FIXME: I don't really know what to do if
-                            ;; PATH is not the same as ROOT.  Maybe
-                            ;; revision id resolution needs to return
-                            ;; the proper root, too.
-                            (assert (xmtn--same-tree-p root path))
-                            '())
-                           ((revision $hash-id)
-                            `(,hash-id)))))
-      (assert (equal (funcall parser) '(("format_version" (string "1")))))
-      (let ((new-manifest-hash-id (xmtn-match (funcall parser)
-                                    ((("new_manifest" (id $hash-id)))
-                                     hash-id))))
-        (let ((proto-revision (xmtn--parse-partial-revision parser)))
-          (setf (xmtn--revision-new-manifest-hash-id proto-revision)
-                new-manifest-hash-id)
-          proto-revision)))))
 
 (defun xmtn--parse-partial-revision (parser)
   "Parse basic_io output from get_revision, starting with the old_revision stanzas."

@@ -147,68 +147,6 @@ ROOT, store it in session cache. Return session."
 workspace root."
   (cdr (assoc key xmtn-automate--*sessions*)))
 
-(defmacro* xmtn-automate-with-session ((session-var-or-null root-form &key)
-                                       &body body)
-  "Call BODY, after ensuring an automate session for ROOT-FORM is active."
-  (declare (indent 1) (debug (sexp body)))
-  ;; I would prefer to factor out a function
-  ;; `xmtn-automate--call-with-session' here, but that would make
-  ;; profiler output unreadable, since every function would only
-  ;; appear to call `xmtn-automate--call-with-session', and that
-  ;; function would appear to do all computation.
-  ;;
-  ;; mtn automate stdio requires a valid database, so we require a
-  ;; root directory here.
-  (let ((session (gensym))
-        (session-var (or session-var-or-null (gensym)))
-        (root (gensym))
-        (key (gensym))
-        (thunk (gensym)))
-    `(let* ((,root (file-name-as-directory ,root-form))
-            (,key (file-truename ,root))
-            (,session (xmtn-automate-get-cached-session ,key))
-            (,thunk (lambda ()
-                      (let ((,session-var ,session))
-                        ,@body))))
-       (if ,session
-           (funcall ,thunk)
-         (unwind-protect
-             (progn
-               (setq ,session (xmtn-automate--make-session ,root ,key))
-               (let ((xmtn-automate--*sessions*
-               ;; note the let-binding here; these sessions are _not_
-               ;; available for later commands. use
-               ;; xmtn-automate-cache-session to get a persistent
-               ;; session.
-                      (acons ,key ,session xmtn-automate--*sessions*)))
-                 (funcall ,thunk)))
-           (when ,session (xmtn-automate--close-session ,session)))))))
-
-(defmacro* xmtn-automate-with-command ((handle-var session-form command-form
-                                                   &key ((:may-kill-p
-                                                          may-kill-p-form)))
-                                       &body body)
-  "Send COMMAND_FORM to session SESSION_FORM, then execute BODY."
-  (declare (indent 1) (debug (sexp body)))
-  (let ((session (gensym))
-        (command (gensym))
-        (may-kill-p (gensym))
-        (handle (gensym)))
-    `(let ((,session ,session-form)
-           (,command ,command-form)
-           (,may-kill-p ,may-kill-p-form)
-           (,handle nil))
-       (unwind-protect
-           (progn
-             (setq ,handle (xmtn-automate--new-command ,session
-                                                       ,command
-                                                       ,may-kill-p))
-             (xmtn--assert-optional (xmtn-automate--command-handle-p ,handle))
-             (let ((,handle-var ,handle))
-               ,@body))
-         (when ,handle
-           (xmtn-automate--cleanup-command ,handle))))))
-
 (defun xmtn-automate--command-output-as-string-ignoring-exit-code (handle)
   (xmtn-automate-command-wait-until-finished handle)
   (with-current-buffer (xmtn-automate-command-buffer handle)
