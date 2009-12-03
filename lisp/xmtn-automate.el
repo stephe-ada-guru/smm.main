@@ -377,7 +377,7 @@ Signals an error if output contains zero lines or more than one line."
     process))
 
 (defun xmtn-automate--new-buffer (session)
-  (let* ((buffer-base-name (format "*%s: session*"
+  (let* ((buffer-base-name (format " *%s: session*"
                                    (xmtn-automate--session-name session)))
          (buffer (generate-new-buffer buffer-base-name)))
     (with-current-buffer buffer
