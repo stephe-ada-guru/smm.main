@@ -447,7 +447,7 @@ the buffer."
          (command-number
           (1- (incf (xmtn-automate--session-next-command-number
                      session))))
-         (buffer-name (format "*%s: output for command %s(%s)*"
+         (buffer-name (format " *%s: output for command %s(%s)*"
                               (xmtn-automate--session-name session)
                               mtn-number
                               command-number))
