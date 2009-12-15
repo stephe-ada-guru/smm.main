@@ -307,25 +307,13 @@ The elements must all be of class xmtn-status-data.")
   (message "checking %s for local changes" work)
   (let ((default-directory work))
 
-    (dvc-run-dvc-sync
-     'xmtn
-     (list "status")
-     :finished (lambda (output error status arguments)
-                 ;; we don't get an error status for not up-to-date,
-                 ;; so parse the output.
-                 ;; FIXME: add option to automate inventory to just return status; can return on first change
-                 ;; FIXME: 'patch' may be internationalized.
-
-                 (message "") ; clear minibuffer
-                 (set-buffer output)
-                 (goto-char (point-min))
-                 (if (search-forward "patch" (point-max) t)
-                     'need-commit
-                   'ok))
-
-     :error (lambda (output error status arguments)
-              (pop-to-buffer error))))
-  )
+    (let ((result (xmtn-automate-simple-command-output-string
+                   default-directory
+                   (list (list "no-unchanged" "no-ignored")
+                         "inventory"))))
+     (if (> (length result) 0)
+         'need-commit
+       'ok))))
 
 (defun xmtn-status-conflicts (data)
   "Return value for xmtn-status-data-conflicts for DATA."
