@@ -302,19 +302,6 @@ The elements must all be of class xmtn-status-data.")
 
   (set-buffer-modified-p nil))
 
-(defun xmtn-status-local-changes (work)
-  "Value for xmtn-status-data-local-changes for WORK."
-  (message "checking %s for local changes" work)
-  (let ((default-directory work))
-
-    (let ((result (xmtn-automate-simple-command-output-string
-                   default-directory
-                   (list (list "no-unchanged" "no-ignored")
-                         "inventory"))))
-     (if (> (length result) 0)
-         'need-commit
-       'ok))))
-
 (defun xmtn-status-conflicts (data)
   "Return value for xmtn-status-data-conflicts for DATA."
   ;; Can't check for "current heads", since there could be more than
@@ -381,7 +368,7 @@ The elements must all be of class xmtn-status-data.")
 
     (case (xmtn-status-data-local-changes data)
       (need-scan
-       (setf (xmtn-status-data-local-changes data) (xmtn-status-local-changes work)))
+       (setf (xmtn-status-data-local-changes data) (xmtn-automate-local-changes work)))
       (t nil))
 
     (case (xmtn-status-data-conflicts data)

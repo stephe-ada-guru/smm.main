@@ -778,6 +778,18 @@ Each element of the list is a list; key, signature, name, value, trust."
 (defun xmtn--tree-default-branch (root)
   (xmtn-automate-simple-command-output-line root `("get_option" "branch")))
 
+(defun xmtn-automate-local-changes (work)
+  "Summary of status  for WORK; 'ok if no changes, 'need-commit if changes."
+  (message "checking %s for local changes" work)
+  (let ((default-directory work))
+
+    (let ((result (xmtn-automate-simple-command-output-string
+                   default-directory
+                   (list (list "no-unchanged" "no-ignored")
+                         "inventory"))))
+     (if (> (length result) 0)
+         'need-commit
+       'ok))))
 
 (provide 'xmtn-automate)
 
