@@ -71,20 +71,18 @@
 (dvc-register-dvc 'xmtn "monotone")
 
 (defmacro* xmtn--with-automate-command-output-basic-io-parser
-    ((parser root-form command-form &key ((:may-kill-p may-kill-p-form)))
+    ((parser root-form command-form)
      &body body)
   (declare (indent 1) (debug (sexp body)))
   (let ((parser-tmp (gensym))
         (root (gensym))
         (command (gensym))
-        (may-kill-p (gensym))
         (session (gensym))
         (handle (gensym)))
     `(let ((,root ,root-form)
-           (,command ,command-form)
-           (,may-kill-p ,may-kill-p-form))
+           (,command ,command-form))
        (let* ((,session (xmtn-automate-cache-session ,root))
-              (,handle (xmtn-automate--new-command ,session ,command ,may-kill-p)))
+              (,handle (xmtn-automate--new-command ,session ,command)))
          (xmtn-automate-command-check-for-and-report-error ,handle)
          (xmtn-automate-command-wait-until-finished ,handle)
          (xmtn-basic-io-with-stanza-parser (,parser

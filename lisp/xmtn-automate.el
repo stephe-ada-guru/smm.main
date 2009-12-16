@@ -50,8 +50,11 @@
 ;; `xmtn-automate-new-command' to send commands to monotone.
 ;;
 ;; A COMMAND is a list of strings (the command and its arguments), or
-;; a cons of lists of strings. If car COMMAND is a list, car COMMAND is
-;; options (without leading "--"), cdr is the command and arguments.
+;; a cons of lists of strings. If car COMMAND is a list, car COMMAND
+;; is options, cdr is the command and arguments. Options are always
+;; specified as pairs of keyword and value, and without the leading
+;; "--". If an option has no value, use ""; see
+;; xmtn-automate-local-changes for an example.
 ;;
 ;; `xmtn-automate-new-command' returns a command handle.  You use this
 ;; handle to check the error code of the command and obtain its
@@ -165,7 +168,7 @@ workspace root."
 (defun xmtn-automate-simple-command-output-string (root command)
   "Send COMMAND to session for ROOT. Return result as a string."
   (let* ((session (xmtn-automate-cache-session root))
-         (command-handle (xmtn-automate--new-command session command nil)))
+         (command-handle (xmtn-automate--new-command session command)))
     (xmtn-automate-command-check-for-and-report-error command-handle)
     (xmtn-automate--command-output-as-string-ignoring-exit-code command-handle)))
 
@@ -173,7 +176,7 @@ workspace root."
   (root buffer command)
   "Send COMMAND to session for ROOT, insert result into BUFFER."
   (let* ((session (xmtn-automate-cache-session root))
-         (command-handle (xmtn-automate--new-command session command nil)))
+         (command-handle (xmtn-automate--new-command session command)))
     (xmtn-automate-command-check-for-and-report-error command-handle)
     (xmtn-automate-command-wait-until-finished command-handle)
     (with-current-buffer buffer
@@ -203,7 +206,7 @@ first in list."
   "Return list of strings containing output of COMMAND, one line per
 string."
   (let* ((session (xmtn-automate-cache-session root))
-         (command-handle (xmtn-automate--new-command session command nil)))
+         (command-handle (xmtn-automate--new-command session command)))
     (xmtn-automate-command-output-lines command-handle)))
 
 (defun xmtn-automate-simple-command-output-line (root command)
@@ -239,7 +242,6 @@ Signals an error if output contains zero lines or more than one line."
   (process nil)
   (decoder-state)
   (next-command-number 0)
-  (must-not-kill-counter)
   (remaining-command-handles)
   (sent-kill-p)
   (closed-p nil))
@@ -252,7 +254,6 @@ Signals an error if output contains zero lines or more than one line."
   (session)
   (buffer)
   (write-marker)
-  (may-kill-p)
   (finished-p nil)
   (error-code nil))
 
@@ -273,7 +274,6 @@ Signals an error if output contains zero lines or more than one line."
 
 (defun xmtn-automate--session-send-process-kill (session)
   (let ((process (xmtn-automate--session-process session)))
-    ;; Stop parser.
     (setf (xmtn-automate--session-sent-kill-p session) t)
     (with-current-buffer (xmtn-automate--session-buffer session)
       (let ((inhibit-read-only t)
@@ -282,13 +282,12 @@ Signals an error if output contains zero lines or more than one line."
           (goto-char (process-mark process))
           (insert "\n(killing process)\n")
           (set-marker (process-mark process) (point)))))
-    ;; Maybe this should really be a sigpipe.  But let's not get too
-    ;; fancy (ha!) and non-portable.
-    ;;(signal-process (xmtn-automate--session-process session) 'PIPE)
+
+    (signal-process process 'KILL)
+
     ;; This call to `sit-for' is apparently needed in some situations to
     ;; make sure the process really gets killed.
-    (sit-for 0)
-    (interrupt-process process))
+    (sit-for 0))
   nil)
 
 (defun xmtn-automate--close-session (session)
@@ -297,36 +296,33 @@ Signals an error if output contains zero lines or more than one line."
   (let ((process (xmtn-automate--session-process session)))
     (cond
      ((null process)
-      ;; Process died for some reason - most likely 'mtn not found in
-      ;; path'. Don't warn if buffer hasn't been deleted; that
-      ;; obscures the real error message
+      ;; Process was never created or was killed - most likely 'mtn
+      ;; not found in path'. Don't warn if buffer hasn't been deleted;
+      ;; that obscures the real error message
       nil)
-     ((ecase (process-status process)
-        (run nil)
-        (exit t)
-        (signal t))
-      (unless xmtn-automate--*preserve-buffers-for-debugging*
-        (kill-buffer (xmtn-automate--session-buffer session))))
      (t
-      (process-send-eof process)
-      (if (zerop (xmtn-automate--session-must-not-kill-counter session))
-          (xmtn-automate--session-send-process-kill session)
-        ;; We can't kill the buffer yet.  We need to dump mtn's output
-        ;; in there so we can parse it and determine when the critical
-        ;; commands are finished so we can then kill mtn.
-        (dvc-trace
-         "Not killing process %s yet: %s out of %s remaining commands are critical"
-         (process-name process)
-         (xmtn-automate--session-must-not-kill-counter session)
-         (length (xmtn-automate--session-remaining-command-handles session))))
-      (with-current-buffer (xmtn-automate--session-buffer session)
-        ;; This isn't essential but helps debugging.
-        (rename-buffer (format "*%s: killed session*"
-                               (xmtn-automate--session-name session))
-                       t))
-      (let ((fake-session (xmtn-automate--copy-session session)))
-        (xmtn-automate--set-process-session process fake-session)))))
+      (ecase (process-status process)
+        (run
+         (process-send-eof process)
+         (xmtn-automate--session-send-process-kill session))
+        (exit t)
+        (signal t))))
+
+    (unless xmtn-automate--*preserve-buffers-for-debugging*
+      (if (buffer-live-p (xmtn-automate--session-buffer session))
+          (kill-buffer (xmtn-automate--session-buffer session)))))
   nil)
+
+(defun xmtn-kill-all-sessions ()
+  "Kill all xmtn-automate sessions."
+  (interactive)
+  (let ((count 0)
+        (key " *xmtn automate session for"))
+    (dolist (session xmtn-automate--*sessions*)
+      (xmtn-automate--close-session (cdr session))
+      (setq count (+ 1 count)))
+    (setq xmtn-automate--*sessions* nil)
+    (message "killed %d sessions" count)))
 
 (defun xmtn-automate--start-process (session)
   (xmtn--check-cached-command-version)
@@ -355,7 +351,6 @@ Signals an error if output contains zero lines or more than one line."
                               (xmtn--assert-optional (eql (point-min) (point)) t)
                               (set-marker (make-marker)
                                           (point-min)))))
-        (setf (xmtn-automate--session-must-not-kill-counter session) 0)
         (setf (xmtn-automate--session-remaining-command-handles session) (list))
         (setf (xmtn-automate--session-sent-kill-p session) nil)
         process))))
@@ -399,8 +394,8 @@ the buffer."
           (goto-char (point-max)))))
   nil)
 
-(defun xmtn-automate--send-command-string (session command option-plist session-number)
-  "Send COMMAND and OPTION-PLIST to SESSION."
+(defun xmtn-automate--send-command-string (session command option-pairs session-number)
+  "Send COMMAND and OPTION-PAIRS to SESSION."
   (let* ((buffer-name (format "*%s: input for command %s*"
                               (xmtn-automate--session-name session)
                               session-number))
@@ -419,9 +414,9 @@ the buffer."
             (set-buffer-multibyte t)
             (setq buffer-read-only t)
             (let ((inhibit-read-only t))
-              (when option-plist
+              (when option-pairs
                 (insert "o")
-                (xmtn-automate--append-encoded-strings option-plist)
+                (xmtn-automate--append-encoded-strings option-pairs)
                 (insert "e"))
               (insert "l")
               (xmtn-automate--append-encoded-strings command)
@@ -435,7 +430,7 @@ the buffer."
         (unless xmtn-automate--*preserve-buffers-for-debugging*
           (kill-buffer buffer))))))
 
-(defun xmtn-automate--new-command (session command may-kill-p)
+(defun xmtn-automate--new-command (session command)
   "Send COMMAND to SESSION."
   (xmtn-automate--ensure-process session)
   (let* ((command-number
@@ -466,18 +461,12 @@ the buffer."
                      :session session
                      :arguments command
                      :session-command-number command-number
-                     :may-kill-p may-kill-p
                      :buffer buffer
                      :write-marker (set-marker (make-marker) (point)))))
         (setf
          (xmtn-automate--session-remaining-command-handles session)
          (nconc (xmtn-automate--session-remaining-command-handles session)
                 (list handle)))
-        (when (not may-kill-p)
-          (incf (xmtn-automate--session-must-not-kill-counter session))
-          (xmtn--set-process-query-on-exit-flag
-           (xmtn-automate--session-process session)
-           t))
         handle))))
 
 (defun xmtn-automate--cleanup-command (handle)
@@ -576,15 +565,8 @@ the buffer."
               ;; discard result
               (pop (xmtn-automate--session-remaining-command-handles session)))
             (setq tag 'check-for-more)
-            (when (not (xmtn-automate--command-handle-may-kill-p command))
-              (when (zerop (decf (xmtn-automate--session-must-not-kill-counter
-                                  session)))
-                (xmtn--set-process-query-on-exit-flag
-                 (xmtn-automate--session-process session)
-                 nil)
-                (when (xmtn-automate--session-closed-p session)
-                  (xmtn-automate--session-send-process-kill session)
-                  (setq tag 'exit-loop))))
+            (when (xmtn-automate--session-closed-p session)
+              (setq tag 'exit-loop))
             (setf (xmtn-automate--decoder-state-last-p state) nil))
            ((and (= (xmtn-automate--decoder-state-remaining-chars state) 0)
                  (not (xmtn-automate--decoder-state-last-p state)))
@@ -688,12 +670,7 @@ the buffer."
            (if (xmtn-automate--session-sent-kill-p session)
                (reclaim-buffer)
              (message "Process %s died due to signal" (process-name process))
-             (when (not (zerop (xmtn-automate--session-must-not-kill-counter
-                                session)))
-               (lwarn
-                'xmtn ':error
-                "Process %s died due to signal during a critical operation"
-                (process-name process))))))))))
+             )))))))
 
 (defun xmtn-automate--process-filter (process input-string)
   (let ((session (xmtn-automate--process-session process)))
@@ -710,12 +687,10 @@ the buffer."
               (insert input-string))
             (set-marker mark (point)))
           (when move-point-p (goto-char mark))))
-      ;;(with-local-quit                    ; For debugging.
       ;; Emacs receives a message "mtn: operation canceled: Interrupt"
       ;; from mtn after we kill it.  Ignore such "input".
       (unless (xmtn-automate--session-sent-kill-p session)
         (xmtn-automate--process-new-output session input-string))
-      ;;)
       )))
 
 (defun xmtn--map-parsed-certs (xmtn--root xmtn--revision-hash-id xmtn--thunk)
@@ -785,7 +760,7 @@ Each element of the list is a list; key, signature, name, value, trust."
 
     (let ((result (xmtn-automate-simple-command-output-string
                    default-directory
-                   (list (list "no-unchanged" "no-ignored")
+                   (list (list "no-unchanged" "" "no-ignored" "")
                          "inventory"))))
      (if (> (length result) 0)
          'need-commit
