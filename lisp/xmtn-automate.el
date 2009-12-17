@@ -87,13 +87,17 @@
   (require 'xmtn-run)
   (require 'xmtn-compat))
 
-(defun xmtn-automate-command-error-code (command)
+(defun xmtn-automate-command-error-code (command-handle)
+  "Wait for process executing COMMAND-HANDLE to finish outputting an error code, return it."
   (let ((process (xmtn-automate--session-process
-                  (xmtn-automate--command-handle-session command))))
-    (while (null (xmtn-automate--command-handle-error-code command))
-      (xmtn--assert-for-effect
-       (accept-process-output process))))
-  (xmtn-automate--command-handle-error-code command))
+                  (xmtn-automate--command-handle-session command-handle))))
+    (while (null (xmtn-automate--command-handle-error-code command-handle))
+      (ecase (process-status process)
+        (run
+         (accept-process-output process))
+        ((exit signal)
+         (error "mtn automate process exited (can't see error message from here)")))))
+  (xmtn-automate--command-handle-error-code command-handle))
 
 (defun xmtn-automate-command-buffer (command)
   (xmtn-automate--command-handle-buffer command))
@@ -117,13 +121,9 @@
                          command))
        previous-write-marker-position)))
 
-(defun xmtn-automate-command-finished-p (command)
-  (xmtn-automate--command-handle-finished-p command))
-
 (defun xmtn-automate-command-wait-until-finished (handle)
-  (while (not (xmtn-automate-command-finished-p handle))
-    (xmtn--assert-for-effect (or (xmtn-automate-command-accept-output handle)
-                                 (xmtn-automate-command-finished-p handle))))
+  (while (not (xmtn-automate--command-handle-finished-p handle))
+    (xmtn-automate-command-accept-output handle))
   nil)
 
 (defvar xmtn-automate--*sessions* '()
@@ -336,6 +336,18 @@ Signals an error if output contains zero lines or more than one line."
       (let ((process
              (apply 'start-process name buffer xmtn-executable
                     "automate" "stdio" xmtn-additional-arguments)))
+        ;; if the process started ok, it is waiting for
+        ;; input. However, if there was an error (like
+        ;; default_directory is not a mtn workspace), it outputs an
+        ;; error message and exits. So we have a race condition
+        ;; waiting for a valid start.
+        (sit-for 1.0)
+        (ecase (process-status process)
+          (run nil)
+          ((exit signal)
+           (error "failed to create mtn automate process: %s"
+                  (with-current-buffer buffer
+                    (buffer-substring-no-properties (point-min) (point-max))))))
         (xmtn-automate--set-process-session process session)
         (set-process-filter process 'xmtn-automate--process-filter)
         (set-process-sentinel process 'xmtn-automate--process-sentinel)
@@ -473,7 +485,7 @@ the buffer."
   (unless xmtn-automate--*preserve-buffers-for-debugging*
     (kill-buffer (xmtn-automate--command-handle-buffer handle))))
 
-(defsubst xmtn-automate--process-new-output--copy (session)
+(defun xmtn-automate--process-new-output--copy (session)
   (let* ((session-buffer (xmtn-automate--session-buffer session))
          (state (xmtn-automate--session-decoder-state session))
          (read-marker (xmtn-automate--decoder-state-read-marker state))
@@ -530,7 +542,7 @@ the buffer."
          (add-text-properties start end '(face (:strike-through
                                                 t))))))))
 
-(defsubst xmtn-automate--process-new-output (session new-string)
+(defun xmtn-automate--process-new-output (session new-string)
   (let* ((session-buffer (xmtn-automate--session-buffer session))
          (state (xmtn-automate--session-decoder-state session))
          (read-marker (xmtn-automate--decoder-state-read-marker state))
@@ -607,20 +619,6 @@ the buffer."
                        ;;                                 t)
                        (set-marker read-marker (match-end 0)))
                      (setq tag 'again))
-                    ;; This is just a simple heuristic, there are many
-                    ;; kinds of invalid input that it doesn't detect.
-                    ;; FIXME: This can errorneously be triggered by
-                    ;; warnings that mtn prints on stderr; but Emacs
-                    ;; interleaves stdout and stderr (see (elisp)
-                    ;; Output from Processes) with no way to
-                    ;; distinguish between them.  We'll probably have
-                    ;; to spawn mtn inside a shell that redirects
-                    ;; stderr to a file.  But I don't think that's
-                    ;; possible in a portable way...
-                    ((looking-at "[^0-9]")
-                     (error "Invalid output from mtn: %s"
-                            (buffer-substring-no-properties (point)
-                                                            (point-max))))
                     (t
                      (xmtn--assert-optional command)
                      (setq tag 'exit-loop)))))

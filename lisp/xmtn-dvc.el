@@ -74,8 +74,7 @@
     ((parser root-form command-form)
      &body body)
   (declare (indent 1) (debug (sexp body)))
-  (let ((parser-tmp (gensym))
-        (root (gensym))
+  (let ((root (gensym))
         (command (gensym))
         (session (gensym))
         (handle (gensym)))
@@ -85,10 +84,11 @@
               (,handle (xmtn-automate--new-command ,session ,command)))
          (xmtn-automate-command-check-for-and-report-error ,handle)
          (xmtn-automate-command-wait-until-finished ,handle)
-         (xmtn-basic-io-with-stanza-parser (,parser
-                                            (xmtn-automate-command-buffer
-                                             ,handle))
-           ,@body)))))
+         (prog1
+             (xmtn-basic-io-with-stanza-parser
+                 (,parser (xmtn-automate-command-buffer ,handle))
+               ,@body)
+           (xmtn-automate--cleanup-command ,handle))))))
 
 ;;;###autoload
 (defun xmtn-dvc-log-edit-file-name-func (&optional root)
