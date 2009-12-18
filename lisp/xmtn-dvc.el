@@ -84,9 +84,11 @@
               (,handle (xmtn-automate--new-command ,session ,command)))
          (xmtn-automate-command-check-for-and-report-error ,handle)
          (xmtn-automate-command-wait-until-finished ,handle)
-         (xmtn-basic-io-with-stanza-parser
-             (,parser (xmtn-automate-command-buffer ,handle)) ,@body)
-         (xmtn-automate--cleanup-command ,handle)))))
+         (prog1
+             (xmtn-basic-io-with-stanza-parser
+                 (,parser (xmtn-automate-command-buffer ,handle))
+               ,@body)
+           (xmtn-automate--cleanup-command ,handle))))))
 
 ;;;###autoload
 (defun xmtn-dvc-log-edit-file-name-func (&optional root)
