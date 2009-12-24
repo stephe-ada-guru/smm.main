@@ -1131,11 +1131,9 @@ finished."
            (lambda ()
              (xmtn--refresh-status-header display-buffer)
              (message "%s... done" msg)))
-        (xmtn--run-command-sync
-           root cmd
-           :finished (lambda (output error status arguments)
-                       (xmtn--refresh-status-header display-buffer)
-                       (message "%s... done" msg)))))))
+        (xmtn--run-command-sync root cmd)
+        (xmtn--refresh-status-header display-buffer)
+        (message "%s... done" msg)))))
 
 (defun xmtn-dvc-merge-1 (root refresh-status)
   (lexical-let ((refresh-status refresh-status))
@@ -1191,20 +1189,16 @@ finished."
   (let ((root (dvc-tree-root)))
     (assert (not (endp file-names)))
     (dvc-save-some-buffers root)
-    (let ((normalized-file-names (xmtn--normalize-file-names root file-names)))
-      (lexical-let
-          ((root root)
-           (progress-message
-            (if (eql (length file-names) 1)
-                (format "Reverting file %s" (first file-names))
-              (format "Reverting %s files" (length file-names)))))
-        (message "%s..." progress-message)
-        (xmtn--run-command-sync root `("revert" "--"
-                                       ,@normalized-file-names)
-                                :finished
-                                (lambda (output error status arguments)
-                                  (message "%s... done" progress-message)))
-        (dvc-revert-some-buffers root))))
+    (let ((normalized-file-names (xmtn--normalize-file-names root file-names))
+          (progress-message
+           (if (eql (length file-names) 1)
+               (format "Reverting file %s" (first file-names))
+             (format "Reverting %s files" (length file-names)))))
+      (message "%s..." progress-message)
+      (xmtn--run-command-sync root `("revert" "--"
+                                     ,@normalized-file-names))
+      (message "%s... done" progress-message))
+    (dvc-revert-some-buffers root))
   nil)
 
 ;;;###autoload

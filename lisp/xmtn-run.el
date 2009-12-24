@@ -43,7 +43,7 @@
 
 (define-coding-system-alias 'xmtn--monotone-normal-form 'utf-8-unix)
 
-(defun* xmtn--run-command-sync (root arguments &rest dvc-run-keys &key)
+(defun* xmtn--run-command-sync (root arguments)
   (xmtn--check-cached-command-version)
   (let ((default-directory (file-truename (or root default-directory))))
     (dvc-run-dvc-sync
@@ -53,8 +53,7 @@
        ;; necessary since default-directory is set, and it
        ;; confuses the Cygwin version of mtn when run with a
        ;; non-Cygwin Emacs.
-       ,@arguments)
-     dvc-run-keys)))
+       ,@arguments))))
 
 ;;; The `dvc-run-dvc-*' functions use `call-process', which, for some
 ;;; reason, spawns the subprocess with a working directory with all
