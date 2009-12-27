@@ -1068,7 +1068,7 @@ finished."
   ;; the user won't see. So check that here - it's fast.
   ;; Don't throw an error; upper level might be doing other directories as well.
   (if (and check-id-p
-           (equal (xmtn--get-base-revision-hash-id root) target-revision-hash-id))
+           (equal (xmtn--get-base-revision-hash-id-or-null root) target-revision-hash-id))
       (progn
         (unless no-ding (ding))
         (message "Tree %s is already based on target revision %s"
@@ -1085,7 +1085,9 @@ finished."
       (let* ((branch (xmtn--tree-default-branch root))
              (heads (xmtn--heads root branch)))
         (case (length heads)
-          (0 (assert nil))
+          (0
+           (error "branch %s has no revisions" branch))
+
           (1
            (xmtn--update root (first heads) t no-ding))
 
