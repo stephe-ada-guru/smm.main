@@ -702,7 +702,7 @@ the buffer."
        for xmtn--stanza = (funcall xmtn--next-stanza)
        while xmtn--stanza
        do (xmtn-match xmtn--stanza
-            ((("key" (string $xmtn--key))
+            ((("key" (id $xmtn--key))
               ("signature" (string $xmtn--signature))
               ("name" (string $xmtn--name))
               ("value" (string $xmtn--value))
