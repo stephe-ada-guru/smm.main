@@ -134,7 +134,7 @@ the file before saving."
         (concat "--message-file=" log-edit-file))))
 
 ;;;###autoload
-(defun xmtn-dvc-log-edit-done ()
+(defun xmtn-dvc-log-edit-done (&optional prompt-branch)
   (let* ((root default-directory)
          (files (or (with-current-buffer dvc-partner-buffer
                       (dvc-current-file-list 'nil-if-none-marked))
@@ -151,7 +151,14 @@ the file before saving."
          (excluded-files
           (with-current-buffer dvc-partner-buffer
             (xmtn--normalize-file-names root (dvc-fileinfo-excluded-files))))
-         (branch (xmtn--tree-default-branch root)))
+         (branch (if prompt-branch
+                     (progn
+                       ;; an automate session caches the original
+                       ;; options, and will not use the new branch.
+                       (let ((session (xmtn-automate-get-cached-session (dvc-uniquify-file-name root))))
+                         (if session (xmtn-automate--close-session session)))
+                       (read-from-minibuffer "branch: " (xmtn--tree-default-branch root)))
+                   (xmtn--tree-default-branch root))))
     ;; Saving the buffer will automatically delete any log edit hints.
     (save-buffer)
     (dvc-save-some-buffers root)
