@@ -96,7 +96,8 @@
         (run
          (accept-process-output process))
         ((exit signal)
-         (error "mtn automate process exited (can't see error message from here)")))))
+         (error (format "mtn automate process exited (see %s buffer for error)"
+                        (get-buffer (format dvc-error-buffer 'xmtn))))))))
   (xmtn-automate--command-handle-error-code command-handle))
 
 (defun xmtn-automate-command-buffer (command)
@@ -582,8 +583,6 @@ the buffer."
             (setf (xmtn-automate--decoder-state-last-p state) nil))
            ((and (= (xmtn-automate--decoder-state-remaining-chars state) 0)
                  (not (xmtn-automate--decoder-state-last-p state)))
-            (unless command
-              (error "Unexpected output from mtn: %s" new-string))
             (save-excursion
               (goto-char read-marker)
               (cond ((looking-at
@@ -620,7 +619,9 @@ the buffer."
                        (set-marker read-marker (match-end 0)))
                      (setq tag 'again))
                     (t
-                     (xmtn--assert-optional command)
+                     ;; unexpected output
+                     (with-current-buffer (get-buffer-create (format dvc-error-buffer 'xmtn))
+                       (insert "Unexpected output from mtn: %s" new-string))
                      (setq tag 'exit-loop)))))
            (t (xmtn--assert-nil))))
          (exit-loop (return))))))
