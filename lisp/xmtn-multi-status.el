@@ -181,7 +181,10 @@ The elements must all be of class xmtn-status-data.")
          (data (ewoc-data elem)))
     (xmtn-status-need-refresh elem data)
     (setf (xmtn-status-data-local-changes data) 'ok)
-    (xmtn-status (xmtn-status-work data))))
+    (xmtn-status (xmtn-status-work data))
+    ;; IMPROVEME: create a log-edit buffer now, since we have both a
+    ;; status and conflict buffer, and that confuses dvc-log-edit
+    ))
 
 (defun xmtn-status-status-ok ()
   "Ignore local changes in current workspace."
@@ -223,9 +226,10 @@ The elements must all be of class xmtn-status-data.")
   (let* ((elem (ewoc-locate xmtn-status-ewoc))
          (data (ewoc-data elem))
          (default-directory (xmtn-status-work data)))
-    (xmtn-status-need-refresh elem data)
     (xmtn-status-save-conflicts-buffer data)
-    (xmtn-dvc-merge-1 default-directory nil)))
+    (xmtn-dvc-merge-1 default-directory nil)
+    (xmtn-status-refresh-one data nil)
+    (ewoc-invalidate xmtn-status-ewoc elem)))
 
 (defun xmtn-status-heads ()
   "Run xmtn-heads on current workspace."

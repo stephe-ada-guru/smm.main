@@ -211,8 +211,11 @@ the file before saving."
                    ;; commit was successful.  Let's not interfere with
                    ;; that.  (Calling `dvc-log-close' would.)
 
-                   ;; we'd like to delete log-edit-buffer here, but
-                   ;; we can't do that from a process sentinel
+                   ;; we'd like to delete log-edit-buffer here, but we
+                   ;; can't do that from a process sentinel. And we'd
+                   ;; have to find it; it may not be current buffer,
+                   ;; if log-edit-done was invoked from the ediff
+                   ;; window.
 
                    (dvc-diff-clear-buffers 'xmtn
                                            default-directory
@@ -1147,17 +1150,15 @@ finished."
                        (message "%s... done" msg)))))))
 
 (defun xmtn-dvc-merge-1 (root refresh-status)
-  (lexical-let ((refresh-status refresh-status))
-    (xmtn--run-command-async
-     root
-     (list
-      "merge"
-      (if (file-exists-p (concat root "/_MTN/conflicts"))
-          "--resolve-conflicts-file=_MTN/conflicts")
-      (xmtn-dvc-log-message))
-     :finished (lambda (output error status arguments)
-                 (if refresh-status
-                     (xmtn--refresh-status-header (current-buffer)))))))
+  (xmtn--run-command-sync
+   root
+   (list
+    "merge"
+    (if (file-exists-p (concat root "/_MTN/conflicts"))
+        "--resolve-conflicts-file=_MTN/conflicts")
+    (xmtn-dvc-log-message)))
+  (if refresh-status
+      (xmtn--refresh-status-header (current-buffer))))
 
 ;;;###autoload
 (defun xmtn-dvc-merge (&optional other)

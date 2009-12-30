@@ -96,8 +96,7 @@
         (run
          (accept-process-output process))
         ((exit signal)
-         (error (format "mtn automate process exited (see %s buffer for error)"
-                        (get-buffer (format dvc-error-buffer 'xmtn))))))))
+         (dvc-switch-to-buffer (get-buffer (format dvc-error-buffer 'xmtn)))))))
   (xmtn-automate--command-handle-error-code command-handle))
 
 (defun xmtn-automate-command-buffer (command)
