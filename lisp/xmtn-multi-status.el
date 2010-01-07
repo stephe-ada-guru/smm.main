@@ -1,6 +1,6 @@
 ;;; xmtn-status.el --- manage actions for multiple projects
 
-;; Copyright (C) 2009 Stephen Leake
+;; Copyright (C) 2009 - 2010 Stephen Leake
 
 ;; Author: Stephen Leake
 ;; Keywords: tools
@@ -115,6 +115,7 @@ The elements must all be of class xmtn-status-data.")
          (inhibit-read-only t))
     (xmtn-status-kill-conflicts-buffer data)
     (xmtn-conflicts-clean (xmtn-status-work data))
+    (xmtn-automate-kill-session (xmtn-status-work data))
     (ewoc-delete xmtn-status-ewoc elem)))
 
 (defun xmtn-status-cleanp ()

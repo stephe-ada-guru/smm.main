@@ -1,6 +1,6 @@
 ;;; xmtn-automate.el --- Interface to monotone's "automate" functionality
 
-;; Copyright (C) 2008, 2009 Stephen Leake
+;; Copyright (C) 2008 - 2010 Stephen Leake
 ;; Copyright (C) 2006, 2007 Christian M. Ohler
 
 ;; Author: Christian M. Ohler
@@ -312,6 +312,14 @@ Signals an error if output contains zero lines or more than one line."
       (if (buffer-live-p (xmtn-automate--session-buffer session))
           (kill-buffer (xmtn-automate--session-buffer session)))))
   nil)
+
+(defun xmtn-automate-kill-session (root)
+  "Kill session for ROOT."
+  (interactive)
+  (let ((temp (assoc (dvc-uniquify-file-name root) xmtn-automate--*sessions*)))
+    (xmtn-automate--close-session (cdr temp))
+    (setq xmtn-automate--*sessions*
+          (delete temp xmtn-automate--*sessions* ))))
 
 (defun xmtn-kill-all-sessions ()
   "Kill all xmtn-automate sessions."
