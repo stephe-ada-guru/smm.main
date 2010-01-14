@@ -1,6 +1,6 @@
 ;;; xmtn-conflicts.el --- conflict resolution for DVC backend for monotone
 
-;; Copyright (C) 2008 - 2009 Stephen Leake
+;; Copyright (C) 2008 - 2010 Stephen Leake
 
 ;; Author: Stephen Leake
 ;; Keywords: tools
@@ -226,7 +226,7 @@ header."
   ;;       right_name "1553/gds-hardware-bus_1553-iru_honeywell-user_guide-symbols.tex"
   ;;    right_file_id [d1eee768379694a59b2b015dd59a61cf67505182]
   ;;
-  ;; optional resolution: {resolved_internal | resolved_user}
+  ;; optional resolution: {resolved_internal | resolved_user_left}
   (let ((conflict (make-xmtn-conflicts-conflict)))
     (setf (xmtn-conflicts-conflict-conflict_type conflict) 'content)
     (xmtn-basic-io-check-line "node_type"
@@ -250,7 +250,7 @@ header."
                (setq xmtn-conflicts-resolved-internal-count (+ 1 xmtn-conflicts-resolved-internal-count))
                (setf (xmtn-conflicts-conflict-left_resolution conflict) (list 'resolved_internal)))
 
-              ((string= "resolved_user" symbol)
+              ((string= "resolved_user_left" symbol)
                (setf (xmtn-conflicts-conflict-left_resolution conflict) (list 'resolved_user (cadar value))))
 
               (t
@@ -523,7 +523,7 @@ header."
            (insert "resolved_keep_left \n"))
 
           (resolved_user
-           (xmtn-basic-io-write-str "resolved_user" (cadr (xmtn-conflicts-conflict-left_resolution conflict))))
+           (xmtn-basic-io-write-str "resolved_user_left" (cadr (xmtn-conflicts-conflict-left_resolution conflict))))
           ))))
 
 (defun xmtn-conflicts-write-duplicate_name (conflict)
