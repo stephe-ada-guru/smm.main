@@ -304,7 +304,9 @@ Signals an error if output contains zero lines or more than one line."
       (ecase (process-status process)
         (run
          (process-send-eof process)
-         (xmtn-automate--session-send-process-kill session))
+         (xmtn-automate--session-send-process-kill session)
+         (sleep-for 1.0); let process die before deleting associated buffers
+         )
         (exit t)
         (signal t))))
 
