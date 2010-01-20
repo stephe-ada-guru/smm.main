@@ -107,16 +107,26 @@ The elements must all be of class xmtn-status-data.")
   (if (buffer-live-p (xmtn-status-data-conflicts-buffer data))
       (with-current-buffer (xmtn-status-data-conflicts-buffer data) (save-buffer))))
 
+(defun xmtn-status-clean-1 (data)
+  "Clean DATA workspace."
+  (xmtn-automate-kill-session (xmtn-status-work data))
+  (xmtn-status-kill-conflicts-buffer data)
+  (xmtn-conflicts-clean (xmtn-status-work data)))
+
 (defun xmtn-status-clean ()
   "Clean current workspace, delete from ewoc"
   (interactive)
   (let* ((elem (ewoc-locate xmtn-status-ewoc))
          (data (ewoc-data elem))
          (inhibit-read-only t))
-    (xmtn-automate-kill-session (xmtn-status-work data))
-    (xmtn-status-kill-conflicts-buffer data)
-    (xmtn-conflicts-clean (xmtn-status-work data))
+    (xmtn-status-clean-1 data)
     (ewoc-delete xmtn-status-ewoc elem)))
+
+(defun xmtn-status-quit ()
+  "Clean all remaining workspaces, kill automate sessions, kill buffer."
+  (interactive)
+  (ewoc-map 'xmtn-status-clean-1 xmtn-status-ewoc)
+  (kill-buffer))
 
 (defun xmtn-status-cleanp ()
   "Non-nil if clean & quit is appropriate for current workspace."
@@ -288,7 +298,7 @@ The elements must all be of class xmtn-status-data.")
     (define-key map [?g]  'xmtn-status-refresh)
     (define-key map [?n]  'xmtn-status-next)
     (define-key map [?p]  'xmtn-status-prev)
-    (define-key map [?q]  (lambda () (interactive) (kill-buffer (current-buffer))))
+    (define-key map [?q]  'xmtn-status-quit)
     map)
   "Keymap used in `xmtn-multiple-status-mode'.")
 
