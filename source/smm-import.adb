@@ -24,8 +24,9 @@ with Interfaces;
 with SAL.Config_Files;
 with SAL.Time_Conversions;
 procedure SMM.Import
-  (Db  : in out SAL.Config_Files.Configuration_Type;
-   Dir : in     String)
+  (Db       : in out SAL.Config_Files.Configuration_Type;
+   Category : in String;
+   Dir      : in     String)
 is
    Index : Interfaces.Unsigned_32;
 
@@ -101,6 +102,7 @@ is
                      Ada.Text_IO.Put_Line ("adding file " & Name);
                   end if;
                   Write_String (Db, Songs_Key & "." & Index_Image & "." & File_Key, Name);
+                  Write_String (Db, Songs_Key & "." & Index_Image & "." & Category_Key, Category);
                   Write_String (Db, Songs_Key & "." & Index_Image & "." & Last_Downloaded_Key, Time_Type'Image (0.0));
                   Index := Index + 1;
                end if;

@@ -2,7 +2,7 @@
 --
 --  main procedure for SMM application
 --
---  Copyright (C) 2008, 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2010 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -35,7 +35,7 @@ is
    procedure Put_Usage
    is begin
       Put_Line ("smm [--db=<db_file>] [--verbosity=<int>] <operation> [arg]...");
-      Put_Line ("  <db_file> : defaults to ~/.smm/smm.db");
+      Put_Line ("  <db_file> : defaults to ~/.smm/smm.db or $APPDATA/smm or $SMM_HOME");
       Put_Line ("  categories: {instrumental | vocal | ...}");
       Put_Line ("  operations:");
       Put_Line ("  download <category> <target_dir>");
@@ -54,7 +54,7 @@ is
       Put_Line ("    --replace - overwrite file; otherwise append");
       Put_Line ("    if <file> is in database root, paths in playlist are relative");
       New_Line;
-      Put_Line ("  import <dir>");
+      Put_Line ("  import <category> <dir>");
       Put_Line ("    scan <dir> for new music; dir must be relative to database root dir");
    end Put_Usage;
 
@@ -62,7 +62,22 @@ is
    Db           : SAL.Config_Files.Configuration_Type;
    Next_Arg     : Integer := 1;
 
-   Home : constant String := Ada.Environment_Variables.Value ("HOME");
+   function Find_Home return String
+   is
+      use Ada.Environment_Variables;
+   begin
+      if Exists ("SMM_HOME") then
+         return Value ("SMM_HOME");
+      elsif Exists ("HOME") then
+         return Value ("HOME") & "/.smm";
+      elsif Exists ("APPDATA") then
+         return Value ("APPDATA") & "/smm";
+      else
+         raise Playlist_Error with "must define either APPDATA or HOME environment variable";
+      end if;
+   end Find_Home;
+
+   Home : constant String := Find_Home;
 
    type Command_Type is (Download, Download_Playlist, Playlist, Import);
 
@@ -76,7 +91,7 @@ begin
       Db_File_Name := new String'(Argument (Next_Arg)(6 .. Argument (Next_Arg)'Last));
       Next_Arg := Next_Arg + 1;
    else
-      Db_File_Name := new String'(Home & "/.smm/smm.db");
+      Db_File_Name := new String'(Home & "/smm.db");
    end if;
 
    if Argument (Next_Arg)'Length > 12 and then
@@ -145,7 +160,7 @@ begin
          end if;
 
          if File_Name = null then
-            File_Name := new String'(Home & "/.smm/" & Category & ".m3u");
+            File_Name := new String'(Home & "/" & Category & ".m3u");
          end if;
 
          SMM.Playlist (Db, Category, File_Name.all, Replace, Max_Song_Count => 30);
@@ -153,12 +168,13 @@ begin
 
    when Import =>
       declare
-         Root : constant String := Argument (Next_Arg);
+         Category : constant String := Argument (Next_Arg);
+         Root     : constant String := Argument (Next_Arg + 1);
       begin
          if Root (Root'Last) /= '/' then
-            SMM.Import (Db, Root & '/');
+            SMM.Import (Db, Category, Root & '/');
          else
-            SMM.Import (Db, Root);
+            SMM.Import (Db, Category, Root);
          end if;
       end;
 

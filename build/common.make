@@ -1,9 +1,10 @@
 # common parts of makefiles
 
-all : smm.exe test_all_harness.diff
+all : smm.exe test_all_harness.diff smm.html
 
 include $(GDS_ROOT)/main/makerules/common_rules.make
 include $(GDS_ROOT)/main/makerules/gnat_project_rules.make
+include $(GDS_ROOT)/main/makerules/texinfo_rules.make
 
 # smm.adb is not the main program, so we need this rule
 smm.exe : force
