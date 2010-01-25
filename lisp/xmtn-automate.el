@@ -1,6 +1,6 @@
 ;;; xmtn-automate.el --- Interface to monotone's "automate" functionality
 
-;; Copyright (C) 2008, 2009 Stephen Leake
+;; Copyright (C) 2008 - 2010 Stephen Leake
 ;; Copyright (C) 2006, 2007 Christian M. Ohler
 
 ;; Author: Christian M. Ohler
@@ -96,8 +96,7 @@
         (run
          (accept-process-output process))
         ((exit signal)
-         (error (format "mtn automate process exited (see %s buffer for error)"
-                        (get-buffer (format dvc-error-buffer 'xmtn))))))))
+         (dvc-switch-to-buffer (get-buffer (format dvc-error-buffer 'xmtn)))))))
   (xmtn-automate--command-handle-error-code command-handle))
 
 (defun xmtn-automate-command-buffer (command)
@@ -305,7 +304,9 @@ Signals an error if output contains zero lines or more than one line."
       (ecase (process-status process)
         (run
          (process-send-eof process)
-         (xmtn-automate--session-send-process-kill session))
+         (xmtn-automate--session-send-process-kill session)
+         (sleep-for 1.0); let process die before deleting associated buffers
+         )
         (exit t)
         (signal t))))
 
@@ -313,6 +314,14 @@ Signals an error if output contains zero lines or more than one line."
       (if (buffer-live-p (xmtn-automate--session-buffer session))
           (kill-buffer (xmtn-automate--session-buffer session)))))
   nil)
+
+(defun xmtn-automate-kill-session (root)
+  "Kill session for ROOT."
+  (interactive)
+  (let ((temp (assoc (dvc-uniquify-file-name root) xmtn-automate--*sessions*)))
+    (xmtn-automate--close-session (cdr temp))
+    (setq xmtn-automate--*sessions*
+          (delete temp xmtn-automate--*sessions* ))))
 
 (defun xmtn-kill-all-sessions ()
   "Kill all xmtn-automate sessions."
@@ -702,7 +711,7 @@ the buffer."
        for xmtn--stanza = (funcall xmtn--next-stanza)
        while xmtn--stanza
        do (xmtn-match xmtn--stanza
-            ((("key" (string $xmtn--key))
+            ((("key" (id $xmtn--key))
               ("signature" (string $xmtn--signature))
               ("name" (string $xmtn--name))
               ("value" (string $xmtn--value))
