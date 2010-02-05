@@ -1,6 +1,6 @@
 ;;; xmtn-dvc.el --- DVC backend for monotone
 
-;; Copyright (C) 2008 - 2009 Stephen Leake
+;; Copyright (C) 2008 - 2010 Stephen Leake
 ;; Copyright (C) 2006, 2007, 2008 Christian M. Ohler
 
 ;; Author: Christian M. Ohler
@@ -82,8 +82,8 @@
            (,command ,command-form))
        (let* ((,session (xmtn-automate-cache-session ,root))
               (,handle (xmtn-automate--new-command ,session ,command)))
-         (xmtn-automate-command-check-for-and-report-error ,handle)
          (xmtn-automate-command-wait-until-finished ,handle)
+         (xmtn-automate-command-check-for-and-report-error ,handle)
          (prog1
              (xmtn-basic-io-with-stanza-parser
                  (,parser (xmtn-automate-command-buffer ,handle))

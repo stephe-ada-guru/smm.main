@@ -88,13 +88,14 @@
   (require 'xmtn-compat))
 
 (defun xmtn-automate-command-error-code (command-handle)
-  "Wait for process executing COMMAND-HANDLE to finish outputting an error code, return it."
+  "Return error code from COMMAND-HANDLE."
   (let ((process (xmtn-automate--session-process
                   (xmtn-automate--command-handle-session command-handle))))
     (while (null (xmtn-automate--command-handle-error-code command-handle))
       (ecase (process-status process)
         (run
-         (accept-process-output process))
+         ;; No need to wait for process output here; that should have been done earlier
+         (error "error code not set"))
         ((exit signal)
          (dvc-switch-to-buffer (get-buffer (format dvc-error-buffer 'xmtn)))))))
   (xmtn-automate--command-handle-error-code command-handle))
@@ -106,17 +107,16 @@
   (marker-position (xmtn-automate--command-handle-write-marker command)))
 
 (defun xmtn-automate-command-accept-output (command)
-  (let ((previous-write-marker-position
+  (let ((session (xmtn-automate--command-handle-session command))
+        (previous-write-marker-position
          (marker-position (xmtn-automate--command-handle-write-marker
                            command))))
     (while (and (= (marker-position (xmtn-automate--command-handle-write-marker
                                      command))
                    previous-write-marker-position)
                 (not (xmtn-automate--command-handle-finished-p command)))
-      (xmtn--assert-for-effect
-       (accept-process-output
-        (xmtn-automate--session-process
-         (xmtn-automate--command-handle-session command)))))
+      (accept-process-output (xmtn-automate--session-process session))
+      (xmtn-automate--process-new-output session))
     (> (marker-position (xmtn-automate--command-handle-write-marker
                          command))
        previous-write-marker-position)))
@@ -169,6 +169,7 @@ workspace root."
   "Send COMMAND to session for ROOT. Return result as a string."
   (let* ((session (xmtn-automate-cache-session root))
          (command-handle (xmtn-automate--new-command session command)))
+    (xmtn-automate-command-wait-until-finished command-handle)
     (xmtn-automate-command-check-for-and-report-error command-handle)
     (xmtn-automate--command-output-as-string-ignoring-exit-code command-handle)))
 
@@ -177,8 +178,8 @@ workspace root."
   "Send COMMAND to session for ROOT, insert result into BUFFER."
   (let* ((session (xmtn-automate-cache-session root))
          (command-handle (xmtn-automate--new-command session command)))
-    (xmtn-automate-command-check-for-and-report-error command-handle)
     (xmtn-automate-command-wait-until-finished command-handle)
+    (xmtn-automate-command-check-for-and-report-error command-handle)
     (with-current-buffer buffer
       (insert-buffer-substring-no-properties
        (xmtn-automate-command-buffer command-handle)))
@@ -187,10 +188,9 @@ workspace root."
 (defun xmtn-automate-command-output-lines (handle)
   "Return list of lines of output in HANDLE; first line output is
 first in list."
-  (xmtn-automate-command-check-for-and-report-error handle)
   (xmtn-automate-command-wait-until-finished handle)
-  (save-excursion
-    (set-buffer (xmtn-automate-command-buffer handle))
+  (xmtn-automate-command-check-for-and-report-error handle)
+  (with-current-buffer (xmtn-automate-command-buffer handle)
     (goto-char (point-min))
     (let (result)
       (while (< (point) (point-max))
@@ -229,9 +229,14 @@ Signals an error if output contains zero lines or more than one line."
 
 (defstruct (xmtn-automate--decoder-state
             (:constructor xmtn-automate--%make-raw-decoder-state))
+  ;; State for decoding stdio output packets.
   (read-marker)
+  ;; char position (not marker) of last character read. We use a
+  ;; position, not a marker, because text gets inserted in front of
+  ;; the marker, and it moves.
   (remaining-chars 0)
-  (last-p nil))
+  (stream 0); determines output buffer
+  )
 
 (defstruct (xmtn-automate--session
             (:constructor xmtn-automate--%make-raw-session)
@@ -336,43 +341,46 @@ Signals an error if output contains zero lines or more than one line."
 
 (defun xmtn-automate--start-process (session)
   (xmtn--check-cached-command-version)
-  (xmtn--assert-optional (not (xmtn-automate--session-closed-p session)))
-  (xmtn--assert-optional (typep session 'xmtn-automate--session))
   (let ((name (xmtn-automate--session-name session))
         (buffer (xmtn-automate--new-buffer session))
         (root (xmtn-automate--session-root session)))
-    (let ((process-connection-type nil)
+    (let ((process-connection-type nil); use a pipe, not a tty
           (default-directory root))
       (let ((process
              (apply 'start-process name buffer xmtn-executable
                     "automate" "stdio" xmtn-additional-arguments)))
-        ;; if the process started ok, it is waiting for
-        ;; input. However, if there was an error (like
-        ;; default_directory is not a mtn workspace), it outputs an
-        ;; error message and exits. So we have a race condition
-        ;; waiting for a valid start.
-        (sit-for 1.0)
         (ecase (process-status process)
-          (run nil)
+          (run
+           ;; If the process started ok, it outputs the stdio
+           ;; header. If there was an error (like default_directory is
+           ;; not a mtn workspace), it outputs an error message and
+           ;; exits.
+           (accept-process-output process)
+           (with-current-buffer buffer
+             ;; If the format version changes, we probably need to
+             ;; adapt. So we insist on an exact match.
+             (goto-char (point-min))
+             (if (looking-at "format-version: \\([0-9]+\\)\n\n")
+                 (if (not (string-equal (match-string 1) xmtn--required-automate-format-version))
+                     (error "unexpected mtn automate stdio format version %s" (match-string 0)))
+               ;; Some error. Display the session buffer to show the error
+               (pop-to-buffer buffer)
+               (error "failed to create mtn automate process"))))
           ((exit signal)
-           (error "failed to create mtn automate process: %s"
-                  (with-current-buffer buffer
-                    (buffer-substring-no-properties (point-min) (point-max))))))
+           (pop-to-buffer buffer)
+           (error "failed to create mtn automate process")))
+
+        (setf (xmtn-automate--session-decoder-state session)
+              (xmtn-automate--%make-raw-decoder-state
+               :read-marker (with-current-buffer buffer (match-end 0))))
+
         (xmtn-automate--set-process-session process session)
-        (set-process-filter process 'xmtn-automate--process-filter)
-        (set-process-sentinel process 'xmtn-automate--process-sentinel)
         (xmtn--set-process-query-on-exit-flag process nil)
         ;; Need binary (or no-conversion or maybe raw-text-unix?)
         ;; since this is the format in which mtn automate stdio
         ;; computes the size of the output.
         (set-process-coding-system process 'binary 'binary)
         (setf (xmtn-automate--session-process session) process)
-        (setf (xmtn-automate--session-decoder-state session)
-              (xmtn-automate--%make-raw-decoder-state
-               :read-marker (with-current-buffer buffer
-                              (xmtn--assert-optional (eql (point-min) (point)) t)
-                              (set-marker (make-marker)
-                                          (point-min)))))
         (setf (xmtn-automate--session-remaining-command-handles session) (list))
         (setf (xmtn-automate--session-sent-kill-p session) nil)
         process))))
@@ -496,46 +504,50 @@ the buffer."
     (kill-buffer (xmtn-automate--command-handle-buffer handle))))
 
 (defun xmtn-automate--process-new-output--copy (session)
+  "Copy SESSION current packet output to command output or error buffer.
+Return non-nil if some text copied."
   (let* ((session-buffer (xmtn-automate--session-buffer session))
          (state (xmtn-automate--session-decoder-state session))
-         (read-marker (xmtn-automate--decoder-state-read-marker state))
          (command (first (xmtn-automate--session-remaining-command-handles
                           session)))
-         (command-output-buffer
-          (xmtn-automate--command-handle-buffer command))
+         (output-buffer
+          (ecase (xmtn-automate--decoder-state-stream state)
+            (?m
+             (xmtn-automate--command-handle-buffer command))
+            ((?e ?p ?t)
+             ;; probably ought to do something else with p and t, but
+             ;; this is good enough for now.
+             (get-buffer-create (format dvc-error-buffer 'xmtn)))))
          (write-marker
           (xmtn-automate--command-handle-write-marker command)))
-    (xmtn--assert-optional (not (xmtn-automate--session-sent-kill-p session)))
     (with-current-buffer session-buffer
-      (let* ((end (min (+ read-marker
+      (let* ((end (min (+ (xmtn-automate--decoder-state-read-marker state)
                           (xmtn-automate--decoder-state-remaining-chars state))
                        (point-max)))
-             (chars-to-read (- end read-marker)))
+             (chars-to-read (- end (xmtn-automate--decoder-state-read-marker state))))
         (cond
          ((= chars-to-read 0)
           nil)
          ((> chars-to-read 0)
-          (if (not (buffer-live-p command-output-buffer))
+          (if (not (buffer-live-p output-buffer))
               ;; Buffer has already been killed, just discard input.
-              (progn)
-            (with-current-buffer command-output-buffer
+              t
+            (with-current-buffer output-buffer
               (save-excursion
                 (goto-char write-marker)
                 (let ((inhibit-read-only t)
                       deactivate-mark)
                   (insert-buffer-substring-no-properties session-buffer
-                                                         read-marker
+                                                         (xmtn-automate--decoder-state-read-marker state)
                                                          end))
                 (set-marker write-marker (point))))
             ;;(xmtn--debug-mark-text-processed session-buffer read-marker end nil)
             )
-          (set-marker read-marker end)
+          (setf (xmtn-automate--decoder-state-read-marker state) end)
           (decf (xmtn-automate--decoder-state-remaining-chars state)
                 chars-to-read)
           t)
-         (t (xmtn--assert-nil))))))
-  ;; Return value matters!
-  )
+         )))))
 
 (defun xmtn--debug-mark-text-processed (buffer start end bold-p)
   (xmtn--assert-optional (< start end) t)
@@ -552,154 +564,81 @@ the buffer."
          (add-text-properties start end '(face (:strike-through
                                                 t))))))))
 
-(defun xmtn-automate--process-new-output (session new-string)
-  (let* ((session-buffer (xmtn-automate--session-buffer session))
-         (state (xmtn-automate--session-decoder-state session))
-         (read-marker (xmtn-automate--decoder-state-read-marker state))
+(defun xmtn-automate--process-new-output (session)
+  (let* ((state (xmtn-automate--session-decoder-state session))
          (write-marker (process-mark (xmtn-automate--session-process session)))
          (tag 'check-for-more))
-    (with-current-buffer session-buffer
-      ;; Why oh why doesn't (require 'cl) provide tagbody...
+    (with-current-buffer (xmtn-automate--session-buffer session)
       (loop
        for command = (first (xmtn-automate--session-remaining-command-handles
                              session))
        do
-       (xmtn--assert-optional (or (eql tag 'exit-loop)
-                                  (not (xmtn-automate--session-sent-kill-p
-                                        session))))
        (ecase tag
          (check-for-more
-          (xmtn--assert-optional (<= read-marker write-marker) t)
-          (if (= read-marker write-marker)
+          (if (= (xmtn-automate--decoder-state-read-marker state) write-marker)
               (setq tag 'exit-loop)
             (setq tag 'again)))
          (again
           (cond
            ((> (xmtn-automate--decoder-state-remaining-chars state) 0)
+            ;; copy more output from the current packet
             (if (xmtn-automate--process-new-output--copy session)
                 (setq tag 'again)
               (setq tag 'check-for-more)))
-           ((and (= (xmtn-automate--decoder-state-remaining-chars state) 0)
-                 (xmtn-automate--decoder-state-last-p state))
-            (xmtn--assert-optional command)
-            (setf (xmtn-automate--command-handle-finished-p command) t)
-            (with-no-warnings
-              ;; discard result
-              (pop (xmtn-automate--session-remaining-command-handles session)))
-            (setq tag 'check-for-more)
-            (when (xmtn-automate--session-closed-p session)
-              (setq tag 'exit-loop))
-            (setf (xmtn-automate--decoder-state-last-p state) nil))
-           ((and (= (xmtn-automate--decoder-state-remaining-chars state) 0)
-                 (not (xmtn-automate--decoder-state-last-p state)))
-            (save-excursion
-              (goto-char read-marker)
-              (cond ((looking-at
-                      "\\([0-9]+\\):\\([012]\\):\\([lm]\\):\\([0-9]+\\):")
-                     (let ((command-number (parse-integer (match-string 1)))
-                           (error-code (parse-integer (match-string 2)))
-                           (last-p (cond
-                                    ((string= (match-string 3) "l") t)
-                                    ((string= (match-string 3) "m") nil)
-                                    (t (xmtn--assert-nil))))
-                           (size (parse-integer (match-string 4))))
-                       (xmtn--assert-optional (typep command-number
-                                                     '(integer 0 *))
-                                              t)
-                       (xmtn--assert-optional (typep error-code '(member 0 1 2))
-                                              t)
-                       (xmtn--assert-optional (typep size '(integer 0 *)) t)
-                       (xmtn--assert-optional
-                        (eql
-                         command-number
-                         (xmtn-automate--command-handle-mtn-command-number
-                          command)))
-                       (setf (xmtn-automate--command-handle-error-code command)
-                             error-code)
-                       (setf (xmtn-automate--decoder-state-remaining-chars
-                              state)
-                             size)
-                       (setf (xmtn-automate--decoder-state-last-p state)
-                             last-p)
-                       ;;(xmtn--debug-mark-text-processed session-buffer
-                       ;;                                 read-marker
-                       ;;                                 (match-end 0)
-                       ;;                                 t)
-                       (set-marker read-marker (match-end 0)))
-                     (setq tag 'again))
-                    (t
-                     ;; unexpected output
-                     (with-current-buffer (get-buffer-create (format dvc-error-buffer 'xmtn))
-                       (insert "Unexpected output from mtn: %s" new-string))
-                     (setq tag 'exit-loop)))))
-           (t (xmtn--assert-nil))))
+
+           (t
+            ;; new packet
+            (goto-char (xmtn-automate--decoder-state-read-marker state))
+            ;; A packet has the structure:
+            ;; <command number>:<stream>:<size>:<output>
+            ;; Streams are:
+            ;; m  main
+            ;; e  error
+            ;; w  warning
+            ;; p  progress
+            ;; t  ticker
+            ;; l  last
+            ;;
+            ;; If size is large, we may not have all of the output in new-string
+            (cond
+             ((looking-at "\\([0-9]+\\):\\([mewptl]\\):\\([0-9]+\\):")
+              (let ((command-number (parse-integer (match-string 1)))
+                    (stream (aref (match-string 2) 0))
+                    (size (parse-integer (match-string 3))))
+                (setf (xmtn-automate--decoder-state-read-marker state) (match-end 0))
+                (setf (xmtn-automate--decoder-state-stream state) stream)
+                (ecase stream
+                  ((?m ?e ?w ?t ?p)
+                   (setf (xmtn-automate--decoder-state-remaining-chars state) size)
+                   (setq tag 'again) )
+
+                  (?l
+                   (setf (xmtn-automate--decoder-state-read-marker state) (+ size (match-end 0)))
+                   (setf (xmtn-automate--command-handle-error-code command)
+                         (parse-integer
+                          (buffer-substring-no-properties
+                           (match-end 0) (xmtn-automate--decoder-state-read-marker state)) ))
+                   (setf (xmtn-automate--command-handle-finished-p command) t)
+                   (with-no-warnings
+                     ;; suppress compiler warning about discarding result
+                     (pop (xmtn-automate--session-remaining-command-handles session)))
+                   (if (xmtn-automate--session-closed-p session)
+                       (setq tag 'exit-loop)
+                     (setq tag 'check-for-more))
+                   )
+                  )))
+
+             (t
+              ;; Unexpected output.
+              (error "Unexpected output from mtn at %s:%d:%s"
+                     (current-buffer)
+                     (point)
+                     (buffer-substring (point) (line-end-position)))
+              (setq tag 'exit-loop))))))
          (exit-loop (return))))))
   nil)
 
-
 (defvar xmtn-automate--*preserve-buffers-for-debugging* nil)
-
-(defun xmtn-automate--process-sentinel (process event-string)
-  (let ((status (process-status process))
-        (session (xmtn-automate--process-session process)))
-    (let ((buffer (xmtn-automate--session-buffer session)))
-      (when (buffer-live-p buffer)
-        (with-current-buffer buffer
-          (let ((inhibit-read-only t)
-                deactivate-mark)
-            (save-excursion
-              ;; This seems to fail in XEmacs when running the test
-              ;; `file-diff'.  I don't know why.
-              (xmtn--assert-optional (marker-position (process-mark process))
-                                     t)
-              (goto-char (process-mark process))
-              (insert (format "\n(process exited: %S)\n"
-                              (if (eql (aref event-string
-                                             (1- (length event-string)))
-                                       ?\n)
-                                  (subseq event-string 0
-                                          (1- (length event-string)))
-                                event-string)))
-              (set-marker (process-mark process) (point))))))
-      (flet ((reclaim-buffer ()
-               (unless xmtn-automate--*preserve-buffers-for-debugging*
-                 ;; Maybe it's not such a good idea to kill the buffer
-                 ;; from here since that will run `kill-buffer-hook',
-                 ;; and the functions in there might not be prepared to
-                 ;; run inside a sentinel.  But let's wait until someone
-                 ;; actually encounters this problem.
-                 (kill-buffer buffer)
-                 )))
-        (ecase status
-          (exit
-           (xmtn--assert-optional (eql (process-exit-status process) 0) t)
-           (reclaim-buffer))
-          (signal
-           (if (xmtn-automate--session-sent-kill-p session)
-               (reclaim-buffer)
-             (message "Process %s died due to signal" (process-name process))
-             )))))))
-
-(defun xmtn-automate--process-filter (process input-string)
-  (let ((session (xmtn-automate--process-session process)))
-    (let ((buffer (xmtn-automate--session-buffer session)))
-      (xmtn--assert-optional (eql (process-buffer process) buffer))
-      (xmtn--assert-optional (buffer-live-p buffer))
-      (with-current-buffer buffer
-        (let* ((mark (process-mark process))
-               (move-point-p (= (point) mark)))
-          (save-excursion
-            (goto-char mark)
-            (let ((inhibit-read-only t)
-                  deactivate-mark)
-              (insert input-string))
-            (set-marker mark (point)))
-          (when move-point-p (goto-char mark))))
-      ;; Emacs receives a message "mtn: operation canceled: Interrupt"
-      ;; from mtn after we kill it.  Ignore such "input".
-      (unless (xmtn-automate--session-sent-kill-p session)
-        (xmtn-automate--process-new-output session input-string))
-      )))
 
 (defun xmtn--map-parsed-certs (xmtn--root xmtn--revision-hash-id xmtn--thunk)
   (lexical-let ((root xmtn--root)

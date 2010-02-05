@@ -735,9 +735,7 @@ header."
   (ediff-dispose-of-variant-according-to-user ediff-buffer-A 'A nil nil)
   (ediff-dispose-of-variant-according-to-user ediff-buffer-B 'B nil nil)
   (ediff-dispose-of-variant-according-to-user ediff-ancestor-buffer 'Ancestor nil nil)
-  (save-excursion
-    (set-buffer ediff-buffer-C)
-    (save-buffer))
+  (with-current-buffer ediff-buffer-C (save-buffer))
   (ediff-kill-buffer-carefully ediff-buffer-C)
 
   (let ((control-buffer ediff-control-buffer))
