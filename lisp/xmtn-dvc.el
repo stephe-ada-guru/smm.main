@@ -83,7 +83,6 @@
        (let* ((,session (xmtn-automate-cache-session ,root))
               (,handle (xmtn-automate--new-command ,session ,command)))
          (xmtn-automate-command-wait-until-finished ,handle)
-         (xmtn-automate-command-check-for-and-report-error ,handle)
          (prog1
              (xmtn-basic-io-with-stanza-parser
                  (,parser (xmtn-automate-command-buffer ,handle))

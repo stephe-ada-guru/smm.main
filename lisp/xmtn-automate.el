@@ -59,22 +59,9 @@
 ;; `xmtn-automate-new-command' returns a command handle.  You use this
 ;; handle to check the error code of the command and obtain its
 ;; output.  Your Emacs Lisp code can also do other computation while
-;; the monotone command runs.  Allowing this kind of parallelism and
-;; incremental processing of command output is the main reason for
-;; introducing command handles.
+;; the monotone command runs.  Allowing this kind of parallelism is
+;; the main reason for introducing command handles.
 ;;
-;; The intention behind this protocol is to allow Emacs Lisp code to
-;; process command output incrementally as it arrives instead of
-;; waiting until it is complete.  However, for xmtn-basic-io, the
-;; bookkeeping overhead for this kind of pipelining was excessive --
-;; byte-compiled Emacs Lisp is rather slow.  But I didn't try very
-;; hard to tune it, either.  So I'm not sure whether incremental
-;; processing is useful.
-;;
-;; In the output buffer, the mtn stdio output header (<command
-;; number>:<err code>:<last?>:<size>:<data>) has been processed;
-;; only the data is present.
-
 ;; There are some notes on the design of xmtn in
 ;; docs/xmtn-readme.txt.
 
@@ -87,43 +74,25 @@
   (require 'xmtn-run)
   (require 'xmtn-compat))
 
-(defun xmtn-automate-command-error-code (command-handle)
-  "Return error code from COMMAND-HANDLE."
-  (let ((process (xmtn-automate--session-process
-                  (xmtn-automate--command-handle-session command-handle))))
-    (while (null (xmtn-automate--command-handle-error-code command-handle))
-      (ecase (process-status process)
-        (run
-         ;; No need to wait for process output here; that should have been done earlier
-         (error "error code not set"))
-        ((exit signal)
-         (dvc-switch-to-buffer (get-buffer (format dvc-error-buffer 'xmtn)))))))
-  (xmtn-automate--command-handle-error-code command-handle))
-
 (defun xmtn-automate-command-buffer (command)
   (xmtn-automate--command-handle-buffer command))
 
 (defun xmtn-automate-command-write-marker-position (command)
   (marker-position (xmtn-automate--command-handle-write-marker command)))
 
-(defun xmtn-automate-command-accept-output (command)
-  (let ((session (xmtn-automate--command-handle-session command))
-        (previous-write-marker-position
-         (marker-position (xmtn-automate--command-handle-write-marker
-                           command))))
-    (while (and (= (marker-position (xmtn-automate--command-handle-write-marker
-                                     command))
-                   previous-write-marker-position)
-                (not (xmtn-automate--command-handle-finished-p command)))
-      (accept-process-output (xmtn-automate--session-process session))
-      (xmtn-automate--process-new-output session))
-    (> (marker-position (xmtn-automate--command-handle-write-marker
-                         command))
-       previous-write-marker-position)))
-
 (defun xmtn-automate-command-wait-until-finished (handle)
-  (while (not (xmtn-automate--command-handle-finished-p handle))
-    (xmtn-automate-command-accept-output handle))
+  (let ((session (xmtn-automate--command-handle-session handle)))
+    (while (not (xmtn-automate--command-handle-finished-p handle))
+      ;; we use a timeout here to allow debugging, and possible incremental processing
+      (accept-process-output (xmtn-automate--session-process session) 1.0)
+      (xmtn-automate--process-new-output session))
+    (unless (eql (xmtn-automate--command-handle-error-code handle) 0)
+      (xmtn-automate--cleanup-command handle)
+      (pop-to-buffer (format dvc-error-buffer 'xmtn))
+      (goto-char (point-max))
+      (newline)
+      (insert (format "command: %s" (xmtn-automate--command-handle-command handle)))
+      (error "mtn error %s" (xmtn-automate--command-handle-error-code handle))))
   nil)
 
 (defvar xmtn-automate--*sessions* '()
@@ -150,28 +119,18 @@ ROOT, store it in session cache. Return session."
 workspace root."
   (cdr (assoc key xmtn-automate--*sessions*)))
 
-(defun xmtn-automate--command-output-as-string-ignoring-exit-code (handle)
-  (xmtn-automate-command-wait-until-finished handle)
+(defun xmtn-automate--command-output-as-string (handle)
   (with-current-buffer (xmtn-automate-command-buffer handle)
     (prog1
         (buffer-substring-no-properties (point-min) (point-max))
       (xmtn-automate--cleanup-command handle))))
-
-(defun xmtn-automate-command-check-for-and-report-error (handle)
-  (unless (eql (xmtn-automate-command-error-code handle) 0)
-    (error "mtn automate command (arguments %S) reported an error (code %s):\n%s"
-           (xmtn-automate--command-handle-arguments handle)
-           (xmtn-automate-command-error-code handle)
-           (xmtn-automate--command-output-as-string-ignoring-exit-code handle)))
-  nil)
 
 (defun xmtn-automate-simple-command-output-string (root command)
   "Send COMMAND to session for ROOT. Return result as a string."
   (let* ((session (xmtn-automate-cache-session root))
          (command-handle (xmtn-automate--new-command session command)))
     (xmtn-automate-command-wait-until-finished command-handle)
-    (xmtn-automate-command-check-for-and-report-error command-handle)
-    (xmtn-automate--command-output-as-string-ignoring-exit-code command-handle)))
+    (xmtn-automate--command-output-as-string command-handle)))
 
 (defun xmtn-automate-simple-command-output-insert-into-buffer
   (root buffer command)
@@ -179,7 +138,6 @@ workspace root."
   (let* ((session (xmtn-automate-cache-session root))
          (command-handle (xmtn-automate--new-command session command)))
     (xmtn-automate-command-wait-until-finished command-handle)
-    (xmtn-automate-command-check-for-and-report-error command-handle)
     (with-current-buffer buffer
       (insert-buffer-substring-no-properties
        (xmtn-automate-command-buffer command-handle)))
@@ -189,7 +147,6 @@ workspace root."
   "Return list of lines of output in HANDLE; first line output is
 first in list."
   (xmtn-automate-command-wait-until-finished handle)
-  (xmtn-automate-command-check-for-and-report-error handle)
   (with-current-buffer (xmtn-automate-command-buffer handle)
     (goto-char (point-min))
     (let (result)
@@ -253,7 +210,7 @@ Signals an error if output contains zero lines or more than one line."
 
 (defstruct (xmtn-automate--command-handle
             (:constructor xmtn-automate--%make-raw-command-handle))
-  (arguments)
+  (command)
   (mtn-command-number)
   (session-command-number)
   (session)
@@ -489,7 +446,7 @@ the buffer."
                                   (eql (point) (point-max))))
       (let ((handle (xmtn-automate--%make-raw-command-handle
                      :session session
-                     :arguments command
+                     :command command
                      :session-command-number command-number
                      :buffer buffer
                      :write-marker (set-marker (make-marker) (point)))))
@@ -629,12 +586,16 @@ Return non-nil if some text copied."
                   )))
 
              (t
-              ;; Unexpected output.
-              (error "Unexpected output from mtn at %s:%d:%s"
-                     (current-buffer)
-                     (point)
-                     (buffer-substring (point) (line-end-position)))
-              (setq tag 'exit-loop))))))
+              ;; Not a packet. Most likely we are at the end of the
+              ;; buffer, and there is more output coming soon.  FIXME:
+              ;; this means the loop logic screwed up.
+              (if (= (point) (point-max))
+                  (setq tag 'exit-loop)
+                (error "Unexpected output from mtn at '%s':%d:'%s'"
+                       (current-buffer)
+                       (point)
+                       (buffer-substring (point) (line-end-position)))))))))
+
          (exit-loop (return))))))
   nil)
 
