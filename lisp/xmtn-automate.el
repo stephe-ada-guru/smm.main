@@ -471,7 +471,7 @@ Return non-nil if some text copied."
           (ecase (xmtn-automate--decoder-state-stream state)
             (?m
              (xmtn-automate--command-handle-buffer command))
-            ((?e ?p ?t)
+            ((?e ?w ?p ?t)
              ;; probably ought to do something else with p and t, but
              ;; this is good enough for now.
              (get-buffer-create (format dvc-error-buffer 'xmtn)))))
