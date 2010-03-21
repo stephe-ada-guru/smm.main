@@ -50,7 +50,7 @@ is
       New_Line;
       Put_Line ("  playlist <category> [<file>] [--replace]");
       Put_Line ("    create a playlist in <file> (same songs as 'download' would do)");
-      Put_Line ("    <file> defaults to ~/.smm/<file>.m3u");
+      Put_Line ("    <file> defaults to <database_root>/<category>.m3u");
       Put_Line ("    --replace - overwrite file; otherwise append");
       Put_Line ("    if <file> is in database root, paths in playlist are relative");
       New_Line;
@@ -160,7 +160,9 @@ begin
          end if;
 
          if File_Name = null then
-            File_Name := new String'(Home & "/" & Category & ".m3u");
+            --  Use Full_Name so directory separators match Containing_Directory
+            File_Name := new String'
+              (Ada.Directories.Full_Name (SAL.Config_Files.Read (Db, Root_Key) & Category & ".m3u"));
          end if;
 
          SMM.Playlist (Db, Category, File_Name.all, Replace, Max_Song_Count => 30);

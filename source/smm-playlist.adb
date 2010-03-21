@@ -2,7 +2,7 @@
 --
 --  create a playlist of least-recenty heard songs
 --
---  Copyright (C) 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2009, 2010 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -45,8 +45,12 @@ begin
    declare
       use Ada.Directories;
       use Ada.Text_IO;
-      Mode : File_Mode;
+      Mode       : File_Mode;
+      Containing : constant String := Containing_Directory (Destination);
+      Full       : constant String := Full_Name (Source_Root);
    begin
+      Relative := Containing = Full;
+
       if Replace then
          Mode := Out_File;
       else
@@ -58,8 +62,6 @@ begin
       else
          Create (Playlist_File, Out_File, Destination);
       end if;
-
-      Relative := Containing_Directory (Destination) = Full_Name (Source_Root);
    end;
 
    Least_Recent_Songs (Db, Category, Song_Count => Max_Song_Count, Songs => Songs);
