@@ -445,8 +445,8 @@ The elements must all be of class xmtn-status-data.")
   "Show actions to update WORK."
   (interactive "DStatus for (workspace): ")
   (pop-to-buffer (get-buffer-create "*xmtn-multi-status*"))
-  ;; allow WORK to be relative
-  (setq default-directory (expand-file-name work))
+  ;; allow WORK to be relative, and ensure it is a workspace root
+  (setq default-directory (xmtn-tree-root (expand-file-name work)))
   (setq xmtn-status-root (expand-file-name (concat (file-name-as-directory default-directory) "../")))
   (setq xmtn-status-ewoc (ewoc-create 'xmtn-status-printer))
   (let ((inhibit-read-only t)) (delete-region (point-min) (point-max)))
