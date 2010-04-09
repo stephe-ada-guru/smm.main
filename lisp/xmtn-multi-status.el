@@ -271,16 +271,16 @@ The elements must all be of class xmtn-status-data.")
     (define-key map [?5]  '(menu-item "5) update"
                                       xmtn-status-update
                                       :visible (xmtn-status-updatep)))
-    (define-key map [?4]  '(menu-item "4) xmtn-merge"
+    (define-key map [?4]  '(menu-item "4) merge"
                                       xmtn-status-merge
                                       :visible (xmtn-status-headsp)))
-    (define-key map [?3]  '(menu-item "3) xmtn-heads"
+    (define-key map [?3]  '(menu-item "3) show heads"
                                       xmtn-status-heads
                                       :visible (xmtn-status-headsp)))
     (define-key map [?2]  '(menu-item "2) resolve conflicts"
                                       xmtn-status-resolve-conflicts
                                       :visible (xmtn-status-resolve-conflictsp)))
-    (define-key map [?1]  '(menu-item "1) dvc-missing"
+    (define-key map [?1]  '(menu-item "1) show missing"
                                       xmtn-status-missing
                                       :visible (xmtn-status-missingp)))
     (define-key map [?0]  '(menu-item "0) status"

@@ -663,16 +663,20 @@ Each element of the list is a list; key, signature, name, value, trust."
 
 (defun xmtn-automate-local-changes (work)
   "Summary of status  for WORK; 'ok if no changes, 'need-commit if changes."
-  (message "checking %s for local changes" work)
-  (let ((default-directory work))
+  (let ((default-directory work)
+        (msg "checking %s for local changes ..."))
+    (message msg work)
 
     (let ((result (xmtn-automate-simple-command-output-string
                    default-directory
                    (list (list "no-unchanged" "" "no-ignored" "")
                          "inventory"))))
-     (if (> (length result) 0)
-         'need-commit
-       'ok))))
+
+      (message (concat msg " done") work)
+
+      (if (> (length result) 0)
+          'need-commit
+        'ok))))
 
 (provide 'xmtn-automate)
 

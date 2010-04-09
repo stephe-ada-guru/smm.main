@@ -414,10 +414,10 @@ The elements must all be of class xmtn-propagate-data.")
     (define-key map [?8]  '(menu-item (concat "8) ignore local changes " (xmtn-propagate-from-name))
                                       xmtn-propagate-status-from-ok
                                       :visible (xmtn-propagate-status-fromp)))
-    (define-key map [?7]  '(menu-item (concat "7) dvc-missing " (xmtn-propagate-to-name))
+    (define-key map [?7]  '(menu-item (concat "7) show missing " (xmtn-propagate-to-name))
                                       xmtn-propagate-missing-to
                                       :visible (xmtn-propagate-missing-top)))
-    (define-key map [?6]  '(menu-item (concat "6) dvc-missing " (xmtn-propagate-from-name))
+    (define-key map [?6]  '(menu-item (concat "6) show missing " (xmtn-propagate-from-name))
                                       xmtn-propagate-missing-from
                                       :visible (xmtn-propagate-missing-fromp)))
     (define-key map [?5]  '(menu-item (concat "5) update " (xmtn-propagate-to-name))
@@ -432,10 +432,10 @@ The elements must all be of class xmtn-propagate-data.")
     (define-key map [?2]  '(menu-item (concat "2) commit " (xmtn-propagate-from-name))
                                       xmtn-propagate-status-from
                                       :visible (xmtn-propagate-status-fromp)))
-    (define-key map [?1]  '(menu-item (concat "1) xmtn-heads " (xmtn-propagate-to-name))
+    (define-key map [?1]  '(menu-item (concat "1) show heads " (xmtn-propagate-to-name))
                                       xmtn-propagate-heads-to
                                       :visible (xmtn-propagate-heads-top)))
-    (define-key map [?0]  '(menu-item (concat "0) xmtn-heads " (xmtn-propagate-from-name))
+    (define-key map [?0]  '(menu-item (concat "0) show heads " (xmtn-propagate-from-name))
                                       xmtn-propagate-heads-from
                                       :visible (xmtn-propagate-heads-fromp)))
     map)
