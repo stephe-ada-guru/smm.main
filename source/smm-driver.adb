@@ -173,6 +173,7 @@ begin
          Category : constant String := Argument (Next_Arg);
          Root     : constant String := Argument (Next_Arg + 1);
       begin
+         Verbosity := Integer'Max (Verbosity, 1);
          if Root (Root'Last) /= '/' then
             SMM.Import (Db, Category, Root & '/');
          else
