@@ -2,7 +2,7 @@
 --
 --  Import new files into SMM db.
 --
---  Copyright (C) 2008, 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2010 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -37,6 +37,7 @@ is
    procedure Get_Initial_Index
    is
       use SAL.Config_Files;
+      use type Interfaces.Unsigned_32;
       I : Iterator_Type;
    begin
       begin
@@ -53,6 +54,7 @@ is
          Index := Interfaces.Unsigned_32'Value (Current (I));
          Next (I);
       end loop;
+      Index := Index + 1;
    end Get_Initial_Index;
 
    procedure Fill_Song_Files
