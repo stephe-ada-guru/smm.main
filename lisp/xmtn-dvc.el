@@ -171,7 +171,7 @@ the file before saving."
     ;; We used to check for things that would make commit fail;
     ;; missing files, nothing to commit. But that just slows things
     ;; down in the typical case; better to just handle the error
-    ;; message, which is way more informative anyway.
+    ;; message, which is nicely informative anyway.
     (lexical-let* ((progress-message
                     (case normalized-files
                       (all (format "Committing all files in %s" root))
@@ -187,6 +187,7 @@ the file before saving."
        root
        `("commit" ,(xmtn-dvc-log-message)
          ,(concat "--branch=" branch)
+         "--non-interactive"
          ,@(case normalized-files
              (all
               (if excluded-files

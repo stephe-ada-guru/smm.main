@@ -41,7 +41,7 @@ After changing the value of this variable, be sure to run
 `xmtn-check-command-version' to clear xmtn's command version
 cache.")
 
-(defvar xmtn-additional-arguments '("--non-interactive")
+(defvar xmtn-additional-arguments nil
   "*Additional arguments to pass to monotone.
 
 A list of strings.")
