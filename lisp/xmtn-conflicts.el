@@ -73,7 +73,7 @@
 
 (defvar xmtn-conflicts-ancestor-revision ""
   "Buffer-local variable holding ancestor revision id.")
-(make-variable-buffer-local 'xmtn-conflicts-ancestor-revision-spec)
+(make-variable-buffer-local 'xmtn-conflicts-ancestor-revision)
 
 (defvar xmtn-conflicts-total-count nil
   "Total count of conflicts.")
