@@ -661,6 +661,23 @@ Each element of the list is a list; key, signature, name, value, trust."
 (defun xmtn--tree-default-branch (root)
   (xmtn-automate-simple-command-output-line root `("get_option" "branch")))
 
+(defun xmtn--get-corresponding-path-raw (root normalized-file-name
+					      source-revision-hash-id
+					      target-revision-hash-id)
+  "Given NORMALIZED-FILE-NAME in SOURCE-REVISION-HASH-ID, return file name in TARGET-REVISION-HASH-ID"
+  (check-type normalized-file-name string)
+  (xmtn--with-automate-command-output-basic-io-parser
+      (next-stanza root `("get_corresponding_path"
+                          ,source-revision-hash-id
+                          ,normalized-file-name
+                          ,target-revision-hash-id))
+    (xmtn-match (funcall next-stanza)
+      (nil nil)
+      ((("file" (string $result)))
+       (assert (null (funcall next-stanza)))
+       result))))
+
+
 (defun xmtn-automate-local-changes (work)
   "Summary of status  for WORK; 'ok if no changes, 'need-commit if changes."
   (let ((default-directory work)
