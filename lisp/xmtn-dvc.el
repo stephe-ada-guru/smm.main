@@ -1442,11 +1442,17 @@ finished."
   (let* ((resolved-id (xmtn--resolve-backend-id root backend-id))
          (hash-id (case (car resolved-id)
                     (local-tree nil)
-                    (revision (cadr resolved-id))))
-         (cmd (if hash-id
+                    (revision (cadr resolved-id)))))
+    (case (car backend-id)
+      ((local-tree last-revision)
+       ;;  file may have been renamed but not committed
+       (setq normalized-file-name (xmtn--get-rename-in-workspace-to root normalized-file-name)))
+      (t nil))
+
+    (let ((cmd (if hash-id
                   (cons (list "revision" hash-id) (list "get_file_of" normalized-file-name))
                 (list "get_file_of" normalized-file-name))))
-    (xmtn-automate-simple-command-output-insert-into-buffer root buffer cmd)))
+      (xmtn-automate-simple-command-output-insert-into-buffer root buffer cmd))))
 
 (defun xmtn--same-tree-p (a b)
   (equal (file-truename a) (file-truename b)))

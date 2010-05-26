@@ -641,7 +641,7 @@ The elements must all be of class xmtn-propagate-data.")
   (interactive)
   (ewoc-map 'xmtn-propagate-refresh-one xmtn-propagate-ewoc current-prefix-arg)
   ;; leaves point at (point-min)
-  (xmtn-propagate-next t)
+  (xmtn-propagate-next nil t)
   (message "done"))
 
 (defun xmtn-propagate-make-data (from-workspace to-workspace from-name to-name)
