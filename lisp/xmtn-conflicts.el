@@ -761,13 +761,13 @@ header."
       (set-window-configuration window-config)
       (set-buffer control-buffer))))
 
-(defun xmtn-conflicts-get-file (file-id dir file-name)
+(defun xmtn-conflicts-get-file (work file-id dir file-name)
   "Get contents of FILE-ID into DIR/FILE-NAME. Return full file name."
   (let ((file (concat (file-name-as-directory dir) file-name)))
     (setq dir (file-name-directory file))
     (unless (file-exists-p dir)
       (make-directory dir t))
-    (xmtn--get-file-by-id default-directory file-id file)
+    (xmtn--get-file-by-id work file-id file)
     file))
 
 (defun xmtn-conflicts-resolve-ediff (side)
@@ -789,13 +789,16 @@ header."
     ;;
     ;; duplicate_name conflicts have no ancestor.
     (let ((file-ancestor (and (xmtn-conflicts-conflict-ancestor_file_id conflict)
-                              (xmtn-conflicts-get-file (xmtn-conflicts-conflict-ancestor_file_id conflict)
+                              (xmtn-conflicts-get-file default-directory
+						       (xmtn-conflicts-conflict-ancestor_file_id conflict)
                                                        "_MTN/resolutions/ancestor"
                                                        (xmtn-conflicts-conflict-ancestor_name conflict))))
-          (file-left (xmtn-conflicts-get-file (xmtn-conflicts-conflict-left_file_id conflict)
+          (file-left (xmtn-conflicts-get-file xmtn-conflicts-left-work
+					      (xmtn-conflicts-conflict-left_file_id conflict)
                                               xmtn-conflicts-left-root
                                               (xmtn-conflicts-conflict-left_name conflict)))
-          (file-right (xmtn-conflicts-get-file (xmtn-conflicts-conflict-right_file_id conflict)
+          (file-right (xmtn-conflicts-get-file xmtn-conflicts-right-work
+					       (xmtn-conflicts-conflict-right_file_id conflict)
                                                xmtn-conflicts-right-root
                                                (xmtn-conflicts-conflict-right_name conflict)))
 
