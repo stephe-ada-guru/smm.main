@@ -5,7 +5,7 @@
 
 include ../common.make
 
-export ADA_PROJECT_PATH = $(GDS_ROOT)/main/makerules;$(GDS_ROOT)/main/sal/Build/x86_gnu_windows_release
+export ADA_PROJECT_PATH = $(GDS_ROOT)/main/makerules;$(GDS_ROOT)/main/sal/Build/x86_gnu_windows_release;$(GDS_ROOT)/main/sal/build
 
 # ../../test/test_one_harness.adb
 one : test_one_harness.run

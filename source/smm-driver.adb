@@ -50,7 +50,7 @@ is
       New_Line;
       Put_Line ("  playlist <category> [<file>] [--replace]");
       Put_Line ("    create a playlist in <file> (same songs as 'download' would do)");
-      Put_Line ("    <file> defaults to <database_root>/<category>.m3u");
+      Put_Line ("    <file> default specified in smm.db by Playlists key");
       Put_Line ("    --replace - overwrite file; otherwise append");
       Put_Line ("    if <file> is in database root, paths in playlist are relative");
       New_Line;
@@ -108,7 +108,7 @@ begin
       Db_File_Name.all,
       Duplicate_Key         => SAL.Config_Files.Raise_Exception,
       Read_Only             => False,
-      Case_Insensitive_Keys => False);
+      Case_Insensitive_Keys => True);
 
    begin
       Get_Command (Command);
@@ -162,7 +162,7 @@ begin
          if File_Name = null then
             --  Use Full_Name so directory separators match Containing_Directory
             File_Name := new String'
-              (Ada.Directories.Full_Name (SAL.Config_Files.Read (Db, Root_Key) & Category & ".m3u"));
+              (As_Directory (SAL.Config_Files.Read (Db, Playlist_Key)) & Category & ".m3u");
          end if;
 
          SMM.Playlist (Db, Category, File_Name.all, Replace, Max_Song_Count => 30);

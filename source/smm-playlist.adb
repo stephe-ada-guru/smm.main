@@ -20,6 +20,9 @@ pragma License (GPL);
 
 with Ada.Directories;
 with Ada.Real_Time;
+with Ada.Strings.Fixed;
+with Ada.Strings.Maps;
+with Ada.Strings.Unbounded;
 with Ada.Text_IO;
 with SAL.Time_Conversions;
 procedure SMM.Playlist
@@ -35,21 +38,50 @@ is
 
    Songs : List_Type;
 
-   I           : Iterator_Type;
-   Source_Root : constant String := SAL.Config_Files.Read (Db, Root_Key);
-   Relative    : Boolean;
+   I               : Iterator_Type;
+   Source_Root     : constant String := SAL.Config_Files.Read (Db, Root_Key);
+   Relative        : Boolean;
+   Relative_Prefix : Ada.Strings.Unbounded.Unbounded_String;
 
    Output_Time : constant String := SAL.Time_Conversions.Time_Type'Image
      (SAL.Time_Conversions.To_Time (Ada.Real_Time.Clock));
 begin
    declare
       use Ada.Directories;
+      use Ada.Strings;
+      use Ada.Strings.Fixed;
       use Ada.Text_IO;
       Mode       : File_Mode;
-      Containing : constant String := Containing_Directory (Destination);
-      Full       : constant String := Full_Name (Source_Root);
+      --  Full_Name normalizes directory separators
+      Containing : constant String  := Full_Name (Containing_Directory (Destination));
+      Full_Root  : constant String  := Full_Name (Source_Root);
+      Found      : constant Integer := Index (Source => Containing, Pattern => Full_Root);
    begin
-      Relative := Containing = Full;
+      Relative := Found = 1 and Full_Root'Length /= Containing'Length;
+
+      if Relative then
+         declare
+            use Ada.Strings.Unbounded;
+            use Ada.Strings.Maps;
+            Containing_Last : Integer                    := Containing'Last + 1;
+            Dir_Sep         : constant Character_Mapping := To_Mapping ("/\", "//");
+         begin
+            Build_Prefix :
+            loop
+               Containing_Last := Index
+                 (Source  => Containing (Full_Root'Length .. Containing_Last - 1),
+                  Pattern => "/",
+                  Mapping => Dir_Sep,
+                  Going   => Backward);
+
+               if Containing_Last > 0 then
+                  Relative_Prefix := Relative_Prefix & "../";
+               else
+                  exit Build_Prefix;
+               end if;
+            end loop Build_Prefix;
+         end;
+      end if;
 
       if Replace then
          Mode := Out_File;
@@ -70,10 +102,11 @@ begin
    loop
       exit when Is_Null (I);
       declare
+         use Ada.Strings.Unbounded;
          Source : constant String := SAL.Config_Files.Read (Db, Current (I), File_Key);
       begin
          if Relative then
-            Ada.Text_IO.Put_Line (Playlist_File, Source);
+            Ada.Text_IO.Put_Line (Playlist_File, To_String (Relative_Prefix) & Source);
          else
             Ada.Text_IO.Put_Line (Playlist_File, Source_Root & Source);
          end if;
