@@ -1,6 +1,6 @@
 ;;; xmtn-base.el --- Basic definitions for accessing monotone
 
-;; Copyright (C) 2009, 2010 Stephen Leake
+;; Copyright (C) 2009 Stephen Leake
 ;; Copyright (C) 2006, 2007, 2009 Christian M. Ohler
 
 ;; Author: Christian M. Ohler
@@ -41,7 +41,7 @@ After changing the value of this variable, be sure to run
 `xmtn-check-command-version' to clear xmtn's command version
 cache.")
 
-(defvar xmtn-additional-arguments nil
+(defvar xmtn-additional-arguments '()
   "*Additional arguments to pass to monotone.
 
 A list of strings.")

@@ -301,11 +301,7 @@ the file before saving."
                   :dir (file-name-directory path)
                   :file (file-name-nondirectory path)
                   :status status
-                  :more-status (if orig-path
-                                   (if (eq status 'rename-target)
-                                       (concat "from " orig-path)
-                                     (concat "to " orig-path))
-                                 ""))))))
+                  :more-status (or orig-path ""))))))
            (likely-dir-p (path) (string-match "/\\'" path)))
 
       ;; First parse the basic_io contained in dvc-header, if any.
@@ -1227,35 +1223,35 @@ finished."
   "Fill current buffer with the contents of FILE in revision BACKEND-ID."
   (let ((root (dvc-tree-root)))
     (let ((normalized-file (xmtn--normalize-file-name root file))
-	  (temp-dir nil))
+          (temp-dir nil))
       (unwind-protect
-	  (progn
-	    (setq temp-dir (make-temp-file
-			    "xmtn--revision-get-file-" t))
-	    ;; Going through a temporary file and using
-	    ;; `insert-file-contents' in conjunction with as
-	    ;; much of the original file name as possible seems
-	    ;; to be the best way to make sure that Emacs'
-	    ;; entire file coding system detection logic is
-	    ;; applied.  Functions like
-	    ;; `find-operation-coding-system' and
-	    ;; `find-file-name-handler' are not a complete
-	    ;; replacement since they don't look at the contents
-	    ;; at all.
-	    (let ((temp-file (concat temp-dir "/" normalized-file)))
-	      (make-directory (file-name-directory temp-file) t)
-	      (with-temp-file temp-file
-		(set-buffer-multibyte nil)
-		(setq buffer-file-coding-system 'binary)
-		(xmtn--insert-file-contents-by-name root backend-id normalized-file (current-buffer)))
-	      (let ((output-buffer (current-buffer)))
-		(with-temp-buffer
-		  (insert-file-contents temp-file)
-		  (let ((input-buffer (current-buffer)))
-		    (with-current-buffer output-buffer
-		      (insert-buffer-substring input-buffer)))))))
-	(when temp-dir
-	  (dvc-delete-recursively temp-dir))))))
+          (progn
+            (setq temp-dir (make-temp-file
+                            "xmtn--revision-get-file-" t))
+            ;; Going through a temporary file and using
+            ;; `insert-file-contents' in conjunction with as
+            ;; much of the original file name as possible seems
+            ;; to be the best way to make sure that Emacs'
+            ;; entire file coding system detection logic is
+            ;; applied.  Functions like
+            ;; `find-operation-coding-system' and
+            ;; `find-file-name-handler' are not a complete
+            ;; replacement since they don't look at the contents
+            ;; at all.
+            (let ((temp-file (concat temp-dir "/" normalized-file)))
+              (make-directory (file-name-directory temp-file) t)
+              (with-temp-file temp-file
+                (set-buffer-multibyte nil)
+                (setq buffer-file-coding-system 'binary)
+                (xmtn--insert-file-contents-by-name root backend-id normalized-file (current-buffer)))
+              (let ((output-buffer (current-buffer)))
+                (with-temp-buffer
+                  (insert-file-contents temp-file)
+                  (let ((input-buffer (current-buffer)))
+                    (with-current-buffer output-buffer
+                      (insert-buffer-substring input-buffer)))))))
+        (when temp-dir
+          (dvc-delete-recursively temp-dir))))))
 
 (defun xmtn--get-file-by-id (root file-id save-as)
   "Store contents of FILE-ID in file SAVE-AS."
@@ -1361,7 +1357,7 @@ finished."
                    ((local-tree $target-path)
                     (assert (xmtn--same-tree-p path target-path))
                     (return-from get-corresponding-path normalized-file-name)))
-	       ;; Handle an uncommitted rename in the current workspace
+               ;; Handle an uncommitted rename in the current workspace
                (setq normalized-file-name (xmtn--get-rename-in-workspace-to
                                            path normalized-file-name))
                (setq source-revision-hash-id base-revision-hash-id)))))
@@ -1376,8 +1372,8 @@ finished."
              (if (null base-revision-hash-id)
                  (return-from get-corresponding-path nil)
                (setq target-revision-hash-id base-revision-hash-id)
-	       ;; Handle an uncommitted rename in the current workspace
-	       (setq file-name-postprocessor
+               ;; Handle an uncommitted rename in the current workspace
+               (setq file-name-postprocessor
                      (lexical-let ((path path))
                        (lambda (file-name)
                          (xmtn--get-rename-in-workspace-from path
