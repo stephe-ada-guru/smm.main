@@ -407,7 +407,7 @@ The elements must all be of class xmtn-status-data.")
 (defun xmtn-update-multiple (dir &optional workspaces)
   "Update all projects under DIR."
   (interactive "DUpdate all in (root directory): ")
-  (let ((root (file-name-as-directory (substitute-in-file-name dir))))
+  (let ((root (file-name-as-directory (expand-file-name (substitute-in-file-name dir)))))
 
     (if (not workspaces) (setq workspaces (xmtn--filter-non-dir root)))
 
@@ -421,7 +421,7 @@ The elements must all be of class xmtn-status-data.")
   "Show actions to update all projects under DIR."
   (interactive "DStatus for all (root directory): \ni\nP")
   (pop-to-buffer (get-buffer-create "*xmtn-multi-status*"))
-  (setq default-directory (file-name-as-directory (substitute-in-file-name dir)))
+  (setq default-directory (file-name-as-directory (expand-file-name (substitute-in-file-name dir))))
   (if (not workspaces) (setq workspaces (xmtn--filter-non-dir default-directory)))
   (setq xmtn-status-root (file-name-as-directory default-directory))
   (setq xmtn-status-ewoc (ewoc-create 'xmtn-status-printer))
