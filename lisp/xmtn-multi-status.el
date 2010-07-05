@@ -20,34 +20,37 @@
 ;; the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
 ;; Boston, MA  02110-1301  USA.
 
-(eval-and-compile
+(eval-when-compile
   ;; these have macros we use
   (require 'xmtn-ids))
 
-(eval-when-compile
+(eval-and-compile
   ;; these have functions we use
   (require 'xmtn-base)
-  (require 'xmtn-conflicts))
+  (require 'xmtn-conflicts)
+  (require 'xmtn-revlist))
 
 (defvar xmtn-status-root ""
-  "Buffer-local variable holding root directory.")
+  "Buffer-local variable holding multi-workspace root directory.")
 (make-variable-buffer-local 'xmtn-status-root)
 (put 'xmtn-status-root 'permanent-local t)
 
 (defvar xmtn-status-ewoc nil
-  "Buffer-local ewoc for displaying propagations.
+  "Buffer-local ewoc for displaying multi-workspace status.
 All xmtn-status functions operate on this ewoc.
 The elements must all be of class xmtn-status-data.")
 (make-variable-buffer-local 'xmtn-status-ewoc)
 (put 'xmtn-status-ewoc 'permanent-local t)
 
 (defstruct (xmtn-status-data (:copier nil))
-  work             ; directory name relative to xmtn-status-root
-  branch           ; branch name (assumed never changes)
+  work             ; workspace directory name relative to xmtn-status-root
+  branch           ; branch name (all workspaces have same branch; assumed never changes)
   need-refresh     ; nil | t : if an async process was started that invalidates state data
   head-rev         ; nil | mtn rev string : current head revision, nil if multiple heads
   conflicts-buffer ; *xmtn-conflicts* buffer for merge
-  heads            ; 'need-scan | 'at-head | 'need-update | 'need-merge)
+  heads            ; 'need-scan | 'at-head | 'need-update | 'need-merge
+  (update-review
+   'pending)       ; 'pending | 'need-review | 'done
   (local-changes
    'need-scan)     ; 'need-scan | 'need-commit | 'ok
   (conflicts
@@ -75,13 +78,13 @@ The elements must all be of class xmtn-status-data.")
       (insert (dvc-face-add "  need refresh\n" 'dvc-conflict))
 
     (ecase (xmtn-status-data-local-changes data)
-      (need-scan (insert "  from local changes unknown\n"))
-      (need-commit (insert (dvc-face-add "  need dvc-status\n" 'dvc-header)))
+      (need-scan (insert "  local changes unknown\n"))
+      (need-commit (insert (dvc-face-add "  need commit\n" 'dvc-header)))
       (ok nil))
 
     (ecase (xmtn-status-data-conflicts data)
       (need-scan
-       (insert "conflicts need scan\n"))
+       (insert "  conflicts need scan\n"))
       (need-resolve
        (insert (dvc-face-add "  need resolve conflicts\n" 'dvc-conflict)))
       (need-review-resolve-internal
@@ -92,10 +95,16 @@ The elements must all be of class xmtn-status-data.")
 
     (ecase (xmtn-status-data-heads data)
       (at-head     nil)
-      (need-update (insert (dvc-face-add "  need update\n" 'dvc-conflict)))
+      (need-update
+       (insert (dvc-face-add "  need update\n" 'dvc-conflict)))
       (need-merge
-       (insert (dvc-face-add "  need merge\n" 'dvc-conflict)))
-      )))
+       (insert (dvc-face-add "  need merge\n" 'dvc-conflict))))
+
+    (ecase (xmtn-status-data-update-review data)
+      (pending nil)
+      (need-review (insert "  need update review\n"))
+      (done nil))
+      ))
 
 (defun xmtn-status-kill-conflicts-buffer (data)
   (if (buffer-live-p (xmtn-status-data-conflicts-buffer data))
@@ -158,6 +167,7 @@ The elements must all be of class xmtn-status-data.")
   (let* ((elem (ewoc-locate xmtn-status-ewoc))
          (data (ewoc-data elem)))
     (xmtn-status-need-refresh elem data)
+    (setf (xmtn-status-data-update-review data) 'need-review)
     (let ((default-directory (xmtn-status-work data)))
       (xmtn-dvc-update))
     (xmtn-status-refresh-one data nil)
@@ -203,11 +213,6 @@ The elements must all be of class xmtn-status-data.")
   (let* ((elem (ewoc-locate xmtn-status-ewoc))
          (data (ewoc-data elem)))
     (setf (xmtn-status-data-local-changes data) 'ok)
-
-    (if (buffer-live-p (xmtn-status-data-conflicts-buffer data))
-        ;; creating the log-edit buffer requires a single status/diff/conflicts buffer
-        (kill-buffer (xmtn-status-data-conflicts-buffer data)))
-
     (ewoc-invalidate xmtn-status-ewoc elem)))
 
 (defun xmtn-status-statusp ()
@@ -217,19 +222,20 @@ The elements must all be of class xmtn-status-data.")
          (member (xmtn-status-data-local-changes data)
                  '(need-scan need-commit)))))
 
-(defun xmtn-status-missing ()
-  "Run xmtn-missing on current workspace."
+(defun xmtn-status-review-update ()
+  "Review last update for current workspace."
   (interactive)
   (let* ((elem (ewoc-locate xmtn-status-ewoc))
          (data (ewoc-data elem)))
     (xmtn-status-need-refresh elem data)
-    (xmtn-missing nil (xmtn-status-work data))))
+    (setf (xmtn-status-data-update-review data) 'done)
+    (xmtn-review-update (xmtn-status-work data))))
 
-(defun xmtn-status-missingp ()
-  "Non-nil if xmtn-missing is appropriate for current workspace."
+(defun xmtn-status-review-updatep ()
+  "Non-nil if xmtn-status-review-update is appropriate for current workspace."
   (let* ((data (ewoc-data (ewoc-locate xmtn-status-ewoc))))
     (and (not (xmtn-status-data-need-refresh data))
-         (eq 'need-update (xmtn-status-data-heads data)))))
+         (eq 'need-review (xmtn-status-data-update-review data)))))
 
 (defun xmtn-status-merge ()
   "Run dvc-merge on current workspace."
@@ -268,22 +274,22 @@ The elements must all be of class xmtn-status-data.")
     (define-key map [?i]  '(menu-item "i) ignore local changes"
                                       xmtn-status-status-ok
                                       :visible (xmtn-status-statusp)))
-    (define-key map [?5]  '(menu-item "5) update"
+    (define-key map [?5]  '(menu-item "5) review update"
+                                      xmtn-status-review-update
+                                      :visible (xmtn-status-review-updatep)))
+    (define-key map [?4]  '(menu-item "4) update"
                                       xmtn-status-update
                                       :visible (xmtn-status-updatep)))
-    (define-key map [?4]  '(menu-item "4) merge"
+    (define-key map [?3]  '(menu-item "3) merge"
                                       xmtn-status-merge
                                       :visible (xmtn-status-headsp)))
-    (define-key map [?3]  '(menu-item "3) show heads"
+    (define-key map [?2]  '(menu-item "2) show heads"
                                       xmtn-status-heads
                                       :visible (xmtn-status-headsp)))
-    (define-key map [?2]  '(menu-item "2) resolve conflicts"
+    (define-key map [?1]  '(menu-item "1) resolve conflicts"
                                       xmtn-status-resolve-conflicts
                                       :visible (xmtn-status-resolve-conflictsp)))
-    (define-key map [?1]  '(menu-item "1) show missing"
-                                      xmtn-status-missing
-                                      :visible (xmtn-status-missingp)))
-    (define-key map [?0]  '(menu-item "0) status"
+    (define-key map [?0]  '(menu-item "0) commit"
                                       xmtn-status-status
                                       :visible (xmtn-status-statusp)))
     map)
@@ -319,8 +325,6 @@ The elements must all be of class xmtn-status-data.")
 
 (defun xmtn-status-conflicts (data)
   "Return value for xmtn-status-data-conflicts for DATA."
-  ;; Can't check for "current heads", since there could be more than
-  ;; 2, so just recreate conflicts
   (let* ((work (xmtn-status-work data))
          (default-directory work))
 
@@ -379,7 +383,11 @@ The elements must all be of class xmtn-status-data.")
     (message "")
 
     (if refresh-local-changes
-        (setf (xmtn-status-data-local-changes data) 'need-scan))
+	(progn
+	  (setf (xmtn-status-data-local-changes data) 'need-scan)
+	  (case (xmtn-status-data-update-review data)
+	    ('done (setf (xmtn-status-data-update-review data) 'need-review))
+	    (t nil))))
 
     (case (xmtn-status-data-local-changes data)
       (need-scan
@@ -398,7 +406,7 @@ The elements must all be of class xmtn-status-data.")
   t)
 
 (defun xmtn-status-refresh ()
-  "Refresh status of each ewoc element. With prefix arg, reset local changes status to `unknown'."
+  "Refresh status of each ewoc element. With prefix arg, re-scan for local changes."
   (interactive)
   (ewoc-map 'xmtn-status-refresh-one xmtn-status-ewoc current-prefix-arg)
   (message "done"))
@@ -409,7 +417,7 @@ The elements must all be of class xmtn-status-data.")
   (interactive "DUpdate all in (root directory): ")
   (let ((root (file-name-as-directory (substitute-in-file-name dir))))
 
-    (if (not workspaces) (setq workspaces (xmtn--filter-non-dir root)))
+    (if (not workspaces) (setq workspaces (xmtn--filter-non-ws root)))
 
     (dolist (workspace workspaces)
       (let ((default-directory (concat root workspace)))
@@ -422,7 +430,7 @@ The elements must all be of class xmtn-status-data.")
   (interactive "DStatus for all (root directory): \ni\nP")
   (pop-to-buffer (get-buffer-create "*xmtn-multi-status*"))
   (setq default-directory (file-name-as-directory (substitute-in-file-name dir)))
-  (if (not workspaces) (setq workspaces (xmtn--filter-non-dir default-directory)))
+  (if (not workspaces) (setq workspaces (xmtn--filter-non-ws default-directory)))
   (setq xmtn-status-root (file-name-as-directory default-directory))
   (setq xmtn-status-ewoc (ewoc-create 'xmtn-status-printer))
   (let ((inhibit-read-only t)) (delete-region (point-min) (point-max)))

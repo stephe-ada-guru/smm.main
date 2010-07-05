@@ -671,9 +671,9 @@ scanned and all common ones found are used."
   (setq from-dir (substitute-in-file-name from-dir))
   (setq to-dir (substitute-in-file-name to-dir))
   (let ((from-workspaces (or workspaces
-                             (xmtn--filter-non-dir from-dir)))
+                             (xmtn--filter-non-ws from-dir)))
         (to-workspaces (or workspaces
-                           (xmtn--filter-non-dir to-dir))))
+                           (xmtn--filter-non-ws to-dir))))
 
     (pop-to-buffer (get-buffer-create "*xmtn-propagate*"))
     (setq xmtn-propagate-from-root (file-name-as-directory from-dir))
