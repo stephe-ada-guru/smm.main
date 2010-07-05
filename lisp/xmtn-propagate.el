@@ -668,16 +668,16 @@ to TO-DIR. WORKSPACES (default nil) is a list of workspaces
 common to from-dir and to-dir; if nil, the directories are
 scanned and all common ones found are used."
   (interactive "DPropagate all from (root directory): \nDto (root directory): ")
-  (setq from-dir (substitute-in-file-name from-dir))
-  (setq to-dir (substitute-in-file-name to-dir))
+  (pop-to-buffer (get-buffer-create "*xmtn-propagate*"))
+  ;; xmtn-propagate-*-root are buffer-local. Note that we don't care
+  ;; what 'default-directory' is for xmtn-propagate buffer.
+  (setq xmtn-propagate-from-root (file-name-as-directory (expand-file-name (substitute-in-file-name from-dir))))
+  (setq xmtn-propagate-to-root (file-name-as-directory (expand-file-name (substitute-in-file-name to-dir))))
   (let ((from-workspaces (or workspaces
-                             (xmtn--filter-non-dir from-dir)))
+                             (xmtn--filter-non-ws xmtn-propagate-from-root)))
         (to-workspaces (or workspaces
-                           (xmtn--filter-non-dir to-dir))))
+                           (xmtn--filter-non-ws xmtn-propagate-to-root))))
 
-    (pop-to-buffer (get-buffer-create "*xmtn-propagate*"))
-    (setq xmtn-propagate-from-root (file-name-as-directory from-dir))
-    (setq xmtn-propagate-to-root (file-name-as-directory to-dir))
     (setq xmtn-propagate-ewoc (ewoc-create 'xmtn-propagate-printer))
     (let ((inhibit-read-only t)) (delete-region (point-min) (point-max)))
     (ewoc-set-hf
@@ -701,29 +701,27 @@ scanned and all common ones found are used."
 (defun xmtn-propagate-one (from-work to-work)
   "Show all actions needed to propagate FROM-WORK to TO-WORK."
   (interactive "DPropagate all from (workspace): \nDto (workspace): ")
-  (setq from-work (substitute-in-file-name from-work))
-  (setq to-work (substitute-in-file-name to-work))
-  (let ((default-directory to-work))
-    (pop-to-buffer (get-buffer-create "*xmtn-propagate*"))
-    ;; default-directory is wrong if buffer is reused
-    (setq default-directory to-work)
-    (setq xmtn-propagate-from-root (expand-file-name (concat (file-name-as-directory from-work) "../")))
-    (setq xmtn-propagate-to-root (expand-file-name (concat (file-name-as-directory to-work) "../")))
-    (setq xmtn-propagate-ewoc (ewoc-create 'xmtn-propagate-printer))
-    (let ((inhibit-read-only t)) (delete-region (point-min) (point-max)))
-    (ewoc-set-hf
-     xmtn-propagate-ewoc
-     (concat
-      (format "From root : %s\n" xmtn-propagate-from-root)
-      (format "  To root : %s\n" xmtn-propagate-to-root)
-      )
-     "")
-    (xmtn-propagate-make-data
-     (file-name-nondirectory (directory-file-name from-work))
-     (file-name-nondirectory (directory-file-name to-work))
-     (file-name-nondirectory (directory-file-name from-work))
-     (file-name-nondirectory (directory-file-name to-work)))
-    (xmtn-propagate-mode)))
+  (setq from-work (file-name-as-directory (expand-file-name (substitute-in-file-name from-work))))
+  (setq to-work (file-name-as-directory (expand-file-name (substitute-in-file-name to-work))))
+  (pop-to-buffer (get-buffer-create "*xmtn-propagate*"))
+  (setq default-directory to-work)
+  (setq xmtn-propagate-from-root (expand-file-name (concat from-work "../")))
+  (setq xmtn-propagate-to-root (expand-file-name (concat to-work "../")))
+  (setq xmtn-propagate-ewoc (ewoc-create 'xmtn-propagate-printer))
+  (let ((inhibit-read-only t)) (delete-region (point-min) (point-max)))
+  (ewoc-set-hf
+   xmtn-propagate-ewoc
+   (concat
+    (format "From root : %s\n" xmtn-propagate-from-root)
+    (format "  To root : %s\n" xmtn-propagate-to-root)
+    )
+   "")
+  (xmtn-propagate-make-data
+   (file-name-nondirectory (directory-file-name from-work))
+   (file-name-nondirectory (directory-file-name to-work))
+   (file-name-nondirectory (directory-file-name from-work))
+   (file-name-nondirectory (directory-file-name to-work)))
+  (xmtn-propagate-mode))
 
 (provide 'xmtn-propagate)
 

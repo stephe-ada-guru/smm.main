@@ -652,11 +652,13 @@ Each element of the list is a list; key, signature, name, value, trust."
     accu))
 
 (defun xmtn--heads (root branch)
-  ;; apparently stdio automate doesn't default arguments properly;
-  ;; this fails if branch is not passed to mtn.
-  (xmtn-automate-simple-command-output-lines root (list "heads"
-                                                        (or branch
-                                                            (xmtn--tree-default-branch root)))))
+  (xmtn-automate-simple-command-output-lines
+   root
+   (cons
+    (list "ignore-suspend-certs" "")
+    (list "heads"
+	  (or branch
+	      (xmtn--tree-default-branch root))))))
 
 (defun xmtn--tree-default-branch (root)
   (xmtn-automate-simple-command-output-line root `("get_option" "branch")))

@@ -583,12 +583,10 @@ otherwise newer."
 
 
           (rename-source
-           (setq more-status
-                 (concat "to " new-path)))
+           (setq more-status new-path))
 
           (rename-target
-           (setq more-status
-                 (concat "from " old-path)))
+           (setq more-status old-path))
 
           (modified
            (if (and (equal status '(known))
