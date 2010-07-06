@@ -253,7 +253,7 @@ arg; root. Result is of the form:
                  'xmtn 'log root 'xmtn--revlist-refresh first-line-only-p last-n)))
     (with-current-buffer buffer
       (setq xmtn--revlist-*info-generator-fn* info-generator-fn)
-      (setq xmtn--revlist-*path* (file-relative-name path root))
+      (setq xmtn--revlist-*path* (when path (file-relative-name path root)))
       (xmtn--revlist-refresh))
     (xmtn--display-buffer-maybe buffer nil))
   nil)
