@@ -477,7 +477,10 @@ from the merge."
      dvc-log-last-n))
   nil)
 
+;;;###autoload
 (defun xmtn-review-update (root)
+  "Review revisions in last update of ROOT workspace."
+  (interactive "D")
   (xmtn--setup-revlist
    root
    'xmtn--revlist--review-update-info
