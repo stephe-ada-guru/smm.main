@@ -229,6 +229,8 @@ The elements must all be of class xmtn-status-data.")
          (data (ewoc-data elem)))
     (xmtn-status-need-refresh elem data)
     (setf (xmtn-status-data-update-review data) 'done)
+    ;; refresh local changes, on the assumption that the review added FIXMEs
+    (setf (xmtn-status-data-local-changes data) 'need-scan)
     (xmtn-review-update (xmtn-status-work data))))
 
 (defun xmtn-status-review-updatep ()

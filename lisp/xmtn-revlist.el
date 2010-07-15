@@ -303,7 +303,7 @@ arg; root. Result is of the form:
 	 (command
 	  (if xmtn--revlist-*path*
 	      (list "log" xmtn--revlist-*path*)
-	    "log"))
+	    (list "log")))
 	 )
       ;; See xmtn--revlist-*info-generator-fn* for result format
       (list branch
