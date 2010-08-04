@@ -132,7 +132,7 @@ workspace root."
     (xmtn-automate-command-wait-until-finished command-handle)
     (xmtn-automate--command-output-as-string command-handle)))
 
-(defun xmtn-automate-simple-command-output-insert-into-buffer
+(defun xmtn-automate-command-output-buffer
   (root buffer command)
   "Send COMMAND to session for ROOT, insert result into BUFFER."
   (let* ((session (xmtn-automate-cache-session root))
@@ -681,7 +681,7 @@ Each element of the list is a list; key, signature, name, value, trust."
 
 
 (defun xmtn-automate-local-changes (work)
-  "Summary of status  for WORK; 'ok if no changes, 'need-commit if changes."
+  "Summary of status for WORK; 'ok if no changes, 'need-commit if changes."
   (let ((default-directory work)
         (msg "checking %s for local changes ..."))
     (message msg work)
