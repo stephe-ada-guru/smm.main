@@ -722,13 +722,7 @@ otherwise newer."
     (dvc-save-some-buffers root)
     (lexical-let* ((status-buffer status-buffer))
       (xmtn--run-command-async
-       root `("automate" "inventory"
-              ,@(and (xmtn--have-no-ignore)
-                     (not dvc-status-display-known)
-                     '("--no-unchanged"))
-              ,@(and (xmtn--have-no-ignore)
-                     (not dvc-status-display-ignored)
-                     '("--no-ignored")))
+       root (list "automate" "inventory" "--no-unchanged" "--no-ignored")
        :finished (lambda (output error status arguments)
                    (dvc-status-inventory-done status-buffer)
                    (with-current-buffer status-buffer
@@ -766,6 +760,72 @@ otherwise newer."
                     (format "Received signal running mtn with arguments %S"
                             arguments)
                     (current-buffer) error)))))))
+
+(defun xmtn--status-inventory-sync (root)
+  "Create a status buffer for ROOT; return (buffer status), where status is 'ok or 'need-commit."
+  (let*
+      ((orig-buffer (current-buffer))
+       (base-revision (xmtn--get-base-revision-hash-id-or-null root))
+       (branch (xmtn--tree-default-branch root))
+       (head-revisions (xmtn--heads root branch))
+       (head-count (length head-revisions))
+       (output-buffer (generate-new-buffer " *xmtn-inventory*"))
+       status
+       (dvc-switch-to-buffer-first nil)
+       (status-buffer
+        (dvc-status-prepare-buffer
+         'xmtn
+         root
+         ;; base-revision
+         (if base-revision (format "%s" base-revision) "none")
+         ;; branch
+         (format "%s" branch)
+         ;; header-more
+         (lambda ()
+           (concat
+            (case head-count
+              (0 "  branch is empty\n")
+              (1 "  branch is merged\n")
+              (t (dvc-face-add (format "  branch has %s heads; need merge\n" head-count) 'dvc-conflict)))
+            (if (member base-revision head-revisions)
+                "  base revision is a head revision\n"
+              (dvc-face-add "  base revision is not a head revision; need update\n" 'dvc-conflict))))
+         ;; refresh
+         'xmtn-dvc-status)))
+    (dvc-save-some-buffers root)
+    (xmtn-automate-command-output-buffer
+       root output-buffer
+       (list (list "no-unchanged" "" "no-ignored" "")
+	     "inventory"))
+    (with-current-buffer output-buffer
+      (setq status
+	    (if (> (point-max) (point-min))
+		'need-commit
+	      'ok)))
+    (dvc-status-inventory-done status-buffer)
+    (with-current-buffer status-buffer
+      (let ((excluded-files (dvc-default-excluded-files)))
+	(xmtn-basic-io-with-stanza-parser
+	    (parser output-buffer)
+	  (xmtn--parse-inventory
+	   parser
+	   (lambda (path status changes old-path new-path
+			 old-type new-type fs-type)
+	     (xmtn--status-process-entry dvc-fileinfo-ewoc
+					 path status
+					 changes
+					 old-path new-path
+					 old-type new-type
+					 fs-type
+					 excluded-files))))
+	(when (not (ewoc-locate dvc-fileinfo-ewoc))
+	  (ewoc-enter-last dvc-fileinfo-ewoc
+			   (make-dvc-fileinfo-message
+			    :text (concat " no changes in workspace")))
+	  (ewoc-refresh dvc-fileinfo-ewoc))))
+    (kill-buffer output-buffer)
+    (set-buffer orig-buffer)
+    (list status-buffer status)))
 
 ;;;###autoload
 (defun xmtn-dvc-status ()
@@ -874,19 +934,8 @@ otherwise newer."
        (let ((default-directory root))
          (mapcan (lambda (file-name)
                    (if (or (file-symlink-p file-name)
-                           (xmtn--have-no-ignore)
                            (not (file-directory-p file-name)))
-                       (list (xmtn--perl-regexp-for-file-name file-name))
-
-                     ;; If mtn automate inventory doesn't support
-                     ;; --no-ignore, it also recurses into unknown
-                     ;; directories, so we need to ignore files in
-                     ;; this directory as well as the directory
-                     ;; itself.
-                     (setq file-name (directory-file-name file-name))
-                     (list
-                      (xmtn--perl-regexp-for-file-name file-name)
-                      (xmtn--perl-regexp-for-files-in-directory file-name))))
+                       (list (xmtn--perl-regexp-for-file-name file-name))))
                  normalized-file-names))
        t))))
 
@@ -1429,7 +1478,7 @@ finished."
 
 (defun xmtn--insert-file-contents (root content-hash-id buffer)
   (check-type content-hash-id xmtn--hash-id)
-  (xmtn-automate-simple-command-output-insert-into-buffer
+  (xmtn-automate-command-output-buffer
    root buffer `("get_file" ,content-hash-id)))
 
 (defun xmtn--insert-file-contents-by-name (root backend-id normalized-file-name buffer)
@@ -1446,7 +1495,7 @@ finished."
     (let ((cmd (if hash-id
                   (cons (list "revision" hash-id) (list "get_file_of" normalized-file-name))
                 (list "get_file_of" normalized-file-name))))
-      (xmtn-automate-simple-command-output-insert-into-buffer root buffer cmd))))
+      (xmtn-automate-command-output-buffer root buffer cmd))))
 
 (defun xmtn--same-tree-p (a b)
   (equal (file-truename a) (file-truename b)))
