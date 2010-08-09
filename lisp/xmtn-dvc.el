@@ -765,6 +765,7 @@ otherwise newer."
   "Create a status buffer for ROOT; return (buffer status), where status is 'ok or 'need-commit."
   (let*
       ((orig-buffer (current-buffer))
+       (msg (concat "running inventory for " root " ..."))
        (base-revision (xmtn--get-base-revision-hash-id-or-null root))
        (branch (xmtn--tree-default-branch root))
        (head-revisions (xmtn--heads root branch))
@@ -793,6 +794,7 @@ otherwise newer."
          ;; refresh
          'xmtn-dvc-status)))
     (dvc-save-some-buffers root)
+    (message msg)
     (xmtn-automate-command-output-buffer
        root output-buffer
        (list (list "no-unchanged" "" "no-ignored" "")
@@ -825,6 +827,7 @@ otherwise newer."
 	  (ewoc-refresh dvc-fileinfo-ewoc))))
     (kill-buffer output-buffer)
     (set-buffer orig-buffer)
+    (message (concat msg " done"))
     (list status-buffer status)))
 
 ;;;###autoload
