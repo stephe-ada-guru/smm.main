@@ -590,15 +590,10 @@ Return non-nil if some text copied."
                   )))
 
              (t
-              ;; Not a packet. Most likely we are at the end of the
-              ;; buffer, and there is more output coming soon.  FIXME:
-              ;; this means the loop logic screwed up.
+              ;; Not a packet yet; there is more output coming soon.
               (if (= (point) (point-max))
                   (setq tag 'exit-loop)
-                (error "Unexpected output from mtn at '%s':%d:'%s'"
-                       (current-buffer)
-                       (point)
-                       (buffer-substring (point) (line-end-position)))))))))
+                ))))))
 
          (exit-loop (return))))))
   nil)
