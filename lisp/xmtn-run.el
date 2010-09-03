@@ -114,10 +114,6 @@ Signals an error if more (or fewer) than one line is output."
 (defconst xmtn--minimum-required-command-version '(0 99))
 (defconst xmtn--required-automate-format-version "2")
 
-(defun xmtn--have-no-ignore ()
-  "Non-nil if mtn automate inventory supports --no-ignore, --no-unknown, --no-unchanged options."
-  (>= (xmtn-dvc-automate-version) 7.0))
-
 (defvar xmtn--*cached-command-version* nil)
 (defvar xmtn--*command-version-cached-for-executable* nil)
 

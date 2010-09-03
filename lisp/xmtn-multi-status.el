@@ -48,6 +48,7 @@ The elements must all be of class xmtn-status-data.")
   need-refresh     ; nil | t : if an async process was started that invalidates state data
   head-rev         ; nil | mtn rev string : current head revision, nil if multiple heads
   conflicts-buffer ; *xmtn-conflicts* buffer for merge
+  status-buffer    ; *xmtn-status* buffer for commit
   heads            ; 'need-scan | 'at-head | 'need-update | 'need-merge
   (update-review
    'pending)       ; 'pending | 'need-review | 'done
@@ -112,6 +113,10 @@ The elements must all be of class xmtn-status-data.")
         (with-current-buffer buffer (save-buffer))
         (kill-buffer buffer))))
 
+(defun xmtn-status-kill-status-buffer (data)
+  (if (buffer-live-p (xmtn-status-data-status-buffer data))
+      (kill-buffer (xmtn-status-data-status-buffer data))))
+
 (defun xmtn-status-save-conflicts-buffer (data)
   (if (buffer-live-p (xmtn-status-data-conflicts-buffer data))
       (with-current-buffer (xmtn-status-data-conflicts-buffer data) (save-buffer))))
@@ -120,6 +125,7 @@ The elements must all be of class xmtn-status-data.")
   "Clean DATA workspace."
   (xmtn-automate-kill-session (xmtn-status-work data))
   (xmtn-status-kill-conflicts-buffer data)
+  (xmtn-status-kill-status-buffer data)
   (xmtn-conflicts-clean (xmtn-status-work data)))
 
 (defun xmtn-status-clean ()
@@ -196,13 +202,13 @@ The elements must all be of class xmtn-status-data.")
                  '(need-resolve need-review-resolve-internal)))))
 
 (defun xmtn-status-status ()
-  "Run xmtn-status on current workspace."
+  "Show status buffer for current workspace."
   (interactive)
   (let* ((elem (ewoc-locate xmtn-status-ewoc))
          (data (ewoc-data elem)))
     (xmtn-status-need-refresh elem data)
     (setf (xmtn-status-data-local-changes data) 'ok)
-    (xmtn-status (xmtn-status-work data))
+    (pop-to-buffer (xmtn-status-data-status-buffer data))
     ;; IMPROVEME: create a log-edit buffer now, since we have both a
     ;; status and conflict buffer, and that confuses dvc-log-edit
     ))
@@ -240,7 +246,7 @@ The elements must all be of class xmtn-status-data.")
          (eq 'need-review (xmtn-status-data-update-review data)))))
 
 (defun xmtn-status-merge ()
-  "Run dvc-merge on current workspace."
+  "Run merge on current workspace."
   (interactive)
   (let* ((elem (ewoc-locate xmtn-status-ewoc))
          (data (ewoc-data elem))
@@ -251,7 +257,7 @@ The elements must all be of class xmtn-status-data.")
     (ewoc-invalidate xmtn-status-ewoc elem)))
 
 (defun xmtn-status-heads ()
-  "Run xmtn-heads on current workspace."
+  "Show heads for current workspace."
   (interactive)
   (let* ((elem (ewoc-locate xmtn-status-ewoc))
          (data (ewoc-data elem))
@@ -393,7 +399,16 @@ The elements must all be of class xmtn-status-data.")
 
     (case (xmtn-status-data-local-changes data)
       (need-scan
-       (setf (xmtn-status-data-local-changes data) (xmtn-automate-local-changes work)))
+       (if (not (buffer-live-p (xmtn-status-data-status-buffer data)))
+	   (let ((result (xmtn--status-inventory-sync (xmtn-status-work data))))
+	     (setf (xmtn-status-data-status-buffer data) (car result)
+		   (xmtn-status-data-local-changes data) (cadr result)))
+	 (with-current-buffer (xmtn-status-data-status-buffer data)
+	   (xmtn-dvc-status)
+	   (setf (xmtn-status-data-local-changes data)
+		 (if (not (ewoc-locate dvc-fileinfo-ewoc))
+		     'ok
+		   'need-commit)))))
       (t nil))
 
     (case (xmtn-status-data-conflicts data)
