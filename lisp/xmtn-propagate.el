@@ -364,32 +364,32 @@ The elements must all be of class xmtn-propagate-data.")
     (and (not (xmtn-propagate-data-need-refresh data))
          (eq 'need-update (xmtn-propagate-data-from-heads data)))))
 
-(defun xmtn-propagate-heads-to ()
-  "Run xmtn-heads on current `to' workspace."
+(defun xmtn-propagate-merge-to ()
+  "Run xmtn-status-one on current `to' workspace, so it can be merged."
   (interactive)
   (let* ((elem (ewoc-locate xmtn-propagate-ewoc))
          (data (ewoc-data elem))
          (default-directory (xmtn-propagate-to-work data)))
     (xmtn-propagate-need-refresh elem data)
-    (xmtn-view-heads-revlist)))
+    (xmtn-status-one default-directory)))
 
-(defun xmtn-propagate-heads-top ()
-  "Non-nil if xmtn-heads is appropriate for current `to' workspace."
+(defun xmtn-propagate-merge-top ()
+  "Non-nil if xmtn-merge is appropriate for current `to' workspace."
   (let* ((data (ewoc-data (ewoc-locate xmtn-propagate-ewoc))))
     (and (not (xmtn-propagate-data-need-refresh data))
          (eq 'need-merge (xmtn-propagate-data-to-heads data)))))
 
-(defun xmtn-propagate-heads-from ()
-  "Run xmtn-heads on current `from' workspace."
+(defun xmtn-propagate-merge-from ()
+  "Run xmtn-merge on current `from' workspace."
   (interactive)
   (let* ((elem (ewoc-locate xmtn-propagate-ewoc))
          (data (ewoc-data elem))
          (default-directory (xmtn-propagate-from-work data)))
     (xmtn-propagate-need-refresh elem data)
-    (xmtn-view-heads-revlist)))
+    (xmtn-status-one default-directory)))
 
-(defun xmtn-propagate-heads-fromp ()
-  "Non-nil if xmtn-heads is appropriate for current `from' workspace."
+(defun xmtn-propagate-merge-fromp ()
+  "Non-nil if xmtn-merge is appropriate for current `from' workspace."
   (let* ((data (ewoc-data (ewoc-locate xmtn-propagate-ewoc))))
     (and (not (xmtn-propagate-data-need-refresh data))
          (eq 'need-merge (xmtn-propagate-data-from-heads data)))))
@@ -432,12 +432,12 @@ The elements must all be of class xmtn-propagate-data.")
     (define-key map [?2]  '(menu-item (concat "2) commit " (xmtn-propagate-from-name))
                                       xmtn-propagate-status-from
                                       :visible (xmtn-propagate-status-fromp)))
-    (define-key map [?1]  '(menu-item (concat "1) show heads " (xmtn-propagate-to-name))
-                                      xmtn-propagate-heads-to
-                                      :visible (xmtn-propagate-heads-top)))
-    (define-key map [?0]  '(menu-item (concat "0) show heads " (xmtn-propagate-from-name))
-                                      xmtn-propagate-heads-from
-                                      :visible (xmtn-propagate-heads-fromp)))
+    (define-key map [?1]  '(menu-item (concat "1) merge " (xmtn-propagate-to-name))
+                                      xmtn-propagate-merge-to
+                                      :visible (xmtn-propagate-merge-top)))
+    (define-key map [?0]  '(menu-item (concat "0) merge " (xmtn-propagate-from-name))
+                                      xmtn-propagate-merge-from
+                                      :visible (xmtn-propagate-merge-fromp)))
     map)
   "Keyboard menu keymap used to manage propagates.")
 
