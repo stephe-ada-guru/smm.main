@@ -132,7 +132,7 @@ workspace root."
     (xmtn-automate-command-wait-until-finished command-handle)
     (xmtn-automate--command-output-as-string command-handle)))
 
-(defun xmtn-automate-simple-command-output-insert-into-buffer
+(defun xmtn-automate-command-output-buffer
   (root buffer command)
   "Send COMMAND to session for ROOT, insert result into BUFFER."
   (let* ((session (xmtn-automate-cache-session root))
@@ -281,9 +281,11 @@ Signals an error if output contains zero lines or more than one line."
   "Kill session for ROOT."
   (interactive)
   (let ((temp (assoc (dvc-uniquify-file-name root) xmtn-automate--*sessions*)))
-    (xmtn-automate--close-session (cdr temp))
-    (setq xmtn-automate--*sessions*
-          (delete temp xmtn-automate--*sessions* ))))
+    ;; session may have already been killed
+    (when temp
+      (xmtn-automate--close-session (cdr temp))
+      (setq xmtn-automate--*sessions*
+	    (delete temp xmtn-automate--*sessions* )))))
 
 (defun xmtn-kill-all-sessions ()
   "Kill all xmtn-automate sessions."
@@ -652,11 +654,13 @@ Each element of the list is a list; key, signature, name, value, trust."
     accu))
 
 (defun xmtn--heads (root branch)
-  ;; apparently stdio automate doesn't default arguments properly;
-  ;; this fails if branch is not passed to mtn.
-  (xmtn-automate-simple-command-output-lines root (list "heads"
-                                                        (or branch
-                                                            (xmtn--tree-default-branch root)))))
+  (xmtn-automate-simple-command-output-lines
+   root
+   (cons
+    (list "ignore-suspend-certs" "")
+    (list "heads"
+	  (or branch
+	      (xmtn--tree-default-branch root))))))
 
 (defun xmtn--tree-default-branch (root)
   (xmtn-automate-simple-command-output-line root `("get_option" "branch")))
@@ -679,7 +683,7 @@ Each element of the list is a list; key, signature, name, value, trust."
 
 
 (defun xmtn-automate-local-changes (work)
-  "Summary of status  for WORK; 'ok if no changes, 'need-commit if changes."
+  "Summary of status for WORK; 'ok if no changes, 'need-commit if changes."
   (let ((default-directory work)
         (msg "checking %s for local changes ..."))
     (message msg work)
