@@ -361,11 +361,11 @@ The elements must all be of class xmtn-propagate-data.")
      (xmtn-propagate-data-to-head-rev data)
      (xmtn-propagate-data-to-status-buffer data)
      (xmtn-propagate-data-to-heads data)
-     (xmtn-propagate-data-to-local-changes data)
+     (xmtn-propagate-data-to-local-changes data))
 
     ;; Assume the user completely handles the local changes in the
     ;; status buffer, so they are now ok
-    (setf (xmtn-propagate-data-to-local-changes data) 'ok))))
+    (setf (xmtn-propagate-data-to-local-changes data) 'ok)))
 
 (defun xmtn-propagate-status-top ()
   "Non-nil if xmtn-status is appropriate for current `to' workspace."
