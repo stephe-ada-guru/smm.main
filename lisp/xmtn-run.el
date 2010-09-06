@@ -111,7 +111,7 @@ Signals an error if more (or fewer) than one line is output."
              arguments))
     (first lines)))
 
-(defconst xmtn--minimum-required-command-version '(0 46))
+(defconst xmtn--minimum-required-command-version '(0 99))
 (defconst xmtn--required-automate-format-version "2")
 
 (defvar xmtn--*cached-command-version* nil)

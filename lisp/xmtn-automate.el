@@ -477,6 +477,7 @@ Return non-nil if some text copied."
              (get-buffer-create (format dvc-error-buffer 'xmtn)))))
          (write-marker
           (xmtn-automate--command-handle-write-marker command)))
+
     (with-current-buffer session-buffer
       (let* ((end (min (+ (xmtn-automate--decoder-state-read-marker state)
                           (xmtn-automate--decoder-state-remaining-chars state))
@@ -535,16 +536,19 @@ Return non-nil if some text copied."
           (if (= (xmtn-automate--decoder-state-read-marker state) write-marker)
               (setq tag 'exit-loop)
             (setq tag 'again)))
+
          (again
           (cond
            ((> (xmtn-automate--decoder-state-remaining-chars state) 0)
             ;; copy more output from the current packet
-            (if (xmtn-automate--process-new-output--copy session)
-                (setq tag 'again)
-              (setq tag 'check-for-more)))
+	    (if (= ?l (xmtn-automate--decoder-state-stream state))
+		(setf (xmtn-automate--decoder-state-remaining-chars state) 0)
+	      (if (xmtn-automate--process-new-output--copy session)
+		  (setq tag 'again)
+		(setq tag 'check-for-more))))
 
            (t
-            ;; new packet
+            ;; new packet, or final packet
             (goto-char (xmtn-automate--decoder-state-read-marker state))
             ;; A packet has the structure:
             ;; <command number>:<stream>:<size>:<output>
@@ -555,46 +559,39 @@ Return non-nil if some text copied."
             ;; p  progress
             ;; t  ticker
             ;; l  last
-            ;;
-            ;; If size is large, we may not have all of the output in new-string
             (cond
              ((looking-at "\\([0-9]+\\):\\([mewptl]\\):\\([0-9]+\\):")
-              (let ((command-number (parse-integer (match-string 1)))
-                    (stream (aref (match-string 2) 0))
+              (let ((stream (aref (match-string 2) 0))
                     (size (parse-integer (match-string 3))))
-                (setf (xmtn-automate--decoder-state-read-marker state) (match-end 0))
-                (setf (xmtn-automate--decoder-state-stream state) stream)
+		(setf (xmtn-automate--decoder-state-remaining-chars state) size)
+		(setf (xmtn-automate--decoder-state-stream state) stream)
                 (ecase stream
                   ((?m ?e ?w ?t ?p)
-                   (setf (xmtn-automate--decoder-state-remaining-chars state) size)
+		   (setf (xmtn-automate--decoder-state-read-marker state) (match-end 0))
                    (setq tag 'again) )
 
                   (?l
-                   (setf (xmtn-automate--decoder-state-read-marker state) (+ size (match-end 0)))
-                   (setf (xmtn-automate--command-handle-error-code command)
-                         (parse-integer
-                          (buffer-substring-no-properties
-                           (match-end 0) (xmtn-automate--decoder-state-read-marker state)) ))
-                   (setf (xmtn-automate--command-handle-finished-p command) t)
-                   (with-no-warnings
-                     ;; suppress compiler warning about discarding result
-                     (pop (xmtn-automate--session-remaining-command-handles session)))
-                   (if (xmtn-automate--session-closed-p session)
-                       (setq tag 'exit-loop)
-                     (setq tag 'check-for-more))
+		   (if (> (+ size (match-end 0)) (point-max))
+		       ;; do not have the error code yet
+		       (setq tag 'exit-loop)
+		     (setf (xmtn-automate--decoder-state-read-marker state) (+ size (match-end 0)))
+		     (setf (xmtn-automate--command-handle-error-code command)
+			   (parse-integer
+			    (buffer-substring-no-properties
+			     (match-end 0) (xmtn-automate--decoder-state-read-marker state)) ))
+		     (setf (xmtn-automate--command-handle-finished-p command) t)
+		     (with-no-warnings
+		       ;; suppress compiler warning about discarding result
+		       (pop (xmtn-automate--session-remaining-command-handles session)))
+		     (if (xmtn-automate--session-closed-p session)
+			 (setq tag 'exit-loop)
+		       (setq tag 'check-for-more)))
                    )
                   )))
 
              (t
-              ;; Not a packet. Most likely we are at the end of the
-              ;; buffer, and there is more output coming soon.  FIXME:
-              ;; this means the loop logic screwed up.
-              (if (= (point) (point-max))
-                  (setq tag 'exit-loop)
-                (error "Unexpected output from mtn at '%s':%d:'%s'"
-                       (current-buffer)
-                       (point)
-                       (buffer-substring (point) (line-end-position)))))))))
+              ;; Not a packet yet; there is more output coming soon.
+	      (setq tag 'exit-loop))))))
 
          (exit-loop (return))))))
   nil)
