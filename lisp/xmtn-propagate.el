@@ -249,7 +249,7 @@ The elements must all be of class xmtn-propagate-data.")
         (eq 'need-scan (xmtn-propagate-data-to-local-changes data)))))
 
 (defun xmtn-propagate-update-to ()
-  "Update current workspace."
+  "Update current `to' workspace."
   (interactive)
   (let* ((elem (ewoc-locate xmtn-propagate-ewoc))
          (data (ewoc-data elem)))
@@ -260,17 +260,12 @@ The elements must all be of class xmtn-propagate-data.")
     (xmtn-propagate-refresh-one data nil)
     (ewoc-invalidate xmtn-propagate-ewoc elem)))
 
-(defun xmtn-propagate-update-from ()
-  "Update current workspace."
-  (interactive)
-  (let* ((elem (ewoc-locate xmtn-propagate-ewoc))
-         (data (ewoc-data elem)))
-    (xmtn-propagate-need-refresh elem data)
-    (xmtn--update (xmtn-propagate-from-work data)
-                  (xmtn-propagate-data-from-head-rev data)
-                  nil t)
-    (xmtn-propagate-refresh-one data nil)
-    (ewoc-invalidate xmtn-propagate-ewoc elem)))
+(defun xmtn-propagate-update-top ()
+  "Non-nil if update is appropriate for current `to' workspace."
+  (let* ((data (ewoc-data (ewoc-locate xmtn-propagate-ewoc))))
+    (and (not (xmtn-propagate-data-need-refresh data))
+	 (eq (xmtn-propagate-data-to-heads data)
+	     'need-update))))
 
 (defun xmtn-propagate-propagate ()
   "Propagate current workspace."
@@ -408,6 +403,9 @@ The elements must all be of class xmtn-propagate-data.")
     (define-key map [?g]  '(menu-item "g) refresh"
                                       xmtn-propagate-do-refresh-one
                                       :visible (xmtn-propagate-refreshp)))
+    (define-key map [?6]  '(menu-item (concat "6) update" (xmtn-propagate-to-name))
+                                      xmtn-propagate-update-to
+                                      :visible (xmtn-propagate-update-top)))
     (define-key map [?5]  '(menu-item "5) propagate"
                                       xmtn-propagate-propagate
                                       :visible (xmtn-propagate-propagatep)))
