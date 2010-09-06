@@ -281,9 +281,11 @@ Signals an error if output contains zero lines or more than one line."
   "Kill session for ROOT."
   (interactive)
   (let ((temp (assoc (dvc-uniquify-file-name root) xmtn-automate--*sessions*)))
-    (xmtn-automate--close-session (cdr temp))
-    (setq xmtn-automate--*sessions*
-          (delete temp xmtn-automate--*sessions* ))))
+    ;; session may have already been killed
+    (when temp
+      (xmtn-automate--close-session (cdr temp))
+      (setq xmtn-automate--*sessions*
+	    (delete temp xmtn-automate--*sessions* )))))
 
 (defun xmtn-kill-all-sessions ()
   "Kill all xmtn-automate sessions."
