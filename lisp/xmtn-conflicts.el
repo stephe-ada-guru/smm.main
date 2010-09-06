@@ -103,8 +103,8 @@
 (defstruct (xmtn-conflicts-conflict
             (:copier nil))
   ;; not worth splitting this into a type hierarchy; differences are
-  ;; minor some fields are nil for some conflict types
-  ;; single file conflicts only set left_resolution
+  ;; minor. Some fields are nil for some conflict types.
+  ;; Single file conflicts only set left_resolution
 
   conflict_type ;; 'content | 'duplicate_name | 'orphaned_node
   ancestor_name
@@ -1037,6 +1037,17 @@ header."
          ;; if no file_id, it's a directory; can't drop if not empty
          (xmtn-conflicts-conflict-right_file_id conflict))))
 
+(defun xmtn-conflicts-left-label ()
+  "Return 'left: ' or '' as appropriate for current conflict."
+  (let* ((conflict (ewoc-data (ewoc-locate xmtn-conflicts-ewoc)))
+         (type (xmtn-conflicts-conflict-conflict_type conflict)))
+
+    ;; duplicate_name is the only conflict type that needs a right
+    ;; resolution, and thus a 'left' label
+    (if (equal type 'duplicate_name)
+	"left: "
+      "")))
+
 (defvar xmtn-conflicts-resolve-map
   (let ((map (make-sparse-keymap "resolution")))
     (define-key map [?c]  '(menu-item "c) clear resolution"
@@ -1072,28 +1083,28 @@ header."
                                         (xmtn-conflicts-resolve-ediff 'right))
                                       :visible (xmtn-conflicts-resolve-user_rightp)))
 
-    (define-key map [?5]  '(menu-item "5) left: right file"
+    (define-key map [?5]  '(menu-item (concat "5) " (xmtn-conflicts-left-label) "right file")
                                       (lambda ()
                                         (interactive)
                                         (xmtn-conflicts-resolve-user 'left 'right))
                                       :visible (xmtn-conflicts-resolve-user_leftp)))
-    (define-key map [?4]  '(menu-item "4) left: left file"
+    (define-key map [?4]  '(menu-item (concat "4) " (xmtn-conflicts-left-label) "left file")
                                       (lambda ()
                                         (interactive)
                                         (xmtn-conflicts-resolve-user 'left 'left))
                                       :visible (xmtn-conflicts-resolve-user_leftp)))
-    (define-key map [?3]  '(menu-item "3) left: drop"
+    (define-key map [?3]  '(menu-item (concat "3) " (xmtn-conflicts-left-label) "drop")
                                       xmtn-conflicts-resolve-drop_left
                                       :visible (xmtn-conflicts-resolve-drop_leftp)))
-    (define-key map [?2]  '(menu-item "2) left: rename"
+    (define-key map [?2]  '(menu-item (concat "2) " (xmtn-conflicts-left-label) "rename")
                                       (lambda ()
                                         (interactive)
                                         (xmtn-conflicts-resolve-rename 'left))
                                       :visible (xmtn-conflicts-resolve-rename_leftp)))
-    (define-key map [?1]  '(menu-item "1) left: keep"
+    (define-key map [?1]  '(menu-item (concat "1) " (xmtn-conflicts-left-label) "keep")
                                       xmtn-conflicts-resolve-keep_left
                                       :visible (xmtn-conflicts-resolve-keep_leftp)))
-    (define-key map [?0]  '(menu-item "0) left: ediff"
+    (define-key map [?0]  '(menu-item (concat "0) " (xmtn-conflicts-left-label) "ediff")
                                       (lambda ()
                                         (interactive)
                                         (xmtn-conflicts-resolve-ediff 'left))

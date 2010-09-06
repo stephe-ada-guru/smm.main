@@ -1,6 +1,6 @@
 ;;; xmtn-propagate.el --- manage multiple propagations for DVC backend for monotone
 
-;; Copyright (C) 2009, 2010 Stephen Leake
+;; Copyright (C) 2009 - 2010 Stephen Leake
 
 ;; Author: Stephen Leake
 ;; Keywords: tools
@@ -20,11 +20,11 @@
 ;; the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
 ;; Boston, MA  02110-1301  USA.
 
-(eval-and-compile
+(eval-when-compile
   ;; these have macros we use
   (require 'xmtn-ids))
 
-(eval-when-compile
+(eval-and-compile
   ;; these have functions we use
   (require 'xmtn-base)
   (require 'xmtn-conflicts))
@@ -49,6 +49,7 @@ The elements must all be of class xmtn-propagate-data.")
 (defstruct (xmtn-propagate-data (:copier nil))
   from-work          ; directory name relative to xmtn-propagate-from-root
   to-work            ; directory name relative to xmtn-propagate-to-root
+		     ; from-work is often the same as to-work
   from-name          ; display name, in buffer and menus
   to-name            ;
   from-branch        ; branch name (assumed never changes)
@@ -57,6 +58,8 @@ The elements must all be of class xmtn-propagate-data.")
   from-head-rev      ; nil | mtn rev string; current head revision; nil if multiple heads
   to-head-rev        ;
   conflicts-buffer   ; *xmtn-conflicts* buffer for this propagation
+  from-status-buffer ; *xmtn-status* buffer for commit in from
+  to-status-buffer   ; *xmtn-status* buffer for commit in to
   propagate-needed   ; nil | t
   from-heads         ; 'at-head | 'need-update | 'need-merge)
   to-heads           ;
@@ -66,6 +69,7 @@ The elements must all be of class xmtn-propagate-data.")
    'need-scan)       ;
   (conflicts
    'need-scan)       ; 'need-scan | 'need-resolve | 'need-review-resolve-internal | 'ok
+		     ; for propagate
   )
 
 (defun xmtn-propagate-from-work (data)
@@ -162,11 +166,44 @@ The elements must all be of class xmtn-propagate-data.")
   (if (buffer-live-p (xmtn-propagate-data-conflicts-buffer data))
       (with-current-buffer (xmtn-propagate-data-conflicts-buffer data) (save-buffer))))
 
+(defun xmtn-propagate-create-to-status-buffer (data)
+  "Create to-status buffer for DATA"
+  (if (buffer-live-p (xmtn-propagate-data-to-status-buffer data))
+      (with-current-buffer (xmtn-propagate-data-to-status-buffer data)
+	(xmtn-dvc-status)
+	(setf (xmtn-propagate-data-to-local-changes data)
+	      (if (not (ewoc-locate dvc-fileinfo-ewoc))
+		  'ok
+		'need-commit)))
+    (let ((result (xmtn--status-inventory-sync (xmtn-propagate-to-work data))))
+      (setf (xmtn-propagate-data-to-status-buffer data) (car result)
+	    (xmtn-propagate-data-to-local-changes data) (cadr result))) ))
+
+(defun xmtn-propagate-create-from-status-buffer (data)
+  "Create from-status buffer for DATA"
+  (if (buffer-live-p (xmtn-propagate-data-from-status-buffer data))
+      (with-current-buffer (xmtn-propagate-data-from-status-buffer data)
+	(xmtn-dvc-status)
+	(setf (xmtn-propagate-data-from-local-changes data)
+	      (if (not (ewoc-locate dvc-fileinfo-ewoc))
+		  'ok
+		'need-commit)))
+    (let ((result (xmtn--status-inventory-sync (xmtn-propagate-from-work data))))
+      (setf (xmtn-propagate-data-from-status-buffer data) (car result)
+	    (xmtn-propagate-data-from-local-changes data) (cadr result))) ))
+
+(defun xmtn-propagate-kill-status-buffers (data)
+  (if (buffer-live-p (xmtn-propagate-data-from-status-buffer data))
+      (kill-buffer (xmtn-propagate-data-from-status-buffer data)))
+  (if (buffer-live-p (xmtn-propagate-data-to-status-buffer data))
+      (kill-buffer (xmtn-propagate-data-to-status-buffer data))))
+
 (defun xmtn-propagate-clean-1 (data)
   "Clean DATA workspace"
   (xmtn-automate-kill-session (xmtn-propagate-from-work data))
   (xmtn-automate-kill-session (xmtn-propagate-to-work data))
   (xmtn-propagate-kill-conflicts-buffer data)
+  (xmtn-propagate-kill-status-buffers data)
   (xmtn-conflicts-clean (xmtn-propagate-to-work data)))
 
 (defun xmtn-propagate-clean ()
@@ -283,19 +320,13 @@ The elements must all be of class xmtn-propagate-data.")
                  '(need-resolve need-review-resolve-internal)))))
 
 (defun xmtn-propagate-status-to ()
-  "Run xmtn-status on current `to' workspace."
+  "Show status buffer for `to' workspace."
   (interactive)
   (let* ((elem (ewoc-locate xmtn-propagate-ewoc))
          (data (ewoc-data elem)))
     (xmtn-propagate-need-refresh elem data)
-
-    ;; can't create log-edit buffer with both conflicts and status
-    ;; buffer open, and we'll be killing this as part of the refresh
-    ;; anyway.
-    (xmtn-propagate-kill-conflicts-buffer data)
-
     (setf (xmtn-propagate-data-to-local-changes data) 'ok)
-    (xmtn-status (xmtn-propagate-to-work data))))
+    (pop-to-buffer (xmtn-propagate-data-to-status-buffer data))))
 
 (defun xmtn-propagate-status-to-ok ()
   "Ignore local changes in current `to' workspace."
@@ -313,13 +344,13 @@ The elements must all be of class xmtn-propagate-data.")
                  '(need-scan need-commit)))))
 
 (defun xmtn-propagate-status-from ()
-  "Run xmtn-status on current `from' workspace."
+  "Show status buffer for `from' workspace."
   (interactive)
   (let* ((elem (ewoc-locate xmtn-propagate-ewoc))
          (data (ewoc-data elem)))
     (xmtn-propagate-need-refresh elem data)
     (setf (xmtn-propagate-data-from-local-changes data) 'ok)
-    (xmtn-status (xmtn-propagate-from-work data))))
+    (pop-to-buffer (xmtn-propagate-data-from-status-buffer data))))
 
 (defun xmtn-propagate-status-from-ok ()
   "Ignore local changes in current `from' workspace."
@@ -572,11 +603,6 @@ The elements must all be of class xmtn-propagate-data.")
 
     (dvc-trace "xmtn-propagate-refresh-one: %s" from-work)
 
-    (if refresh-local-changes
-        (progn
-          (setf (xmtn-propagate-data-from-local-changes data) 'need-scan)
-          (setf (xmtn-propagate-data-to-local-changes data) 'need-scan)))
-
     (let ((heads (xmtn--heads from-work (xmtn-propagate-data-from-branch data)))
           (from-base-rev (xmtn--get-base-revision-hash-id-or-null from-work)))
       (case (length heads)
@@ -604,19 +630,24 @@ The elements must all be of class xmtn-propagate-data.")
     (setf (xmtn-propagate-data-propagate-needed data)
           (xmtn-propagate-needed data))
 
+    (if refresh-local-changes
+        (progn
+          (setf (xmtn-propagate-data-from-local-changes data) 'need-scan)
+          (setf (xmtn-propagate-data-to-local-changes data) 'need-scan)))
+
     (if (or refresh-local-changes
             (xmtn-propagate-data-propagate-needed data))
         ;; these checks are slow, so don't do them if they probably are not needed.
         (progn
           (ecase (xmtn-propagate-data-from-local-changes data)
-            ((need-scan need-commit)
-             (setf (xmtn-propagate-data-from-local-changes data) (xmtn-automate-local-changes from-work)))
-            (ok nil))
+            (need-scan
+             (xmtn-propagate-create-from-status-buffer data))
+            (t nil))
 
           (ecase (xmtn-propagate-data-to-local-changes data)
-            ((need-scan need-commit)
-             (setf (xmtn-propagate-data-to-local-changes data) (xmtn-automate-local-changes to-work)))
-            (ok nil))))
+            (need-scan
+             (xmtn-propagate-create-to-status-buffer data))
+            (t nil))))
 
     (if (xmtn-propagate-data-propagate-needed data)
         (progn
