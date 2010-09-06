@@ -397,16 +397,16 @@ The elements must all be of class xmtn-status-data.")
 
     (case (xmtn-status-data-local-changes data)
       (need-scan
-       (if (not (buffer-live-p (xmtn-status-data-status-buffer data)))
-	   (let ((result (xmtn--status-inventory-sync (xmtn-status-work data))))
-	     (setf (xmtn-status-data-status-buffer data) (car result)
-		   (xmtn-status-data-local-changes data) (cadr result)))
-	 (with-current-buffer (xmtn-status-data-status-buffer data)
-	   (xmtn-dvc-status)
-	   (setf (xmtn-status-data-local-changes data)
-		 (if (not (ewoc-locate dvc-fileinfo-ewoc))
-		     'ok
-		   'need-commit)))))
+       (if (buffer-live-p (xmtn-status-data-status-buffer data))
+	   (with-current-buffer (xmtn-status-data-status-buffer data)
+	     (xmtn-dvc-status)
+	     (setf (xmtn-status-data-local-changes data)
+		   (if (not (ewoc-locate dvc-fileinfo-ewoc))
+		       'ok
+		     'need-commit)))
+	 (let ((result (xmtn--status-inventory-sync (xmtn-status-work data))))
+	   (setf (xmtn-status-data-status-buffer data) (car result)
+		 (xmtn-status-data-local-changes data) (cadr result))) ))
       (t nil))
 
     (case (xmtn-status-data-conflicts data)
