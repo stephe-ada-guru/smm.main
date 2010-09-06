@@ -484,6 +484,29 @@ The elements must all be of class xmtn-status-data.")
   (xmtn-status-refresh)
   (xmtn-status-next))
 
+;;;###autoload
+(defun xmtn-status-one-1 (root name head-rev status-buffer heads local-changes)
+  "Create an xmtn-multi-status buffer from xmtn-propagate."
+  (pop-to-buffer (get-buffer-create "*xmtn-multi-status*"))
+  (setq default-directory (concat root "/" name))
+  (setq xmtn-status-root root)
+  (setq xmtn-status-ewoc (ewoc-create 'xmtn-status-printer))
+  (let ((inhibit-read-only t)) (delete-region (point-min) (point-max)))
+  (ewoc-set-hf xmtn-status-ewoc (format "Root : %s\n" xmtn-status-root) "")
+  (ewoc-enter-last xmtn-status-ewoc
+                   (make-xmtn-status-data
+                    :work (file-name-nondirectory (directory-file-name default-directory))
+                    :branch (xmtn--tree-default-branch default-directory)
+                    :need-refresh nil
+		    :head-rev head-rev
+		    :conflicts-buffer nil
+		    :status-buffer status-buffer
+                    :heads heads
+		    :local-changes local-changes
+		    :conflicts 'need-scan))
+  (xmtn-multiple-status-mode)
+  (xmtn-status-refresh))
+
 (provide 'xmtn-multi-status)
 
 ;; end of file
