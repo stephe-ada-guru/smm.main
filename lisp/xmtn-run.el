@@ -114,7 +114,10 @@ Signals an error if more (or fewer) than one line is output."
 (defconst xmtn--minimum-required-command-version '(0 46))
 (defconst xmtn--required-automate-format-version "2")
 
-(defvar xmtn--*cached-command-version* nil)
+(defvar xmtn--*cached-command-version* nil
+  ;; compare with version-list-<
+  "(MAJOR MINOR REVISION VERSION-STRING).")
+
 (defvar xmtn--*command-version-cached-for-executable* nil)
 
 (defun xmtn--clear-command-version-cache ()
@@ -123,6 +126,8 @@ Signals an error if more (or fewer) than one line is output."
         xmtn--*cached-command-version* nil))
 
 (defun xmtn--cached-command-version ()
+  "Return mtn version as a list (MAJOR MINOR REVISION VERSION-STRING).
+Sets cache if not already set."
   (if (equal xmtn--*command-version-cached-for-executable* xmtn-executable)
       xmtn--*cached-command-version*
     (let ((executable xmtn-executable))
@@ -160,21 +165,19 @@ id."
         (list major minor revision string)))))
 
 (defun xmtn--check-cached-command-version ()
-  (let ((minimum-version xmtn--minimum-required-command-version))
-    (destructuring-bind (major minor revision string)
-        (xmtn--cached-command-version)
-      (unless (or (> major (car minimum-version))
-                  (and (= major (car minimum-version))
-                       (>= minor (cadr minimum-version))))
-        ;; Clear cache now since the user is somewhat likely to
-        ;; upgrade mtn (or change the value of `xmtn-executable')
-        ;; after this message.
-        (xmtn--clear-command-version-cache)
-        (error (concat "xmtn does not work with mtn versions below %s.%s"
-                       " (%s is %s)")
-               (car minimum-version) (cadr minimum-version)
-               xmtn-executable string)))
-    nil))
+  (let ((minimum-version xmtn--minimum-required-command-version)
+        (string (nth 3 (xmtn--cached-command-version))))
+    (unless (version-list-<= xmtn--minimum-required-command-version
+                             (xmtn--cached-command-version))
+      ;; Clear cache now since the user is somewhat likely to
+      ;; upgrade mtn (or change the value of `xmtn-executable')
+      ;; after this message.
+      (xmtn--clear-command-version-cache)
+      (error (concat "xmtn does not work with mtn versions below %s.%s"
+                     " (%s is %s)")
+             (car minimum-version) (cadr minimum-version)
+             xmtn-executable string)))
+  nil)
 
 ;;;###autoload
 (defun xmtn-check-command-version ()
@@ -199,87 +202,6 @@ This command resets xmtn's command version cache."
         (message "%s" version-string))))
   nil)
 
-(defun xmtn--make-version-check-form (version-var condition)
-  ;; The expression (mainline> X Y) matches all command versions
-  ;; strictly newer than X.Y, and, if X.Y is the latest version
-  ;; according to (xmtn--latest-mtn-release), command versions that
-  ;; report version X.Y with a revision ID different from what
-  ;; (xmtn--latest-mtn-release) returns.  This is a kludge to attempt
-  ;; to distinguish the latest mtn release from the current
-  ;; bleeding-edge ("mainline") version.  (Bleeding-edge mtn versions
-  ;; always report a version equal to the last release, while they
-  ;; generally have syntax and semantics that match the upcoming
-  ;; release; i.e., their syntax and semantics don't match the version
-  ;; number they report.)
-  (case condition
-    ((t) `t)
-    ((nil) `nil)
-    (t
-     (let ((operator (car condition))
-           (arguments (cdr condition)))
-       (ecase operator
-         ((< <= > >= = /= mainline>)
-          (let ((target-version arguments))
-            (assert (eql (length arguments) 2))
-            (ecase operator
-              ((=)
-               `(and (= (car ,version-var) ,(car target-version))
-                     (= (cadr ,version-var) ,(cadr target-version))))
-              ((< >)
-               `(or (,operator (car ,version-var) ,(car target-version))
-                    (and
-                     (= (car ,version-var) ,(car target-version))
-                     (,operator (cadr ,version-var) ,(cadr target-version)))))
-              ((mainline>)
-               `(or (> (car ,version-var) ,(car target-version))
-                    (and (= (car ,version-var) ,(car target-version))
-                         (or (> (cadr ,version-var) ,(cadr target-version))
-                             (and (= (cadr ,version-var) ,(cadr target-version))
-                                  (let ((-latest- (xmtn--latest-mtn-release)))
-                                    (and (= (car -latest-) ,(car target-version))
-                                         (= (cadr -latest-)
-                                            ,(cadr target-version))
-                                         (not (equal (caddr ,version-var)
-                                                     (caddr -latest-))))))))))
-              ((/= <= >=)
-               (let ((negated-operator (ecase operator
-                                         (/= '=)
-                                         (<= '>)
-                                         (>= '<))))
-                 `(not ,(xmtn--make-version-check-form version-var
-                                                       `(,negated-operator
-                                                         ,@arguments))))))))
-         ((not)
-          (assert (eql (length arguments) 1))
-          `(not ,(xmtn--make-version-check-form version-var (first arguments))))
-         ((and or)
-          `(,operator
-            ,@(loop for subform in arguments
-                    collect
-                    (xmtn--make-version-check-form version-var subform)))))))))
-
-(defun xmtn--signal-unsupported-version (version supported-conditions)
-  (error "Operation only implemented for monotone versions matching %S"
-         ;; This message is probably not very helpful to users who
-         ;; don't know xmtn's internals.
-         `(or ,@supported-conditions)))
-
-(defmacro* xmtn--version-case (&body clauses)
-  (let ((version (gensym)))
-    `(let ((,version (xmtn--cached-command-version)))
-       (cond ,@(loop for (condition . body) in clauses
-                     collect `(,(xmtn--make-version-check-form version
-                                                               condition)
-                               ,@body))
-             (t (xmtn--signal-unsupported-version
-                 ,version
-                 ',(loop for (condition . nil) in clauses
-                         collect condition)))))))
-
-(defun xmtn--latest-mtn-release ()
-  ;; Version number and revision id of the latest mtn release at the
-  ;; time of this xmtn release.
-  '(0 35 "f92dd754bf5c1e6eddc9c462b8d68691cfeb7f8b"))
 
 (provide 'xmtn-run)
 
