@@ -115,10 +115,14 @@ Signals an error if more (or fewer) than one line is output."
 (defconst xmtn--required-automate-format-version "2")
 
 (defvar xmtn--*cached-command-version* nil
-  ;; compare with version-list-<
+  ;; compare with (xmtn-version-<= required)
   "(MAJOR MINOR REVISION VERSION-STRING).")
 
 (defvar xmtn--*command-version-cached-for-executable* nil)
+
+(defun xmtn-version-<= (required)
+  "Nonnil if REQUIRED (list of major, minor) is <= cached version."
+  (version-list-<= required (butlast (xmtn--cached-command-version) 2)))
 
 (defun xmtn--clear-command-version-cache ()
   (setq xmtn--*command-version-cached-for-executable* nil
@@ -167,8 +171,7 @@ id."
 (defun xmtn--check-cached-command-version ()
   (let ((minimum-version xmtn--minimum-required-command-version)
         (string (nth 3 (xmtn--cached-command-version))))
-    (unless (version-list-<= xmtn--minimum-required-command-version
-                             (xmtn--cached-command-version))
+    (unless (xmtn-version-<= xmtn--minimum-required-command-version)
       ;; Clear cache now since the user is somewhat likely to
       ;; upgrade mtn (or change the value of `xmtn-executable')
       ;; after this message.

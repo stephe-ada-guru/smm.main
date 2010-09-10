@@ -51,15 +51,16 @@
 (defconst xmtn-sync-required-command-version '(0 46)
   "Minimum mtn version for automate sync; overrides xmtn--minimum-required-command-version.")
 
-(defconst xmtn-sync-remote-exec-default "mtn --clear-rcfile"
-  ;; we use --clear-rcfile to prevent notices from netsync hooks
-  "Default executable command to run on remote host; see `xmtn-sync-remote-exec-alist'.")
+(defconst xmtn-sync-remote-exec-default "mtn"
+  "Default executable command to run on remote host for file: or ssh:; see `xmtn-sync-remote-exec-alist'.")
 
 ;; loaded from xmtn-sync-config
 (defvar xmtn-sync-branch-alist nil
   "Alist associating branch name with workspace root")
 
-(defvar xmtn-sync-remote-exec-alist nil
+(defvar xmtn-sync-remote-exec-alist
+  (list
+   (list "file://" xmtn-sync-executable))
   "Alist of host and remote command. Overrides `xmtn-sync-remote-exec-default'.")
 
 ;; buffer-local
@@ -144,22 +145,19 @@ The elements must all be of type xmtn-sync-sync.")
   (buffer-disable-undo)
   (set-buffer-modified-p nil))
 
+;;;###autoload
 (defun xmtn-sync-sync (local-db remote-host remote-db)
-  "Sync LOCAL-DB with REMOTE-HOST:REMOTE-DB, display received branches.
+  "Sync LOCAL-DB with REMOTE-HOST REMOTE-DB, display received branches.
 Remote-db should include branch pattern in URI syntax."
   (interactive "flocal db: \nMremote-host: \nMremote-db: ")
   (pop-to-buffer (get-buffer-create "*xmtn-sync*"))
   (let ((xmtn-executable xmtn-sync-executable)
-        (xmtn--minimum-required-command-version xmtn-sync-required-command-version)
-        (clear-rcfile
-         (if (version-list-<= '(0 99) (xmtn--cached-command-version))
-             "--clear-rcfile"
-           "--norc")))
+        (xmtn--minimum-required-command-version xmtn-sync-required-command-version))
 
     ;; pass remote command to mtn via Lua hook get_mtn_command; see
     ;; xmtn-sync-hooks.lua
     (setenv "XMTN_SYNC_MTN"
-            (or (assoc remote-host xmtn-sync-remote-exec-alist)
+            (or (cadr (assoc remote-host xmtn-sync-remote-exec-alist))
                 xmtn-sync-remote-exec-default))
 
     (xmtn-automate-command-output-buffer
@@ -168,10 +166,9 @@ Remote-db should include branch pattern in URI syntax."
      (list (list
             "ticker" "count"
             "db" local-db
-            clear-rcfile ""
             "rcfile" (locate-library "xmtn-sync-hooks.lua")
             ) ;; options
-           "sync" remote-db) ;; command, args
+           "sync" (concat remote-host remote-db)) ;; command, args
      )))
 
 (provide 'xmtn-sync)

@@ -588,15 +588,18 @@ Return non-nil if some text copied."
                   )))
 
              (t
-              ;; Not a packet. Most likely we are at the end of the
-              ;; buffer, and there is more output coming soon.  FIXME:
-              ;; this means the loop logic screwed up.
-              (if (= (point) (point-max))
+              ;; Not a packet yet, or garbage in the stream from some
+              ;; Lua hook. Most likely we are at the end of the
+              ;; buffer, don't have a complete header, and there is
+              ;; more output coming soon. A packet header has at least
+              ;; 6 bytes; allowing 4 digits per integer takes that to
+              ;; 12.
+              (if (> 12 (- (point-max) (point))
                   (setq tag 'exit-loop)
                 (error "Unexpected output from mtn at '%s':%d:'%s'"
                        (current-buffer)
                        (point)
-                       (buffer-substring (point) (line-end-position)))))))))
+                       (buffer-substring (point) (min (point-max) (+ (point) 100))))))))))
 
          (exit-loop (return))))))
   nil)

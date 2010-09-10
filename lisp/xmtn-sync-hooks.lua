@@ -21,19 +21,16 @@
 -- Boston, MA  02110-1301  USA.
 
 function get_mtn_command(host)
-   -- Return a mtn command line for the remote host. We need to
-   -- specify --clear-rcfiles (or --norc for mtn older than 0.99), so
-   -- any netsync hooks do not generate output.
+   -- Return a mtn command line for the remote host. 
    -- 
    -- If the remote host is a Windows machine (ie file: on a Windows
    -- machine), we need the Cygwin mtn executable, since the Win32
    -- executable does not support file: or ssh:.
    --
-   -- But we have no way to tell what the remote machine is, or what
-   -- version of mtn it is running. So we let the lisp code figure
-   -- that out from user options, and it provides the entire mtn
-   -- command to this hook by defining the XMTN_SYNC_MTN environment
-   -- variable.
+   -- But we have no way to tell what the remote machine is. So we let
+   -- the lisp code figure that out from user options, and it provides
+   -- the mtn command to this hook by defining the XMTN_SYNC_MTN
+   -- environment variable.
 
    return os.getenv("XMTN_SYNC_MTN");
 end
