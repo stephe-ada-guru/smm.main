@@ -51,7 +51,7 @@ The elements must all be of class xmtn-propagate-data.")
   from-work          ; directory name relative to xmtn-propagate-from-root
   to-work            ; directory name relative to xmtn-propagate-to-root
 		     ; from-work is often the same as to-work
-  from-name          ; display name, in buffer and menus
+  from-name          ; display name, in buffer and menus; usually root dir name
   to-name            ;
   from-branch        ; branch name (assumed never changes)
   to-branch          ;
@@ -93,8 +93,8 @@ The elements must all be of class xmtn-propagate-data.")
 
 (defun xmtn-propagate-printer (data)
   "Print an ewoc element."
-  (if (string= (xmtn-propagate-from-work data)
-               (xmtn-propagate-to-work data))
+  (if (string= (xmtn-propagate-data-from-work data)
+               (xmtn-propagate-data-to-work data))
       (insert (dvc-face-add (format "%s\n" (xmtn-propagate-data-from-work data)) 'dvc-keyword))
     (insert (dvc-face-add (format "%s -> %s\n"
                                   (xmtn-propagate-data-from-work data)
@@ -381,7 +381,7 @@ The elements must all be of class xmtn-propagate-data.")
     (xmtn-propagate-need-refresh elem data)
     (xmtn-status-one-1
      xmtn-propagate-to-root
-     (xmtn-propagate-data-to-name data)
+     (xmtn-propagate-data-to-work data)
      (xmtn-propagate-data-to-head-rev data)
      (xmtn-propagate-data-to-status-buffer data)
      (xmtn-propagate-data-to-heads data)
@@ -408,7 +408,7 @@ The elements must all be of class xmtn-propagate-data.")
     (xmtn-propagate-need-refresh elem data)
     (xmtn-status-one-1
      xmtn-propagate-from-root
-     (xmtn-propagate-data-from-name data)
+     (xmtn-propagate-data-from-work data)
      (xmtn-propagate-data-from-head-rev data)
      (xmtn-propagate-data-from-status-buffer data)
      (xmtn-propagate-data-from-heads data)
