@@ -15,6 +15,7 @@
 ^lisp/dvc-version\.el$
 ^lisp/tests/xmtn-tests-one\.el$
 ^texinfo/Makefile$
+^texinfo/dvc-intro\.info$
 ^texinfo/dvc-version\.info$
 ^texinfo/dvc-version\.texinfo$
 ^texinfo/dvc\.info$

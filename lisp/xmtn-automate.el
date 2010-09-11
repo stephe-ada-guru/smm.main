@@ -74,6 +74,9 @@
   (require 'xmtn-run)
   (require 'xmtn-compat))
 
+(defconst xmtn-automate-arguments (list "--rcfile" (locate-library "xmtn-hooks.lua"))
+  "Arguments and options for 'mtn automate stdio' sessions.")
+
 (defun xmtn-automate-command-buffer (command)
   (xmtn-automate--command-handle-buffer command))
 
@@ -92,7 +95,10 @@
       (goto-char (point-max))
       (newline)
       (insert (format "command: %s" (xmtn-automate--command-handle-command handle)))
-      (error "mtn error %s" (xmtn-automate--command-handle-error-code handle))))
+      (error "mtn error %s" (xmtn-automate--command-handle-error-code handle)))
+    (if (xmtn-automate--command-handle-warnings handle)
+      (display-buffer (format dvc-error-buffer 'xmtn) t))
+    )
   nil)
 
 (defvar xmtn-automate--*sessions* '()
@@ -217,7 +223,8 @@ Signals an error if output contains zero lines or more than one line."
   (buffer)
   (write-marker)
   (finished-p nil)
-  (error-code nil))
+  (error-code nil)
+  (warnings nil))
 
 (defun* xmtn-automate--initialize-session (session &key root name)
   (xmtn--assert-optional (equal root (file-name-as-directory root)) t)
@@ -307,7 +314,7 @@ Signals an error if output contains zero lines or more than one line."
           (default-directory root))
       (let ((process
              (apply 'start-process name buffer xmtn-executable
-                    "automate" "stdio" xmtn-additional-arguments)))
+                    "automate" "stdio" xmtn-automate-arguments)))
         (ecase (process-status process)
           (run
            ;; If the process started ok, it outputs the stdio
@@ -474,6 +481,8 @@ Return non-nil if some text copied."
             (?m
              (xmtn-automate--command-handle-buffer command))
             ((?e ?w ?p ?t)
+             (if (equal ?w (xmtn-automate--decoder-state-stream state))
+                 (setf (xmtn-automate--command-handle-warnings command) t))
              ;; probably ought to do something else with p and t, but
              ;; this is good enough for now.
              (get-buffer-create (format dvc-error-buffer 'xmtn)))))
@@ -542,8 +551,8 @@ Return non-nil if some text copied."
          (again
           (cond
            ((> (xmtn-automate--decoder-state-remaining-chars state) 0)
-            ;; copy more output from the current packet
 	    (if (= ?l (xmtn-automate--decoder-state-stream state))
+		;; got the rest of the last packet; process in t branch next loop
 		(setf (xmtn-automate--decoder-state-remaining-chars state) 0)
 	      (if (xmtn-automate--process-new-output--copy session)
 		  (setq tag 'again)
@@ -592,8 +601,18 @@ Return non-nil if some text copied."
                   )))
 
              (t
-              ;; Not a packet yet; there is more output coming soon.
-	      (setq tag 'exit-loop))))))
+              ;; Not a packet yet, or garbage in the stream from some
+              ;; Lua hook. Most likely we are at the end of the
+              ;; buffer, don't have a complete header, and there is
+              ;; more output coming soon. A packet header has at least
+              ;; 6 bytes; allowing 4 digits per integer takes that to
+              ;; 12.
+              (if (> 12 (- (point-max) (point)))
+                  (setq tag 'exit-loop)
+                (error "Unexpected output from mtn at '%s':%d:'%s'"
+                       (current-buffer)
+                       (point)
+                       (buffer-substring (point) (min (point-max) (+ (point) 100))))))))))
 
          (exit-loop (return))))))
   nil)
