@@ -54,7 +54,7 @@
 ;; is options, cdr is the command and arguments. Options are always
 ;; specified as pairs of keyword and value, and without the leading
 ;; "--". If an option has no value, use ""; see
-;; xmtn-automate-local-changes for an example.
+;; xmtn--status-inventory-sync in xmtn-dvc for an example.
 ;;
 ;; `xmtn-automate-new-command' returns a command handle.  You use this
 ;; handle to check the error code of the command and obtain its
@@ -594,12 +594,13 @@ Return non-nil if some text copied."
               ;; more output coming soon. A packet header has at least
               ;; 6 bytes; allowing 4 digits per integer takes that to
               ;; 12.
-              (if (> 12 (- (point-max) (point))
+              (if (> 12 (- (point-max) (point)))
                   (setq tag 'exit-loop)
                 (error "Unexpected output from mtn at '%s':%d:'%s'"
                        (current-buffer)
                        (point)
-                       (buffer-substring (point) (min (point-max) (+ (point) 100))))))))))
+                       (buffer-substring (point) (min (point-max) (+ (point) 100))))
+		))))))
 
          (exit-loop (return))))))
   nil)
@@ -683,24 +684,6 @@ Each element of the list is a list; key, signature, name, value, trust."
       ((("file" (string $result)))
        (assert (null (funcall next-stanza)))
        result))))
-
-
-(defun xmtn-automate-local-changes (work)
-  "Summary of status for WORK; 'ok if no changes, 'need-commit if changes."
-  (let ((default-directory work)
-        (msg "checking %s for local changes ..."))
-    (message msg work)
-
-    (let ((result (xmtn-automate-simple-command-output-string
-                   default-directory
-                   (list (list "no-unchanged" "" "no-ignored" "")
-                         "inventory"))))
-
-      (message (concat msg " done") work)
-
-      (if (> (length result) 0)
-          'need-commit
-        'ok))))
 
 (provide 'xmtn-automate)
 

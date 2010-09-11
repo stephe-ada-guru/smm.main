@@ -112,6 +112,7 @@ Signals an error if more (or fewer) than one line is output."
     (first lines)))
 
 (defconst xmtn--minimum-required-command-version '(0 46))
+;; see also xmtn-sync.el xmtn-sync-required-command-version
 (defconst xmtn--required-automate-format-version "2")
 
 (defvar xmtn--*cached-command-version* nil
