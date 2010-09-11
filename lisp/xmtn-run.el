@@ -183,30 +183,6 @@ id."
              xmtn-executable string)))
   nil)
 
-;;;###autoload
-(defun xmtn-check-command-version ()
-  "Check and display the version identifier of the mtn command.
-
-This command resets xmtn's command version cache."
-  (interactive)
-  (xmtn--clear-command-version-cache)
-  (destructuring-bind (major minor revision version-string)
-      (xmtn--cached-command-version)
-    (let* ((latest (xmtn--latest-mtn-release))
-           (latest-major (first latest))
-           (latest-minor (second latest)))
-      (if (eval `(xmtn--version-case
-                  ((and (= ,latest-major latest-minor)
-                        (mainline> latest-major latest-minor))
-                   t)
-                  (t
-                   nil)))
-          (message "%s (xmtn considers this version newer than %s.%s)"
-                   version-string major minor)
-        (message "%s" version-string))))
-  nil)
-
-
 (provide 'xmtn-run)
 
 ;;; xmtn-run.el ends here
