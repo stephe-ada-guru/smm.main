@@ -92,7 +92,10 @@
       (goto-char (point-max))
       (newline)
       (insert (format "command: %s" (xmtn-automate--command-handle-command handle)))
-      (error "mtn error %s" (xmtn-automate--command-handle-error-code handle))))
+      (error "mtn error %s" (xmtn-automate--command-handle-error-code handle)))
+    (if (xmtn-automate--command-handle-warnings handle)
+      (display-buffer (format dvc-error-buffer 'xmtn) t))
+    )
   nil)
 
 (defvar xmtn-automate--*sessions* '()
@@ -217,7 +220,8 @@ Signals an error if output contains zero lines or more than one line."
   (buffer)
   (write-marker)
   (finished-p nil)
-  (error-code nil))
+  (error-code nil)
+  (warnings nil))
 
 (defun* xmtn-automate--initialize-session (session &key root name)
   (xmtn--assert-optional (equal root (file-name-as-directory root)) t)
@@ -471,7 +475,9 @@ Return non-nil if some text copied."
           (ecase (xmtn-automate--decoder-state-stream state)
             (?m
              (xmtn-automate--command-handle-buffer command))
-            ((?e ?p ?t)
+            ((?e ?w ?p ?t)
+             (if (equal ?w (xmtn-automate--decoder-state-stream state))
+                 (setf (xmtn-automate--command-handle-warnings command) t))
              ;; probably ought to do something else with p and t, but
              ;; this is good enough for now.
              (get-buffer-create (format dvc-error-buffer 'xmtn)))))
