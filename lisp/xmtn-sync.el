@@ -147,7 +147,7 @@ The elements must all be of type xmtn-sync-sync.")
 
 ;;;###autoload
 (defun xmtn-sync-sync (local-db remote-host remote-db)
-  "Sync LOCAL-DB with REMOTE-HOST REMOTE-DB, display received branches.
+  "Sync LOCAL-DB with REMOTE-HOST REMOTE-DB, display sent and received branches.
 Remote-db should include branch pattern in URI syntax."
   (interactive "flocal db: \nMremote-host: \nMremote-db: ")
   (pop-to-buffer (get-buffer-create "*xmtn-sync*"))
@@ -155,7 +155,7 @@ Remote-db should include branch pattern in URI syntax."
         (xmtn--minimum-required-command-version xmtn-sync-required-command-version))
 
     ;; pass remote command to mtn via Lua hook get_mtn_command; see
-    ;; xmtn-sync-hooks.lua
+    ;; xmtn-hooks.lua
     (setenv "XMTN_SYNC_MTN"
             (or (cadr (assoc remote-host xmtn-sync-remote-exec-alist))
                 xmtn-sync-remote-exec-default))
@@ -166,7 +166,6 @@ Remote-db should include branch pattern in URI syntax."
      (list (list
             "ticker" "count"
             "db" local-db
-            "rcfile" (locate-library "xmtn-sync-hooks.lua")
             ) ;; options
            "sync" (concat remote-host remote-db)) ;; command, args
      )))

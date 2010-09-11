@@ -74,6 +74,9 @@
   (require 'xmtn-run)
   (require 'xmtn-compat))
 
+(defconst xmtn-automate-arguments (list "--rcfile" (locate-library "xmtn-hooks.lua"))
+  "Arguments and options for 'mtn automate stdio' sessions.")
+
 (defun xmtn-automate-command-buffer (command)
   (xmtn-automate--command-handle-buffer command))
 
@@ -307,7 +310,7 @@ Signals an error if output contains zero lines or more than one line."
           (default-directory root))
       (let ((process
              (apply 'start-process name buffer xmtn-executable
-                    "automate" "stdio" xmtn-additional-arguments)))
+                    "automate" "stdio" xmtn-automate-arguments)))
         (ecase (process-status process)
           (run
            ;; If the process started ok, it outputs the stdio
@@ -594,7 +597,7 @@ Return non-nil if some text copied."
               ;; more output coming soon. A packet header has at least
               ;; 6 bytes; allowing 4 digits per integer takes that to
               ;; 12.
-              (if (> 12 (- (point-max) (point))
+              (if (> 12 (- (point-max) (point)))
                   (setq tag 'exit-loop)
                 (error "Unexpected output from mtn at '%s':%d:'%s'"
                        (current-buffer)

@@ -1,4 +1,5 @@
--- xmtn-sync-hooks.lua --- mtn Lua hook functions used during sync
+-- xmtn-hooks.lua --- mtn Lua hook functions used in all xmtn automate
+-- stdio sessions
 --
 -- Copyright (C) 2010 Stephen Leake
 --
@@ -35,39 +36,5 @@ function get_mtn_command(host)
    return os.getenv("XMTN_SYNC_MTN");
 end
 
-netsync_branches = {}
-function note_netsync_start(session_id)
-   netsync_branches[session_id] = {}
-end
 
-function note_cert(name,value,session_id)
-   if name == "branch" then
-      netsync_branches[session_id][value] = true
-   end
-end
-
-function note_netsync_revision_received(new_id,revision,certs,session_id)
-   for _, item in pairs(certs)
-   do
-      note_cert(item.name,item.value,session_id)
-   end
-end
-
-function note_netsync_cert_received(rev_id,key,name,value,session_id)
-   -- a branch cert was newly assigned to an existing revision
-   note_cert(name,value,session_id)
-end
-
-function note_netsync_end(session_id)
-   if netsync_branches[session_id] == nil then
-      -- did not start this session!?
-      return
-   end
-   
-   for item, _ in pairs(netsync_branches[session_id])
-   do
-      io.stdout:write(item,"\n")
-   end
-   netsync_branches[session_id] = nil
-
-end
+-- end of file
