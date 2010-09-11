@@ -92,8 +92,8 @@ The elements must all be of class xmtn-propagate-data.")
 
 (defun xmtn-propagate-printer (data)
   "Print an ewoc element."
-  (if (string= (xmtn-propagate-from-work data)
-               (xmtn-propagate-to-work data))
+  (if (string= (xmtn-propagate-data-from-work data)
+               (xmtn-propagate-data-to-work data))
       (insert (dvc-face-add (format "%s\n" (xmtn-propagate-data-from-work data)) 'dvc-keyword))
     (insert (dvc-face-add (format "%s -> %s\n"
                                   (xmtn-propagate-data-from-work data)

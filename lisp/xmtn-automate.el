@@ -95,7 +95,10 @@
       (goto-char (point-max))
       (newline)
       (insert (format "command: %s" (xmtn-automate--command-handle-command handle)))
-      (error "mtn error %s" (xmtn-automate--command-handle-error-code handle))))
+      (error "mtn error %s" (xmtn-automate--command-handle-error-code handle)))
+    (if (xmtn-automate--command-handle-warnings handle)
+      (display-buffer (format dvc-error-buffer 'xmtn) t))
+    )
   nil)
 
 (defvar xmtn-automate--*sessions* '()
@@ -220,7 +223,8 @@ Signals an error if output contains zero lines or more than one line."
   (buffer)
   (write-marker)
   (finished-p nil)
-  (error-code nil))
+  (error-code nil)
+  (warnings nil))
 
 (defun* xmtn-automate--initialize-session (session &key root name)
   (xmtn--assert-optional (equal root (file-name-as-directory root)) t)
@@ -477,11 +481,14 @@ Return non-nil if some text copied."
             (?m
              (xmtn-automate--command-handle-buffer command))
             ((?e ?w ?p ?t)
+             (if (equal ?w (xmtn-automate--decoder-state-stream state))
+                 (setf (xmtn-automate--command-handle-warnings command) t))
              ;; probably ought to do something else with p and t, but
              ;; this is good enough for now.
              (get-buffer-create (format dvc-error-buffer 'xmtn)))))
          (write-marker
           (xmtn-automate--command-handle-write-marker command)))
+
     (with-current-buffer session-buffer
       (let* ((end (min (+ (xmtn-automate--decoder-state-read-marker state)
                           (xmtn-automate--decoder-state-remaining-chars state))
@@ -540,16 +547,19 @@ Return non-nil if some text copied."
           (if (= (xmtn-automate--decoder-state-read-marker state) write-marker)
               (setq tag 'exit-loop)
             (setq tag 'again)))
+
          (again
           (cond
            ((> (xmtn-automate--decoder-state-remaining-chars state) 0)
-            ;; copy more output from the current packet
-            (if (xmtn-automate--process-new-output--copy session)
-                (setq tag 'again)
-              (setq tag 'check-for-more)))
+	    (if (= ?l (xmtn-automate--decoder-state-stream state))
+		;; got the rest of the last packet; process in t branch next loop
+		(setf (xmtn-automate--decoder-state-remaining-chars state) 0)
+	      (if (xmtn-automate--process-new-output--copy session)
+		  (setq tag 'again)
+		(setq tag 'check-for-more))))
 
            (t
-            ;; new packet
+            ;; new packet, or final packet
             (goto-char (xmtn-automate--decoder-state-read-marker state))
             ;; A packet has the structure:
             ;; <command number>:<stream>:<size>:<output>
@@ -560,33 +570,33 @@ Return non-nil if some text copied."
             ;; p  progress
             ;; t  ticker
             ;; l  last
-            ;;
-            ;; If size is large, we may not have all of the output in new-string
             (cond
              ((looking-at "\\([0-9]+\\):\\([mewptl]\\):\\([0-9]+\\):")
-              (let ((command-number (parse-integer (match-string 1)))
-                    (stream (aref (match-string 2) 0))
+              (let ((stream (aref (match-string 2) 0))
                     (size (parse-integer (match-string 3))))
-                (setf (xmtn-automate--decoder-state-read-marker state) (match-end 0))
-                (setf (xmtn-automate--decoder-state-stream state) stream)
+		(setf (xmtn-automate--decoder-state-remaining-chars state) size)
+		(setf (xmtn-automate--decoder-state-stream state) stream)
                 (ecase stream
                   ((?m ?e ?w ?t ?p)
-                   (setf (xmtn-automate--decoder-state-remaining-chars state) size)
+		   (setf (xmtn-automate--decoder-state-read-marker state) (match-end 0))
                    (setq tag 'again) )
 
                   (?l
-                   (setf (xmtn-automate--decoder-state-read-marker state) (+ size (match-end 0)))
-                   (setf (xmtn-automate--command-handle-error-code command)
-                         (parse-integer
-                          (buffer-substring-no-properties
-                           (match-end 0) (xmtn-automate--decoder-state-read-marker state)) ))
-                   (setf (xmtn-automate--command-handle-finished-p command) t)
-                   (with-no-warnings
-                     ;; suppress compiler warning about discarding result
-                     (pop (xmtn-automate--session-remaining-command-handles session)))
-                   (if (xmtn-automate--session-closed-p session)
-                       (setq tag 'exit-loop)
-                     (setq tag 'check-for-more))
+		   (if (> (+ size (match-end 0)) (point-max))
+		       ;; do not have the error code yet
+		       (setq tag 'exit-loop)
+		     (setf (xmtn-automate--decoder-state-read-marker state) (+ size (match-end 0)))
+		     (setf (xmtn-automate--command-handle-error-code command)
+			   (parse-integer
+			    (buffer-substring-no-properties
+			     (match-end 0) (xmtn-automate--decoder-state-read-marker state)) ))
+		     (setf (xmtn-automate--command-handle-finished-p command) t)
+		     (with-no-warnings
+		       ;; suppress compiler warning about discarding result
+		       (pop (xmtn-automate--session-remaining-command-handles session)))
+		     (if (xmtn-automate--session-closed-p session)
+			 (setq tag 'exit-loop)
+		       (setq tag 'check-for-more)))
                    )
                   )))
 

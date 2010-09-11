@@ -235,6 +235,8 @@ The elements must all be of class xmtn-status-data.")
          (data (ewoc-data elem)))
     (xmtn-status-need-refresh elem data)
     (setf (xmtn-status-data-update-review data) 'done)
+    ;; refresh local changes, on the assumption that the review added FIXMEs
+    (setf (xmtn-status-data-local-changes data) 'need-scan)
     (xmtn-review-update (xmtn-status-work data))))
 
 (defun xmtn-status-review-updatep ()
@@ -469,7 +471,7 @@ The elements must all be of class xmtn-status-data.")
   (interactive "DStatus for (workspace): ")
   (pop-to-buffer (get-buffer-create "*xmtn-multi-status*"))
   ;; allow WORK to be relative, and ensure it is a workspace root
-  (setq default-directory (xmtn-tree-root (expand-file-name work)))
+  (setq default-directory (xmtn-tree-root (expand-file-name (substitute-in-file-name work))))
   (setq xmtn-status-root (expand-file-name (concat (file-name-as-directory default-directory) "../")))
   (setq xmtn-status-ewoc (ewoc-create 'xmtn-status-printer))
   (let ((inhibit-read-only t)) (delete-region (point-min) (point-max)))
