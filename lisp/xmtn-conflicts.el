@@ -20,7 +20,7 @@
 ;; the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
 ;; Boston, MA  02110-1301  USA.
 
-(eval-and-compile
+(eval-when-compile
   ;; these have macros we use
   (require 'cl)
   (require 'dvc-utils)
@@ -29,7 +29,7 @@
   (require 'xmtn-ids)
   (require 'xmtn-run))
 
-(eval-when-compile
+(eval-and-compile
   ;; these have functions we use
   (require 'dired))
 
@@ -1207,10 +1207,6 @@ non-nil, show log-edit buffer in other frame."
 
   ;; Arrange for `revert-buffer' to do the right thing
   (set (make-local-variable 'after-insert-file-functions) '(xmtn-conflicts-after-insert-file))
-
-  ;; don't do normal clean up stuff
-  (set (make-local-variable 'before-save-hook) nil)
-  (set (make-local-variable 'write-file-functions) nil)
 
   (dvc-install-buffer-menu)
   (setq buffer-read-only t)

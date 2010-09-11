@@ -26,6 +26,7 @@
 
 (eval-and-compile
   ;; these have functions we use
+  (require 'xmtn-automate)
   (require 'xmtn-base)
   (require 'xmtn-conflicts))
 
@@ -248,6 +249,34 @@ The elements must all be of class xmtn-propagate-data.")
         (eq 'need-scan (xmtn-propagate-data-from-local-changes data))
         (eq 'need-scan (xmtn-propagate-data-to-local-changes data)))))
 
+(defun xmtn-propagate-commit-to ()
+  "Show commit buffer for `to' workspace, so it can be committed, updated, or merged."
+  (interactive)
+  (let* ((elem (ewoc-locate xmtn-propagate-ewoc))
+         (data (ewoc-data elem)))
+    (xmtn-propagate-need-refresh elem data)
+    (pop-to-buffer (xmtn-propagate-data-to-status-buffer data))))
+
+(defun xmtn-propagate-commit-top ()
+  "Non-nil if commit is appropriate for current `to' workspace."
+  (let* ((data (ewoc-data (ewoc-locate xmtn-propagate-ewoc))))
+    (and (not (xmtn-propagate-data-need-refresh data))
+	 (eq (xmtn-propagate-data-to-local-changes data) 'need-commit))))
+
+(defun xmtn-propagate-commit-from ()
+  "Show commit buffer for `from' workspace, so it can be committed, updated, or merged."
+  (interactive)
+  (let* ((elem (ewoc-locate xmtn-propagate-ewoc))
+         (data (ewoc-data elem)))
+    (xmtn-propagate-need-refresh elem data)
+    (pop-to-buffer (xmtn-propagate-data-from-status-buffer data))))
+
+(defun xmtn-propagate-commit-fromp ()
+  "Non-nil if commit is appropriate for current `from' workspace."
+  (let* ((data (ewoc-data (ewoc-locate xmtn-propagate-ewoc))))
+    (and (not (xmtn-propagate-data-need-refresh data))
+	 (eq (xmtn-propagate-data-from-local-changes data) 'need-commit))))
+
 (defun xmtn-propagate-update-to ()
   "Update current `to' workspace."
   (interactive)
@@ -372,7 +401,7 @@ The elements must all be of class xmtn-propagate-data.")
 	  (eq (xmtn-propagate-data-to-local-changes data) 'need-commit)))))
 
 (defun xmtn-propagate-status-from ()
-  "Show status buffer for `to' workspace, so it can be committed, updated, or merged."
+  "Show status buffer for `from' workspace, so it can be committed, updated, or merged."
   (interactive)
   (let* ((elem (ewoc-locate xmtn-propagate-ewoc))
          (data (ewoc-data elem)))
@@ -403,9 +432,15 @@ The elements must all be of class xmtn-propagate-data.")
     (define-key map [?g]  '(menu-item "g) refresh"
                                       xmtn-propagate-do-refresh-one
                                       :visible (xmtn-propagate-refreshp)))
-    (define-key map [?6]  '(menu-item (concat "6) update" (xmtn-propagate-to-name))
+    (define-key map [?8]  '(menu-item (concat "8) update " (xmtn-propagate-to-name))
                                       xmtn-propagate-update-to
                                       :visible (xmtn-propagate-update-top)))
+    (define-key map [?7]  '(menu-item (concat "7) commit " (xmtn-propagate-to-name))
+                                      xmtn-propagate-commit-to
+                                      :visible (xmtn-propagate-commit-top)))
+    (define-key map [?6]  '(menu-item (concat "6) commit " (xmtn-propagate-from-name))
+                                      xmtn-propagate-commit-from
+                                      :visible (xmtn-propagate-commit-fromp)))
     (define-key map [?5]  '(menu-item "5) propagate"
                                       xmtn-propagate-propagate
                                       :visible (xmtn-propagate-propagatep)))

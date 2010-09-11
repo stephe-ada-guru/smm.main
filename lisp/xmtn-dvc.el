@@ -1167,6 +1167,8 @@ finished."
             (progn
               "--resolve-conflicts-file=_MTN/conflicts")))
        (cmd (list "propagate" other local-branch resolve-conflicts
+		  ;; may be resurrecting a suspended branch; doesn't hurt otherwise.
+		  "--ignore-suspend-certs"
                   (xmtn-dvc-log-message)))
        (prompt
         (if resolve-conflicts
