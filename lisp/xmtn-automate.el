@@ -135,7 +135,7 @@ workspace root."
     (xmtn-automate-command-wait-until-finished command-handle)
     (xmtn-automate--command-output-as-string command-handle)))
 
-(defun xmtn-automate-simple-command-output-insert-into-buffer
+(defun xmtn-automate-command-output-buffer
   (root buffer command)
   "Send COMMAND to session for ROOT, insert result into BUFFER."
   (let* ((session (xmtn-automate-cache-session root))
@@ -285,9 +285,11 @@ Signals an error if output contains zero lines or more than one line."
   "Kill session for ROOT."
   (interactive)
   (let ((temp (assoc (dvc-uniquify-file-name root) xmtn-automate--*sessions*)))
-    (xmtn-automate--close-session (cdr temp))
-    (setq xmtn-automate--*sessions*
-          (delete temp xmtn-automate--*sessions* ))))
+    ;; session may have already been killed
+    (when temp
+      (xmtn-automate--close-session (cdr temp))
+      (setq xmtn-automate--*sessions*
+	    (delete temp xmtn-automate--*sessions* )))))
 
 (defun xmtn-kill-all-sessions ()
   "Kill all xmtn-automate sessions."
@@ -483,6 +485,7 @@ Return non-nil if some text copied."
              (get-buffer-create (format dvc-error-buffer 'xmtn)))))
          (write-marker
           (xmtn-automate--command-handle-write-marker command)))
+
     (with-current-buffer session-buffer
       (let* ((end (min (+ (xmtn-automate--decoder-state-read-marker state)
                           (xmtn-automate--decoder-state-remaining-chars state))
@@ -541,16 +544,19 @@ Return non-nil if some text copied."
           (if (= (xmtn-automate--decoder-state-read-marker state) write-marker)
               (setq tag 'exit-loop)
             (setq tag 'again)))
+
          (again
           (cond
            ((> (xmtn-automate--decoder-state-remaining-chars state) 0)
             ;; copy more output from the current packet
-            (if (xmtn-automate--process-new-output--copy session)
-                (setq tag 'again)
-              (setq tag 'check-for-more)))
+	    (if (= ?l (xmtn-automate--decoder-state-stream state))
+		(setf (xmtn-automate--decoder-state-remaining-chars state) 0)
+	      (if (xmtn-automate--process-new-output--copy session)
+		  (setq tag 'again)
+		(setq tag 'check-for-more))))
 
            (t
-            ;; new packet
+            ;; new packet, or final packet
             (goto-char (xmtn-automate--decoder-state-read-marker state))
             ;; A packet has the structure:
             ;; <command number>:<stream>:<size>:<output>
@@ -561,46 +567,39 @@ Return non-nil if some text copied."
             ;; p  progress
             ;; t  ticker
             ;; l  last
-            ;;
-            ;; If size is large, we may not have all of the output in new-string
             (cond
              ((looking-at "\\([0-9]+\\):\\([mewptl]\\):\\([0-9]+\\):")
-              (let ((command-number (parse-integer (match-string 1)))
-                    (stream (aref (match-string 2) 0))
+              (let ((stream (aref (match-string 2) 0))
                     (size (parse-integer (match-string 3))))
-                (setf (xmtn-automate--decoder-state-read-marker state) (match-end 0))
-                (setf (xmtn-automate--decoder-state-stream state) stream)
+		(setf (xmtn-automate--decoder-state-remaining-chars state) size)
+		(setf (xmtn-automate--decoder-state-stream state) stream)
                 (ecase stream
                   ((?m ?e ?w ?t ?p)
-                   (setf (xmtn-automate--decoder-state-remaining-chars state) size)
+		   (setf (xmtn-automate--decoder-state-read-marker state) (match-end 0))
                    (setq tag 'again) )
 
                   (?l
-                   (setf (xmtn-automate--decoder-state-read-marker state) (+ size (match-end 0)))
-                   (setf (xmtn-automate--command-handle-error-code command)
-                         (parse-integer
-                          (buffer-substring-no-properties
-                           (match-end 0) (xmtn-automate--decoder-state-read-marker state)) ))
-                   (setf (xmtn-automate--command-handle-finished-p command) t)
-                   (with-no-warnings
-                     ;; suppress compiler warning about discarding result
-                     (pop (xmtn-automate--session-remaining-command-handles session)))
-                   (if (xmtn-automate--session-closed-p session)
-                       (setq tag 'exit-loop)
-                     (setq tag 'check-for-more))
+		   (if (> (+ size (match-end 0)) (point-max))
+		       ;; do not have the error code yet
+		       (setq tag 'exit-loop)
+		     (setf (xmtn-automate--decoder-state-read-marker state) (+ size (match-end 0)))
+		     (setf (xmtn-automate--command-handle-error-code command)
+			   (parse-integer
+			    (buffer-substring-no-properties
+			     (match-end 0) (xmtn-automate--decoder-state-read-marker state)) ))
+		     (setf (xmtn-automate--command-handle-finished-p command) t)
+		     (with-no-warnings
+		       ;; suppress compiler warning about discarding result
+		       (pop (xmtn-automate--session-remaining-command-handles session)))
+		     (if (xmtn-automate--session-closed-p session)
+			 (setq tag 'exit-loop)
+		       (setq tag 'check-for-more)))
                    )
                   )))
 
              (t
-              ;; Not a packet. Most likely we are at the end of the
-              ;; buffer, and there is more output coming soon.  FIXME:
-              ;; this means the loop logic screwed up.
-              (if (= (point) (point-max))
-                  (setq tag 'exit-loop)
-                (error "Unexpected output from mtn at '%s':%d:'%s'"
-                       (current-buffer)
-                       (point)
-                       (buffer-substring (point) (line-end-position)))))))))
+              ;; Not a packet yet; there is more output coming soon.
+	      (setq tag 'exit-loop))))))
 
          (exit-loop (return))))))
   nil)
@@ -658,27 +657,50 @@ Each element of the list is a list; key, signature, name, value, trust."
     accu))
 
 (defun xmtn--heads (root branch)
-  ;; apparently stdio automate doesn't default arguments properly;
-  ;; this fails if branch is not passed to mtn.
-  (xmtn-automate-simple-command-output-lines root (list "heads"
-                                                        (or branch
-                                                            (xmtn--tree-default-branch root)))))
+  (xmtn-automate-simple-command-output-lines
+   root
+   (cons
+    (list "ignore-suspend-certs" "")
+    (list "heads"
+	  (or branch
+	      (xmtn--tree-default-branch root))))))
 
 (defun xmtn--tree-default-branch (root)
   (xmtn-automate-simple-command-output-line root `("get_option" "branch")))
 
+(defun xmtn--get-corresponding-path-raw (root normalized-file-name
+					      source-revision-hash-id
+					      target-revision-hash-id)
+  "Given NORMALIZED-FILE-NAME in SOURCE-REVISION-HASH-ID, return file name in TARGET-REVISION-HASH-ID"
+  (check-type normalized-file-name string)
+  (xmtn--with-automate-command-output-basic-io-parser
+      (next-stanza root `("get_corresponding_path"
+                          ,source-revision-hash-id
+                          ,normalized-file-name
+                          ,target-revision-hash-id))
+    (xmtn-match (funcall next-stanza)
+      (nil nil)
+      ((("file" (string $result)))
+       (assert (null (funcall next-stanza)))
+       result))))
+
+
 (defun xmtn-automate-local-changes (work)
-  "Summary of status  for WORK; 'ok if no changes, 'need-commit if changes."
-  (message "checking %s for local changes" work)
-  (let ((default-directory work))
+  "Summary of status for WORK; 'ok if no changes, 'need-commit if changes."
+  (let ((default-directory work)
+        (msg "checking %s for local changes ..."))
+    (message msg work)
 
     (let ((result (xmtn-automate-simple-command-output-string
                    default-directory
                    (list (list "no-unchanged" "" "no-ignored" "")
                          "inventory"))))
-     (if (> (length result) 0)
-         'need-commit
-       'ok))))
+
+      (message (concat msg " done") work)
+
+      (if (> (length result) 0)
+          'need-commit
+        'ok))))
 
 (provide 'xmtn-automate)
 
