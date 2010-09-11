@@ -35,11 +35,7 @@
   (require 'cl))
 
 (defvar xmtn-executable "mtn"
-  "*The monotone executable command.
-
-After changing the value of this variable, be sure to run
-`xmtn-check-command-version' to clear xmtn's command version
-cache.")
+  "*The monotone executable command.")
 
 (defvar xmtn-additional-arguments '()
   "*Additional arguments to pass to monotone.
