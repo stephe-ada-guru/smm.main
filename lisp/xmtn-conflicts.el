@@ -530,7 +530,10 @@ header."
   (xmtn-basic-io-write-sym "conflict" "content")
   (xmtn-basic-io-write-str "node_type" "file")
   (xmtn-basic-io-write-str "ancestor_name" (xmtn-conflicts-conflict-ancestor_name conflict))
-  (xmtn-basic-io-write-id "ancestor_file_id" (xmtn-conflicts-conflict-ancestor_file_id conflict))
+  ;; ancestor can be null if this is a new file
+  (if (xmtn-conflicts-conflict-ancestor_file_id conflict)
+      (xmtn-basic-io-write-id "ancestor_file_id" (xmtn-conflicts-conflict-ancestor_file_id conflict))
+    (xmtn-basic-io-write-id "ancestor_file_id" ""))
   (xmtn-basic-io-write-str "left_name" (xmtn-conflicts-conflict-left_name conflict))
   (xmtn-basic-io-write-id "left_file_id" (xmtn-conflicts-conflict-left_file_id conflict))
   (xmtn-basic-io-write-str "right_name" (xmtn-conflicts-conflict-right_name conflict))
