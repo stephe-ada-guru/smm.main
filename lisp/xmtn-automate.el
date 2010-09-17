@@ -74,7 +74,7 @@
   (require 'xmtn-run)
   (require 'xmtn-compat))
 
-(defconst xmtn-automate-arguments (list "--rcfile" (locate-library "xmtn-hooks.lua"))
+(defconst xmtn-automate-arguments nil
   "Arguments and options for 'mtn automate stdio' sessions.")
 
 (defun xmtn-automate-command-buffer (command)
