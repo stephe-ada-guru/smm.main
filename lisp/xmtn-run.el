@@ -126,6 +126,7 @@ Signals an error if more (or fewer) than one line is output."
   (version-list-<= required (butlast (xmtn--cached-command-version) 2)))
 
 (defun xmtn--clear-command-version-cache ()
+  (interactive)
   (setq xmtn--*command-version-cached-for-executable* nil
         ;; This is redundant but neater.
         xmtn--*cached-command-version* nil))
