@@ -255,6 +255,15 @@ line. List is of form ((category value) ...)."
        (let ((value (cdr line)))
          ,body))))
 
+(defun xmtn-basic-io-skip-line (expected-key)
+  "Read basic-io line at point. Error if it is `empty' or
+`eof', or if its key is not EXPECTED-KEY (a string). Otherwise
+skip do nothing."
+  (let ((line (xmtn-basic-io--next-parsed-line)))
+    (if (or (member line '(empty eof))
+	    (not (string= (car line) expected-key)))
+	(error "expecting \"%s\", found %s" expected-key line))))
+
 (defun xmtn-basic-io-check-empty ()
   "Read next basic-io line at point. Error if it is not `empty' or `eof'."
   (let ((line (xmtn-basic-io--next-parsed-line)))

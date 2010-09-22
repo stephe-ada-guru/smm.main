@@ -31,8 +31,11 @@
   )
 
 ;;; User variables
-(defvar xmtn-sync-branch-file "~/.dvc/branches"
-  "File associating branch name with workspace root")
+(defvar xmtn-sync-save-file "sync"
+  "File to save sync results for later review; relative to `dvc-config-directory'.")
+
+(defvar xmtn-sync-branch-file "branches"
+  "File associating branch name with workspace root; relative to `dvc-config-directory'.")
 
 (defvar xmtn-sync-executable
   (cond
@@ -92,58 +95,98 @@ The elements must all be of type xmtn-sync-sync.")
   (let ((date (nth 1 rev))
 	(author (nth 2 rev))
 	(changelog (nth 3 rev)))
-    (insert "%s %s\n" date author)
+    (insert (dvc-face-add (format "\n   %s %s\n" date author) 'dvc-header))
     (ecase print-mode
-      ('brief
+      (brief
        (insert (substring changelog 0 (string-match "\n" changelog))))
-      ('full
+      (full
        (insert changelog)))))
 
 (defun xmtn-sync-printer (branch)
   "Print an ewoc element; BRANCH must be of type xmtn-sync-branch."
-  (insert (xmtn-sync-branch-name branch))
+  (insert (dvc-face-add (xmtn-sync-branch-name branch) 'dvc-keyword))
   (ecase (xmtn-sync-branch-print-mode branch)
-    ('summary
+    (summary
      (insert (format " %d\n" (length (xmtn-sync-branch-revlist branch)))))
 
-    (('brief 'full)
+    ((brief full)
      (loop for rev in (xmtn-sync-branch-revlist branch) do
 	(xmtn-sync-print-rev rev (xmtn-sync-branch-print-mode branch))))
 
-    ('done
+    (done
      (insert "\n")))
   )
 
+(defun xmtn-sync-brief ()
+  "Set display mode for current item to brief."
+  (interactive)
+  (let* ((elem (ewoc-locate xmtn-sync-ewoc))
+	 (data (ewoc-data elem)))
+    (setf (xmtn-sync-branch-print-mode data) 'brief)
+    (ewoc-invalidate xmtn-sync-ewoc elem)))
+
+(defun xmtn-sync-full ()
+  "Set display mode for current item to full."
+  (interactive)
+  (let* ((elem (ewoc-locate xmtn-sync-ewoc))
+	 (data (ewoc-data elem)))
+    (setf (xmtn-sync-branch-print-mode data) 'full)
+    (ewoc-invalidate xmtn-sync-ewoc elem)))
+
+(defun xmtn-sync-summary ()
+  "Set display mode for current item to summary."
+  (interactive)
+  (let* ((elem (ewoc-locate xmtn-sync-ewoc))
+	 (data (ewoc-data elem)))
+    (setf (xmtn-sync-branch-print-mode data) 'summary)
+    (ewoc-invalidate xmtn-sync-ewoc elem)))
+
 (defun xmtn-sync-status ()
   "Start xmtn-status-one for current ewoc element."
-  (let* ((data (ewoc-data (ewoc-locate xmtn-sync-ewoc)))
+  (interactive)
+  (let* ((elem (ewoc-locate xmtn-sync-ewoc))
+	 (data (ewoc-data elem))
          (branch (xmtn-sync-branch-name data))
          (work (assoc branch xmtn-sync-branch-alist)))
     (if (not work)
         (progn
           (setq work (read-directory-name (format "workspace root for %s: " branch)))
           (push (list branch work) xmtn-sync-branch-alist)))
+    (setf (xmtn-sync-branch-print-mode data) 'summary) ; indicate we've started work on it
+    (ewoc-invalidate xmtn-sync-ewoc elem)
     (xmtn-status-one work)))
 
-(defvar xmtn-sync-ewoc-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map [?0]  '(menu-item "0) status"
-                                      'xmtn-sync-status))
-    map)
-  "Keyboard menu keymap for xmtn-sync-ewoc.")
+(defun xmtn-sync-clean ()
+  "Clean and delete current ewoc element."
+  (interactive)
+  (let* ((elem (ewoc-locate xmtn-sync-ewoc))
+         (inhibit-read-only t))
+    (ewoc-delete xmtn-sync-ewoc elem)))
+
+(defun xmtn-sync-save-quit ()
+  "Save state, quit buffer."
+  (interactive)
+  (xmtn-sync-save)
+  (kill-buffer))
 
 (defvar xmtn-sync-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map [?q]  'dvc-buffer-quit)
-    (define-key map "\M-d" xmtn-sync-ewoc-map)
+    (define-key map [?b]  'xmtn-sync-brief)
+    (define-key map [?c]  'xmtn-sync-clean)
+    (define-key map [?f]  'xmtn-sync-full)
+    (define-key map [?q]  'xmtn-sync-save-quit)
+    (define-key map [?s]  'xmtn-sync-status)
     map)
   "Keymap used in `xmtn-sync-mode'.")
 
 (easy-menu-define xmtn-sync-mode-menu xmtn-sync-mode-map
   "`xmtn-sync' menu"
   `("Xmtn-sync"
-    ["Do the right thing"  xmtn-sync-ewoc-map t]
-    ["Quit"                dvc-buffer-quit t]
+    ["Brief display" xmtn-sync-brief t]
+    ["Full display"  xmtn-sync-full t]
+    ["Clean/delete"  xmtn-sync-clean t]
+    ["Status"        xmtn-sync-status t]
+    ["Save and Quit" xmtn-sync-save-quit t]
     ))
 
 (define-derived-mode xmtn-sync-mode fundamental-mode "xmtn-sync"
@@ -164,19 +207,19 @@ The elements must all be of type xmtn-sync-sync.")
 	(cond
 	 ((string= cert-label "branch")
 	  (xmtn-basic-io-check-line "value" (setq branch (cadar value)))
-	  (xmtn-basic-io-check-line "key" nil))
+	  (xmtn-basic-io-skip-line "key"))
 
 	 ((string= cert-label "changelog")
 	  (xmtn-basic-io-check-line "value" (setq changelog (cadar value)))
-	  (xmtn-basic-io-check-line "key" nil))
+	  (xmtn-basic-io-skip-line "key"))
 
 	 ((string= cert-label "date")
 	  (xmtn-basic-io-check-line "value" (setq date (cadar value)))
-	  (xmtn-basic-io-check-line "key" nil))
+	  (xmtn-basic-io-skip-line "key"))
 
 	 ((string= cert-label "author")
 	  (xmtn-basic-io-check-line "value" (setq author (cadar value)))
-	  (xmtn-basic-io-check-line "key" nil))
+	  (xmtn-basic-io-skip-line "key"))
 
 	 (t
 	  ;; ignore other certs
@@ -198,16 +241,23 @@ The elements must all be of type xmtn-sync-sync.")
 	  (let* ((data (car nodes))
 		 (revlist (xmtn-sync-branch-revlist data)))
 	    (setf (xmtn-sync-branch-revlist data)
+		  ;; sync sends revs newest first, we want newest
+		  ;; displayed last, so append to head of list
 		  (add-to-list 'revlist
-			       (list revid date author changelog)
-			       t)))
+			       (list revid date author changelog))))
 	;; new branch
 	(ewoc-enter-last xmtn-sync-ewoc
 			 (make-xmtn-sync-branch
 			  :name branch
-			  :revlist (list revid date author changelog)
+			  :revlist (list (list revid date author changelog))
 			  :print-mode 'summary)))
       )))
+
+(defun xmtn-sync-parse-certs (direction)
+  (error "xmtn-sync-parse-certs not implemented"))
+
+(defun xmtn-sync-parse-keys (direction)
+  (error "xmtn-sync-parse-keys not implemented"))
 
 (defun xmtn-sync-parse (begin end)
   "Parse region BEGIN END in current buffer, fill in `xmtn-sync-ewoc', erase BEGIN END."
@@ -277,7 +327,7 @@ The elements must all be of type xmtn-sync-sync.")
 
   (xmtn-basic-io-skip-blank-lines)
   (xmtn-basic-io-optional-line-2 '("receive" (symbol "cert"))
-    (xmtn-sync-parse-certs 'receive nil))
+    (xmtn-sync-parse-certs 'receive))
 
   (xmtn-basic-io-skip-blank-lines)
   (xmtn-basic-io-optional-line-2 '("receive" (symbol "key"))
@@ -289,7 +339,7 @@ The elements must all be of type xmtn-sync-sync.")
 
   (xmtn-basic-io-skip-blank-lines)
   (xmtn-basic-io-optional-line-2 '("send" (symbol "cert"))
-    (xmtn-sync-parse-certs 'send nil))
+    (xmtn-sync-parse-certs 'send))
 
   (xmtn-basic-io-skip-blank-lines)
   (xmtn-basic-io-optional-line-2 '("send" (symbol "key"))
@@ -350,7 +400,42 @@ Remote-db should include branch pattern in URI syntax."
 
     (xmtn-sync-parse (point-min) parse-end)
     (setq buffer-read-only t)
-    (set-buffer-modified-p nil)))
+    (set-buffer-modified-p nil)
+    (xmtn-sync-save)))
+
+(defun xmtn-sync-save ()
+  "Save current sync results in `xmtn-sync-save-file' for later review."
+  (interactive)
+  (let ((save-file (expand-file-name xmtn-sync-save-file dvc-config-directory))
+	stuff)
+    ;; Directly saving the ewoc doesn't work; too complicated for
+    ;; pp-to-string. So we turn the ewoc into a simpler list of data
+    ;; items
+    (ewoc-map
+     (lambda (data)
+       (setq stuff (add-to-list 'stuff data t))
+       nil)
+     xmtn-sync-ewoc)
+
+    (dvc-save-state
+     (list 'stuff)
+     (expand-file-name xmtn-sync-save-file dvc-config-directory))))
+
+(defun xmtn-sync-review ()
+  "Display sync results in `xmtn-sync-save-file'."
+  (interactive)
+  (let ((save-file (expand-file-name xmtn-sync-save-file dvc-config-directory))
+	stuff)
+    (if (file-exists-p save-file)
+	(progn
+	  (pop-to-buffer (get-buffer-create "*xmtn-sync*"))
+	  (setq buffer-read-only nil)
+	  (delete-region (point-min) (point-max))
+	  (xmtn-sync-mode)
+	  (load save-file)
+	  (dolist (data stuff) (ewoc-enter-last xmtn-sync-ewoc data))
+	  (setq buffer-read-only t))
+      (error "%s file not found" save-file))))
 
 (provide 'xmtn-sync)
 

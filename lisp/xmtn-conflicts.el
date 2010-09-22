@@ -1235,9 +1235,9 @@ retrieval by `xmtn-conflicts-load-opts'."
   ))
 
 (defun xmtn-conflicts-load-opts ()
-  "Load options saved by
-`xmtn-conflicts-save-opts'. `default-directory' must be workspace
-root where options file is stored."
+  "Load options saved by `xmtn-conflicts-save-opts'.
+`default-directory' must be workspace root where options file is
+stored."
   (let ((opts-file (concat default-directory xmtn-conflicts-opts-file)))
     (if (file-exists-p opts-file)
         (load opts-file)

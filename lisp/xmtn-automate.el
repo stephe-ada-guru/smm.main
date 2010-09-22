@@ -82,7 +82,7 @@
 	    ;; only one Windows drive active, and Cygwin is installed
 	    ;; and mounted at c:/
 	    (substring (locate-library "xmtn-hooks.lua") 2)
-	  (locate-library "xmtn-hooks.lua"))))
+	  (locate-library "xmtn-hooks.lua")))
   "Arguments and options for 'mtn automate stdio' sessions.")
 
 (defun xmtn-automate-command-buffer (command)
