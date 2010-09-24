@@ -23,15 +23,15 @@
 (eval-when-compile
   ;; these have macros we use
   (require 'cl)
-  (require 'dvc-utils)
-  (require 'xmtn-automate)
-  (require 'xmtn-basic-io)
-  (require 'xmtn-ids)
-  (require 'xmtn-run))
+  (require 'dvc-utils))
 
 (eval-and-compile
   ;; these have functions we use
-  (require 'dired))
+  (require 'dired)
+  (require 'xmtn-automate)
+  (require 'xmtn-basic-io)
+  (require 'xmtn-run)
+  (require 'xmtn-ids))
 
 (defvar xmtn-conflicts-left-revision ""
   "Buffer-local variable holding left revision id.")
