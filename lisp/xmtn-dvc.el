@@ -1305,13 +1305,6 @@ finished."
         (when temp-dir
           (dvc-delete-recursively temp-dir))))))
 
-(defun xmtn--get-file-by-id (root file-id save-as)
-  "Store contents of FILE-ID in file SAVE-AS."
-  (with-temp-file save-as
-    (set-buffer-multibyte nil)
-    (setq buffer-file-coding-system 'binary)
-    (xmtn--insert-file-contents root file-id (current-buffer))))
-
 (defun xmtn--revision-parents (root revision-hash-id)
   (xmtn-automate-simple-command-output-lines root
                                              `("parents" ,revision-hash-id)))
@@ -1480,27 +1473,6 @@ finished."
   (check-type content-hash-id xmtn--hash-id)
   (xmtn-automate-simple-command-output-string
    root `("get_file" ,content-hash-id)))
-
-(defun xmtn--insert-file-contents (root content-hash-id buffer)
-  (check-type content-hash-id xmtn--hash-id)
-  (xmtn-automate-command-output-buffer
-   root buffer `("get_file" ,content-hash-id)))
-
-(defun xmtn--insert-file-contents-by-name (root backend-id normalized-file-name buffer)
-  (let* ((resolved-id (xmtn--resolve-backend-id root backend-id))
-         (hash-id (case (car resolved-id)
-                    (local-tree nil)
-                    (revision (cadr resolved-id)))))
-    (case (car backend-id)
-      ((local-tree last-revision)
-       ;;  file may have been renamed but not committed
-       (setq normalized-file-name (xmtn--get-rename-in-workspace-to root normalized-file-name)))
-      (t nil))
-
-    (let ((cmd (if hash-id
-                  (cons (list "revision" hash-id) (list "get_file_of" normalized-file-name))
-                (list "get_file_of" normalized-file-name))))
-      (xmtn-automate-command-output-buffer root buffer cmd))))
 
 (defun xmtn--same-tree-p (a b)
   (equal (file-truename a) (file-truename b)))
