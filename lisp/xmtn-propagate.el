@@ -668,7 +668,7 @@ The elements must all be of class xmtn-propagate-data.")
   (message "done"))
 
 (defun xmtn-propagate-make-data (from-workspace to-workspace from-name to-name)
-  "FROM-WORKSPACE, TO-WORKSPACE are relative names"
+  "FROM-WORKSPACE, TO-WORKSPACE are relative names, FROM-NAME, TO_NAME should be root dir names."
     (let* ((from-work (concat xmtn-propagate-from-root from-workspace))
            (to-work (concat xmtn-propagate-to-root to-workspace))
            )
@@ -739,11 +739,17 @@ scanned and all common ones found are used."
     (format "  To root : %s\n" xmtn-propagate-to-root)
     )
    "")
-  (xmtn-propagate-make-data
-   (file-name-nondirectory (directory-file-name from-work))
-   (file-name-nondirectory (directory-file-name to-work))
-   (file-name-nondirectory (directory-file-name from-work))
-   (file-name-nondirectory (directory-file-name to-work)))
+  (let ((from-name (file-name-nondirectory (directory-file-name from-work)))
+	(to-name (file-name-nondirectory (directory-file-name to-work))))
+    (if (string-equal from-name to-name)
+	(progn
+	  (setq from-name (file-name-nondirectory (directory-file-name xmtn-propagate-from-root)))
+	  (setq to-name (file-name-nondirectory (directory-file-name xmtn-propagate-to-root)))))
+    (xmtn-propagate-make-data
+     (file-name-nondirectory (directory-file-name from-work))
+     (file-name-nondirectory (directory-file-name to-work))
+     from-name
+     to-name))
   (xmtn-propagate-mode))
 
 (provide 'xmtn-propagate)
