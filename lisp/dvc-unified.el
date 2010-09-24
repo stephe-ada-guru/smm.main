@@ -100,7 +100,7 @@ Note: this function is only useful when called interactively."
           (working-dir (dvc-uniquify-file-name default-directory))
           (dvc))
       ;; hide backends that don't provide an init function
-      (mapcar '(lambda (elem)
+      (mapc '(lambda (elem)
                 (setq supported-variants (delete elem supported-variants)))
               '("xdarcs" "xmtn" "baz"))
       (add-to-list 'supported-variants "bzr-repo")
