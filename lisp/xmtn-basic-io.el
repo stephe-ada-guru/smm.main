@@ -264,6 +264,17 @@ skip do nothing."
 	    (not (string= (car line) expected-key)))
 	(error "expecting \"%s\", found %s" expected-key line))))
 
+(defun xmtn-basic-io-optional-skip-line (expected-key)
+  "Read basic-io line at point. If its key is EXPECTED-KEY (a
+string) return t. Else reset to parse the same line again, and
+return nil."
+  (let ((line (xmtn-basic-io--next-parsed-line)))
+    (if (and (not (member line '(empty eof)))
+	     (string= (car line) expected-key))
+	t
+      (beginning-of-line 0) ;; returns nil
+      )))
+
 (defun xmtn-basic-io-check-empty ()
   "Read next basic-io line at point. Error if it is not `empty' or `eof'."
   (let ((line (xmtn-basic-io--next-parsed-line)))

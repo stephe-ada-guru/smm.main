@@ -26,6 +26,7 @@
 
 (eval-and-compile
   ;; these have functions (and possibly macros) we use
+  (require 'dvc-config)
   (require 'xmtn-automate)
   (require 'xmtn-basic-io)
   )
@@ -49,22 +50,23 @@
   "Executable for running sync command on local db; overrides xmtn-executable.")
 
 (defvar xmtn-sync-config "xmtn-sync-config"
-  "File to store `xmtn-sync-branch-alist' and `xmtn-sync-remote-exec-alist'; relative to `dvc-config-directory'.")
+  "File to store `xmtn-sync-branch-alist'; relative to `dvc-config-directory'.")
 
 ;;; Internal variables
 (defconst xmtn-sync-required-command-version '(0 46)
-  "Minimum mtn version for automate sync; overrides xmtn--minimum-required-command-version.")
+  "Minimum version for `xmtn-sync-executable'; overrides xmtn--minimum-required-command-version.")
 
-(defconst xmtn-sync-remote-exec-default "mtn"
-  "Default executable command to run on remote host for file: or ssh:; see `xmtn-sync-remote-exec-alist'.")
+(defconst xmtn-sync-remote-exec "mtn"
+  ;; We assume the user has setup the login used for ssh: to put the
+  ;; right mtn in path, except they may want to override that for
+  ;; experiments.
+  "Executable command to run on remote host for ssh: connections.")
 
 ;; loaded from xmtn-sync-config
 (defvar xmtn-sync-branch-alist nil
   "Alist associating branch name with workspace root")
 
-(defvar xmtn-sync-remote-exec-alist
-  (list
-   (list "file://" xmtn-sync-executable))
+(defvar xmtn-sync-remote-exec-alist nil
   "Alist of host and remote command. Overrides `xmtn-sync-remote-exec-default'.")
 
 ;; buffer-local
@@ -86,15 +88,16 @@ The elements must all be of type xmtn-sync-sync.")
             (:copier nil))
   ;; ewoc element; data for a branch that was received
   name ;; monotone branch name
-  revlist ;; list of '(backend revid, date, author, changelog)
+  rev-alist ;; alist of '(revid (date author changelog)) for received revs
+  send-count ;; integer count of sent revs
   print-mode ;; 'summary | 'brief | 'full | 'done
   )
 
 (defun xmtn-sync-print-rev (rev print-mode)
-  "Print a REV (element of branch revlist) according to PRINT-MODE ('brief or 'full)."
-  (let ((date (nth 1 rev))
-	(author (nth 2 rev))
-	(changelog (nth 3 rev)))
+  "Print a REV (element of branch rev-alist) according to PRINT-MODE ('brief or 'full)."
+  (let ((date (nth 0 (cadr rev)))
+	(author (nth 1 (cadr rev)))
+	(changelog (nth 2 (cadr rev))))
     (insert (dvc-face-add (format "\n   %s %s\n" date author) 'dvc-header))
     (ecase print-mode
       (brief
@@ -105,16 +108,19 @@ The elements must all be of type xmtn-sync-sync.")
 (defun xmtn-sync-printer (branch)
   "Print an ewoc element; BRANCH must be of type xmtn-sync-branch."
   (insert (dvc-face-add (xmtn-sync-branch-name branch) 'dvc-keyword))
+  (insert (format " rx %d tx %d\n"
+		  (length (xmtn-sync-branch-rev-alist branch))
+		  (xmtn-sync-branch-send-count branch)))
   (ecase (xmtn-sync-branch-print-mode branch)
     (summary
-     (insert (format " %d\n" (length (xmtn-sync-branch-revlist branch)))))
+     (insert "\n"))
 
     ((brief full)
-     (loop for rev in (xmtn-sync-branch-revlist branch) do
+     (loop for rev in (xmtn-sync-branch-rev-alist branch) do
 	(xmtn-sync-print-rev rev (xmtn-sync-branch-print-mode branch))))
 
     (done
-     (insert "\n")))
+     (insert " done\n")))
   )
 
 (defun xmtn-sync-brief ()
@@ -147,7 +153,7 @@ The elements must all be of type xmtn-sync-sync.")
   (let* ((elem (ewoc-locate xmtn-sync-ewoc))
 	 (data (ewoc-data elem))
          (branch (xmtn-sync-branch-name data))
-         (work (assoc branch xmtn-sync-branch-alist)))
+         (work (cadr (assoc branch xmtn-sync-branch-alist))))
     (if (not work)
         (progn
           (setq work (read-directory-name (format "workspace root for %s: " branch)))
@@ -199,7 +205,7 @@ The elements must all be of type xmtn-sync-sync.")
 
 (defun xmtn-sync-parse-revisions (direction)
   "Parse revisions with associated certs."
-  (let (revid cert-label branch date author changelog nodes)
+  (let (revid cert-label branch date author changelog old-branch)
     (xmtn-basic-io-skip-blank-lines)
     (while (xmtn-basic-io-optional-line "revision" (setq revid (cadar value)))
       (xmtn-basic-io-check-empty)
@@ -228,36 +234,104 @@ The elements must all be of type xmtn-sync-sync.")
 	(xmtn-basic-io-skip-blank-lines) ;; might be at end of parsing region
 	) ;; end while cert
 
-      (setq nodes
-	    (ewoc-collect
-	     xmtn-sync-ewoc
-	     (lambda (data branch)
-	       (string= branch (xmtn-sync-branch-name data)))
-	     branch))
+      (ewoc-map
+       (lambda (data)
+	 (if (string= branch (xmtn-sync-branch-name data))
+	     ;; already some data for branch
+	     (let ((rev-alist (xmtn-sync-branch-rev-alist data)))
+	       (ecase direction
+		 ('receive
+		  (setf (xmtn-sync-branch-rev-alist data)
+			;; sync sends revs newest first, we want newest
+			;; displayed last, so append to head of list
+			(push (list revid (list date author changelog)) rev-alist)))
+		 ('send
+		  (setf (xmtn-sync-branch-send-count data) (+ 1 (xmtn-sync-branch-send-count data)))))
+	       (setq old-branch t))))
+       xmtn-sync-ewoc)
 
-      (if nodes
-	  ;; already some data for branch; nodes is a list of data,
-	  ;; not a list of nodes
-	  (let* ((data (car nodes))
-		 (revlist (xmtn-sync-branch-revlist data)))
-	    (setf (xmtn-sync-branch-revlist data)
-		  ;; sync sends revs newest first, we want newest
-		  ;; displayed last, so append to head of list
-		  (add-to-list 'revlist
-			       (list revid date author changelog))))
-	;; new branch
-	(ewoc-enter-last xmtn-sync-ewoc
-			 (make-xmtn-sync-branch
-			  :name branch
-			  :revlist (list (list revid date author changelog))
-			  :print-mode 'summary)))
+      (if (not old-branch)
+	  (ewoc-enter-last
+	   xmtn-sync-ewoc
+	   (ecase direction
+	     ('receive
+	      (make-xmtn-sync-branch
+	       :name branch
+	       :rev-alist (list (list revid (list date author changelog)))
+	       :send-count 0
+	       :print-mode 'summary))
+	     ('send
+	      (make-xmtn-sync-branch
+	       :name branch
+	       :rev-alist nil
+	       :send-count 1
+	       :print-mode 'summary)))))
       )))
 
 (defun xmtn-sync-parse-certs (direction)
-  (error "xmtn-sync-parse-certs not implemented"))
+  "Parse certs not associated with revisions."
+  ;; The only case we care about is a new branch created from an existing revision.
+  (let (revid
+	cert-label
+	branch
+	(date "")
+	(author "")
+	(changelog "create branch\n")
+	old-branch)
+    (xmtn-basic-io-skip-blank-lines)
+    (while (xmtn-basic-io-optional-line "cert" (setq cert-label (cadar value)))
+      (cond
+       ((string= cert-label "branch")
+	(xmtn-basic-io-check-line "value" (setq branch (cadar value)))
+	(xmtn-basic-io-skip-line "key")
+	(xmtn-basic-io-check-line "revision" (setq revid (cadar value))))
+
+       (t
+	;; ignore other certs
+	(xmtn-basic-io-skip-stanza))
+       )
+
+      ;; move to next stanza or end of parsing region
+      (xmtn-basic-io-skip-blank-lines)
+
+      (ewoc-map
+       (lambda (data)
+	 (if (string= branch (xmtn-sync-branch-name data))
+	     ;; Already some data for branch; this is the create event
+	     (let* ((rev-alist (xmtn-sync-branch-rev-alist data)))
+	       (ecase direction
+		 ('receive
+		  (setf (xmtn-sync-branch-rev-alist data)
+			;; sync sends revs newest first, we want newest
+			;; displayed last, so append to head of list
+			(push (list revid (list date author changelog)) rev-alist)))
+		 ('send
+		  (setf (xmtn-sync-branch-send-count data) (+ 1 (xmtn-sync-branch-send-count data)))))
+	       (setq old-branch t))))
+       xmtn-sync-ewoc)
+
+      (if (not old-branch)
+	  (ewoc-enter-last
+	   xmtn-sync-ewoc
+	   (ecase direction
+	     ('receive
+	      (make-xmtn-sync-branch
+	       :name branch
+	       :rev-alist (list (list revid (list date author changelog)))
+	       :send-count 0
+	       :print-mode 'summary))
+	     ('send
+	      (make-xmtn-sync-branch
+	       :name branch
+	       :rev-alist nil
+	       :send-count 1
+	       :print-mode 'summary)))))
+    )))
 
 (defun xmtn-sync-parse-keys (direction)
-  (error "xmtn-sync-parse-keys not implemented"))
+  ;; just ignore all keys
+  (xmtn-basic-io-skip-blank-lines)
+  (while (xmtn-basic-io-optional-skip-line "key")))
 
 (defun xmtn-sync-parse (begin end)
   "Parse region BEGIN END in current buffer, fill in `xmtn-sync-ewoc', erase BEGIN END."
@@ -300,12 +374,6 @@ The elements must all be of type xmtn-sync-sync.")
   ;;    value "foo2"
   ;;      key [46ec58576f9e4f34a9eede521422aa5fd299dc50]
   ;;
-  ;;     cert "changelog"
-  ;; revision [e4352c1d28b38e87b5040f770a66be2ec9b2362d]
-  ;;    value "more
-  ;; "
-  ;;      key [46ec58576f9e4f34a9eede521422aa5fd299dc50]
-  ;;
   ;; ... more unattached certs
   ;;
   ;; receive key
@@ -319,6 +387,11 @@ The elements must all be of type xmtn-sync-sync.")
   ;; ... sent revisions, certs
   ;;
   ;; send cert
+  ;;
+  ;;    cert "branch"
+  ;;    value "work_2"
+  ;;      key [ed5da650ec723c2c4172169df9d9ddf4e6b54f2c]
+  ;; revision [bd3fb494a07939a79405f728d9c8c54d1005dcf3]
   ;;
   ;; send key
 
@@ -349,10 +422,10 @@ The elements must all be of type xmtn-sync-sync.")
   )
 
 ;;;###autoload
-(defun xmtn-sync-sync (local-db remote-host remote-db)
-  "Sync LOCAL-DB with REMOTE-HOST REMOTE-DB, display sent and received branches.
+(defun xmtn-sync-sync (local-db scheme remote-host remote-db)
+  "Sync LOCAL-DB with using SCHEME to connect to REMOTE-HOST REMOTE-DB, display sent and received branches.
 Remote-db should include branch pattern in URI syntax."
-  (interactive "flocal db: \nMremote-host: \nMremote-db: ")
+  (interactive "flocal db: \nMscheme: \nMremote-host: \nMremote-db: ")
   (pop-to-buffer (get-buffer-create "*xmtn-sync*"))
   (setq buffer-read-only nil)
   (delete-region (point-min) (point-max))
@@ -367,10 +440,7 @@ Remote-db should include branch pattern in URI syntax."
   (let ((xmtn-executable xmtn-sync-executable)
         (xmtn--minimum-required-command-version xmtn-sync-required-command-version)
 	parse-end
-	(header (concat
-		 (format "   local db: %s\n" local-db)
-		 (format "remote host: %s\n" remote-host)
-		 (format "  remote db: %s\n" remote-db)))
+	(remote-uri (concat scheme "://" remote-host remote-db))
 	(footer "")
 	(msg "Running mtn sync ..."))
 
@@ -379,15 +449,19 @@ Remote-db should include branch pattern in URI syntax."
     ;; pass remote command to mtn via Lua hook get_mtn_command; see
     ;; xmtn-hooks.lua
     (setenv "XMTN_SYNC_MTN"
-            (or (cadr (assoc remote-host xmtn-sync-remote-exec-alist))
-                xmtn-sync-remote-exec-default))
+	    (cond
+	     ((string= scheme "file") xmtn-sync-executable)
+	     ((string= scheme "ssh")  xmtn-sync-remote-exec)
+	     ((string= scheme "mtn") "")
+	     (t
+	      (error "invalid scheme %s" scheme))))
 
     (xmtn-automate-command-output-buffer
-     default-directory ; root
+     "sync" ; root - one session for all syncs
      (current-buffer) ; output-buffer
      (list
       (list "db" local-db) ;; options
-      "sync" (concat remote-host remote-db)) ;; command, args
+      "sync" remote-uri) ;; command, args
      )
 
     (message (concat msg " done"))
@@ -396,7 +470,12 @@ Remote-db should include branch pattern in URI syntax."
     (setq parse-end (point-max))
     (xmtn-sync-mode)
     (setq buffer-read-only nil)
-    (ewoc-set-hf xmtn-sync-ewoc header footer)
+    (ewoc-set-hf
+     xmtn-sync-ewoc
+     (concat ;; header
+      (format " local db: %s\n" local-db)
+      (format "remote db: %s\n" remote-uri))
+     "") ;; footer
 
     (xmtn-sync-parse (point-min) parse-end)
     (setq buffer-read-only t)
