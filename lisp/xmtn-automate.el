@@ -74,15 +74,7 @@
   (require 'xmtn-run)
   (require 'xmtn-compat))
 
-(defconst xmtn-automate-arguments
-  (list "--rcfile"
-	(if (equal system-type 'windows-nt)
-	    ;; Need a path that works for mingw and cygwin (for ssh:
-	    ;; sync). So we strip the device; this assumes there is
-	    ;; only one Windows drive active, and Cygwin is installed
-	    ;; and mounted at c:/
-	    (substring (locate-library "xmtn-hooks.lua") 2)
-	  (locate-library "xmtn-hooks.lua")))
+(defconst xmtn-automate-arguments nil
   "Arguments and options for 'mtn automate stdio' sessions.")
 
 (defun xmtn-automate-command-buffer (command)

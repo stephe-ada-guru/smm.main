@@ -437,32 +437,42 @@ Remote-db should include branch pattern in URI syntax."
 
   ;; FIXME: need the ticker to show sync progress
 
-  (let ((xmtn-executable xmtn-sync-executable)
-        (xmtn--minimum-required-command-version xmtn-sync-required-command-version)
+  (let (opts
 	parse-end
 	(remote-uri (concat scheme "://" remote-host remote-db))
-	(footer "")
 	(msg "Running mtn sync ..."))
 
     (message msg)
 
-    ;; pass remote command to mtn via Lua hook get_mtn_command; see
-    ;; xmtn-hooks.lua
+    ;; Determine correct syntax for path to xmtn-hooks.lua.
+    (if (eq system-type 'windows-nt)
+	(setq opts (add-to-list 'xmtn-automate-arguments
+				(concat "--rcfile=" (substring (locate-library "xmtn-hooks.lua") 2))))
+      (setq opts (add-to-list 'xmtn-automate-arguments
+			      (concat "--rcfile=" (locate-library "xmtn-hooks.lua")))))
+
+    ;; Pass remote command to mtn via Lua hook get_mtn_command; see
+    ;; xmtn-hooks.lua.
     (setenv "XMTN_SYNC_MTN"
 	    (cond
 	     ((string= scheme "file") xmtn-sync-executable)
-	     ((string= scheme "ssh")  xmtn-sync-remote-exec)
+	     ((string= scheme "ssh") xmtn-sync-remote-exec)
 	     ((string= scheme "mtn") "")
 	     (t
 	      (error "invalid scheme %s" scheme))))
 
-    (xmtn-automate-command-output-buffer
-     "sync" ; root - one session for all syncs
-     (current-buffer) ; output-buffer
-     (list
-      (list "db" local-db) ;; options
-      "sync" remote-uri) ;; command, args
-     )
+    ;; Always use mtn executable that supports file and ssh, so we
+    ;; only need one session for all syncs.
+    (let ((xmtn-executable xmtn-sync-executable)
+	  (xmtn--minimum-required-command-version xmtn-sync-required-command-version)
+	  (xmtn-automate-arguments opts))
+      (xmtn-automate-command-output-buffer
+       "sync" ; root - one session for all syncs
+       (current-buffer) ; output-buffer
+       (list
+	(list "db" local-db) ;; options
+	"sync" remote-uri) ;; command, args
+       ))
 
     (message (concat msg " done"))
 
