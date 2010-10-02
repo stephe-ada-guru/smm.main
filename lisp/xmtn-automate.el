@@ -85,6 +85,9 @@
 	  (locate-library "xmtn-hooks.lua")))
   "Arguments and options for 'mtn automate stdio' sessions.")
 
+(defconst xmtn-sync-session-root "sync"
+  "Name for unique automate session used for sync commands.")
+
 (defun xmtn-automate-command-buffer (command)
   (xmtn-automate--command-handle-buffer command))
 
@@ -215,6 +218,7 @@ Signals an error if output contains zero lines or more than one line."
   (root)
   (name)
   (buffer nil)
+  (error-file nil)
   (process nil)
   (decoder-state)
   (next-command-number 0)
@@ -319,9 +323,33 @@ Signals an error if output contains zero lines or more than one line."
         (buffer (xmtn-automate--new-buffer session))
         (root (xmtn-automate--session-root session)))
     (let ((process-connection-type nil); use a pipe, not a tty
-          (default-directory root))
+          (default-directory root)
+	  ;; start-process merges stderr and stdout from the child,
+	  ;; but stderr messages are not packetized, so they confuse
+	  ;; the packet parser. This is only a problem when the
+	  ;; session will run 'sync ssh:' or 'sync file:', since those
+	  ;; spawn new mtn processes that can report errors on
+	  ;; stderr. All other errors will be reported properly thru
+	  ;; the stdout packetized error stream.  xmtn-sync uses the
+	  ;; unique xmtn-sync-session-root for the session root, so we
+	  ;; treat that specially.
+	  (cmd (if (string= xmtn-sync-session-root root)
+		   (progn
+		     (setf (xmtn-automate--session-error-file session)
+			   (dvc-make-temp-name (concat xmtn-sync-session-root "-errors")))
+		     (append (list dvc-sh-executable
+				   "-c"
+				   xmtn-executable
+				   "automate" "stdio")
+			     xmtn-automate-arguments
+			     (list "2>" (xmtn-automate--session-error-file session))))
+		 ;; not the sync session
+		 (append (list xmtn-executable "automate" "stdio")
+			 xmtn-automate-arguments))))
       (let ((process
-             (apply 'start-process name buffer xmtn-executable
+		 (apply 'start-process name buffer cmd)
+
+	       (apply 'start-process name buffer xmtn-executable
                     "automate" "stdio" xmtn-automate-arguments)))
         (ecase (process-status process)
           (run
