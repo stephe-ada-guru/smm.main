@@ -90,7 +90,7 @@ The elements must all be of type xmtn-sync-sync.")
   name ;; monotone branch name
   rev-alist ;; alist of '(revid (date author changelog)) for received revs
   send-count ;; integer count of sent revs
-  print-mode ;; 'summary | 'brief | 'full | 'done
+  print-mode ;; 'summary | 'brief | 'full | 'started
   )
 
 (defun xmtn-sync-print-rev (rev print-mode)
@@ -119,8 +119,8 @@ The elements must all be of type xmtn-sync-sync.")
      (loop for rev in (xmtn-sync-branch-rev-alist branch) do
 	(xmtn-sync-print-rev rev (xmtn-sync-branch-print-mode branch))))
 
-    (done
-     (insert " done\n")))
+    (started
+     (insert " started\n")))
   )
 
 (defun xmtn-sync-brief ()
@@ -158,7 +158,7 @@ The elements must all be of type xmtn-sync-sync.")
         (progn
           (setq work (read-directory-name (format "workspace root for %s: " branch)))
           (push (list branch work) xmtn-sync-branch-alist)))
-    (setf (xmtn-sync-branch-print-mode data) 'summary) ; indicate we've started work on it
+    (setf (xmtn-sync-branch-print-mode data) 'started) ; indicate we've started work on it
     (ewoc-invalidate xmtn-sync-ewoc elem)
     (xmtn-status-one work)))
 
@@ -175,11 +175,16 @@ The elements must all be of type xmtn-sync-sync.")
   (xmtn-sync-save)
   (kill-buffer))
 
+(dvc-make-ewoc-next xmtn-sync-next xmtn-sync-ewoc)
+(dvc-make-ewoc-prev xmtn-sync-prev xmtn-sync-ewoc)
+
 (defvar xmtn-sync-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map [?b]  'xmtn-sync-brief)
     (define-key map [?c]  'xmtn-sync-clean)
     (define-key map [?f]  'xmtn-sync-full)
+    (define-key map [?n]  'xmtn-sync-next)
+    (define-key map [?p]  'xmtn-sync-prev)
     (define-key map [?q]  'xmtn-sync-save-quit)
     (define-key map [?s]  'xmtn-sync-status)
     map)
@@ -205,67 +210,68 @@ The elements must all be of type xmtn-sync-sync.")
 
 (defun xmtn-sync-parse-revisions (direction)
   "Parse revisions with associated certs."
-  (let (revid cert-label branch date author changelog old-branch)
+  (let (revid)
     (xmtn-basic-io-skip-blank-lines)
     (while (xmtn-basic-io-optional-line "revision" (setq revid (cadar value)))
-      (xmtn-basic-io-check-empty)
-      (while (xmtn-basic-io-optional-line "cert" (setq cert-label (cadar value)))
-	(cond
-	 ((string= cert-label "branch")
-	  (xmtn-basic-io-check-line "value" (setq branch (cadar value)))
-	  (xmtn-basic-io-skip-line "key"))
+      (let (cert-label branch date author changelog old-branch)
+	(xmtn-basic-io-check-empty)
+	(while (xmtn-basic-io-optional-line "cert" (setq cert-label (cadar value)))
+	  (cond
+	   ((string= cert-label "branch")
+	    (xmtn-basic-io-check-line "value" (setq branch (cadar value)))
+	    (xmtn-basic-io-skip-line "key"))
 
-	 ((string= cert-label "changelog")
-	  (xmtn-basic-io-check-line "value" (setq changelog (cadar value)))
-	  (xmtn-basic-io-skip-line "key"))
+	   ((string= cert-label "changelog")
+	    (xmtn-basic-io-check-line "value" (setq changelog (cadar value)))
+	    (xmtn-basic-io-skip-line "key"))
 
-	 ((string= cert-label "date")
-	  (xmtn-basic-io-check-line "value" (setq date (cadar value)))
-	  (xmtn-basic-io-skip-line "key"))
+	   ((string= cert-label "date")
+	    (xmtn-basic-io-check-line "value" (setq date (cadar value)))
+	    (xmtn-basic-io-skip-line "key"))
 
-	 ((string= cert-label "author")
-	  (xmtn-basic-io-check-line "value" (setq author (cadar value)))
-	  (xmtn-basic-io-skip-line "key"))
+	   ((string= cert-label "author")
+	    (xmtn-basic-io-check-line "value" (setq author (cadar value)))
+	    (xmtn-basic-io-skip-line "key"))
 
-	 (t
-	  ;; ignore other certs
-	  (xmtn-basic-io-skip-stanza))
-	 )
-	(xmtn-basic-io-skip-blank-lines) ;; might be at end of parsing region
-	) ;; end while cert
+	   (t
+	    ;; ignore other certs
+	    (xmtn-basic-io-skip-stanza))
+	   )
+	  (xmtn-basic-io-skip-blank-lines) ;; might be at end of parsing region
+	  ) ;; end while cert
 
-      (ewoc-map
-       (lambda (data)
-	 (if (string= branch (xmtn-sync-branch-name data))
-	     ;; already some data for branch
-	     (let ((rev-alist (xmtn-sync-branch-rev-alist data)))
-	       (ecase direction
-		 ('receive
-		  (setf (xmtn-sync-branch-rev-alist data)
-			;; sync sends revs newest first, we want newest
-			;; displayed last, so append to head of list
-			(push (list revid (list date author changelog)) rev-alist)))
-		 ('send
-		  (setf (xmtn-sync-branch-send-count data) (+ 1 (xmtn-sync-branch-send-count data)))))
-	       (setq old-branch t))))
-       xmtn-sync-ewoc)
+	(ewoc-map
+	 (lambda (data)
+	   (if (string= branch (xmtn-sync-branch-name data))
+	       ;; already some data for branch
+	       (let ((rev-alist (xmtn-sync-branch-rev-alist data)))
+		 (ecase direction
+		   ('receive
+		    (setf (xmtn-sync-branch-rev-alist data)
+			  ;; sync sends revs newest first, we want newest
+			  ;; displayed last, so append to head of list
+			  (push (list revid (list date author changelog)) rev-alist)))
+		   ('send
+		    (setf (xmtn-sync-branch-send-count data) (+ 1 (xmtn-sync-branch-send-count data)))))
+		 (setq old-branch t))))
+	 xmtn-sync-ewoc)
 
-      (if (not old-branch)
-	  (ewoc-enter-last
-	   xmtn-sync-ewoc
-	   (ecase direction
-	     ('receive
-	      (make-xmtn-sync-branch
-	       :name branch
-	       :rev-alist (list (list revid (list date author changelog)))
-	       :send-count 0
-	       :print-mode 'summary))
-	     ('send
-	      (make-xmtn-sync-branch
-	       :name branch
-	       :rev-alist nil
-	       :send-count 1
-	       :print-mode 'summary)))))
+	(if (not old-branch)
+	    (ewoc-enter-last
+	     xmtn-sync-ewoc
+	     (ecase direction
+	       ('receive
+		(make-xmtn-sync-branch
+		 :name branch
+		 :rev-alist (list (list revid (list date author changelog)))
+		 :send-count 0
+		 :print-mode 'summary))
+	       ('send
+		(make-xmtn-sync-branch
+		 :name branch
+		 :rev-alist nil
+		 :send-count 1
+		 :print-mode 'summary))))))
       )))
 
 (defun xmtn-sync-parse-certs (direction)
