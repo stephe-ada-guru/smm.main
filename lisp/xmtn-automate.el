@@ -338,11 +338,7 @@ Signals an error if output contains zero lines or more than one line."
 		 ;; not the sync session
 		 (append (list xmtn-executable "automate" "stdio")
 			 xmtn-automate-arguments))))
-      (let ((process
-		 (apply 'start-process name buffer cmd)
-
-	       (apply 'start-process name buffer xmtn-executable
-                    "automate" "stdio" xmtn-automate-arguments)))
+      (let ((process (apply 'start-process name buffer cmd)))
         (ecase (process-status process)
           (run
            ;; If the process started ok, it outputs the stdio
