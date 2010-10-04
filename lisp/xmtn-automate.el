@@ -98,6 +98,8 @@
       (goto-char (point-max))
       (newline)
       (insert (format "command: %s" (xmtn-automate--command-handle-command handle)))
+      (when (xmtn-automate--session-error-file session)
+	(insert-file-contents (xmtn-automate--session-error-file session)))
       (error "mtn error %s" (xmtn-automate--command-handle-error-code handle)))
     (if (xmtn-automate--command-handle-warnings handle)
       (display-buffer (format dvc-error-buffer 'xmtn) t))
@@ -325,16 +327,19 @@ Signals an error if output contains zero lines or more than one line."
 	  ;; the stdout packetized error stream.  xmtn-sync uses the
 	  ;; unique xmtn-sync-session-root for the session root, so we
 	  ;; treat that specially.
-	  (cmd (if (string= xmtn-sync-session-root root)
+	  (cmd (if (string= xmtn-sync-session-root (file-name-nondirectory root))
 		   (progn
 		     (setf (xmtn-automate--session-error-file session)
 			   (dvc-make-temp-name (concat xmtn-sync-session-root "-errors")))
-		     (append (list dvc-sh-executable
-				   "-c"
-				   xmtn-executable
-				   "automate" "stdio")
-			     xmtn-automate-arguments
-			     (list "2>" (xmtn-automate--session-error-file session))))
+		     (list dvc-sh-executable
+			   "-c"
+			   (mapconcat
+			    'concat
+			    (append (list xmtn-executable "automate" "stdio")
+				    xmtn-automate-arguments
+				    (list "2>"
+					  (xmtn-automate--session-error-file session)))
+			    " ")))
 		 ;; not the sync session
 		 (append (list xmtn-executable "automate" "stdio")
 			 xmtn-automate-arguments))))

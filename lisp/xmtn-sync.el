@@ -53,8 +53,10 @@
   "File to store `xmtn-sync-branch-alist'; relative to `dvc-config-directory'.")
 
 ;;; Internal variables
-(defconst xmtn-sync-required-command-version '(0 46)
-  "Minimum version for `xmtn-sync-executable'; overrides xmtn--minimum-required-command-version.")
+(defconst xmtn-sync-required-command-version '(0 99)
+  ;; Sometimes the Cygwin version lags behind the MinGW version; this allows that.
+  "Minimum version for `xmtn-sync-executable'; overrides xmtn--minimum-required-command-version.
+Must support file:, ssh:, automate sync.")
 
 (defconst xmtn-sync-remote-exec "mtn"
   ;; We assume the user has setup the login used for ssh: to put the
@@ -157,7 +159,10 @@ The elements must all be of type xmtn-sync-sync.")
     (if (not work)
         (progn
           (setq work (read-directory-name (format "workspace root for %s: " branch)))
-          (push (list branch work) xmtn-sync-branch-alist)))
+          (push (list branch work) xmtn-sync-branch-alist)
+	  (dvc-save-state
+	   (list 'xmtn-sync-branch-alist)
+	   (expand-file-name xmtn-sync-branch-file dvc-config-directory))))
     (setf (xmtn-sync-branch-print-mode data) 'started) ; indicate we've started work on it
     (ewoc-invalidate xmtn-sync-ewoc elem)
     (xmtn-status-one work)))
@@ -496,7 +501,10 @@ Remote-db should include branch pattern in URI syntax."
     (xmtn-sync-parse (point-min) parse-end)
     (setq buffer-read-only t)
     (set-buffer-modified-p nil)
-    (xmtn-sync-save)))
+    (xmtn-sync-save)
+    (unless xmtn-sync-branch-alist
+      (load (expand-file-name xmtn-sync-branch-file dvc-config-directory)))
+    ))
 
 (defun xmtn-sync-save ()
   "Save current sync results in `xmtn-sync-save-file' for later review."
