@@ -503,7 +503,9 @@ Remote-db should include branch pattern in URI syntax."
     (set-buffer-modified-p nil)
     (xmtn-sync-save)
     (unless xmtn-sync-branch-alist
-      (load (expand-file-name xmtn-sync-branch-file dvc-config-directory)))
+      (let ((save-file (expand-file-name xmtn-sync-branch-file dvc-config-directory)))
+	(if (file-exists-p save-file)
+	    (load save-file))))
     ))
 
 (defun xmtn-sync-save ()
