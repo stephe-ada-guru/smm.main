@@ -292,9 +292,9 @@ The elements must all be of type xmtn-sync-sync.")
       (xmtn-basic-io-skip-blank-lines)
       (let* ((cert-values (xmtn-sync-parse-revision-certs direction))
 	     (branch (nth 0 cert-values))
-	     (date (nth 1 cert-values))
-	     (author (nth 2 cert-values))
-	     (changelog (nth 3 cert-values)))
+	     (changelog (nth 1 cert-values))
+	     (date (nth 2 cert-values))
+	     (author (nth 3 cert-values)))
 
 	(xmtn-sync-enter-rev revid branch date author changelog direction)))))
 
