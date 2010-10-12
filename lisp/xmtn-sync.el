@@ -114,8 +114,7 @@ The elements must all be of type xmtn-sync-sync.")
 		  (length (xmtn-sync-branch-rev-alist branch))
 		  (xmtn-sync-branch-send-count branch)))
   (ecase (xmtn-sync-branch-print-mode branch)
-    (summary
-     (insert "\n"))
+    (summary nil)
 
     ((brief full)
      (loop for rev in (xmtn-sync-branch-rev-alist branch) do
@@ -526,6 +525,7 @@ Remote-db should include branch pattern in URI syntax."
      (list 'stuff)
      (expand-file-name xmtn-sync-save-file dvc-config-directory))))
 
+;;;###autoload
 (defun xmtn-sync-review ()
   "Display sync results in `xmtn-sync-save-file'."
   (interactive)
