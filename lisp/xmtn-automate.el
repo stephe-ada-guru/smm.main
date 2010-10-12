@@ -360,7 +360,10 @@ Signals an error if output contains zero lines or more than one line."
                      (error "unexpected mtn automate stdio format version %s" (match-string 0)))
                ;; Some error. Display the session buffer to show the error
                (pop-to-buffer buffer)
-               (error "failed to create mtn automate process"))))
+	       (let ((inhibit-read-only t))
+		 (when (xmtn-automate--session-error-file session)
+		   (insert-file-contents (xmtn-automate--session-error-file session))))
+               (error "unexpected header from mtn automate process"))))
           ((exit signal)
            (pop-to-buffer buffer)
            (error "failed to create mtn automate process")))
