@@ -212,84 +212,110 @@ The elements must all be of type xmtn-sync-sync.")
   (dvc-install-buffer-menu)
   (buffer-disable-undo))
 
-(defun xmtn-sync-parse-revisions (direction)
-  "Parse revisions with associated certs."
-  (let (revid)
-    (xmtn-basic-io-skip-blank-lines)
-    (while (xmtn-basic-io-optional-line "revision" (setq revid (cadar value)))
-      (let (cert-label branch date author changelog old-branch)
-	(xmtn-basic-io-check-empty)
-	(while (xmtn-basic-io-optional-line "cert" (setq cert-label (cadar value)))
-	  (cond
-	   ((string= cert-label "branch")
-	    (xmtn-basic-io-check-line "value" (setq branch (cadar value)))
-	    (xmtn-basic-io-skip-line "key"))
+(defun xmtn-sync-parse-revision-certs (direction)
+  "Parse certs associated with a revision; return (branch changelog date author)."
+  (let ((keyword (ecase direction
+		   ('receive "receive_cert")
+		   ('send    "send_cert")))
+	cert-label branch date author changelog old-branch)
+    (while (xmtn-basic-io-optional-line keyword (setq cert-label (cadar value)))
+      (cond
+       ((string= cert-label "branch")
+	(xmtn-basic-io-check-line "value" (setq branch (cadar value)))
+	(xmtn-basic-io-skip-line "key")
+	(xmtn-basic-io-skip-line "revision"))
 
-	   ((string= cert-label "changelog")
-	    (xmtn-basic-io-check-line "value" (setq changelog (cadar value)))
-	    (xmtn-basic-io-skip-line "key"))
+       ((string= cert-label "changelog")
+	(xmtn-basic-io-check-line "value" (setq changelog (cadar value)))
+	(xmtn-basic-io-skip-line "key")
+	(xmtn-basic-io-skip-line "revision"))
 
-	   ((string= cert-label "date")
-	    (xmtn-basic-io-check-line "value" (setq date (cadar value)))
-	    (xmtn-basic-io-skip-line "key"))
+       ((string= cert-label "date")
+	(xmtn-basic-io-check-line "value" (setq date (cadar value)))
+	(xmtn-basic-io-skip-line "key")
+	(xmtn-basic-io-skip-line "revision"))
 
-	   ((string= cert-label "author")
-	    (xmtn-basic-io-check-line "value" (setq author (cadar value)))
-	    (xmtn-basic-io-skip-line "key"))
+       ((string= cert-label "author")
+	(xmtn-basic-io-check-line "value" (setq author (cadar value)))
+	(xmtn-basic-io-skip-line "key")
+	(xmtn-basic-io-skip-line "revision"))
 
-	   (t
-	    ;; ignore other certs
-	    (xmtn-basic-io-skip-stanza))
-	   )
-	  (xmtn-basic-io-skip-blank-lines) ;; might be at end of parsing region
-	  ) ;; end while cert
+       (t
+	;; ignore other certs
+	(xmtn-basic-io-skip-stanza))
+       )
+      (xmtn-basic-io-skip-blank-lines) ;; might be at end of parsing region
+      ) ;; end while cert
 
-	(ewoc-map
-	 (lambda (data)
-	   (if (string= branch (xmtn-sync-branch-name data))
-	       ;; already some data for branch
-	       (let ((rev-alist (xmtn-sync-branch-rev-alist data)))
-		 (ecase direction
-		   ('receive
-		    (setf (xmtn-sync-branch-rev-alist data)
-			  ;; sync sends revs newest first, we want newest
-			  ;; displayed last, so append to head of list
-			  (push (list revid (list date author changelog)) rev-alist)))
-		   ('send
-		    (setf (xmtn-sync-branch-send-count data) (+ 1 (xmtn-sync-branch-send-count data)))))
-		 (setq old-branch t))))
-	 xmtn-sync-ewoc)
+    (list branch changelog date author)))
 
-	(if (not old-branch)
-	    (ewoc-enter-last
-	     xmtn-sync-ewoc
+(defun xmtn-sync-enter-rev (revid branch date author changelog direction)
+  "Enter data for REVID into ewoc."
+  (let (old-branch)
+    (ewoc-map
+     (lambda (data)
+       (if (string= branch (xmtn-sync-branch-name data))
+	   ;; already some data for branch
+	   (let ((rev-alist (xmtn-sync-branch-rev-alist data)))
 	     (ecase direction
 	       ('receive
-		(make-xmtn-sync-branch
-		 :name branch
-		 :rev-alist (list (list revid (list date author changelog)))
-		 :send-count 0
-		 :print-mode 'summary))
+		(setf (xmtn-sync-branch-rev-alist data)
+		      ;; sync sends revs newest first, we want newest
+		      ;; displayed last, so append to head of list
+		      (push (list revid (list date author changelog)) rev-alist)))
 	       ('send
-		(make-xmtn-sync-branch
-		 :name branch
-		 :rev-alist nil
-		 :send-count 1
-		 :print-mode 'summary))))))
-      )))
+		(setf (xmtn-sync-branch-send-count data) (+ 1 (xmtn-sync-branch-send-count data)))))
+	     (setq old-branch t))))
+     xmtn-sync-ewoc)
+
+    (if (not old-branch)
+	(ewoc-enter-last
+	 xmtn-sync-ewoc
+	 (ecase direction
+	   ('receive
+	    (make-xmtn-sync-branch
+	     :name branch
+	     :rev-alist (list (list revid (list date author changelog)))
+	     :send-count 0
+	     :print-mode 'summary))
+	   ('send
+	    (make-xmtn-sync-branch
+	     :name branch
+	     :rev-alist nil
+	     :send-count 1
+	     :print-mode 'summary)))))))
+
+(defun xmtn-sync-parse-revisions (direction)
+  "Parse revisions with associated certs."
+  (let ((keyword (ecase direction
+		   ('receive "receive_revision")
+		   ('send    "send_revision")))
+	revid)
+    (while (xmtn-basic-io-optional-line keyword (setq revid (cadar value)))
+      (xmtn-basic-io-skip-blank-lines)
+      (let* ((cert-values (xmtn-sync-parse-revision-certs direction))
+	     (branch (nth 0 cert-values))
+	     (changelog (nth 1 cert-values))
+	     (date (nth 2 cert-values))
+	     (author (nth 3 cert-values)))
+
+	(xmtn-sync-enter-rev revid branch date author changelog direction)))))
 
 (defun xmtn-sync-parse-certs (direction)
   "Parse certs not associated with revisions."
   ;; The only case we care about is a new branch created from an existing revision.
-  (let (revid
+  (let ((keyword (ecase direction
+		   ('receive "receive_cert")
+		   ('send    "send_cert")))
+	revid
 	cert-label
 	branch
 	(date "")
 	(author "")
 	(changelog "create branch\n")
 	old-branch)
-    (xmtn-basic-io-skip-blank-lines)
-    (while (xmtn-basic-io-optional-line "cert" (setq cert-label (cadar value)))
+
+    (while (xmtn-basic-io-optional-line keyword (setq cert-label (cadar value)))
       (cond
        ((string= cert-label "branch")
 	(xmtn-basic-io-check-line "value" (setq branch (cadar value)))
@@ -304,138 +330,98 @@ The elements must all be of type xmtn-sync-sync.")
       ;; move to next stanza or end of parsing region
       (xmtn-basic-io-skip-blank-lines)
 
-      (ewoc-map
-       (lambda (data)
-	 (if (string= branch (xmtn-sync-branch-name data))
-	     ;; Already some data for branch; this is the create event
-	     (let* ((rev-alist (xmtn-sync-branch-rev-alist data)))
-	       (ecase direction
-		 ('receive
-		  (setf (xmtn-sync-branch-rev-alist data)
-			;; sync sends revs newest first, we want newest
-			;; displayed last, so append to head of list
-			(push (list revid (list date author changelog)) rev-alist)))
-		 ('send
-		  (setf (xmtn-sync-branch-send-count data) (+ 1 (xmtn-sync-branch-send-count data)))))
-	       (setq old-branch t))))
-       xmtn-sync-ewoc)
-
-      (if (not old-branch)
-	  (ewoc-enter-last
-	   xmtn-sync-ewoc
-	   (ecase direction
-	     ('receive
-	      (make-xmtn-sync-branch
-	       :name branch
-	       :rev-alist (list (list revid (list date author changelog)))
-	       :send-count 0
-	       :print-mode 'summary))
-	     ('send
-	      (make-xmtn-sync-branch
-	       :name branch
-	       :rev-alist nil
-	       :send-count 1
-	       :print-mode 'summary)))))
-    )))
+      (xmtn-sync-enter-rev revid branch date author changelog direction))))
 
 (defun xmtn-sync-parse-keys (direction)
   ;; just ignore all keys
-  (xmtn-basic-io-skip-blank-lines)
-  (while (xmtn-basic-io-optional-skip-line "key")))
+  (let ((keyword (ecase direction
+		   ('receive "receive_key")
+		   ('send    "send_key"))))
+    (xmtn-basic-io-skip-blank-lines)
+    (while (xmtn-basic-io-optional-skip-line keyword))))
 
 (defun xmtn-sync-parse (begin end)
   "Parse region BEGIN END in current buffer, fill in `xmtn-sync-ewoc', erase BEGIN END."
   (set-syntax-table xmtn-basic-io--*syntax-table*)
   (goto-char begin)
 
-  ;; receive revision
-  ;;
-  ;; revision [e4352c1d28b38e87b5040f770a66be2ec9b2362d]
-  ;;
-  ;;     cert "branch"
-  ;;    value "foo2"
-  ;;      key [46ec58576f9e4f34a9eede521422aa5fd299dc50]
-  ;;
-  ;;     cert "changelog"
-  ;;    value "more
-  ;; "
-  ;;      key [46ec58576f9e4f34a9eede521422aa5fd299dc50]
-  ;;
-  ;;     cert "date"
-  ;;    value "2010-09-21T08:29:11"
-  ;;      key [46ec58576f9e4f34a9eede521422aa5fd299dc50]
-  ;;
-  ;;     cert "author"
-  ;;    value "tester@test.net"
-  ;;      key [46ec58576f9e4f34a9eede521422aa5fd299dc50]
-  ;;
-  ;;     ... more certs
-  ;;
-  ;; revision [f05b1451d082698243328e31829e9b2a39fb7c69]
-  ;;
-  ;;     ... certs
-  ;;
-  ;; ... more revisions with certs
-  ;;
-  ;; receive cert
-  ;;
-  ;;     cert "branch"
-  ;; revision [e4352c1d28b38e87b5040f770a66be2ec9b2362d]
-  ;;    value "foo2"
-  ;;      key [46ec58576f9e4f34a9eede521422aa5fd299dc50]
+  ;; receive_cert "branch"
+  ;;        value "foo2"
+  ;;          key [46ec58576f9e4f34a9eede521422aa5fd299dc50]
+  ;;     revision [e4352c1d28b38e87b5040f770a66be2ec9b2362d]
   ;;
   ;; ... more unattached certs
   ;;
-  ;; receive key
+  ;; receive_revision [e4352c1d28b38e87b5040f770a66be2ec9b2362d]
+  ;;
+  ;; receive_cert "branch"
+  ;;        value "foo2"
+  ;;          key [46ec58576f9e4f34a9eede521422aa5fd299dc50]
+  ;;     revision [...]
+  ;;
+  ;; receive_cert "changelog"
+  ;;        value "more
+  ;; "
+  ;;          key [46ec58576f9e4f34a9eede521422aa5fd299dc50]
+  ;;     revision [...]
+  ;;
+  ;; receive_cert "date"
+  ;;        value "2010-09-21T08:29:11"
+  ;;          key [46ec58576f9e4f34a9eede521422aa5fd299dc50]
+  ;;     revision [...]
+  ;;
+  ;; receive_cert "author"
+  ;;        value "tester@test.net"
+  ;;          key [46ec58576f9e4f34a9eede521422aa5fd299dc50]
+  ;;     revision [...]
+  ;;
+  ;;     ... more certs
+  ;;
+  ;; ... more revisions with certs
+  ;;
+  ;; receive_key
   ;;
   ;; key [46ec58576f9e4f34a9eede521422aa5fd299dc50]
   ;; key [46ec58576f9e4f34a9eede521422aa5fd299dc50]
   ;; ... more keys
   ;;
-  ;; send revision
+  ;; send_cert ... (unattached)
   ;;
-  ;; ... sent revisions, certs
+  ;; send_revision [...]
+  ;;    send_cert ...
   ;;
-  ;; send cert
-  ;;
-  ;;    cert "branch"
-  ;;    value "work_2"
-  ;;      key [ed5da650ec723c2c4172169df9d9ddf4e6b54f2c]
-  ;; revision [bd3fb494a07939a79405f728d9c8c54d1005dcf3]
-  ;;
-  ;; send key
+  ;; send_key ...
 
-  (xmtn-basic-io-optional-line-2 '("receive" (symbol "revision"))
-    (xmtn-sync-parse-revisions 'receive))
-
-  (xmtn-basic-io-skip-blank-lines)
-  (xmtn-basic-io-optional-line-2 '("receive" (symbol "cert"))
-    (xmtn-sync-parse-certs 'receive))
-
-  (xmtn-basic-io-skip-blank-lines)
-  (xmtn-basic-io-optional-line-2 '("receive" (symbol "key"))
-    (xmtn-sync-parse-keys 'receive))
-
-  (xmtn-basic-io-skip-blank-lines)
-  (xmtn-basic-io-optional-line-2 '("send" (symbol "revision"))
-    (xmtn-sync-parse-revisions 'send))
-
-  (xmtn-basic-io-skip-blank-lines)
-  (xmtn-basic-io-optional-line-2 '("send" (symbol "cert"))
-    (xmtn-sync-parse-certs 'send))
-
-  (xmtn-basic-io-skip-blank-lines)
-  (xmtn-basic-io-optional-line-2 '("send" (symbol "key"))
-    (xmtn-sync-parse-keys 'send))
+  (xmtn-sync-parse-certs 'receive)
+  (xmtn-sync-parse-revisions 'receive)
+  (xmtn-sync-parse-keys 'receive)
+  (xmtn-sync-parse-certs 'send)
+  (xmtn-sync-parse-revisions 'send)
+  (xmtn-sync-parse-keys 'send)
 
   (delete-region begin end)
   )
+
+(defun xmtn-sync-load-file (&optional noerror)
+  "Add contents of `xmtn-sync-save-file' to current ewoc."
+  (let ((save-file (expand-file-name xmtn-sync-save-file dvc-config-directory))
+	stuff)
+    (if (file-exists-p save-file)
+	(progn
+	  (load save-file)
+	  (setq buffer-read-only nil)
+	  (dolist (data stuff) (ewoc-enter-last xmtn-sync-ewoc data))
+	  (setq buffer-read-only t)
+	  (set-buffer-modified-p nil))
+      (unless noerror
+	(error "%s file not found" save-file)))))
 
 ;;;###autoload
 (defun xmtn-sync-sync (local-db scheme remote-host remote-db)
   "Sync LOCAL-DB with using SCHEME to connect to REMOTE-HOST REMOTE-DB, display sent and received branches.
 Remote-db should include branch pattern in URI syntax."
   (interactive "flocal db: \nMscheme: \nMremote-host: \nMremote-db: ")
+
   (pop-to-buffer (get-buffer-create "*xmtn-sync*"))
   (setq buffer-read-only nil)
   (delete-region (point-min) (point-max))
@@ -447,7 +433,7 @@ Remote-db should include branch pattern in URI syntax."
 
   ;; FIXME: need the ticker to show sync progress
 
-  (let (opts
+  (let ((opts xmtn-automate-arguments)
 	parse-end
 	(remote-uri (concat scheme "://" remote-host remote-db))
 	(msg "Running mtn sync ..."))
@@ -456,10 +442,10 @@ Remote-db should include branch pattern in URI syntax."
 
     ;; Determine correct syntax for path to xmtn-hooks.lua.
     (if (eq system-type 'windows-nt)
-	(setq opts (add-to-list 'xmtn-automate-arguments
-				(concat "--rcfile=" (substring (locate-library "xmtn-hooks.lua") 2))))
-      (setq opts (add-to-list 'xmtn-automate-arguments
-			      (concat "--rcfile=" (locate-library "xmtn-hooks.lua")))))
+	(add-to-list 'opts
+		     (concat "--rcfile=" (substring (locate-library "xmtn-hooks.lua") 2)))
+      (add-to-list 'opts
+		   (concat "--rcfile=" (locate-library "xmtn-hooks.lua"))))
 
     ;; Pass remote command to mtn via Lua hook get_mtn_command; see
     ;; xmtn-hooks.lua.
@@ -488,7 +474,11 @@ Remote-db should include branch pattern in URI syntax."
 
     (goto-char (point-max))
     (setq parse-end (point-max))
+
+    ;; don't lose what was saved from last sync; may not have been reviewed yet
     (xmtn-sync-mode)
+    (xmtn-sync-load-file t)
+
     (setq buffer-read-only nil)
     (ewoc-set-hf
      xmtn-sync-ewoc
@@ -529,18 +519,11 @@ Remote-db should include branch pattern in URI syntax."
 (defun xmtn-sync-review ()
   "Display sync results in `xmtn-sync-save-file'."
   (interactive)
-  (let ((save-file (expand-file-name xmtn-sync-save-file dvc-config-directory))
-	stuff)
-    (if (file-exists-p save-file)
-	(progn
-	  (pop-to-buffer (get-buffer-create "*xmtn-sync*"))
-	  (setq buffer-read-only nil)
-	  (delete-region (point-min) (point-max))
-	  (xmtn-sync-mode)
-	  (load save-file)
-	  (dolist (data stuff) (ewoc-enter-last xmtn-sync-ewoc data))
-	  (setq buffer-read-only t))
-      (error "%s file not found" save-file))))
+  (pop-to-buffer (get-buffer-create "*xmtn-sync*"))
+  (setq buffer-read-only nil)
+  (delete-region (point-min) (point-max))
+  (xmtn-sync-mode)
+  (xmtn-sync-load-file))
 
 (provide 'xmtn-sync)
 
