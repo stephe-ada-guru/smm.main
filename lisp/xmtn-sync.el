@@ -154,17 +154,23 @@ The elements must all be of type xmtn-sync-sync.")
   (let* ((elem (ewoc-locate xmtn-sync-ewoc))
 	 (data (ewoc-data elem))
          (branch (xmtn-sync-branch-name data))
-         (work (cadr (assoc branch xmtn-sync-branch-alist))))
+         (work (cadr (assoc branch xmtn-sync-branch-alist)))
+	 save-work)
     (if (not work)
         (progn
           (setq work (read-directory-name (format "workspace root for %s: " branch)))
-          (push (list branch work) xmtn-sync-branch-alist)
-	  (dvc-save-state
-	   (list 'xmtn-sync-branch-alist)
-	   (expand-file-name xmtn-sync-branch-file dvc-config-directory))))
+	  (setq save-work t)))
     (setf (xmtn-sync-branch-print-mode data) 'started) ; indicate we've started work on it
     (ewoc-invalidate xmtn-sync-ewoc elem)
-    (xmtn-status-one work)))
+    (xmtn-status-one work)
+
+    ;; don't save the workspace association until it is validated by xmtn-status-one
+    (if save-work
+	(progn
+	  (push (list branch work) xmtn-sync-branch-alist)
+	  (dvc-save-state
+	   (list 'xmtn-sync-branch-alist)
+	   (expand-file-name xmtn-sync-branch-file dvc-config-directory))))))
 
 (defun xmtn-sync-clean ()
   "Clean and delete current ewoc element."
