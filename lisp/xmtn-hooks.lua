@@ -39,10 +39,14 @@ function get_netsync_connect_command(uri, args)
 
         table.insert(argv, uri["host"])
 
-        if xmtn_sync_remote_exec then
-            argv = { xmtn_sync_remote_exec }
+        if xmtn_sync_ssh_exec then
+            if xmtn_sync_ssh_exec [uri["host"]] then
+               table.insert(argv, xmtn_sync_ssh_exec [uri["host"]])
+            else
+               table.insert(argv, "mtn")
+            end
         else
-            argv = { "mtn" }
+            table.insert(argv, "mtn")
         end
         
         if args["debug"] then
