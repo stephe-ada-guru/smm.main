@@ -58,12 +58,6 @@
   "Minimum version for `xmtn-sync-executable'; overrides xmtn--minimum-required-command-version.
 Must support file:, ssh:, automate sync.")
 
-(defconst xmtn-sync-remote-exec "mtn"
-  ;; We assume the user has setup the login used for ssh: to put the
-  ;; right mtn in path, except they may want to override that for
-  ;; experiments.
-  "Executable command to run on remote host for ssh: connections.")
-
 ;; loaded from xmtn-sync-config
 (defvar xmtn-sync-branch-alist nil
   "Alist associating branch name with workspace root")
@@ -265,7 +259,9 @@ The elements must all be of type xmtn-sync-sync.")
 		      (push (list revid (list date author changelog)) rev-alist)))
 	       ('send
 		(setf (xmtn-sync-branch-send-count data) (+ 1 (xmtn-sync-branch-send-count data)))))
-	     (setq old-branch t))))
+	     (setq old-branch t)
+	     nil; don't update ewoc yet
+	     )))
      xmtn-sync-ewoc)
 
     (if (not old-branch)
@@ -440,22 +436,15 @@ Remote-db should include branch pattern in URI syntax."
 
     (message msg)
 
+    ;; Remote command is determined by a custom version of
+    ;; get_netsync_connect_command; see xmtn-hooks.lua.
+
     ;; Determine correct syntax for path to xmtn-hooks.lua.
     (if (eq system-type 'windows-nt)
 	(add-to-list 'opts
 		     (concat "--rcfile=" (substring (locate-library "xmtn-hooks.lua") 2)))
       (add-to-list 'opts
 		   (concat "--rcfile=" (locate-library "xmtn-hooks.lua"))))
-
-    ;; Pass remote command to mtn via Lua hook get_mtn_command; see
-    ;; xmtn-hooks.lua.
-    (setenv "XMTN_SYNC_MTN"
-	    (cond
-	     ((string= scheme "file") xmtn-sync-executable)
-	     ((string= scheme "ssh") xmtn-sync-remote-exec)
-	     ((string= scheme "mtn") "")
-	     (t
-	      (error "invalid scheme %s" scheme))))
 
     ;; Always use mtn executable that supports file and ssh, so we
     ;; only need one session for all syncs.
@@ -492,9 +481,9 @@ Remote-db should include branch pattern in URI syntax."
     (set-buffer-modified-p nil)
     (xmtn-sync-save)
     (unless xmtn-sync-branch-alist
-      (let ((save-file (expand-file-name xmtn-sync-branch-file dvc-config-directory)))
-	(if (file-exists-p save-file)
-	    (load save-file))))
+      (let ((branch-file (expand-file-name xmtn-sync-branch-file dvc-config-directory)))
+	(if (file-exists-p branch-file)
+	    (load branch-file))))
     ))
 
 (defun xmtn-sync-save ()
