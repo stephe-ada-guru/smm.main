@@ -188,8 +188,18 @@ The elements must all be of type xmtn-sync-sync.")
 (dvc-make-ewoc-next xmtn-sync-next xmtn-sync-ewoc)
 (dvc-make-ewoc-prev xmtn-sync-prev xmtn-sync-ewoc)
 
+(defvar xmtn-sync-kbd-map
+  (let ((map (make-sparse-keymap "action")))
+    (define-key map [?b]  '(menu-item "brief" xmtn-sync-brief))
+    (define-key map [?c]  '(menu-item "clean" xmtn-sync-clean))
+    (define-key map [?f]  '(menu-item "full" xmtn-sync-full))
+    (define-key map [?s]  '(menu-item "status" xmtn-sync-status))
+    map)
+  "Keyboard menu keymap used in `xmtn-sync-mode'.")
+
 (defvar xmtn-sync-mode-map
   (let ((map (make-sparse-keymap)))
+    (define-key map "\M-d" xmtn-sync-kbd-map)
     (define-key map [?b]  'xmtn-sync-brief)
     (define-key map [?c]  'xmtn-sync-clean)
     (define-key map [?f]  'xmtn-sync-full)
