@@ -32,12 +32,6 @@
   )
 
 ;;; User variables
-(defvar xmtn-sync-save-file "sync"
-  "File to save sync results for later review; relative to `dvc-config-directory'.")
-
-(defvar xmtn-sync-branch-file "branches"
-  "File associating branch name with workspace root; relative to `dvc-config-directory'.")
-
 (defvar xmtn-sync-executable
   (cond
     ((equal system-type 'windows-nt)
@@ -49,10 +43,27 @@
      "mtn"))
   "Executable for running sync command on local db; overrides xmtn-executable.")
 
+(defvar xmtn-sync-automate-args
+  (cond
+    ((equal system-type 'windows-nt)
+     ;; Assume using Cygwin, which looks for .monotone/keys in a different place.
+     (list "--keydir" "~/.monotone/keys"))
+    (t
+     ;; Unix or Cygwin
+     nil))
+  "Extra arguments (list of strings) used when starting a sync automate process;
+overrides xmtn-automate-arguments.")
+
 (defvar xmtn-sync-config "xmtn-sync-config"
   "File to store `xmtn-sync-branch-alist'; relative to `dvc-config-directory'.")
 
 ;;; Internal variables
+(defconst xmtn-sync-save-file "sync"
+  "File to save sync results for later review; relative to `dvc-config-directory'.")
+
+(defconst xmtn-sync-branch-file "branches"
+  "File associating branch name with workspace root; relative to `dvc-config-directory'.")
+
 (defconst xmtn-sync-required-command-version '(0 99)
   ;; Sometimes the Cygwin version lags behind the MinGW version; this allows that.
   "Minimum version for `xmtn-sync-executable'; overrides xmtn--minimum-required-command-version.
@@ -266,7 +277,7 @@ The elements must all be of type xmtn-sync-sync.")
 	       ('send
 		(setf (xmtn-sync-branch-send-count data) (+ 1 (xmtn-sync-branch-send-count data)))))
 	     (setq old-branch t)
-	     nil; don't update ewoc yet
+	     t; update ewoc
 	     )))
      xmtn-sync-ewoc)
 
@@ -435,17 +446,16 @@ Remote-db should include branch pattern in URI syntax."
 
   ;; FIXME: need the ticker to show sync progress
 
-  (let ((opts xmtn-automate-arguments)
+  (let ((opts xmtn-sync-automate-args)
 	parse-end
 	(remote-uri (concat scheme "://" remote-host remote-db))
 	(msg "Running mtn sync ..."))
 
     (message msg)
 
-    ;; Remote command is determined by a custom version of
-    ;; get_netsync_connect_command; see xmtn-hooks.lua.
+    ;; Remote command (if needed by scheme) is determined by a custom
+    ;; version of get_netsync_connect_command; see xmtn-hooks.lua.
 
-    ;; Determine correct syntax for path to xmtn-hooks.lua.
     (if (eq system-type 'windows-nt)
 	(add-to-list 'opts
 		     (concat "--rcfile=" (substring (locate-library "xmtn-hooks.lua") 2)))
@@ -458,7 +468,7 @@ Remote-db should include branch pattern in URI syntax."
 	  (xmtn--minimum-required-command-version xmtn-sync-required-command-version)
 	  (xmtn-automate-arguments opts))
       (xmtn-automate-command-output-buffer
-       "sync" ; root - one session for all syncs
+       (expand-file-name "~/sync") ; root - one session for all syncs
        (current-buffer) ; output-buffer
        (list
 	(list "db" local-db) ;; options
