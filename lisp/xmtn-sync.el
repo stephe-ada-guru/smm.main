@@ -54,8 +54,9 @@
   "Extra arguments (list of strings) used when starting a sync automate process;
 overrides xmtn-automate-arguments.")
 
-(defvar xmtn-sync-config "xmtn-sync-config"
-  "File to store `xmtn-sync-branch-alist'; relative to `dvc-config-directory'.")
+(defvar xmtn-sync-guess-workspace nil
+  "User-supplied function to guess workspace location given branch.
+Called with a string containing the mtn branch name; return a workspace root or nil.")
 
 ;;; Internal variables
 (defconst xmtn-sync-save-file "sync"
@@ -63,6 +64,9 @@ overrides xmtn-automate-arguments.")
 
 (defconst xmtn-sync-branch-file "branches"
   "File associating branch name with workspace root; relative to `dvc-config-directory'.")
+
+(defconst xmtn-sync-config "xmtn-sync-config"
+  "File to store `xmtn-sync-branch-alist'; relative to `dvc-config-directory'.")
 
 (defconst xmtn-sync-required-command-version '(0 99)
   ;; Sometimes the Cygwin version lags behind the MinGW version; this allows that.
@@ -159,12 +163,15 @@ The elements must all be of type xmtn-sync-sync.")
   (let* ((elem (ewoc-locate xmtn-sync-ewoc))
 	 (data (ewoc-data elem))
          (branch (xmtn-sync-branch-name data))
-         (work (cadr (assoc branch xmtn-sync-branch-alist)))
-	 save-work)
-    (if (not work)
-        (progn
-          (setq work (read-directory-name (format "workspace root for %s: " branch)))
-	  (setq save-work t)))
+	 save-work
+         (work (or
+		(cadr (assoc branch xmtn-sync-branch-alist))
+		(if (functionp xmtn-sync-guess-workspace)
+		    (funcall xmtn-sync-guess-workspace branch))
+		(progn
+		  (read-directory-name (format "workspace root for %s: " branch))
+		  (setq save-work t))
+		)))
     (setf (xmtn-sync-branch-print-mode data) 'started) ; indicate we've started work on it
     (ewoc-invalidate xmtn-sync-ewoc elem)
     (xmtn-status-one work)
@@ -212,6 +219,7 @@ The elements must all be of type xmtn-sync-sync.")
     (define-key map [?p]  'xmtn-sync-prev)
     (define-key map [?q]  'xmtn-sync-save-quit)
     (define-key map [?s]  'xmtn-sync-status)
+    (define-key map [?S]  'xmtn-sync-save)
     map)
   "Keymap used in `xmtn-sync-mode'.")
 
@@ -222,6 +230,7 @@ The elements must all be of type xmtn-sync-sync.")
     ["Full display"  xmtn-sync-full t]
     ["Clean/delete"  xmtn-sync-clean t]
     ["Status"        xmtn-sync-status t]
+    ["Save"          xmtn-sync-save t]
     ["Save and Quit" xmtn-sync-save-quit t]
     ))
 
