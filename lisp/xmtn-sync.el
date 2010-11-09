@@ -462,6 +462,7 @@ Remote-db should include branch pattern in URI syntax."
 	(msg "Running mtn sync ..."))
 
     (message msg)
+    (redisplay) ;; show tickers in mode-line
 
     ;; Remote command (if needed by scheme) is determined by a custom
     ;; version of get_netsync_connect_command; see xmtn-hooks.lua.
@@ -483,6 +484,7 @@ Remote-db should include branch pattern in URI syntax."
        (list
 	(list "db" local-db) ;; options
 	"sync" remote-uri) ;; command, args
+       '("revisions" "revs in" "revs out") ;; display-tickers
        ))
 
     (message (concat msg " done"))

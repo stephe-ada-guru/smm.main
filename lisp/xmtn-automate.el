@@ -47,7 +47,7 @@
 ;; process must be killed with `xmtn-automate-kill-session'.
 ;;
 ;; Once you have a session object, you can use
-;; `xmtn-automate-new-command' to send commands to monotone.
+;; `xmtn-automate--new-command' to send commands to monotone.
 ;;
 ;; A COMMAND is a list of strings (the command and its arguments), or
 ;; a cons of lists of strings. If car COMMAND is a list, car COMMAND
@@ -56,7 +56,7 @@
 ;; "--". If an option has no value, use ""; see
 ;; xmtn--status-inventory-sync in xmtn-dvc for an example.
 ;;
-;; `xmtn-automate-new-command' returns a command handle.  You use this
+;; `xmtn-automate--new-command' returns a command handle.  You use this
 ;; handle to check the error code of the command and obtain its
 ;; output.  Your Emacs Lisp code can also do other computation while
 ;; the monotone command runs.  Allowing this kind of parallelism is
@@ -143,11 +143,11 @@ workspace root."
     (xmtn-automate-command-wait-until-finished command-handle)
     (xmtn-automate--command-output-as-string command-handle)))
 
-(defun xmtn-automate-command-output-buffer
-  (root buffer command)
-  "Send COMMAND to session for ROOT, insert result into BUFFER."
+(defun xmtn-automate-command-output-buffer (root buffer command &optional display-tickers)
+  "Send COMMAND to session for ROOT, insert result into BUFFER.
+Optionally DISPLAY-TICKERS in mode-line of BUFFER."
   (let* ((session (xmtn-automate-cache-session root))
-         (command-handle (xmtn-automate--new-command session command)))
+         (command-handle (xmtn-automate--new-command session command display-tickers buffer)))
     (xmtn-automate-command-wait-until-finished command-handle)
     (with-current-buffer buffer
       (insert-buffer-substring-no-properties
@@ -230,7 +230,11 @@ Signals an error if output contains zero lines or more than one line."
   (write-marker)
   (finished-p nil)
   (error-code nil)
-  (warnings nil))
+  (warnings nil)
+  (tickers nil) ; alist of xmtn-automate--ticker by short name; nil if none active
+  (display-tickers nil) ; list of long names of tickers to display
+  (display-buffer nil) ; buffer in which to display tickers
+  )
 
 (defun* xmtn-automate--initialize-session (session &key root name)
   (xmtn--assert-optional (equal root (file-name-as-directory root)) t)
@@ -458,8 +462,9 @@ the buffer."
         (unless xmtn-automate--*preserve-buffers-for-debugging*
           (kill-buffer buffer))))))
 
-(defun xmtn-automate--new-command (session command)
-  "Send COMMAND to SESSION."
+(defun xmtn-automate--new-command (session command &optional display-tickers display-buffer)
+  "Send COMMAND to SESSION. Optionally DISPLAY-TICKERS in DISPLAY-BUFFER mode-line.
+DISPLAY-TICKERS is a list of strings; names of tickers to display."
   (xmtn-automate--ensure-process session)
   (let* ((command-number
           (1- (incf (xmtn-automate--session-next-command-number
@@ -490,7 +495,9 @@ the buffer."
                      :command command
                      :session-command-number command-number
                      :buffer buffer
-                     :write-marker (set-marker (make-marker) (point)))))
+                     :write-marker (set-marker (make-marker) (point))
+		     :display-tickers display-tickers
+		     :display-buffer display-buffer)))
         (setf
          (xmtn-automate--session-remaining-command-handles session)
          (nconc (xmtn-automate--session-remaining-command-handles session)
@@ -500,6 +507,64 @@ the buffer."
 (defun xmtn-automate--cleanup-command (handle)
   (unless xmtn-automate--*preserve-buffers-for-debugging*
     (kill-buffer (xmtn-automate--command-handle-buffer handle))))
+
+(defstruct (xmtn-automate--ticker)
+  (long-name)
+  (display nil)
+  (current 0)
+  (total 0))
+
+(defun xmtn-automate--ticker-process (ticker-string tickers display-tickers)
+  "Process TICKER-STRING, updating tickers in alist TICKERS.
+DISPLAY-TICKERS is list of ticker names to display.
+Return updated value of TICKERS."
+  ;; ticker-string is contents of one stdio ticker packet:
+  ;; c:certificates;k:keys;r:revisions;   declare short and long names
+  ;; c=0;k=0;r=0;                         set total values
+  ;; c#7;k#1;r#2;                         set current values
+  ;; c;k;r;                               close ticker
+  (while (< 0 (length ticker-string))
+    (let* ((tick (substring ticker-string 0 (search ";" ticker-string)))
+	   (name (aref tick 0))
+	   (ticker (cadr (assoc name tickers))))
+      (if ticker
+	  (cond
+	   ((= 1 (length tick))
+	    (setq tickers (assq-delete-all name tickers)))
+	   ((= ?= (aref tick 1))
+	    (setf (xmtn-automate--ticker-total ticker) (string-to-number (substring tick 2))))
+	   ((= ?# (aref tick 1))
+	    (setf (xmtn-automate--ticker-current ticker) (string-to-number (substring tick 2))))
+	   )
+	;; else create new ticker
+	(setq tickers
+	      (add-to-list
+	       'tickers
+	       (list name
+		     (make-xmtn-automate--ticker
+		      :long-name (substring tick 2)
+		      :display (not (null (member (substring tick 2) display-tickers)))
+		      ))))
+	)
+      (setq ticker-string (substring ticker-string (+ 1 (length tick))))
+      ))
+  tickers)
+
+(defun xmtn-automate--ticker-mode-line (tickers buffer)
+  "Display TICKERS alist in BUFFER mode-line-process"
+  (with-current-buffer buffer
+    (setq mode-line-process nil)
+    (loop for item in tickers do
+	  (let ((ticker (cadr item)))
+	    (if (xmtn-automate--ticker-display ticker)
+		(progn
+		  (setq mode-line-process
+			(concat mode-line-process
+				(format " %s %d/%d"
+					(xmtn-automate--ticker-long-name ticker)
+					(xmtn-automate--ticker-current ticker)
+					(xmtn-automate--ticker-total ticker))))
+		  (force-mode-line-update)))))))
 
 (defun xmtn-automate--process-new-output--copy (session)
   "Copy SESSION current packet output to command output or error buffer.
@@ -512,10 +577,14 @@ Return non-nil if some text copied."
           (ecase (xmtn-automate--decoder-state-stream state)
             (?m
              (xmtn-automate--command-handle-buffer command))
-            ((?e ?w ?p ?t)
+	    (?t
+	     ;; Display ticker in mode line of display buffer for
+	     ;; current command.
+	     (xmtn-automate--command-handle-display-buffer command))
+            ((?e ?w ?p)
              (if (equal ?w (xmtn-automate--decoder-state-stream state))
                  (setf (xmtn-automate--command-handle-warnings command) t))
-             ;; probably ought to do something else with p and t, but
+             ;; probably ought to do something else with p, but
              ;; this is good enough for now.
              (get-buffer-create (format dvc-error-buffer 'xmtn)))))
          (write-marker
@@ -533,17 +602,29 @@ Return non-nil if some text copied."
           (if (not (buffer-live-p output-buffer))
               ;; Buffer has already been killed, just discard input.
               t
-            (with-current-buffer output-buffer
-              (save-excursion
-                (goto-char write-marker)
-                (let ((inhibit-read-only t)
-                      deactivate-mark)
-                  (insert-buffer-substring-no-properties session-buffer
-                                                         (xmtn-automate--decoder-state-read-marker state)
-                                                         end))
-                (set-marker write-marker (point))))
-            ;;(xmtn--debug-mark-text-processed session-buffer read-marker end nil)
-            )
+	    (ecase (xmtn-automate--decoder-state-stream state)
+	      (?t
+	       (setf (xmtn-automate--command-handle-tickers command)
+		     (xmtn-automate--ticker-process
+		      (buffer-substring-no-properties (xmtn-automate--decoder-state-read-marker state)
+						      end)
+		      (xmtn-automate--command-handle-tickers command)
+		      (xmtn-automate--command-handle-display-tickers command)))
+	       (xmtn-automate--ticker-mode-line
+		(xmtn-automate--command-handle-tickers command)
+		output-buffer))
+
+	      ((?m ?e ?w ?p)
+	       (with-current-buffer output-buffer
+		 (save-excursion
+		   (goto-char write-marker)
+		   (let ((inhibit-read-only t)
+			 deactivate-mark)
+		     (insert-buffer-substring-no-properties session-buffer
+							    (xmtn-automate--decoder-state-read-marker state)
+							    end))
+		   (set-marker write-marker (point)))))
+	      ))
           (setf (xmtn-automate--decoder-state-read-marker state) end)
           (decf (xmtn-automate--decoder-state-remaining-chars state)
                 chars-to-read)
