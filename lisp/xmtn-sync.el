@@ -168,7 +168,7 @@ The elements must all be of type xmtn-sync-sync.")
 		(cadr (assoc branch xmtn-sync-branch-alist))
 		(if (functionp xmtn-sync-guess-workspace)
 		    (funcall xmtn-sync-guess-workspace branch))
-		(progn
+		(prog1
 		  (read-directory-name (format "workspace root for %s: " branch))
 		  (setq save-work t))
 		)))
