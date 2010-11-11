@@ -159,7 +159,7 @@ id."
         (xmtn-executable executable))
     (let ((string (xmtn--command-output-line nil '("--version"))))
       (unless (string-match
-               (concat "\\`monotone \\([0-9]+\\)\\.\\([0-9]+\\)\\(dev\\)?"
+               (concat "\\`monotone \\([0-9]+\\)\\.\\([0-9]+\\)\\(\\.[0-9]+\\)?\\(dev\\)?"
                        " (base revision: \\(unknown\\|\\([0-9a-f]\\{40\\}\\)\\))\\'")
                string)
         (error (concat "Version output from monotone --version"
