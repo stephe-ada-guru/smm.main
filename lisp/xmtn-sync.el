@@ -343,7 +343,9 @@ The elements must all be of type xmtn-sync-sync.")
        ((string= cert-label "branch")
 	(xmtn-basic-io-check-line "value" (setq branch (cadar value)))
 	(xmtn-basic-io-skip-line "key")
-	(xmtn-basic-io-check-line "revision" (setq revid (cadar value))))
+	(xmtn-basic-io-check-line "revision" (setq revid (cadar value)))
+
+	(xmtn-sync-enter-rev revid branch date author changelog direction))
 
        (t
 	;; ignore other certs
@@ -353,7 +355,7 @@ The elements must all be of type xmtn-sync-sync.")
       ;; move to next stanza or end of parsing region
       (xmtn-basic-io-skip-blank-lines)
 
-      (xmtn-sync-enter-rev revid branch date author changelog direction))))
+      )))
 
 (defun xmtn-sync-parse-keys (direction)
   ;; just ignore all keys

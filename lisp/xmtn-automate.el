@@ -89,8 +89,10 @@
 (defun xmtn-automate-command-wait-until-finished (handle)
   (let ((session (xmtn-automate--command-handle-session handle)))
     (while (not (xmtn-automate--command-handle-finished-p handle))
-      ;; we use a timeout here to allow debugging, and possible incremental processing
-      (accept-process-output (xmtn-automate--session-process session) 1.0)
+      ;; We use a timeout here to allow debugging, and incremental
+      ;; processing of tickers. We don't use a process filter, because
+      ;; they are very hard to debug.
+      (accept-process-output (xmtn-automate--session-process session) 0.01)
       (xmtn-automate--process-new-output session))
     (unless (eql (xmtn-automate--command-handle-error-code handle) 0)
       (xmtn-automate--cleanup-command handle)
