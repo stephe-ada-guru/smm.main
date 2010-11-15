@@ -22,6 +22,7 @@
 ^texinfo/dvc\.aux$
 ^texinfo/dvc\.cp$
 ^texinfo/dvc\.fn$
+^texinfo/dvc\.html$
 ^texinfo/dvc\.info$
 ^texinfo/dvc\.ky$
 ^texinfo/dvc\.log$

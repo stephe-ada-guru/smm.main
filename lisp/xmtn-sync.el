@@ -174,7 +174,16 @@ The elements must all be of type xmtn-sync-sync.")
 		)))
     (setf (xmtn-sync-branch-print-mode data) 'started) ; indicate we've started work on it
     (ewoc-invalidate xmtn-sync-ewoc elem)
-    (xmtn-status-one work)
+
+    (condition-case err
+	(xmtn-status-one work)
+      ('error
+       (if (and (not save-work) (functionp xmtn-sync-guess-workspace))
+	   ;; xmtn-sync-guess-workspace guessed wrong; prompt and try again
+	   (progn
+	     (setq work (read-directory-name (format "workspace root for %s: " branch)))
+	     (setq save-work t)
+	     (xmtn-status-one work)))))
 
     ;; don't save the workspace association until it is validated by xmtn-status-one
     (if save-work
