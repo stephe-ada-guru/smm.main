@@ -936,9 +936,7 @@ otherwise newer."
        root
        (let ((default-directory root))
          (mapcan (lambda (file-name)
-                   (if (or (file-symlink-p file-name)
-                           (not (file-directory-p file-name)))
-                       (list (xmtn--perl-regexp-for-file-name file-name))))
+		   (list (xmtn--perl-regexp-for-file-name file-name)))
                  normalized-file-names))
        t))))
 
