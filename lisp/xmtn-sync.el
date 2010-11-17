@@ -211,10 +211,10 @@ The elements must all be of type xmtn-sync-sync.")
 
 (defvar xmtn-sync-kbd-map
   (let ((map (make-sparse-keymap "action")))
-    (define-key map [?b]  '(menu-item "brief" xmtn-sync-brief))
-    (define-key map [?c]  '(menu-item "clean" xmtn-sync-clean))
-    (define-key map [?f]  '(menu-item "full" xmtn-sync-full))
-    (define-key map [?s]  '(menu-item "status" xmtn-sync-status))
+    (define-key map [?s]  '(menu-item "s) status" xmtn-sync-status))
+    (define-key map [?b]  '(menu-item "b) brief" xmtn-sync-brief))
+    (define-key map [?f]  '(menu-item "f) full" xmtn-sync-full))
+    (define-key map [?c]  '(menu-item "c) clean" xmtn-sync-clean))
     map)
   "Keyboard menu keymap used in `xmtn-sync-mode'.")
 
