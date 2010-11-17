@@ -211,10 +211,11 @@ The elements must all be of type xmtn-sync-sync.")
 
 (defvar xmtn-sync-kbd-map
   (let ((map (make-sparse-keymap "action")))
-    (define-key map [?s]  '(menu-item "s) status" xmtn-sync-status))
-    (define-key map [?b]  '(menu-item "b) brief" xmtn-sync-brief))
-    (define-key map [?f]  '(menu-item "f) full" xmtn-sync-full))
+    ;; last defined is first in displayed menu
     (define-key map [?c]  '(menu-item "c) clean" xmtn-sync-clean))
+    (define-key map [?f]  '(menu-item "f) full" xmtn-sync-full))
+    (define-key map [?b]  '(menu-item "b) brief" xmtn-sync-brief))
+    (define-key map [?s]  '(menu-item "s) status" xmtn-sync-status))
     map)
   "Keyboard menu keymap used in `xmtn-sync-mode'.")
 
@@ -235,10 +236,11 @@ The elements must all be of type xmtn-sync-sync.")
 (easy-menu-define xmtn-sync-mode-menu xmtn-sync-mode-map
   "`xmtn-sync' menu"
   `("Xmtn-sync"
+    ;; first item is top in display
+    ["Status"        xmtn-sync-status t]
     ["Brief display" xmtn-sync-brief t]
     ["Full display"  xmtn-sync-full t]
     ["Clean/delete"  xmtn-sync-clean t]
-    ["Status"        xmtn-sync-status t]
     ["Save"          xmtn-sync-save t]
     ["Save and Quit" xmtn-sync-save-quit t]
     ))
