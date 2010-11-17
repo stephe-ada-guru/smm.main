@@ -235,8 +235,6 @@ The elements must all be of class xmtn-status-data.")
          (data (ewoc-data elem)))
     (xmtn-status-need-refresh elem data)
     (setf (xmtn-status-data-update-review data) 'done)
-    ;; refresh local changes, on the assumption that the review added FIXMEs
-    (setf (xmtn-status-data-local-changes data) 'need-scan)
     (xmtn-review-update (xmtn-status-work data))))
 
 (defun xmtn-status-review-updatep ()
@@ -399,16 +397,9 @@ The elements must all be of class xmtn-status-data.")
 
     (case (xmtn-status-data-local-changes data)
       (need-scan
-       (if (buffer-live-p (xmtn-status-data-status-buffer data))
-	   (with-current-buffer (xmtn-status-data-status-buffer data)
-	     (xmtn-dvc-status)
-	     (setf (xmtn-status-data-local-changes data)
-		   (if (not (ewoc-locate dvc-fileinfo-ewoc))
-		       'ok
-		     'need-commit)))
 	 (let ((result (xmtn--status-inventory-sync (xmtn-status-work data))))
 	   (setf (xmtn-status-data-status-buffer data) (car result)
-		 (xmtn-status-data-local-changes data) (cadr result))) ))
+		 (xmtn-status-data-local-changes data) (cadr result))) )
       (t nil))
 
     (case (xmtn-status-data-conflicts data)

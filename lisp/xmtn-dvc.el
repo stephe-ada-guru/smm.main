@@ -762,7 +762,8 @@ otherwise newer."
                     (current-buffer) error)))))))
 
 (defun xmtn--status-inventory-sync (root)
-  "Create a status buffer for ROOT; return (buffer status), where status is 'ok or 'need-commit."
+  "Create or reuse a status buffer for ROOT; return `(buffer status)',
+where `status' is 'ok or 'need-commit."
   (let*
       ((orig-buffer (current-buffer))
        (msg (concat "running inventory for " root " ..."))
