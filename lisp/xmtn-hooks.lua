@@ -66,7 +66,7 @@ function get_netsync_connect_command(uri, args)
         if xmtn_sync_file_exec then
             argv = { xmtn_sync_file_exec }
         else
-            if string.sub(get_ostype(), 1, 7) == "Cygwin" then
+            if string.sub(get_ostype(), 1, 6) == "CYGWIN" then
                 -- assume Cygwin mtn is not first in path
                 argv = { "c:/bin/mtn" }
             else
