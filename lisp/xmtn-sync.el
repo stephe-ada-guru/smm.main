@@ -474,8 +474,6 @@ Remote-db should include branch pattern in URI syntax."
   ;; need them to be inserted _after_ the text that is being
   ;; parsed. `xmtn-sync-mode' creates the ewoc at point.
 
-  ;; FIXME: need the ticker to show sync progress
-
   (let ((opts xmtn-sync-automate-args)
 	parse-end
 	(remote-uri (concat scheme "://" remote-host remote-db))
