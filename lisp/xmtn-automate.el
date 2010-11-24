@@ -204,7 +204,8 @@ Signals an error if output contains zero lines or more than one line."
   ;; char position (not marker) of last character read. We use a
   ;; position, not a marker, because text gets inserted in front of
   ;; the marker, and it moves.
-  (remaining-chars 0)
+
+  (remaining-chars 0) ;; until end of packet
   (stream 0); determines output buffer
   )
 
@@ -571,6 +572,8 @@ Return updated value of TICKERS."
 (defun xmtn-automate--process-new-output--copy (session)
   "Copy SESSION current packet output to command output or error buffer.
 Return non-nil if some text copied."
+  ;; We often get here with only a partial packet; the main channel
+  ;; outputs very large packets.
   (let* ((session-buffer (xmtn-automate--session-buffer session))
          (state (xmtn-automate--session-decoder-state session))
          (command (first (xmtn-automate--session-remaining-command-handles
@@ -606,15 +609,24 @@ Return non-nil if some text copied."
               t
 	    (ecase (xmtn-automate--decoder-state-stream state)
 	      (?t
-	       (setf (xmtn-automate--command-handle-tickers command)
-		     (xmtn-automate--ticker-process
-		      (buffer-substring-no-properties (xmtn-automate--decoder-state-read-marker state)
-						      end)
+	       ;; Display ticker in mode line of display buffer for
+	       ;; current command. But only if we have the whole packet
+	       (if (= chars-to-read (xmtn-automate--decoder-state-remaining-chars state))
+		   (progn
+		     (setf (xmtn-automate--command-handle-tickers command)
+			   (xmtn-automate--ticker-process
+			    (buffer-substring-no-properties (xmtn-automate--decoder-state-read-marker state)
+							    end)
+			    (xmtn-automate--command-handle-tickers command)
+			    (xmtn-automate--command-handle-display-tickers command)))
+		     (xmtn-automate--ticker-mode-line
 		      (xmtn-automate--command-handle-tickers command)
-		      (xmtn-automate--command-handle-display-tickers command)))
-	       (xmtn-automate--ticker-mode-line
-		(xmtn-automate--command-handle-tickers command)
-		output-buffer))
+		      output-buffer)
+		     (setf (xmtn-automate--decoder-state-read-marker state) end)
+		     (decf (xmtn-automate--decoder-state-remaining-chars state)
+			   chars-to-read))
+		 ;; not a whole packet; no text copied
+		 nil))
 
 	      ((?m ?e ?w ?p)
 	       (with-current-buffer output-buffer
@@ -625,13 +637,12 @@ Return non-nil if some text copied."
 		     (insert-buffer-substring-no-properties session-buffer
 							    (xmtn-automate--decoder-state-read-marker state)
 							    end))
-		   (set-marker write-marker (point)))))
-	      ))
-          (setf (xmtn-automate--decoder-state-read-marker state) end)
-          (decf (xmtn-automate--decoder-state-remaining-chars state)
-                chars-to-read)
-          t)
-         )))))
+		   (set-marker write-marker (point))))
+	       (setf (xmtn-automate--decoder-state-read-marker state) end)
+	       (decf (xmtn-automate--decoder-state-remaining-chars state)
+		     chars-to-read)
+	       t)))
+          ))))))
 
 (defun xmtn--debug-mark-text-processed (buffer start end bold-p)
   (xmtn--assert-optional (< start end) t)
