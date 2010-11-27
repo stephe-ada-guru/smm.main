@@ -306,49 +306,6 @@ arg; root. Result is of the form:
 	     root
 	     (cons options command))))))
 
-(defun xmtn--revlist--missing-get-info (root)
-  (let* ((branch (xmtn--tree-default-branch root))
-         (heads (xmtn--heads root branch))
-         (base-revision-hash-id (xmtn--get-base-revision-hash-id root))
-         (difference
-          (delete-duplicates
-           (mapcan
-            (lambda (head)
-              (xmtn-automate-simple-command-output-lines
-               root
-               `("ancestry_difference"
-                 ,head ,base-revision-hash-id)))
-            heads))))
-    (list
-     `(,(format "workspace %s" root) ;; header
-       nil ;; footer
-       ,(case (length difference) ;; revs
-          (0 "No revisions that are not in base revision")
-          (1 "1 revision that is not in base revision:")
-          (t (format
-              "%s revisions that are not in base revision:"
-              (length difference)))))
-     '()
-     difference)))
-
-(defun xmtn--revlist--review-update-info (root)
-  (let ((branch (xmtn--tree-default-branch root))
-	(revs
-	 (xmtn-automate-simple-command-output-lines
-	  root
-	  (cons (list "from" "u:" "to" "w:") (list "log")))))
-    (list
-     `(,(format "workspace %s" root)
-       nil
-       ,(case (length revs)
-          (0 "No revisions in last update")
-          (1 "1 revision in last update:")
-          (t (format
-              "%s revisions in last update:"
-              (length revs)))))
-     '()
-     revs)))
-
 (defun xmtn-revlist-show-conflicts ()
   "If point is on a revision that has two parents, show conflicts
 from the merge."
@@ -441,10 +398,32 @@ from the merge."
 ;;;###autoload
 (defun xmtn-dvc-missing (&optional other)
   ;; `other', if non-nil, designates a remote repository (see bzr); mtn doesn't support that.
-  (let ((root (dvc-tree-root)))
+  (let* ((root (dvc-tree-root))
+	 (branch (xmtn--tree-default-branch root))
+         (heads (xmtn--heads root branch)))
+    (if (/= 1 (length heads))
+      (error "%d heads, need merge; use `xmtn-status-one'" (length heads)))
+
     (xmtn--setup-revlist
      root
-     'xmtn--revlist--missing-get-info
+     (lambda (root)
+       (let ((revs
+	      ;; first rev is w:, don't display that
+	      (cdr (xmtn-automate-simple-command-output-lines
+		    root
+		    (cons (list "from" "w:" "to" "h:") (list "log"))))))
+	 (list
+	  (list ;; header
+	   (format "workspace %s" root)
+	   nil ;; blank line
+	   (case (length revs)
+	     (0 "No revisions that are not in base revision")
+	     (1 "1 revision that is not in base revision:")
+	     (t (format
+		 "%s revisions that are not in base revision:"
+		 (length revs)))))
+	  '() ;; footer
+	  revs)))
      nil ;; path
      nil ;; first-line-only-p
      ;; When the missing revs are due to a propagate, there can be a
@@ -461,7 +440,23 @@ from the merge."
   (interactive "D")
   (xmtn--setup-revlist
    root
-   'xmtn--revlist--review-update-info
+   (lambda (root)
+     (let ((revs
+	    (xmtn-automate-simple-command-output-lines
+	     root
+	     (cons (list "from" "u:" "to" "w:") (list "log")))))
+       (list
+	(list ;; header
+	 (format "workspace %s" root)
+	 nil ;; blank line
+	 (case (length revs)
+	   (0 "No revisions in last update")
+	   (1 "1 revision in last update:")
+	   (t (format
+	       "%s revisions in last update:"
+	       (length revs)))))
+	'() ;; footer
+	revs)))
    nil ;; path
    nil ;; first-line-only-p
    dvc-log-last-n)
