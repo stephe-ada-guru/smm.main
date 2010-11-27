@@ -526,7 +526,7 @@ The elements must all be of class xmtn-propagate-data.")
   ))
 
 (defun xmtn-propagate-conflicts-buffer (data)
-  "Return a conflicts buffer for FROM-WORK, TO-WORK (absolute paths)."
+  "Return a conflicts buffer for DATA (an xmtn-propagate struct)."
   (let ((from-work (xmtn-propagate-from-work data))
         (from-head-rev (xmtn-propagate-data-from-head-rev data))
         (to-work (xmtn-propagate-to-work data))
