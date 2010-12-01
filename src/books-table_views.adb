@@ -2,7 +2,7 @@
 --
 --  See spec.
 --
---  Copyright (C) 2002 - 2005, 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002 - 2005, 2009, 2010 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -149,10 +149,12 @@ package body Books.Table_Views is
             raise SAL.Programmer_Error;
 
          when Collection =>
-            raise SAL.Programmer_Error;
+            --  not a link, but a typical user error; need to edit directly
+            Gdk.Main.Beep;
 
          when Series =>
-            raise SAL.Programmer_Error;
+            --  not a link, but a typical user error; need to edit directly
+            Gdk.Main.Beep;
 
          when Books.Title =>
             AuthorTitle.Insert
@@ -639,7 +641,8 @@ package body Books.Table_Views is
          when Collection =>
             case Table_View.Current_List is
             when Author =>
-               raise SAL.Programmer_Error;
+               --  not a link, but a typical user error; need to edit directly
+               Gdk.Main.Beep;
 
             when Collection =>
                raise SAL.Programmer_Error;
