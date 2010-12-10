@@ -1332,7 +1332,6 @@ finished."
           ((revision $hash-id)
            (setq source-revision-hash-id hash-id))
           ((local-tree $path)
-           (assert (xmtn--same-tree-p root path))
            (let ((base-revision-hash-id
                   (xmtn--get-base-revision-hash-id-or-null path)))
              (if (null base-revision-hash-id)
@@ -1340,7 +1339,6 @@ finished."
                    ((revision $hash-id)
                     (return-from get-corresponding-path nil))
                    ((local-tree $target-path)
-                    (assert (xmtn--same-tree-p path target-path))
                     (return-from get-corresponding-path normalized-file-name)))
                ;; Handle an uncommitted rename in the current workspace
                (setq normalized-file-name (xmtn--get-rename-in-workspace-to
@@ -1351,7 +1349,6 @@ finished."
           ((revision $hash-id)
            (setq target-revision-hash-id hash-id))
           ((local-tree $path)
-           (assert (xmtn--same-tree-p root path))
            (let ((base-revision-hash-id
                   (xmtn--get-base-revision-hash-id-or-null path)))
              (if (null base-revision-hash-id)
@@ -1413,9 +1410,6 @@ finished."
   (check-type content-hash-id xmtn--hash-id)
   (xmtn-automate-simple-command-output-string
    root `("get_file" ,content-hash-id)))
-
-(defun xmtn--same-tree-p (a b)
-  (equal (file-truename a) (file-truename b)))
 
 (defstruct (xmtn--revision (:constructor xmtn--make-revision))
   ;; matches data output by 'mtn diff'

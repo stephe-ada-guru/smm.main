@@ -202,7 +202,7 @@ If DVC is nil, it matches any back-end. TYPE must match exactly.
 PATH matches if the entry in dvc-buffers-tree is a prefix of
 PATH."
   (let ((result nil)
-        (true-path (file-truename path))
+        (true-path (dvc-uniquify-file-name path))
         tree)
 
     (if dvc
