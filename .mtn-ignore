@@ -6,6 +6,7 @@
 ^confdefs\.h$
 ^config\.log$
 ^config\.status$
+^config\.status\.lineno$
 ^configure$
 ^dvc-load-install\.el$
 ^dvc-load\.el$
