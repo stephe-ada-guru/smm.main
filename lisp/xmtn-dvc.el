@@ -1076,21 +1076,6 @@ finished."
 ;;; synchronousness/asynchronousness, progress messages and return
 ;;; value.
 
-(defun xmtn--do-explicit-merge (root left-revision-hash-id right-revision-hash-id
-                                     destination-branch-name)
-  (check-type root string)
-  (check-type left-revision-hash-id xmtn--hash-id)
-  (check-type right-revision-hash-id xmtn--hash-id)
-  (check-type destination-branch-name string)
-  (xmtn--run-command-that-might-invoke-merger root
-                                              `("explicit_merge"
-                                                "--"
-                                                ,left-revision-hash-id
-                                                ,right-revision-hash-id
-                                                ,destination-branch-name)
-                                              nil)
-  nil)
-
 (defun xmtn--do-update (root target-revision-hash-id post-update-p)
   (check-type root string)
   (check-type target-revision-hash-id xmtn--hash-id)
