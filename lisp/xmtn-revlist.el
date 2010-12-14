@@ -444,7 +444,7 @@ from the merge."
      (let ((revs
 	    (xmtn-automate-simple-command-output-lines
 	     root
-	     (cons (list "from" "u:" "to" "w:") (list "log")))))
+	     (cons (list "from" "w:" "to" "u:") (list "log")))))
        (list
 	(list ;; header
 	 (format "workspace %s" root)
