@@ -389,7 +389,8 @@ The elements must all be of type xmtn-sync-sync.")
     (while (xmtn-basic-io-optional-skip-line keyword))))
 
 (defun xmtn-sync-parse (begin)
-  "Parse current buffer starting at BEGIN, fill in `xmtn-sync-ewoc' in current buffer, erase parsed text."
+  "Parse current buffer starting at BEGIN, fill in `xmtn-sync-ewoc' in current buffer, erase parsed text.
+Return non-nil if anything parsed."
   (set-syntax-table xmtn-basic-io--*syntax-table*)
   (goto-char begin)
 
@@ -447,7 +448,9 @@ The elements must all be of type xmtn-sync-sync.")
   (xmtn-sync-parse-revisions 'send)
   (xmtn-sync-parse-keys 'send)
 
-  (delete-region begin (point))
+  (let ((result (not (= begin (point)))))
+    (delete-region begin (point))
+    result)
   )
 
 (defun xmtn-sync-load-file (&optional noerror)
@@ -565,7 +568,7 @@ FILE should be output of 'automate sync'. (external sync handles tickers better)
   (xmtn-sync-mode)
   (xmtn-sync-load-file)
 
-  ;; now add file
+  ;; now add FILE
   (setq file (or file
 		 (expand-file-name xmtn-sync-review-file dvc-config-directory)))
   (if (file-exists-p file)
@@ -573,8 +576,11 @@ FILE should be output of 'automate sync'. (external sync handles tickers better)
 	(goto-char (point-min))
 	(setq buffer-read-only nil)
 	(insert-file-contents-literally file)
-	(xmtn-sync-parse (point-min))
+
+	;; user may have run several syncs, dumping each output into FILE; loop thru each.
+	(while (xmtn-sync-parse (point-min)))
 	(setq buffer-read-only t)
+	(xmtn-sync-save)
 	(delete-file file))))
 
 (provide 'xmtn-sync)

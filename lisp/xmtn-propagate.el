@@ -105,14 +105,14 @@ The elements must all be of class xmtn-propagate-data.")
       (insert (dvc-face-add "  need refresh\n" 'dvc-conflict))
 
     (ecase (xmtn-propagate-data-from-local-changes data)
-      (need-scan (insert "  local changes unknown " (xmtn-propagate-data-from-name data) "\n"))
+      (need-scan (insert "  local changes not checked " (xmtn-propagate-data-from-name data) "\n"))
       (need-commit
        (insert (dvc-face-add (concat "  need commit " (xmtn-propagate-data-from-name data) "\n")
                              'dvc-header)))
       (ok nil))
 
     (ecase (xmtn-propagate-data-to-local-changes data)
-      (need-scan (insert "  local changes unknown " (xmtn-propagate-data-to-name data) "\n"))
+      (need-scan (insert "  local changes not checked " (xmtn-propagate-data-to-name data) "\n"))
       (need-commit
        (insert (dvc-face-add (concat "  need commit " (xmtn-propagate-data-to-name data) "\n")
                              'dvc-header)))
