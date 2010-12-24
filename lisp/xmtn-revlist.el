@@ -61,9 +61,7 @@ arg; root. Result is of the form:
   authors
   dates
   changelogs
-  tags
-  parent-hash-ids
-  child-hash-ids)
+  tags)
 
 ;;;###autoload
 (defun xmtn-revision-refresh-maybe ()
@@ -78,17 +76,9 @@ arg; root. Result is of the form:
 (defun xmtn-revision-list-entry-patch-printer (patch)
   (let ((entry (dvc-revlist-entry-patch-struct patch)))
     (assert (typep entry 'xmtn--revlist-entry))
-    (insert (format " %s %s%s\n"
+    (insert (format " %s %s\n"
                     (if (dvc-revlist-entry-patch-marked patch) "*" " ")
-                    (xmtn--revlist-entry-revision-hash-id entry)
-                    (let ((head-p
-                           (endp (xmtn--revlist-entry-child-hash-ids entry)))
-                          (root-p
-                           (endp (xmtn--revlist-entry-parent-hash-ids entry))))
-                      (cond ((and head-p root-p) " (head, root)")
-                            (head-p " (head)")
-                            (root-p " (root)")
-                            (t "")))))
+                    (xmtn--revlist-entry-revision-hash-id entry)))
     (dolist (tag (xmtn--revlist-entry-tags entry))
       (insert (format "   Tag: %s\n" tag)))
     (let ((authors (xmtn--revlist-entry-authors entry))
@@ -132,7 +122,6 @@ arg; root. Result is of the form:
                (insert (format "     %s\n" line))))))))))
 
 (defun xmtn--revlist-setup-ewoc (root ewoc header footer revision-hash-ids last-n)
-  (assert (every (lambda (x) (typep x 'xmtn--hash-id)) revision-hash-ids))
   (ewoc-set-hf ewoc header footer)
   (ewoc-filter ewoc (lambda (x) nil))   ; Clear it.
   (setq revision-hash-ids (xmtn--toposort root revision-hash-ids))
@@ -146,8 +135,6 @@ arg; root. Result is of the form:
         (1 "Setting up revlist buffer (1 revision)...")
         (t (format "Setting up revlist buffer (%s revisions)..."
                    (length revision-hash-ids))))
-    ;; Maybe also show parents and children?  (Could add toggle
-    ;; commands to show/hide these.)
     (lexical-let ((rev (aref revision-hash-ids i))
                   (branches (list))
                   (authors (list))
@@ -176,36 +163,21 @@ arg; root. Result is of the form:
             changelogs (nreverse changelogs)
             branches (nreverse branches)
             tags (nreverse tags))
-      (let ((parent-hash-ids
-             (xmtn-automate-simple-command-output-lines root `("parents"
-                                                               ,rev)))
-            (child-hash-ids
-             (xmtn-automate-simple-command-output-lines root `("children"
-                                                               ,rev))))
-        (xmtn--assert-optional (every #'stringp authors))
-        (xmtn--assert-optional (every #'stringp dates))
-        (xmtn--assert-optional (every #'stringp changelogs))
-        (xmtn--assert-optional (every #'stringp branches))
-        (xmtn--assert-optional (every #'stringp tags))
-        (xmtn--assert-optional (every #'xmtn--hash-id-p parent-hash-ids))
-        (xmtn--assert-optional (every #'xmtn--hash-id-p child-hash-ids))
-        (ewoc-enter-last ewoc
-                         ;; Creating a list `(entry-patch
-                         ;; ,instance-of-dvc-revlist-entry-patch) seems
-                         ;; to be part of DVC's API.
-                         `(entry-patch
-                           ,(make-dvc-revlist-entry-patch
-                             :dvc 'xmtn
-                             :rev-id `(xmtn (revision ,rev))
-                             :struct (xmtn--make-revlist-entry
-                                      :revision-hash-id rev
-                                      :branches branches
-                                      :authors authors
-                                      :dates dates
-                                      :changelogs changelogs
-                                      :tags tags
-                                      :parent-hash-ids parent-hash-ids
-                                      :child-hash-ids child-hash-ids)))))))
+      (ewoc-enter-last ewoc
+		       ;; Creating a list `(entry-patch
+		       ;; ,instance-of-dvc-revlist-entry-patch) seems
+		       ;; to be part of DVC's API.
+		       `(entry-patch
+			 ,(make-dvc-revlist-entry-patch
+			   :dvc 'xmtn
+			   :rev-id `(xmtn (revision ,rev))
+			   :struct (xmtn--make-revlist-entry
+				    :revision-hash-id rev
+				    :branches branches
+				    :authors authors
+				    :dates dates
+				    :changelogs changelogs
+				    :tags tags))))))
   nil)
 
 (defun xmtn-revision-st-message (entry)
@@ -213,9 +185,11 @@ arg; root. Result is of the form:
 
 (defun xmtn--revlist-refresh ()
   (let ((root default-directory))
-    (destructuring-bind (header-lines footer-lines revision-hash-ids)
+    (destructuring-bind (header-lines footer-lines revs)
         (funcall xmtn--revlist-*info-generator-fn* root)
-      (let ((ewoc dvc-revlist-cookie))
+      (let ((ewoc dvc-revlist-cookie)
+	    (count (length revs))
+	    (last-n dvc-revlist-last-n))
         (xmtn--revlist-setup-ewoc root ewoc
                                   (with-temp-buffer
                                     (dolist (line header-lines)
@@ -223,7 +197,16 @@ arg; root. Result is of the form:
                                           (insert ?\n)
                                         (insert line ?\n)))
                                     (when header-lines (insert ?\n))
-                                    (buffer-string))
+				    (insert
+				     (cond
+				      ((= 0 count) "No revisions")
+				      ((= 1 count) "1 revision:")
+				      ((or (null last-n)
+					   (> last-n count))
+				       (format "%d of %d revisions:" count count))
+				      (t (format "%d of %d revisions:" last-n count))))
+				    (insert ?\n)
+				    (buffer-string))
                                   (with-temp-buffer
                                     (when footer-lines (insert ?\n))
                                     (dolist (line footer-lines)
@@ -231,7 +214,7 @@ arg; root. Result is of the form:
                                           (insert ?\n)
                                         (insert line ?\n)))
                                     (buffer-string))
-                                  revision-hash-ids
+                                  revs
                                   dvc-revlist-last-n)
         (if (null (ewoc-nth ewoc 0))
             (goto-char (point-max))
@@ -287,10 +270,7 @@ arg; root. Result is of the form:
   (let ((branch (xmtn--tree-default-branch root)))
     (let
 	((header
-	  (list
-	   (if dvc-revlist-last-n
-	       (format "Log for branch %s (last %d entries):" branch dvc-revlist-last-n)
-	     (format "Log for branch %s (all entries):" branch))))
+	  (list (format "Log for branch %s" branch)))
 	 (options
 	  (if dvc-revlist-last-n
 	      (list "last" (format "%d" dvc-revlist-last-n))))
@@ -408,20 +388,14 @@ from the merge."
      root
      (lambda (root)
        (let ((revs
-	      ;; first rev is w:, don't display that
-	      (cdr (xmtn-automate-simple-command-output-lines
-		    root
-		    (cons (list "from" "w:" "to" "h:") (list "log"))))))
+	      (xmtn-automate-simple-command-output-lines
+	       root
+	       (cons (list "from" "h:" "to" "w:") (list "log")))))
 	 (list
 	  (list ;; header
 	   (format "workspace %s" root)
 	   nil ;; blank line
-	   (case (length revs)
-	     (0 "No revisions that are not in base revision")
-	     (1 "1 revision that is not in base revision:")
-	     (t (format
-		 "%s revisions that are not in base revision:"
-		 (length revs)))))
+	   "Revisions that are not in base revision")
 	  '() ;; footer
 	  revs)))
      nil ;; path
@@ -449,12 +423,7 @@ from the merge."
 	(list ;; header
 	 (format "workspace %s" root)
 	 nil ;; blank line
-	 (case (length revs)
-	   (0 "No revisions in last update")
-	   (1 "1 revision in last update:")
-	   (t (format
-	       "%s revisions in last update:"
-	       (length revs)))))
+	 "Revisions in last update")
 	'() ;; footer
 	revs)))
    nil ;; path
@@ -471,15 +440,12 @@ from the merge."
      root
      (lambda (root)
        (let* ((branch (xmtn--tree-default-branch root))
-              (head-revision-hash-ids (xmtn--heads root branch))
-              (head-count (length head-revision-hash-ids)))
+              (head-revision-hash-ids (xmtn--heads root branch)))
          (list
-          (list (format "workspace %s" root)
-                (case head-count
-                  (0 "No head revisions (branch empty (or circular ;))")
-                  (1 "1 head revision:")
-                  (t (format "%s head revisions: " head-count))))
-          '()
+          (list ; header
+	   (format "workspace %s" root)
+	   "Head revisions")
+          '() ; footer
           head-revision-hash-ids)))
      nil ;; path
      nil ;; first-line-only-p
@@ -505,17 +471,14 @@ from the merge."
          (let* ((revision-hash-ids (xmtn--expand-selector root selector))
                 (count (length revision-hash-ids)))
            (list
-            (list (format "workspace %s" root)
-                  (if (with-syntax-table (standard-syntax-table)
-                        (string-match "\\`\\s *\\'" selector))
-                      "Blank selector"
-                    (format "Selector %s" selector))
-                  (case count
-                    (0 "No revisions matching selector")
-                    (1 "1 revision matching selector:")
-                    (t (format "%s revisions matching selector: "
-                               count))))
-            '()
+            (list ; header
+	     (format "workspace %s" root)
+	     (if (with-syntax-table (standard-syntax-table)
+		   (string-match "\\`\\s *\\'" selector))
+		 "Blank selector"
+	       (format "Selector %s" selector))
+	     "Revisions matching selector")
+            '() ; footer
             revision-hash-ids)))
        nil ;; path
        nil ;; first-line-only-p
