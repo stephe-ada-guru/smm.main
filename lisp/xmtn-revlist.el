@@ -124,6 +124,10 @@ arg; root. Result is of the form:
 (defun xmtn--revlist-setup-ewoc (root ewoc header footer revision-hash-ids last-n)
   (ewoc-set-hf ewoc header footer)
   (ewoc-filter ewoc (lambda (x) nil))   ; Clear it.
+  ;; FIXME: setup should not modify order; this should be a waste of
+  ;; time or wrong. This was here historically; see
+  ;; xmtn--log-generator for comment on why I have not removed it. I
+  ;; have not investigated order problems with other revlists.
   (setq revision-hash-ids (xmtn--toposort root revision-hash-ids))
   (if last-n
       (let ((len (length revision-hash-ids)))
@@ -272,6 +276,12 @@ arg; root. Result is of the form:
 	((header
 	  (list (format "Log for branch %s" branch)))
 	 (options
+	  ;; FIXME: this gives most the recent date first, we want
+	  ;; that last. See mtn issue 118 for why we can't fix that
+	  ;; with more options. The 'toposort' in
+	  ;; xmtn--revlist-setup-ewoc puts it in the desired date
+	  ;; order. In general, it would be better if revlist-setup
+	  ;; did not alter the order.
 	  (if dvc-revlist-last-n
 	      (list "last" (format "%d" dvc-revlist-last-n))))
 	 (command
