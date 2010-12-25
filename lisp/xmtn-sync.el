@@ -203,12 +203,6 @@ The elements must all be of type xmtn-sync-sync.")
          (inhibit-read-only t))
     (ewoc-delete xmtn-sync-ewoc elem)))
 
-(defun xmtn-sync-save-quit ()
-  "Save state, quit buffer."
-  (interactive)
-  (xmtn-sync-save)
-  (kill-buffer))
-
 (dvc-make-ewoc-next xmtn-sync-next xmtn-sync-ewoc)
 (dvc-make-ewoc-prev xmtn-sync-prev xmtn-sync-ewoc)
 
@@ -230,7 +224,7 @@ The elements must all be of type xmtn-sync-sync.")
     (define-key map [?f]  'xmtn-sync-full)
     (define-key map [?n]  'xmtn-sync-next)
     (define-key map [?p]  'xmtn-sync-prev)
-    (define-key map [?q]  'xmtn-sync-save-quit)
+    (define-key map [?q]  'kill-buffer)
     (define-key map [?s]  'xmtn-sync-status)
     (define-key map [?S]  'xmtn-sync-save)
     map)
@@ -245,7 +239,7 @@ The elements must all be of type xmtn-sync-sync.")
     ["Full display"  xmtn-sync-full t]
     ["Clean/delete"  xmtn-sync-clean t]
     ["Save"          xmtn-sync-save t]
-    ["Save and Quit" xmtn-sync-save-quit t]
+    ["Save and Quit" kill-buffer t]
     ))
 
 (define-derived-mode xmtn-sync-mode fundamental-mode "xmtn-sync"
@@ -254,6 +248,7 @@ The elements must all be of type xmtn-sync-sync.")
   (setq xmtn-sync-ewoc (ewoc-create 'xmtn-sync-printer))
   (setq dvc-buffer-refresh-function nil)
   (dvc-install-buffer-menu)
+  (add-hook 'kill-buffer-hook 'xmtn-sync-save nil t)
   (buffer-disable-undo))
 
 (defun xmtn-sync-parse-revision-certs (direction)

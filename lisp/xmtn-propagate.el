@@ -200,7 +200,7 @@ The elements must all be of class xmtn-propagate-data.")
       (kill-buffer (xmtn-propagate-data-to-status-buffer data))))
 
 (defun xmtn-propagate-clean-1 (data)
-  "Clean DATA workspace"
+  "Clean DATA workspace, kill associated automate session."
   (xmtn-automate-kill-session (xmtn-propagate-from-work data))
   (xmtn-automate-kill-session (xmtn-propagate-to-work data))
   (xmtn-propagate-kill-conflicts-buffer data)
@@ -208,7 +208,7 @@ The elements must all be of class xmtn-propagate-data.")
   (xmtn-conflicts-clean (xmtn-propagate-to-work data)))
 
 (defun xmtn-propagate-clean ()
-  "Clean current workspace, delete from ewoc"
+  "Clean current workspace, delete from ewoc."
   (interactive)
   (let* ((elem (ewoc-locate xmtn-propagate-ewoc))
          (data (ewoc-data elem)))
@@ -217,11 +217,10 @@ The elements must all be of class xmtn-propagate-data.")
     (let ((inhibit-read-only t))
       (ewoc-delete xmtn-propagate-ewoc elem))))
 
-(defun xmtn-propagate-quit ()
-  "Clean all remaining workspaces, kill automate sessions, kill buffer."
+(defun xmtn-propagate-clean-all ()
+  "Clean all remaining workspaces."
   (interactive)
-  (ewoc-map 'xmtn-propagate-clean-1 xmtn-propagate-ewoc)
-  (kill-buffer))
+  (ewoc-map 'xmtn-propagate-clean-1 xmtn-propagate-ewoc))
 
 (defun xmtn-propagate-cleanp ()
   "Non-nil if clean is appropriate for current workspace."
@@ -475,7 +474,7 @@ The elements must all be of class xmtn-propagate-data.")
     (define-key map [?g]  'xmtn-propagate-refresh)
     (define-key map [?n]  'xmtn-propagate-next)
     (define-key map [?p]  'xmtn-propagate-prev)
-    (define-key map [?q]  'xmtn-propagate-quit)
+    (define-key map [?q]  'kill-buffer)
     map)
   "Keymap used in `xmtn-propagate-mode'.")
 
@@ -489,6 +488,7 @@ The elements must all be of class xmtn-propagate-data.")
   (set (make-local-variable 'write-file-functions) nil)
 
   (dvc-install-buffer-menu)
+  (add-hook 'kill-buffer-hook 'xmtn-propagate-clean-all nil t)
   (setq buffer-read-only t)
   (buffer-disable-undo)
   (set-buffer-modified-p nil)

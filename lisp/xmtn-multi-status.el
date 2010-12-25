@@ -123,7 +123,7 @@ The elements must all be of class xmtn-status-data.")
       (with-current-buffer (xmtn-status-data-conflicts-buffer data) (save-buffer))))
 
 (defun xmtn-status-clean-1 (data)
-  "Clean DATA workspace."
+  "Clean DATA workspace, kill associated automate session."
   (xmtn-automate-kill-session (xmtn-status-work data))
   (xmtn-status-kill-conflicts-buffer data)
   (xmtn-status-kill-status-buffer data)
@@ -138,11 +138,10 @@ The elements must all be of class xmtn-status-data.")
     (xmtn-status-clean-1 data)
     (ewoc-delete xmtn-status-ewoc elem)))
 
-(defun xmtn-status-quit ()
-  "Clean all remaining workspaces, kill automate sessions, kill buffer."
+(defun xmtn-status-clean-all ()
+  "Clean all remaining workspaces."
   (interactive)
-  (ewoc-map 'xmtn-status-clean-1 xmtn-status-ewoc)
-  (kill-buffer))
+  (ewoc-map 'xmtn-status-clean-1 xmtn-status-ewoc))
 
 (defun xmtn-status-cleanp ()
   "Non-nil if clean & quit is appropriate for current workspace."
@@ -312,7 +311,7 @@ The elements must all be of class xmtn-status-data.")
     (define-key map [?g]  'xmtn-status-refresh)
     (define-key map [?n]  'xmtn-status-next)
     (define-key map [?p]  'xmtn-status-prev)
-    (define-key map [?q]  'xmtn-status-quit)
+    (define-key map [?q]  'kill-buffer)
     map)
   "Keymap used in `xmtn-multiple-status-mode'.")
 
@@ -326,6 +325,7 @@ The elements must all be of class xmtn-status-data.")
   (set (make-local-variable 'write-file-functions) nil)
 
   (dvc-install-buffer-menu)
+  (add-hook 'kill-buffer-hook 'xmtn-status-clean-all nil t)
   (setq buffer-read-only t)
   (buffer-disable-undo)
 
