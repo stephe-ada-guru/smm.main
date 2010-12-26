@@ -1324,31 +1324,6 @@ It must be merged, and should be at the head revision, and have no local changes
   ))
 
 ;;;###autoload
-(defun xmtn-conflicts-propagate (left-work right-work)
-  "List conflicts for a propagate from LEFT-WORK to RIGHT-WORK workspace branch head revisions.
-Allow specifying resolutions.  LEFT-WORK and RIGHT-WORK are strings giving
-workspace directories; prompted if nil. Review is done in RIGHT-WORK
-workspace."
-  (interactive "i\ni")
-  (setq left-work (dvc-read-project-tree-maybe "Propagate from (workspace directory): " left-work))
-  (setq right-work (dvc-read-project-tree-maybe "to (workspace directory): " right-work))
-
-  (let ((left-branch (xmtn--tree-default-branch left-work))
-        (right-branch (xmtn--tree-default-branch right-work)))
-
-    (xmtn-check-workspace-for-propagate left-work left-branch)
-    (xmtn-check-workspace-for-propagate right-work right-branch)
-
-    (xmtn-check-propagate-needed left-work right-work)
-
-    (message "computing conflicts")
-
-    (xmtn-conflicts-1 left-work
-                    (car (xmtn--heads left-work left-branch))
-                    right-work
-                    (car (xmtn--heads right-work right-branch)))))
-
-;;;###autoload
 (defun xmtn-conflicts-merge ()
   "List conflicts between current head revisions."
   (interactive)

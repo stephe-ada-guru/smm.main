@@ -224,7 +224,7 @@ The elements must all be of type xmtn-sync-sync.")
     (define-key map [?f]  'xmtn-sync-full)
     (define-key map [?n]  'xmtn-sync-next)
     (define-key map [?p]  'xmtn-sync-prev)
-    (define-key map [?q]  'kill-buffer)
+    (define-key map [?q]  (lambda () (kill-buffer (current-buffer))))
     (define-key map [?s]  'xmtn-sync-status)
     (define-key map [?S]  'xmtn-sync-save)
     map)
@@ -239,7 +239,7 @@ The elements must all be of type xmtn-sync-sync.")
     ["Full display"  xmtn-sync-full t]
     ["Clean/delete"  xmtn-sync-clean t]
     ["Save"          xmtn-sync-save t]
-    ["Save and Quit" kill-buffer t]
+    ["Save and Quit" (lambda () (kill-buffer (current-buffer))) t]
     ))
 
 (define-derived-mode xmtn-sync-mode fundamental-mode "xmtn-sync"

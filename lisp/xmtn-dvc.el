@@ -399,7 +399,6 @@ the file before saving."
 (defvar xmtn-diff-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map "CM" 'xmtn-conflicts-merge)
-    (define-key map "CP" 'xmtn-conflicts-propagate)
     (define-key map "CR" 'xmtn-conflicts-review)
     (define-key map "CC" 'xmtn-conflicts-clean)
     (define-key map "MH" 'xmtn-view-heads-revlist)
@@ -411,7 +410,6 @@ the file before saving."
   "Mtn specific diff menu."
   `("DVC-Mtn"
     ["View Heads" xmtn-view-heads-revlist t]
-    ["Show propagate conflicts" xmtn-conflicts-propagate t]
     ["Review conflicts" xmtn-conflicts-review t]
     ["Propagate branch" xmtn-propagate-from t]
     ["Clean conflicts resolutions" xmtn-conflicts-clean t]
@@ -469,7 +467,6 @@ otherwise newer."
 (defvar xmtn-status-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map "CM" 'xmtn-conflicts-merge)
-    (define-key map "CP" 'xmtn-conflicts-propagate)
     (define-key map "CR" 'xmtn-conflicts-review)
     (define-key map "CC" 'xmtn-conflicts-clean)
     (define-key map "MP" 'xmtn-propagate-from)
@@ -481,7 +478,6 @@ otherwise newer."
   `("DVC-Mtn"
     ["View Heads" xmtn-view-heads-revlist t]
     ["Show merge conflicts" xmtn-conflicts-merge t]
-    ["Show propagate conflicts" xmtn-conflicts-propagate t]
     ["Review conflicts" xmtn-conflicts-review t]
     ["Propagate branch" xmtn-propagate-from t]
     ["Clean conflicts resolutions" xmtn-conflicts-clean t]

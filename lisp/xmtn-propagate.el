@@ -474,7 +474,7 @@ The elements must all be of class xmtn-propagate-data.")
     (define-key map [?g]  'xmtn-propagate-refresh)
     (define-key map [?n]  'xmtn-propagate-next)
     (define-key map [?p]  'xmtn-propagate-prev)
-    (define-key map [?q]  'kill-buffer)
+    (define-key map [?q]  (lambda () (kill-buffer (current-buffer))))
     map)
   "Keymap used in `xmtn-propagate-mode'.")
 

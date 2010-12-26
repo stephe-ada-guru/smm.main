@@ -311,7 +311,7 @@ The elements must all be of class xmtn-status-data.")
     (define-key map [?g]  'xmtn-status-refresh)
     (define-key map [?n]  'xmtn-status-next)
     (define-key map [?p]  'xmtn-status-prev)
-    (define-key map [?q]  'kill-buffer)
+    (define-key map [?q]  (lambda () (kill-buffer (current-buffer))))
     map)
   "Keymap used in `xmtn-multiple-status-mode'.")
 
