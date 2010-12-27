@@ -358,7 +358,6 @@ from the merge."
 ;;;###autoload
 (defvar xmtn-revlist-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map "CM" 'xmtn-conflicts-merge)
     (define-key map "CR" 'xmtn-conflicts-review)
     (define-key map "CC" 'xmtn-conflicts-clean)
     (define-key map "MH" 'xmtn-view-heads-revlist)
@@ -371,9 +370,8 @@ from the merge."
   "Mtn specific revlist menu."
   `("DVC-Mtn"
     ["View Heads"       xmtn-view-heads-revlist t]
-    ["Show merge conflicts before merge" xmtn-conflicts-merge t]
+    ["Review conflicts (before merge)" xmtn-conflicts-review t]
     ["Show merge conflicts after merge" xmtn-revlist-show-conflicts t]
-    ["Review conflicts" xmtn-conflicts-review t]
     ["Propagate branch" xmtn-propagate-from t]
     ["Clean conflicts resolutions" xmtn-conflicts-clean t]
     ))

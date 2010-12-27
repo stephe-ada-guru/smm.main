@@ -1302,35 +1302,6 @@ It must be merged, and should be at the head revision, and have no local changes
 
   )
 
-(defun xmtn-check-propagate-needed (left-work right-work)
-  "Throw error unless branch in workspace LEFT-WORK needs to be propagated to RIGHT-WORK."
-  ;; We assume xmtn-check-workspace-for-propagate has already been run
-  ;; on left-work, right-work, so just check if they have the same
-  ;; base revision, or the target (right) base revision is a
-  ;; descendant of the source.
-  (message "checking if propagate needed")
-
-  (let ((left-base (xmtn--get-base-revision-hash-id-or-null left-work))
-        (right-base (xmtn--get-base-revision-hash-id-or-null right-work)))
-
-    (if (string= left-base right-base)
-        (error "don't need to propagate")
-      ;; check for right descendant of left
-      (let ((descendents (xmtn-automate-simple-command-output-lines left-work (list "descendents" left-base))))
-        (while descendents
-          (if (string= right-base (car descendents))
-              (error "don't need to propagate"))
-          (setq descendents (cdr descendents)))))
-  ))
-
-;;;###autoload
-(defun xmtn-conflicts-merge ()
-  "List conflicts between current head revisions."
-  (interactive)
-  (let ((default-directory
-          (dvc-read-project-tree-maybe "Review conflicts in (workspace directory): ")))
-    (xmtn-conflicts-1 default-directory nil default-directory nil)))
-
 ;;;###autoload
 (defun xmtn-conflicts-review (&optional workspace)
   "Review conflicts for WORKSPACE (a directory; default prompt)."
