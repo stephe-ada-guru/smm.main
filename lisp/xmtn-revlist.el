@@ -336,43 +336,25 @@ from the merge."
      (t
       (error "not on a two parent revision")))
 
-    (xmtn-conflicts-save-opts
-     (read-file-name "left work: ")
-     (read-file-name "right work: ")
+    (xmtn-conflicts-review
+     default-directory ; left-work
+     left-rev
+     default-directory ; right-work
+     right-rev
      left-branch
-     right-branch)
-
-    (dvc-run-dvc-async
-     'xmtn
-     (list "conflicts" "store" left-rev right-rev)
-     :finished (lambda (output error status arguments)
-                 (let ((conflicts-buffer (dvc-get-buffer-create 'xmtn 'conflicts default-directory)))
-                   (pop-to-buffer conflicts-buffer)
-                   (xmtn-conflicts-load-opts)
-                   (set (make-local-variable 'after-insert-file-functions) '(xmtn-conflicts-after-insert-file))
-                   (insert-file-contents "_MTN/conflicts" t)))
-
-     :error (lambda (output error status arguments)
-              (pop-to-buffer error)))))
+     right-branch)))
 
 ;;;###autoload
 (defvar xmtn-revlist-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map "CR" 'xmtn-conflicts-review)
-    (define-key map "CC" 'xmtn-conflicts-clean)
-    (define-key map "MH" 'xmtn-view-heads-revlist)
-    (define-key map "MP" 'xmtn-propagate-from)
     (define-key map "MC" 'xmtn-revlist-show-conflicts)
+    (define-key map "CC" 'xmtn-conflicts-clean)
     map))
 
-;; items added here should probably also be added to xmtn-diff-mode-menu, -map in xmtn-dvc.el
 (easy-menu-define xmtn-revlist-mode-menu xmtn-revlist-mode-map
   "Mtn specific revlist menu."
   `("DVC-Mtn"
-    ["View Heads"       xmtn-view-heads-revlist t]
-    ["Review conflicts (before merge)" xmtn-conflicts-review t]
     ["Show merge conflicts after merge" xmtn-revlist-show-conflicts t]
-    ["Propagate branch" xmtn-propagate-from t]
     ["Clean conflicts resolutions" xmtn-conflicts-clean t]
     ))
 

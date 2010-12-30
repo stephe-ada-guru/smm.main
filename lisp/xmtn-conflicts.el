@@ -704,12 +704,9 @@ header."
     (with-current-buffer ewoc-buffer (xmtn-conflicts-set-hf))
     ))
 
-;; Arrange for xmtn-conflicts-save to be called by save-buffer. We do
-;; not automatically convert in insert-file-contents, because we don't
-;; want to convert _all_ conflict files (consider the monotone test
-;; suite!). Instead, we call xmtn-conflicts-read explicitly from
-;; xmtn-conflicts-review, and set after-insert-file-functions to a
-;; buffer-local value in xmtn-conflicts-mode.
+;; Arrange for xmtn-conflicts-save to be called by save-buffer. We
+;; also set after-insert-file-functions to a buffer-local value in
+;; xmtn-conflicts-mode.
 (add-to-list 'format-alist
              '(xmtn-conflicts-format
                "Save conflicts in basic-io format."
@@ -1247,78 +1244,88 @@ stored."
       ;; When reviewing conflicts after a merge is complete, the options file is not present
       (message "%s options file not found" opts-file))))
 
-(defun xmtn-conflicts-1 (left-work left-rev right-work right-rev)
+(defun xmtn-conflicts-load-file ()
+  "Load _MTN/conflicts for default-directory."
+  (dvc-switch-to-buffer-maybe (dvc-get-buffer-create 'xmtn 'conflicts default-directory))
+  (setq buffer-read-only nil)
+  (xmtn-conflicts-load-opts)
+  (set (make-local-variable 'after-insert-file-functions) '(xmtn-conflicts-after-insert-file))
+  (insert-file-contents "_MTN/conflicts" t nil nil t))
+
+(defun xmtn-conflicts-1 (left-work left-rev right-work right-rev &optional left-branch right-branch)
   "List conflicts between LEFT-REV and RIGHT-REV
 revisions (monotone revision specs; if nil, defaults to heads of
 respective workspace branches) in LEFT-WORK and RIGHT-WORK
 workspaces (strings).  Allow specifying resolutions, propagating
 to right.  Stores conflict file in RIGHT-WORK/_MTN."
   (let ((default-directory right-work))
-    (xmtn-conflicts-save-opts left-work right-work)
-    (dvc-run-dvc-async
-     'xmtn
-     (list "conflicts" "store" left-rev right-rev)
-     :finished (lambda (output error status arguments)
-                 (xmtn-conflicts-review default-directory))
+    (xmtn-conflicts-save-opts left-work right-work left-branch right-branch)
+    (xmtn-automate-command-output-file
+     default-directory
+     "_MTN/conflicts"
+     (list "show_conflicts" left-rev right-rev))
+    (xmtn-conflicts-load-file)))
 
-     :error (lambda (output error status arguments)
-              (pop-to-buffer error))
-     )))
+(defun xmtn-conflicts-review (left-work left-rev right-work right-rev left-branch right-branch show)
+  "Review conflicts between LEFT-WORK (a directory), rev LEFT-REV,
+and RIGHT-WORK, rev RIGHT-REV.  If LEFT_WORK/_MTN/conflicts
+exists and is current, display it. Otherwise generate a new
+LEFT_WORK/_MTN/conflicts file and display that. Return the
+conflicts buffer."
+  (let ((default-directory left-work)
+	(dvc-switch-to-buffer-first show))
+    (if (file-exists-p "_MTN/conflicts")
+	(progn
+	  (xmtn-conflicts-load-file)
+	  (if (not (and (string-equal xmtn-conflicts-left-revision left-rev)
+			(string-equal xmtn-conflicts-left-work left-work)
+			(string-equal xmtn-conflicts-right-revision right-rev)
+			(string-equal xmtn-conflicts-right-work right-work)))
+	      ;; file not current; regenerate
+	      (xmtn-conflicts-1 left-work left-rev right-work right-rev left-branch right-branch)))
 
-(defun xmtn-check-workspace-for-propagate (work cached-branch)
-  "Check that workspace WORK is ready for propagate.
-It must be merged, and should be at the head revision, and have no local changes."
-  (let* ((default-directory work)
-         (heads (xmtn--heads default-directory cached-branch))
-         (base (xmtn--get-base-revision-hash-id-or-null default-directory)))
+      ;; else generate new file
+      (xmtn-conflicts-1 left-work left-rev right-work right-rev left-branch right-branch)))
+  (current-buffer))
 
-    (message "checking %s for multiple heads, base not head" work)
+(defun xmtn-conflicts-status (buffer left-work left-rev right-work right-rev left-branch right-branch)
+  "Return '(status buffer), where status is one of
+'need-resolve | 'need-review-resolve-internal | 'resolved | 'none
+for BUFFER. Regenerate conflicts if not current."
+  (if (buffer-live-p buffer)
+      ;; check if buffer still current
+      (with-current-buffer buffer
+	(let ((revs-current
+	       (and (string= left-rev xmtn-conflicts-left-revision)
+		    (string= right-rev xmtn-conflicts-right-revision))))
+	  (if revs-current
+	      (progn
+		(xmtn-conflicts-update-counts)
+		(save-buffer))
+	    ;; else reload or regenerate
+	    (save-excursion
+	      (setq buffer
+		    (xmtn-conflicts-review
+		     left-work left-rev right-work right-rev left-branch right-branch nil))))))
 
-    (if (> 1 (length heads))
-        (error "%s has multiple heads; can't propagate" work))
+    ;; else reload or regenerate
+    (save-excursion
+      (setq buffer
+	    (xmtn-conflicts-review
+	     left-work left-rev right-work right-rev left-branch right-branch nil))))
 
-    (if (not (string= base (nth 0 heads)))
-            (error "Aborting due to %s not at head" work))
-
-    ;; check for local changes
-    (message "checking %s for local changes" work)
-
-    (dvc-run-dvc-sync
-     'xmtn
-     (list "status")
-     :finished (lambda (output error status arguments)
-                 ;; we don't get an error status for not up-to-date,
-                 ;; so parse the output.
-                 ;; FIXME: add option to automate inventory to just return status; can return on first change
-                 ;; FIXME: 'patch' may be internationalized.
-                 (set-buffer output)
-                 (goto-char (point-min))
-                 (if (search-forward "patch" (point-max) t)
-                     (if (not (yes-or-no-p (format "%s has local changes; really show conflicts? " work)))
-                         (error "aborting due to local changes"))))
-
-     :error (lambda (output error status arguments)
-              (pop-to-buffer error))))
-
-  )
-
-;;;###autoload
-(defun xmtn-conflicts-review (&optional workspace)
-  "Review conflicts for WORKSPACE (a directory; default prompt)."
-  (interactive)
-  (let ((default-directory
-          (dvc-read-project-tree-maybe "Review conflicts for (workspace directory): "
-                                       (when workspace (expand-file-name workspace))))
-        (file-name "_MTN/conflicts"))
-    (if (not (file-exists-p file-name))
-        (error "conflicts file not found"))
-
-    (let ((conflicts-buffer (dvc-get-buffer-create 'xmtn 'conflicts default-directory)))
-      (dvc-switch-to-buffer-maybe conflicts-buffer)
-      (setq buffer-read-only nil)
-      (xmtn-conflicts-load-opts)
-      (set (make-local-variable 'after-insert-file-functions) '(xmtn-conflicts-after-insert-file))
-      (insert-file-contents "_MTN/conflicts" t nil nil t))))
+    ;; compute status
+    (with-current-buffer buffer
+      (case xmtn-conflicts-total-count
+        (0 '(buffer none))
+        (t
+         (cond
+	  ((= xmtn-conflicts-total-count xmtn-conflicts-resolved-count)
+	   '(buffer resolved))
+	  ((= xmtn-conflicts-total-count xmtn-conflicts-resolved-internal-count)
+	   '(buffer need-review-resolve-internal))
+	  (t
+           '(buffer need-resolve)))))))
 
 ;;;###autoload
 (defun xmtn-conflicts-clean (&optional workspace)

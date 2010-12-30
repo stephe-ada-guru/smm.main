@@ -156,6 +156,15 @@ Optionally DISPLAY-TICKERS in mode-line of BUFFER."
        (xmtn-automate-command-buffer command-handle)))
     (xmtn-automate--cleanup-command command-handle)))
 
+(defun xmtn-automate-command-output-file (root file command)
+  "Send COMMAND to session for ROOT, store result in FILE."
+  (let* ((session (xmtn-automate-cache-session root))
+         (command-handle (xmtn-automate--new-command session command nil buffer)))
+    (xmtn-automate-command-wait-until-finished command-handle)
+    (with-current-buffer (xmtn-automate-command-buffer command-handle)
+      (write-region nil nil file))
+    (xmtn-automate--cleanup-command command-handle)))
+
 (defun xmtn-automate-command-output-lines (handle)
   "Return list of lines of output in HANDLE; first line output is
 first in list."

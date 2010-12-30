@@ -46,7 +46,7 @@ The elements must all be of class xmtn-status-data.")
   work             ; workspace directory name relative to xmtn-status-root
   branch           ; branch name (all workspaces have same branch; assumed never changes)
   need-refresh     ; nil | t : if an async process was started that invalidates state data
-  head-rev         ; nil | mtn rev string : current head revision, nil if multiple heads
+  head-revs        ; either current head revision or (left, right) if multiple heads
   conflicts-buffer ; *xmtn-conflicts* buffer for merge
   status-buffer    ; *xmtn-status* buffer for commit
   heads            ; 'need-scan | 'at-head | 'need-update | 'need-merge
@@ -191,7 +191,7 @@ The elements must all be of class xmtn-status-data.")
   (let* ((elem (ewoc-locate xmtn-status-ewoc))
          (data (ewoc-data elem)))
     (xmtn-status-need-refresh elem data nil)
-    (setf (xmtn-status-data-conflicts data) 'resolved)
+    (setf (xmtn-status-data-conflicts data) 'need-scan)
     (pop-to-buffer (xmtn-status-data-conflicts-buffer data))))
 
 (defun xmtn-status-resolve-conflictsp ()
@@ -311,7 +311,7 @@ The elements must all be of class xmtn-status-data.")
     (define-key map [?g]  'xmtn-status-refresh)
     (define-key map [?n]  'xmtn-status-next)
     (define-key map [?p]  'xmtn-status-prev)
-    (define-key map [?q]  (lambda () (kill-buffer (current-buffer))))
+    (define-key map [?q]  'dvc-buffer-quit)
     map)
   "Keymap used in `xmtn-multiple-status-mode'.")
 
@@ -333,35 +333,18 @@ The elements must all be of class xmtn-status-data.")
 
 (defun xmtn-status-conflicts (data)
   "Return value for xmtn-status-data-conflicts for DATA."
-  (let* ((work (xmtn-status-work data))
-         (default-directory work))
-
-    (if (buffer-live-p (xmtn-status-data-conflicts-buffer data))
-        (kill-buffer (xmtn-status-data-conflicts-buffer data)))
-
-    ;; create conflicts file
-    (xmtn-conflicts-clean work)
-    (xmtn-conflicts-save-opts work work (xmtn-status-data-branch data) (xmtn-status-data-branch data))
-    (dvc-run-dvc-sync
-     'xmtn
-     (list "conflicts" "store")
-     :error (lambda (output error status arguments)
-              (pop-to-buffer error)))
-
-    ;; create conflicts buffer
-    (setf (xmtn-status-data-conflicts-buffer data)
-          (save-excursion
-            (let ((dvc-switch-to-buffer-first nil))
-              (xmtn-conflicts-review work)
-              (current-buffer))))
-
-    (with-current-buffer (xmtn-status-data-conflicts-buffer data)
-      (case xmtn-conflicts-total-count
-        (0 'none)
-        (t
-         (if (= xmtn-conflicts-total-count xmtn-conflicts-resolved-internal-count)
-             'need-review-resolve-internal
-           'need-resolve))))))
+  ;; only called if need merge; two items in head-revs
+  (let ((result (xmtn-conflicts-status
+		 (xmtn-status-data-conflicts-buffer data) ; buffer
+		 (xmtn-status-data-work data) ; left-work
+		 (car (xmtn-status-data-head-revs data)) ; left-rev
+		 (xmtn-status-data-work data) ; right-work
+		 (cadr (xmtn-status-data-head-revs data)) ; right-rev
+		 (xmtn-status-data-branch data) ; left-branch
+		 (xmtn-status-data-branch data) ; right-branch
+		 )))
+    (setf (xmtn-status-data-conflicts-buffer data) (car result))
+    (cadr result)))
 
 (defun xmtn-status-refresh-one (data refresh-local-changes)
   "Refresh DATA."
@@ -373,20 +356,14 @@ The elements must all be of class xmtn-status-data.")
           (base-rev (xmtn--get-base-revision-hash-id-or-null work)))
       (case (length heads)
         (1
-         (setf (xmtn-status-data-head-rev data) (nth 0 heads))
+         (setf (xmtn-status-data-head-revs data) (nth 0 heads))
          (setf (xmtn-status-data-conflicts data) 'none)
-         (if (string= (xmtn-status-data-head-rev data) base-rev)
+         (if (string= (xmtn-status-data-head-revs data) base-rev)
              (setf (xmtn-status-data-heads data) 'at-head)
            (setf (xmtn-status-data-heads data) 'need-update)))
         (t
-         (setf (xmtn-status-data-head-rev data) nil)
-         (setf (xmtn-status-data-heads data) 'need-merge)
-         (case (xmtn-status-data-conflicts data)
-           (resolved
-            ;; Assume the resolution was just completed, so don't erase it!
-            nil)
-           (t
-            (setf (xmtn-status-data-conflicts data) 'need-scan))))))
+         (setf (xmtn-status-data-head-revs data) (list (nth 0 heads) (nth 1 heads)))
+         (setf (xmtn-status-data-heads data) 'need-merge))))
 
     (message "")
 
@@ -404,11 +381,14 @@ The elements must all be of class xmtn-status-data.")
 		 (xmtn-status-data-local-changes data) (cadr result))) )
       (t nil))
 
-    (case (xmtn-status-data-conflicts data)
-      (need-scan
+    (case (xmtn-status-data-heads data)
+      (need-merge
        (setf (xmtn-status-data-conflicts data)
              (xmtn-status-conflicts data)))
-      (t nil))
+      (t
+       (xmtn-status-kill-conflicts-buffer data)
+       (xmtn-conflicts-clean (xmtn-status-work data))
+       (setf (xmtn-status-data-conflicts data) 'none)))
 
     (setf (xmtn-status-data-need-refresh data) nil))
 
@@ -480,7 +460,7 @@ The elements must all be of class xmtn-status-data.")
   (xmtn-status-next))
 
 ;;;###autoload
-(defun xmtn-status-one-1 (root name head-rev status-buffer heads local-changes)
+(defun xmtn-status-one-1 (root name head-revs status-buffer heads local-changes)
   "Create an xmtn-multi-status buffer from xmtn-propagate."
   (pop-to-buffer (get-buffer-create "*xmtn-multi-status*"))
   (setq default-directory (concat root "/" name))
@@ -493,7 +473,7 @@ The elements must all be of class xmtn-status-data.")
                     :work (file-name-nondirectory (directory-file-name default-directory))
                     :branch (xmtn--tree-default-branch default-directory)
                     :need-refresh nil
-		    :head-rev head-rev
+		    :head-revs head-revs
 		    :conflicts-buffer nil
 		    :status-buffer status-buffer
                     :heads heads
