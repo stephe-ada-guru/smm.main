@@ -219,7 +219,7 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
     (let ((inhibit-read-only t))
       (ewoc-delete xmtn-propagate-ewoc elem))))
 
-(defun xmtn-propagate-clean-all (save-conflicts)
+(defun xmtn-propagate-clean-all (&optional save-conflicts)
   "Clean all remaining workspaces."
   (interactive)
   (ewoc-map 'xmtn-propagate-clean-1 xmtn-propagate-ewoc save-conflicts))

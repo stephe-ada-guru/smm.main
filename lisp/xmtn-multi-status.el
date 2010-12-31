@@ -140,7 +140,7 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
     (xmtn-status-clean-1 data nil)
     (ewoc-delete xmtn-status-ewoc elem)))
 
-(defun xmtn-status-clean-all (save-conflicts)
+(defun xmtn-status-clean-all (&optional save-conflicts)
   "Clean all remaining workspaces."
   (interactive)
   (ewoc-map 'xmtn-status-clean-1 xmtn-status-ewoc save-conflicts))
