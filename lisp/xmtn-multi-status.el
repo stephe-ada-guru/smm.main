@@ -122,12 +122,14 @@ The elements must all be of class xmtn-status-data.")
   (if (buffer-live-p (xmtn-status-data-conflicts-buffer data))
       (with-current-buffer (xmtn-status-data-conflicts-buffer data) (save-buffer))))
 
-(defun xmtn-status-clean-1 (data)
-  "Clean DATA workspace, kill associated automate session."
+(defun xmtn-status-clean-1 (data save-conflicts)
+  "Clean DATA workspace, kill associated automate session.
+If SAVE-CONFLICTS non-nil, don't delete conflicts files."
   (xmtn-automate-kill-session (xmtn-status-work data))
   (xmtn-status-kill-conflicts-buffer data)
   (xmtn-status-kill-status-buffer data)
-  (xmtn-conflicts-clean (xmtn-status-work data)))
+  (unless save-conflicts
+    (xmtn-conflicts-clean (xmtn-status-work data))))
 
 (defun xmtn-status-clean ()
   "Clean current workspace, delete from ewoc"
@@ -135,13 +137,13 @@ The elements must all be of class xmtn-status-data.")
   (let* ((elem (ewoc-locate xmtn-status-ewoc))
          (data (ewoc-data elem))
          (inhibit-read-only t))
-    (xmtn-status-clean-1 data)
+    (xmtn-status-clean-1 data nil)
     (ewoc-delete xmtn-status-ewoc elem)))
 
-(defun xmtn-status-clean-all ()
+(defun xmtn-status-clean-all (save-conflicts)
   "Clean all remaining workspaces."
   (interactive)
-  (ewoc-map 'xmtn-status-clean-1 xmtn-status-ewoc))
+  (ewoc-map 'xmtn-status-clean-1 xmtn-status-ewoc save-conflicts))
 
 (defun xmtn-status-cleanp ()
   "Non-nil if clean & quit is appropriate for current workspace."
@@ -270,6 +272,13 @@ The elements must all be of class xmtn-status-data.")
     (and (not (xmtn-status-data-need-refresh data))
          (eq 'need-merge (xmtn-status-data-heads data)))))
 
+(defun xmtn-status-quit-save ()
+  "Quit, but save conflicts files for later resume."
+  (interactive)
+  (remove-hook 'kill-buffer-hook 'xmtn-status-clean-all t)
+  (xmtn-status-clean-all t)
+  (kill-buffer))
+
 (defvar xmtn-status-actions-map
   (let ((map (make-sparse-keymap "actions")))
     (define-key map [?c]  '(menu-item "c) clean/delete"
@@ -311,9 +320,18 @@ The elements must all be of class xmtn-status-data.")
     (define-key map [?g]  'xmtn-status-refresh)
     (define-key map [?n]  'xmtn-status-next)
     (define-key map [?p]  'xmtn-status-prev)
+    (define-key map [?s]  'xmtn-status-quit-save)
     (define-key map [?q]  'dvc-buffer-quit)
     map)
   "Keymap used in `xmtn-multiple-status-mode'.")
+
+(easy-menu-define xmtn-multiple-status-mode-menu xmtn-multiple-status-mode-map
+  "Mtn specific status menu."
+  `("DVC-Mtn"
+    ["Do the right thing"    xmtn-status-actions-map t]
+    ["Quit, clean conflicts" dvc-buffer-quit t]
+    ["Quit, save conflicts"  xmtn-status-quit-save t]
+    ))
 
 (define-derived-mode xmtn-multiple-status-mode nil "xmtn-multiple-status"
   "Major mode to show status of multiple workspaces."
@@ -336,9 +354,9 @@ The elements must all be of class xmtn-status-data.")
   ;; only called if need merge; two items in head-revs
   (let ((result (xmtn-conflicts-status
 		 (xmtn-status-data-conflicts-buffer data) ; buffer
-		 (xmtn-status-data-work data) ; left-work
+		 (xmtn-status-work data) ; left-work
 		 (car (xmtn-status-data-head-revs data)) ; left-rev
-		 (xmtn-status-data-work data) ; right-work
+		 (xmtn-status-work data) ; right-work
 		 (cadr (xmtn-status-data-head-revs data)) ; right-rev
 		 (xmtn-status-data-branch data) ; left-branch
 		 (xmtn-status-data-branch data) ; right-branch

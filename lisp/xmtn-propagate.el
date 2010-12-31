@@ -199,13 +199,15 @@ The elements must all be of class xmtn-propagate-data.")
   (if (buffer-live-p (xmtn-propagate-data-to-status-buffer data))
       (kill-buffer (xmtn-propagate-data-to-status-buffer data))))
 
-(defun xmtn-propagate-clean-1 (data)
-  "Clean DATA workspace, kill associated automate session."
+(defun xmtn-propagate-clean-1 (data save-conflicts)
+  "Clean DATA workspace, kill associated automate session.
+If SAVE-CONFLICTS non-nil, don't delete conflicts files."
   (xmtn-automate-kill-session (xmtn-propagate-from-work data))
   (xmtn-automate-kill-session (xmtn-propagate-to-work data))
   (xmtn-propagate-kill-conflicts-buffer data)
   (xmtn-propagate-kill-status-buffers data)
-  (xmtn-conflicts-clean (xmtn-propagate-to-work data)))
+  (unless save-conflicts
+    (xmtn-conflicts-clean (xmtn-propagate-to-work data))))
 
 (defun xmtn-propagate-clean ()
   "Clean current workspace, delete from ewoc."
@@ -213,14 +215,14 @@ The elements must all be of class xmtn-propagate-data.")
   (let* ((elem (ewoc-locate xmtn-propagate-ewoc))
          (data (ewoc-data elem)))
 
-    (xmtn-propagate-clean-1 data)
+    (xmtn-propagate-clean-1 data nil)
     (let ((inhibit-read-only t))
       (ewoc-delete xmtn-propagate-ewoc elem))))
 
-(defun xmtn-propagate-clean-all ()
+(defun xmtn-propagate-clean-all (save-conflicts)
   "Clean all remaining workspaces."
   (interactive)
-  (ewoc-map 'xmtn-propagate-clean-1 xmtn-propagate-ewoc))
+  (ewoc-map 'xmtn-propagate-clean-1 xmtn-propagate-ewoc save-conflicts))
 
 (defun xmtn-propagate-cleanp ()
   "Non-nil if clean is appropriate for current workspace."
@@ -426,6 +428,13 @@ The elements must all be of class xmtn-propagate-data.")
 		  '(need-update need-merge))
 	  (eq (xmtn-propagate-data-from-local-changes data) 'need-commit)))))
 
+(defun xmtn-propagate-quit-save ()
+  "Quit, but save conflicts files for later resume."
+  (interactive)
+  (remove-hook 'kill-buffer-hook 'xmtn-propagate-clean-all t)
+  (xmtn-propagate-clean-all t)
+  (kill-buffer))
+
 (defvar xmtn-propagate-actions-map
   (let ((map (make-sparse-keymap "actions")))
     (define-key map [?c]  '(menu-item "c) clean/delete"
@@ -473,9 +482,18 @@ The elements must all be of class xmtn-propagate-data.")
     (define-key map [?g]  'xmtn-propagate-refresh)
     (define-key map [?n]  'xmtn-propagate-next)
     (define-key map [?p]  'xmtn-propagate-prev)
+    (define-key map [?s]  'xmtn-propagate-quit-save)
     (define-key map [?q]  'dvc-buffer-quit)
     map)
   "Keymap used in `xmtn-propagate-mode'.")
+
+(easy-menu-define xmtn-propagate-mode-menu xmtn-propagate-mode-map
+  "Mtn specific status menu."
+  `("DVC-Mtn"
+    ["Do the right thing"    xmtn-status-actions-map t]
+    ["Quit, clean conflicts" dvc-buffer-quit t]
+    ["Quit, save conflicts"  xmtn-propagate-quit-save t]
+    ))
 
 (define-derived-mode xmtn-propagate-mode nil "xmtn-propagate"
   "Major mode to propagate multiple workspaces."
