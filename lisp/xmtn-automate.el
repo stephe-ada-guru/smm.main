@@ -1,6 +1,6 @@
 ;;; xmtn-automate.el --- Interface to monotone's "automate" functionality
 
-;; Copyright (C) 2008 - 2010 Stephen Leake
+;; Copyright (C) 2008 - 2011 Stephen Leake
 ;; Copyright (C) 2006, 2007 Christian M. Ohler
 
 ;; Author: Christian M. Ohler
@@ -159,7 +159,7 @@ Optionally DISPLAY-TICKERS in mode-line of BUFFER."
 (defun xmtn-automate-command-output-file (root file command)
   "Send COMMAND to session for ROOT, store result in FILE."
   (let* ((session (xmtn-automate-cache-session root))
-         (command-handle (xmtn-automate--new-command session command nil buffer)))
+         (command-handle (xmtn-automate--new-command session command nil nil)))
     (xmtn-automate-command-wait-until-finished command-handle)
     (with-current-buffer (xmtn-automate-command-buffer command-handle)
       (write-region nil nil file))
