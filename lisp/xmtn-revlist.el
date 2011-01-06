@@ -1,6 +1,6 @@
 ;;; xmtn-revlist.el --- Interactive display of revision histories for monotone
 
-;; Copyright (C) 2008 - 2010 Stephen Leake
+;; Copyright (C) 2008 - 2011 Stephen Leake
 ;; Copyright (C) 2006, 2007 Christian M. Ohler
 
 ;; Author: Christian M. Ohler
@@ -342,7 +342,8 @@ from the merge."
      default-directory ; right-work
      right-rev
      left-branch
-     right-branch)))
+     right-branch
+     t)))
 
 ;;;###autoload
 (defvar xmtn-revlist-mode-map
