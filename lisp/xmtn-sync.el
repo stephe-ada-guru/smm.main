@@ -249,7 +249,11 @@ The elements must all be of type xmtn-sync-sync.")
   (setq dvc-buffer-refresh-function nil)
   (dvc-install-buffer-menu)
   (add-hook 'kill-buffer-hook 'xmtn-sync-save nil t)
-  (buffer-disable-undo))
+  (buffer-disable-undo)
+  (unless xmtn-sync-branch-alist
+    (let ((branch-file (expand-file-name xmtn-sync-branch-file dvc-config-directory)))
+      (if (file-exists-p branch-file)
+	  (load branch-file)))))
 
 (defun xmtn-sync-parse-revision-certs (direction)
   "Parse certs associated with a revision; return (branch changelog date author)."
@@ -527,10 +531,6 @@ Remote-db should include branch pattern in URI syntax."
     (setq buffer-read-only t)
     (set-buffer-modified-p nil)
     (xmtn-sync-save)
-    (unless xmtn-sync-branch-alist
-      (let ((branch-file (expand-file-name xmtn-sync-branch-file dvc-config-directory)))
-	(if (file-exists-p branch-file)
-	    (load branch-file))))
     ))
 
 (defun xmtn-sync-save ()
@@ -575,6 +575,7 @@ FILE should be output of 'automate sync'. (external sync handles tickers better)
 	;; user may have run several syncs, dumping each output into FILE; loop thru each.
 	(while (xmtn-sync-parse (point-min)))
 	(setq buffer-read-only t)
+	(set-buffer-modified-p nil)
 	(xmtn-sync-save)
 	(delete-file file))))
 
