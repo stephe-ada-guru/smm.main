@@ -1,6 +1,6 @@
 ;;; xmtn-conflicts.el --- conflict resolution for DVC backend for monotone
 
-;; Copyright (C) 2008 - 2010 Stephen Leake
+;; Copyright (C) 2008 - 2011 Stephen Leake
 
 ;; Author: Stephen Leake
 ;; Keywords: tools
@@ -1317,15 +1317,15 @@ for BUFFER. Regenerate conflicts if not current."
     ;; compute status
     (with-current-buffer buffer
       (case xmtn-conflicts-total-count
-        (0 '(buffer none))
+        (0 (list buffer 'none))
         (t
          (cond
 	  ((= xmtn-conflicts-total-count xmtn-conflicts-resolved-count)
-	   '(buffer resolved))
+	   (list buffer 'resolved))
 	  ((= xmtn-conflicts-total-count xmtn-conflicts-resolved-internal-count)
-	   '(buffer need-review-resolve-internal))
+	   (list buffer 'need-review-resolve-internal))
 	  (t
-           '(buffer need-resolve)))))))
+           (list buffer 'need-resolve)))))))
 
 ;;;###autoload
 (defun xmtn-conflicts-clean (&optional workspace)

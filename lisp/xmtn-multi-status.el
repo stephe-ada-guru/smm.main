@@ -1,6 +1,6 @@
 ;;; xmtn-status.el --- manage actions for multiple projects
 
-;; Copyright (C) 2009 - 2010 Stephen Leake
+;; Copyright (C) 2009 - 2011 Stephen Leake
 
 ;; Author: Stephen Leake
 ;; Keywords: tools
@@ -44,7 +44,7 @@ The elements must all be of class xmtn-status-data.")
 
 (defstruct (xmtn-status-data (:copier nil))
   work             ; workspace directory name relative to xmtn-status-root
-  branch           ; branch name (all workspaces have same branch; assumed never changes)
+  branch           ; GDS branch name (all workspaces have same branch; assumed never changes)
   need-refresh     ; nil | t : if an async process was started that invalidates state data
   head-revs        ; either current head revision or (left, right) if multiple heads
   conflicts-buffer ; *xmtn-conflicts* buffer for merge
@@ -253,7 +253,16 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
          (data (ewoc-data elem))
          (default-directory (xmtn-status-work data)))
     (xmtn-status-save-conflicts-buffer data)
-    (xmtn-dvc-merge-1 default-directory nil)
+    (xmtn--run-command-sync
+     default-directory
+     (list
+      "explicit_merge"
+      (nth 0 (xmtn-status-data-head-revs data))
+      (nth 1 (xmtn-status-data-head-revs data))
+      (xmtn--tree-default-branch default-directory)
+      (if (file-exists-p "_MTN/conflicts")
+	  "--resolve-conflicts-file=_MTN/conflicts")
+      (xmtn-dvc-log-message)))
     (xmtn-status-refresh-one data nil)
     (ewoc-invalidate xmtn-status-ewoc elem)))
 
