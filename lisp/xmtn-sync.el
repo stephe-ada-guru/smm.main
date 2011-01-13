@@ -1,6 +1,6 @@
 ;;; xmtn-sync.el --- database sync handling for DVC backend for monotone
 ;;
-;; Copyright (C) 2010 Stephen Leake
+;; Copyright (C) 2010, 2011 Stephen Leake
 ;;
 ;; Author: Stephen Leake
 ;; Keywords: tools
@@ -249,6 +249,10 @@ The elements must all be of type xmtn-sync-sync.")
   (setq dvc-buffer-refresh-function nil)
   (dvc-install-buffer-menu)
   (add-hook 'kill-buffer-hook 'xmtn-sync-save nil t)
+  (unless xmtn-sync-branch-alist
+    (let ((branch-file (expand-file-name xmtn-sync-branch-file dvc-config-directory)))
+      (if (file-exists-p branch-file)
+	  (load branch-file))))
   (buffer-disable-undo))
 
 (defun xmtn-sync-parse-revision-certs (direction)
@@ -527,10 +531,6 @@ Remote-db should include branch pattern in URI syntax."
     (setq buffer-read-only t)
     (set-buffer-modified-p nil)
     (xmtn-sync-save)
-    (unless xmtn-sync-branch-alist
-      (let ((branch-file (expand-file-name xmtn-sync-branch-file dvc-config-directory)))
-	(if (file-exists-p branch-file)
-	    (load branch-file))))
     ))
 
 (defun xmtn-sync-save ()
