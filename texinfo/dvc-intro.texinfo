@@ -49,7 +49,6 @@ Invoking
 * xmtn-status-one::
 * xmtn-propagate-one::
 * xmtn-sync-sync::
-* xmtn-sync-review::
 
 Key bindings
 
@@ -305,7 +304,7 @@ The external sync should redirect stdout to
 @file{~/.dvc/sync.basic_io}. For example:
 
 @example
-    mtn --db ~/monotone-dbs/gds.db automate sync --ticker=count "ssh:user@host/gds.db?*" >> ~/.dvc/sync.basic_io
+    mtn --db ~/monotone-dbs/gds.db automate sync --ticker=count "ssh:user@@host/gds.db?*" >> ~/.dvc/sync.basic_io
 @end example
 @end table
 
