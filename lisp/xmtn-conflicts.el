@@ -1317,7 +1317,7 @@ for BUFFER. Regenerate conflicts if not current."
     ;; compute status
     (with-current-buffer buffer
       (case xmtn-conflicts-total-count
-        (0 '(buffer none))
+        (0 (list buffer 'none))
         (t
          (cond
 	  ((= xmtn-conflicts-total-count xmtn-conflicts-resolved-count)

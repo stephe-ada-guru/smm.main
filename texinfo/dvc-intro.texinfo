@@ -14,7 +14,7 @@ distributed version control systems.
 
 @smallexample
 @group
-  Copyright (C) 2007, 2008, 2009, 2010 Stephen Leake
+  Copyright (C) 2007 - 2011 Stephen Leake
   Permission is granted to copy, distribute and/or modify this document
   under the terms of the GNU Free Documentation License, Version 1.2
   or any later version published by the Free Software Foundation;
@@ -49,6 +49,7 @@ Invoking
 * xmtn-status-one::
 * xmtn-propagate-one::
 * xmtn-sync-sync::
+* xmtn-sync-review::
 
 Key bindings
 
@@ -300,8 +301,12 @@ displays branches that have been transferred. This is useful for syncs
 that take a long time, because external commands display the tickers
 much better than DVC does.
 
-The external sync should redirect stdout to @file{~/.dvc/sync.basic_io}.
+The external sync should redirect stdout to
+@file{~/.dvc/sync.basic_io}. For example:
 
+@example
+    mtn --db ~/monotone-dbs/gds.db automate sync --ticker=count "ssh:user@host/gds.db?*" >> ~/.dvc/sync.basic_io
+@end example
 @end table
 
 @menu
