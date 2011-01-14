@@ -1,6 +1,6 @@
 ;;; xmtn-status.el --- manage actions for multiple projects
 
-;; Copyright (C) 2009 - 2010 Stephen Leake
+;; Copyright (C) 2009 - 2011 Stephen Leake
 
 ;; Author: Stephen Leake
 ;; Keywords: tools
@@ -388,9 +388,7 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
     (if refresh-local-changes
 	(progn
 	  (setf (xmtn-status-data-local-changes data) 'need-scan)
-	  (case (xmtn-status-data-update-review data)
-	    ('done (setf (xmtn-status-data-update-review data) 'need-review))
-	    (t nil))))
+	  (setf (xmtn-status-data-update-review data) 'need-review)))
 
     (case (xmtn-status-data-local-changes data)
       (need-scan
