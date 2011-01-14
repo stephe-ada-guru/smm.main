@@ -1,6 +1,6 @@
 ;;; xmtn-sync.el --- database sync handling for DVC backend for monotone
 ;;
-;; Copyright (C) 2010 Stephen Leake
+;; Copyright (C) 2010, 2011 Stephen Leake
 ;;
 ;; Author: Stephen Leake
 ;; Keywords: tools
