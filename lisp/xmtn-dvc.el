@@ -1,6 +1,6 @@
 ;;; xmtn-dvc.el --- DVC backend for monotone
 
-;; Copyright (C) 2008 - 2010 Stephen Leake
+;; Copyright (C) 2008 - 2011 Stephen Leake
 ;; Copyright (C) 2006, 2007, 2008 Christian M. Ohler
 
 ;; Author: Christian M. Ohler
@@ -95,7 +95,7 @@
           "_MTN/log"))
 
 (defun xmtn--toposort (root revision-hash-ids)
-  (xmtn-automate-simple-command-output-lines root
+  (xmtn-automate-command-output-lines root
                                              `("toposort"
                                                ,@revision-hash-ids)))
 
@@ -383,7 +383,7 @@ the file before saving."
     (if (string= rev-string base)
         ;; local changes in workspace are 'to'
         (xmtn-dvc-delta rev workspace dont-switch)
-      (let ((descendents (xmtn-automate-simple-command-output-lines path (list "descendents" base)))
+      (let ((descendents (xmtn-automate-command-output-lines path (list "descendents" base)))
             (done nil))
         (while descendents
           (if (string= rev-string (car descendents))
@@ -1382,7 +1382,7 @@ finished."
 
 (defun xmtn--file-contents-as-string (root content-hash-id)
   (check-type content-hash-id xmtn--hash-id)
-  (xmtn-automate-simple-command-output-string
+  (xmtn-automate-command-output-string
    root `("get_file" ,content-hash-id)))
 
 (defstruct (xmtn--revision (:constructor xmtn--make-revision))

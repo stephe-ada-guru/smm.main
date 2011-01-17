@@ -44,32 +44,36 @@
 (defvar xmtn-conflicts-left-work ""
   "Buffer-local variable holding left workspace root.")
 (make-variable-buffer-local 'xmtn-conflicts-left-work)
-(put 'xmtn-conflicts-left-work 'permanent-local t)
 
 (defvar xmtn-conflicts-right-work ""
   "Buffer-local variable holding right workspace root.")
 (make-variable-buffer-local 'xmtn-conflicts-right-work)
-(put 'xmtn-conflicts-right-work 'permanent-local t)
 
-(defvar xmtn-conflicts-left-root ""
+(defvar xmtn-conflicts-left-resolution-root ""
   "Buffer-local variable holding left resolution root directory
   name; relative to workspace root.")
-(make-variable-buffer-local 'xmtn-conflicts-left-root)
+(make-variable-buffer-local 'xmtn-conflicts-left-resolution-root)
 
-(defvar xmtn-conflicts-right-root ""
+(defvar xmtn-conflicts-right-resolution-root ""
   "Buffer-local variable holding right resolution root directory
   name; relative to workspace root.")
-(make-variable-buffer-local 'xmtn-conflicts-right-root)
+(make-variable-buffer-local 'xmtn-conflicts-right-resolution-root)
 
 (defvar xmtn-conflicts-left-branch ""
-  "Buffer-local variable holding left resolution branch.")
+  "Buffer-local variable holding left branch.")
 (make-variable-buffer-local 'xmtn-conflicts-left-branch)
-(put 'xmtn-conflicts-left-branch 'permanent-local t)
 
 (defvar xmtn-conflicts-right-branch ""
-  "Buffer-local variable holding right resolution branch.")
+  "Buffer-local variable holding right branch.")
 (make-variable-buffer-local 'xmtn-conflicts-right-branch)
-(put 'xmtn-conflicts-right-branch 'permanent-local t)
+
+(defvar xmtn-conflicts-left-author ""
+  "Buffer-local variable holding left author.")
+(make-variable-buffer-local 'xmtn-conflicts-left-author)
+
+(defvar xmtn-conflicts-right-author ""
+  "Buffer-local variable holding right branch.")
+(make-variable-buffer-local 'xmtn-conflicts-right-author)
 
 (defvar xmtn-conflicts-ancestor-revision ""
   "Buffer-local variable holding ancestor revision id.")
@@ -185,8 +189,8 @@ The elements must all be of type xmtn-conflicts-conflict.")
 (make-variable-buffer-local 'xmtn-conflicts-ewoc)
 
 (defun xmtn-conflicts-parse-header ()
-  "Fill `xmtn-conflicts-left-revision', `xmtn-conflicts-left-root',
-`xmtn-conflicts-right-revision', `xmtn-conflicts-right-root'
+  "Fill `xmtn-conflicts-left-revision', `xmtn-conflicts-left-resolution-root',
+`xmtn-conflicts-right-revision', `xmtn-conflicts-right-resolution-root'
 `xmtn-conflicts-ancestor-revision' with data from conflict
 header."
   ;;     left [9a019f3a364416050a8ff5c05f1e44d67a79e393]
@@ -201,15 +205,16 @@ header."
     (setq xmtn-conflicts-ancestor-revision (cadar value)))
   (xmtn-basic-io-check-empty)
 
-  ;; xmtn-conflicts-left-branch xmtn-conflicts-right-branch set by xmtn-conflicts-load-opts
+  ;; xmtn-conflicts-left-branch, -right-branch, -left-author,
+  ;; -right-author set by xmtn-conflicts-load-opts
 
   (if (string= xmtn-conflicts-left-branch xmtn-conflicts-right-branch)
       (progn
-        (setq xmtn-conflicts-left-root "_MTN/resolutions/left")
-        (setq xmtn-conflicts-right-root "_MTN/resolutions/right"))
+        (setq xmtn-conflicts-left-resolution-root "_MTN/resolutions/left")
+        (setq xmtn-conflicts-right-resolution-root "_MTN/resolutions/right"))
     (progn
-      (setq xmtn-conflicts-left-root (concat "_MTN/resolutions/" xmtn-conflicts-left-branch))
-      (setq xmtn-conflicts-right-root (concat "_MTN/resolutions/" xmtn-conflicts-right-branch))))
+      (setq xmtn-conflicts-left-resolution-root (concat "_MTN/resolutions/" xmtn-conflicts-left-branch))
+      (setq xmtn-conflicts-right-resolution-root (concat "_MTN/resolutions/" xmtn-conflicts-right-branch))))
   (setq xmtn-conflicts-total-count 0)
   (setq xmtn-conflicts-resolved-count 0)
   (setq xmtn-conflicts-resolved-internal-count 0)
@@ -476,7 +481,9 @@ header."
    xmtn-conflicts-ewoc
    (concat
     (format "       Left branch : %s\n" xmtn-conflicts-left-branch)
+    (format "       Left author : %s\n" xmtn-conflicts-left-author)
     (format "      Right branch : %s\n" xmtn-conflicts-right-branch)
+    (format "      Right author : %s\n" xmtn-conflicts-right-author)
     (format "   Total conflicts : %d\n" xmtn-conflicts-total-count)
     (format "Resolved conflicts : %d\n" xmtn-conflicts-resolved-count)
     )
@@ -495,6 +502,7 @@ header."
     ;; else no conflicts
     )
   (let ((inhibit-read-only t)) (delete-region begin (1- end)))
+  (xmtn-conflicts-load-opts)
   (xmtn-conflicts-set-hf)
   (set-buffer-modified-p nil)
   (point-max))
@@ -509,7 +517,7 @@ header."
   ;; point, and inserts empty header and footer lines.
   (goto-char (point-max))
   (let ((text-end (point)))
-    (xmtn-conflicts-mode)
+    (xmtn-conflicts-mode) ;; kills non-permanent buffer-local variables
     (xmtn-conflicts-read (point-min) text-end))
 
   (set-buffer-modified-p nil)
@@ -517,7 +525,7 @@ header."
   (xmtn-conflicts-next nil t))
 
 (defun xmtn-conflicts-write-header (ewoc-buffer)
-  "Write EWOC-BUFFER header info in basic-io format to current buffer."
+  "Write revisions from EWOC-BUFFER header info in basic-io format to current buffer."
   (xmtn-basic-io-write-id "left" (with-current-buffer ewoc-buffer xmtn-conflicts-left-revision))
   (xmtn-basic-io-write-id "right" (with-current-buffer ewoc-buffer xmtn-conflicts-right-revision))
   (if xmtn-conflicts-ancestor-revision
@@ -698,9 +706,11 @@ header."
   (xmtn-conflicts-write-header ewoc-buffer)
   ;; ewoc-map sets current-buffer to ewoc-buffer, so we need a
   ;; reference to the current buffer.
+  ;; FIXME: xmtn-conflicts-output-buffer not used
   (let ((xmtn-conflicts-output-buffer (current-buffer))
         (ewoc (with-current-buffer ewoc-buffer xmtn-conflicts-ewoc)))
     (xmtn-conflicts-write-conflicts ewoc)
+    ;; FIXME: xmtn-conflicts-update-counts
     (with-current-buffer ewoc-buffer (xmtn-conflicts-set-hf))
     ))
 
@@ -719,6 +729,7 @@ header."
 
 (defun xmtn-conflicts-update-counts ()
   "Update resolved counts."
+  (interactive)
   (setq xmtn-conflicts-resolved-count 0)
   (setq xmtn-conflicts-resolved-internal-count 0)
 
@@ -742,7 +753,8 @@ header."
             (setq xmtn-conflicts-resolved-count (+ 1 xmtn-conflicts-resolved-count))))
 
        ))
-   xmtn-conflicts-ewoc))
+   xmtn-conflicts-ewoc)
+  (xmtn-conflicts-set-hf))
 
 (dvc-make-ewoc-next xmtn-conflicts-next xmtn-conflicts-ewoc)
 (dvc-make-ewoc-prev xmtn-conflicts-prev xmtn-conflicts-ewoc)
@@ -845,11 +857,11 @@ header."
                                                        (xmtn-conflicts-conflict-ancestor_name conflict))))
           (file-left (xmtn-conflicts-get-file xmtn-conflicts-left-work
 					      (xmtn-conflicts-conflict-left_file_id conflict)
-                                              xmtn-conflicts-left-root
+                                              xmtn-conflicts-left-resolution-root
                                               (xmtn-conflicts-conflict-left_name conflict)))
           (file-right (xmtn-conflicts-get-file xmtn-conflicts-right-work
 					       (xmtn-conflicts-conflict-right_file_id conflict)
-                                               xmtn-conflicts-right-root
+                                               xmtn-conflicts-right-resolution-root
                                                (xmtn-conflicts-conflict-right_name conflict)))
 
           (result-file (concat "_MTN/resolutions/result/" (xmtn-conflicts-conflict-right_name conflict))) )
@@ -1138,6 +1150,7 @@ non-nil, show log-edit buffer in other frame."
     ))
 
 (defun xmtn-conflicts-do-propagate (&optional cached-branch)
+  ;; FIXME: delete
   "Perform propagate on revisions in current conflict buffer."
   (interactive)
   (save-some-buffers t); log buffer
@@ -1146,6 +1159,7 @@ non-nil, show log-edit buffer in other frame."
   (xmtn-propagate-from xmtn-conflicts-left-branch cached-branch))
 
 (defun xmtn-conflicts-do-merge ()
+  ;; FIXME: delete
   "Perform merge on revisions in current conflict buffer."
   (interactive)
   (save-some-buffers t); log buffer
@@ -1177,6 +1191,7 @@ non-nil, show log-edit buffer in other frame."
     (define-key map [?q]  'dvc-buffer-quit)
     (define-key map [?r]  xmtn-conflicts-resolve-map)
     (define-key map [?t]  'xmtn-conflicts-add-log-entry)
+    (define-key map [?u]  'xmtn-conflicts-update-counts)
     (define-key map "\M-d" xmtn-conflicts-resolve-map)
     (define-key map "MM" 'xmtn-conflicts-do-merge)
     (define-key map "MP" 'xmtn-conflicts-do-propagate)
@@ -1217,20 +1232,23 @@ non-nil, show log-edit buffer in other frame."
 
 (defconst xmtn-conflicts-opts-file "_MTN/dvc-conflicts-opts")
 
-(defun xmtn-conflicts-save-opts (left-work right-work &optional left-branch right-branch)
-  "Store LEFT-WORK, RIGHT-WORK in `xmtn-conflicts-opts-file', for
+(defun xmtn-conflicts-save-opts (left-work right-work left-branch right-branch left-rev right-rev)
+  "Store LEFT-*, RIGHT-* in `xmtn-conflicts-opts-file', for
 retrieval by `xmtn-conflicts-load-opts'."
+  ;; need correct buffer-local variable names for load-opts
   (let ((xmtn-conflicts-left-work left-work)
         (xmtn-conflicts-right-work right-work)
-        (xmtn-conflicts-left-branch (or left-branch
-                                        (xmtn--tree-default-branch left-work)))
-        (xmtn-conflicts-right-branch (or right-branch
-                                         (xmtn--tree-default-branch right-work))))
+        (xmtn-conflicts-left-branch left-branch)
+        (xmtn-conflicts-right-branch right-branch)
+        (xmtn-conflicts-left-author (xmtn--rev-author left-work left-rev))
+        (xmtn-conflicts-right-author (xmtn--rev-author right-work right-rev)))
 
   (dvc-save-state (list 'xmtn-conflicts-left-work
                         'xmtn-conflicts-left-branch
+                        'xmtn-conflicts-left-author
                         'xmtn-conflicts-right-work
-                        'xmtn-conflicts-right-branch)
+                        'xmtn-conflicts-right-branch
+                        'xmtn-conflicts-right-author)
                   (concat (file-name-as-directory right-work) xmtn-conflicts-opts-file))
   ))
 
@@ -1248,7 +1266,6 @@ stored."
   "Load _MTN/conflicts for default-directory."
   (dvc-switch-to-buffer-maybe (dvc-get-buffer-create 'xmtn 'conflicts default-directory))
   (setq buffer-read-only nil)
-  (xmtn-conflicts-load-opts)
   (set (make-local-variable 'after-insert-file-functions) '(xmtn-conflicts-after-insert-file))
   (insert-file-contents "_MTN/conflicts" t nil nil t))
 
@@ -1259,7 +1276,7 @@ respective workspace branches) in LEFT-WORK and RIGHT-WORK
 workspaces (strings).  Allow specifying resolutions, propagating
 to right.  Stores conflict file in RIGHT-WORK/_MTN."
   (let ((default-directory right-work))
-    (xmtn-conflicts-save-opts left-work right-work left-branch right-branch)
+    (xmtn-conflicts-save-opts left-work right-work left-branch right-branch left-rev right-rev)
     (xmtn-automate-command-output-file
      default-directory
      "_MTN/conflicts"

@@ -1,6 +1,6 @@
 ;;; xmtn-propagate.el --- manage multiple propagations for DVC backend for monotone
 
-;; Copyright (C) 2009 - 2010 Stephen Leake
+;; Copyright (C) 2009 - 2011 Stephen Leake
 
 ;; Author: Stephen Leake
 ;; Keywords: tools
@@ -531,7 +531,7 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
       (if (string= from-head-rev to-head-rev)
           ;; case 2
           (setq result nil)
-        (let ((descendents (xmtn-automate-simple-command-output-lines from-work (list "descendents" from-head-rev)))
+        (let ((descendents (xmtn-automate-command-output-lines from-work (list "descendents" from-head-rev)))
               done)
           (if (not descendents)
               ;; case 1

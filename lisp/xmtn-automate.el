@@ -138,7 +138,7 @@ workspace root."
         (buffer-substring-no-properties (point-min) (point-max))
       (xmtn-automate--cleanup-command handle))))
 
-(defun xmtn-automate-simple-command-output-string (root command)
+(defun xmtn-automate-command-output-string (root command)
   "Send COMMAND to session for ROOT. Return result as a string."
   (let* ((session (xmtn-automate-cache-session root))
          (command-handle (xmtn-automate--new-command session command)))
@@ -165,34 +165,30 @@ Optionally DISPLAY-TICKERS in mode-line of BUFFER."
       (write-region nil nil file))
     (xmtn-automate--cleanup-command command-handle)))
 
-(defun xmtn-automate-command-output-lines (handle)
-  "Return list of lines of output in HANDLE; first line output is
-first in list."
-  (xmtn-automate-command-wait-until-finished handle)
-  (with-current-buffer (xmtn-automate-command-buffer handle)
-    (goto-char (point-min))
-    (let (result)
-      (while (< (point) (point-max))
-        (setq result (cons (buffer-substring-no-properties
-                            (point)
-                            (progn (end-of-line) (point)))
-                           result))
-        (forward-line 1))
-      (xmtn-automate--cleanup-command handle)
-      (nreverse result))))
-
-(defun xmtn-automate-simple-command-output-lines (root command)
+(defun xmtn-automate-command-output-lines (root command)
   "Return list of strings containing output of COMMAND, one line per
 string."
   (let* ((session (xmtn-automate-cache-session root))
-         (command-handle (xmtn-automate--new-command session command)))
-    (xmtn-automate-command-output-lines command-handle)))
+         (handle (xmtn-automate--new-command session command)))
+    (xmtn-automate-command-wait-until-finished handle)
+    (with-current-buffer (xmtn-automate-command-buffer handle)
+      (goto-char (point-min))
+      ;; FIXME: goto point-max to eliminate nreverse
+      (let (result)
+	(while (< (point) (point-max))
+	  (setq result (cons (buffer-substring-no-properties
+			      (point)
+			      (progn (end-of-line) (point)))
+			     result))
+	  (forward-line 1))
+	(xmtn-automate--cleanup-command handle)
+	(nreverse result)))))
 
-(defun xmtn-automate-simple-command-output-line (root command)
+(defun xmtn-automate-command-output-line (root command)
   "Return the one line output from mtn automate as a string.
 
 Signals an error if output contains zero lines or more than one line."
-  (let ((lines (xmtn-automate-simple-command-output-lines root command)))
+  (let ((lines (xmtn-automate-command-output-lines root command)))
     (unless (eql (length lines) 1)
       (error "Expected precisely one line of output from mtn automate, got %s: %s %S"
              (length lines)
@@ -806,7 +802,7 @@ Each element of the list is a list; key, signature, name, value, trust."
     accu))
 
 (defun xmtn--heads (root branch)
-  (xmtn-automate-simple-command-output-lines
+  (xmtn-automate-command-output-lines
    root
    (cons
     (list "ignore-suspend-certs" "")
@@ -814,8 +810,33 @@ Each element of the list is a list; key, signature, name, value, trust."
 	  (or branch
 	      (xmtn--tree-default-branch root))))))
 
+(defun xmtn--rev-author (root rev)
+  "Return first author of REV"
+  (let (cert-name
+	result)
+    (with-temp-buffer
+      (xmtn-automate-command-output-buffer root (current-buffer) (list "certs" rev))
+      (goto-char (point-min))
+      ;;       key [46ec58576f9e4f34a9eede521422aa5fd299dc50]
+      ;; signature "ok"
+      ;;      name "author"
+      ;;     value "beth"
+      ;;     trust "trusted"
+      ;;
+      ;; ...
+      (while (not result)
+	(xmtn-basic-io-skip-line "key")
+	(xmtn-basic-io-skip-line "signature")
+	(xmtn-basic-io-check-line "name" (setq cert-name (cadar value)))
+	(xmtn-basic-io-check-line "value"
+	  (if (string= cert-name "author")
+	      (setq result (cadar value))))
+	(xmtn-basic-io-skip-line "trust")
+	(xmtn-basic-io-check-empty)))
+    result))
+
 (defun xmtn--tree-default-branch (root)
-  (xmtn-automate-simple-command-output-line root `("get_option" "branch")))
+  (xmtn-automate-command-output-line root `("get_option" "branch")))
 
 (defun xmtn--get-corresponding-path-raw (root normalized-file-name
 					      source-revision-hash-id

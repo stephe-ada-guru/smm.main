@@ -292,7 +292,7 @@ arg; root. Result is of the form:
       ;; See xmtn--revlist-*info-generator-fn* for result format
       (list header
 	    '() ;; footer
-	    (xmtn-automate-simple-command-output-lines ;; revisions
+	    (xmtn-automate-command-output-lines ;; revisions
 	     root
 	     (cons options command))))))
 
@@ -377,7 +377,7 @@ from the merge."
      root
      (lambda (root)
        (let ((revs
-	      (xmtn-automate-simple-command-output-lines
+	      (xmtn-automate-command-output-lines
 	       root
 	       (cons (list "from" "h:" "to" "w:") (list "log")))))
 	 (list
@@ -405,7 +405,7 @@ from the merge."
    root
    (lambda (root)
      (let ((revs
-	    (xmtn-automate-simple-command-output-lines
+	    (xmtn-automate-command-output-lines
 	     root
 	     (cons (list "from" "w:" "to" "u:") (list "log")))))
        (list
