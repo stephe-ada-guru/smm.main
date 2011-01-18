@@ -91,10 +91,6 @@
   "Count of resolved-internal conflicts.")
 (make-variable-buffer-local 'xmtn-conflicts-resolved-internal-count)
 
-(defvar xmtn-conflicts-output-buffer nil
-  "Buffer to write basic-io to, when saving a conflicts buffer.")
-(make-variable-buffer-local 'xmtn-conflicts-output-buffer)
-
 (defvar xmtn-conflicts-current-conflict-buffer nil
   "Global variable for use in ediff quit hook.")
 ;; xmtn-conflicts-current-conflict-buffer cannot be buffer local,
@@ -683,13 +679,13 @@ header."
            (xmtn-basic-io-write-str "resolved_rename_left" (cadr (xmtn-conflicts-conflict-left_resolution conflict))))
           ))))
 
-(defun xmtn-conflicts-write-conflicts (ewoc)
-  "Write EWOC elements in basic-io format to xmtn-conflicts-output-buffer."
+(defun xmtn-conflicts-write-conflicts (ewoc buffer)
+  "Write EWOC elements in basic-io format to BUFFER."
   (setq xmtn-conflicts-resolved-count 0)
   (setq xmtn-conflicts-resolved-internal-count 0)
   (ewoc-map
    (lambda (conflict)
-     (with-current-buffer xmtn-conflicts-output-buffer
+     (with-current-buffer buffer
        (ecase (xmtn-conflicts-conflict-conflict_type conflict)
          (content
           (xmtn-conflicts-write-content conflict))
@@ -704,14 +700,11 @@ header."
   "Replace region BEGIN END with EWOC-BUFFER ewoc in basic-io format."
   (delete-region begin end)
   (xmtn-conflicts-write-header ewoc-buffer)
-  ;; ewoc-map sets current-buffer to ewoc-buffer, so we need a
-  ;; reference to the current buffer.
-  ;; FIXME: xmtn-conflicts-output-buffer not used
-  (let ((xmtn-conflicts-output-buffer (current-buffer))
-        (ewoc (with-current-buffer ewoc-buffer xmtn-conflicts-ewoc)))
-    (xmtn-conflicts-write-conflicts ewoc)
-    ;; FIXME: xmtn-conflicts-update-counts
-    (with-current-buffer ewoc-buffer (xmtn-conflicts-set-hf))
+  (let ((ewoc (with-current-buffer ewoc-buffer xmtn-conflicts-ewoc)))
+    (xmtn-conflicts-write-conflicts ewoc (current-buffer))
+
+    ;; 'update' not needed for save, but it's nice for the user
+    (with-current-buffer ewoc-buffer (xmtn-conflicts-update-counts))
     ))
 
 ;; Arrange for xmtn-conflicts-save to be called by save-buffer. We
@@ -1149,24 +1142,6 @@ non-nil, show log-edit buffer in other frame."
     (insert ": ")
     ))
 
-(defun xmtn-conflicts-do-propagate (&optional cached-branch)
-  ;; FIXME: delete
-  "Perform propagate on revisions in current conflict buffer."
-  (interactive)
-  (save-some-buffers t); log buffer
-  ;; save-some-buffers does not save the conflicts buffer, which is the current buffer
-  (save-buffer)
-  (xmtn-propagate-from xmtn-conflicts-left-branch cached-branch))
-
-(defun xmtn-conflicts-do-merge ()
-  ;; FIXME: delete
-  "Perform merge on revisions in current conflict buffer."
-  (interactive)
-  (save-some-buffers t); log buffer
-  ;; save-some-buffers does not save the conflicts buffer, which is the current buffer
-  (save-buffer)
-  (xmtn-dvc-merge-1 default-directory nil))
-
 (defun xmtn-conflicts-ediff-resolution-ws ()
   "Ediff current resolution file against workspace."
   (interactive)
@@ -1193,21 +1168,16 @@ non-nil, show log-edit buffer in other frame."
     (define-key map [?t]  'xmtn-conflicts-add-log-entry)
     (define-key map [?u]  'xmtn-conflicts-update-counts)
     (define-key map "\M-d" xmtn-conflicts-resolve-map)
-    (define-key map "MM" 'xmtn-conflicts-do-merge)
-    (define-key map "MP" 'xmtn-conflicts-do-propagate)
-    (define-key map "MU" 'dvc-update)
     map)
   "Keymap used in `xmtn-conflicts-mode'.")
 
 (easy-menu-define xmtn-conflicts-mode-menu xmtn-conflicts-mode-map
   "`xmtn-conflicts' menu"
   `("Mtn-conflicts"
-    ["Clear resolution"     xmtn-conflicts-clear-resolution t]
+    ["Clear resolution"       xmtn-conflicts-clear-resolution t]
     ["Ediff resolution to ws" xmtn-conflicts-ediff-resolution-ws t]
-    ["Propagate"            xmtn-conflicts-do-propagate t]
-    ["Merge"                xmtn-conflicts-do-merge t]
-    ["Update"               dvc-update t]
-    ["Clean"                xmtn-conflicts-clean t]
+    ["Add log entry"          xmtn-conflicts-add-log-entry t]
+    ["Clean"                  xmtn-conflicts-clean t]
     ))
 
 ;; derive from nil causes no keymap to be used, but still have self-insert keys

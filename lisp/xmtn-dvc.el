@@ -99,31 +99,13 @@
                                              `("toposort"
                                                ,@revision-hash-ids)))
 
-(add-to-list 'format-alist
-             '(xmtn--log-file
-               "This format automatically removes xmtn's log edit hints from
-the file before saving."
-               nil
-               xmtn--log-file-format-from-fn
-               xmtn--log-file-format-to-fn
-               t
-               nil
-               nil))
-
-(defun xmtn--log-file-format-from-fn (begin end)
-  (xmtn--assert-nil))
-
-(defun xmtn--log-file-format-to-fn (begin end buffer)
-  (dvc-log-flush-commit-file-list))
-
 ;;;###autoload
 (defun xmtn-dvc-log-edit (root other-frame no-init)
   (if no-init
       (dvc-dvc-log-edit root other-frame no-init)
     (progn
       (dvc-dvc-log-edit root other-frame nil)
-      (setq buffer-file-coding-system 'xmtn--monotone-normal-form) ;; FIXME: move this into dvc-get-buffer-create?
-      (add-to-list 'buffer-file-format 'xmtn--log-file) ;; FIXME: generalize to dvc--log-file
+      (setq buffer-file-coding-system 'xmtn--monotone-normal-form)
       )))
 
 (defun xmtn-dvc-log-message ()
@@ -357,20 +339,6 @@ the file before saving."
 
 
 ;;;###autoload
-(defun xmtn-dvc-search-file-in-diff (file)
-  (re-search-forward
-   (let ((quoted-file (regexp-quote file)))
-     (concat "^\\(\\("
-             "\\+\\+\\+ " quoted-file
-             "\\)\\|\\("
-             ;; FIXME: What `dvc-diff-diff-or-list' does doesn't work
-             ;; for this case, since `diff-hunk-next' doesn't recognize
-             ;; mtn's output for this case as a diff hunk.
-             "# " quoted-file " is binary"
-             "\\)\\)$"))))
-
-
-;;;###autoload
 (defun xmtn-dvc-diff (&optional rev path dont-switch)
   ;; If rev is an ancestor of base-rev of path, then rev is from, path
   ;; is 'to', and vice versa.
@@ -418,18 +386,13 @@ the file before saving."
 (dvc-add-uniquify-directory-mode 'xmtn-diff-mode)
 
 (defun xmtn--rev-to-option (resolved from)
-  "Return a string contaiing the mtn diff command-line option for RESOLVED-REV.
-If FROM is non-nil, RESOLVED-REV is assumed older than workspace;
+  "Return a string contaiing the mtn diff command-line option for RESOLVED.
+If FROM is non-nil, RESOLVED is assumed older than workspace;
 otherwise newer."
   (ecase (car resolved)
     ('local-tree
      (if from
-         (progn
-           ;; FIXME: --reverse is not in mtn 0.44; bump overall
-           ;; required version on new mtn release
-           (let ((xmtn--minimum-required-command-version '(0 45)))
-             (xmtn--check-cached-command-version)
-             "--reverse"))
+	 "--reverse"
        ""))
     ('revision (concat "--revision=" (cadr resolved)))))
 
@@ -691,7 +654,6 @@ otherwise newer."
         (dvc-status-prepare-buffer
          'xmtn
          root
-         ;; FIXME: just pass header
          ;; base-revision
          (if base-revision (format "%s" base-revision) "none")
          ;; branch
@@ -735,8 +697,7 @@ otherwise newer."
                                            :text (concat " no changes in workspace")))
                          (ewoc-refresh dvc-fileinfo-ewoc)))))
        :error (lambda (output error status arguments)
-                ;; FIXME: need `dvc-status-error-in-process', or change name.
-                (dvc-diff-error-in-process
+                (dvc-diff-error-in-process ;; correct for status-mode as well
                  status-buffer
                  (format "Error running mtn with arguments %S" arguments)
                  output error))
@@ -919,7 +880,6 @@ where `status' is 'ok or 'need-commit."
                 (1 (format "%s" (first normalized-file-names)))
                 (t (format "%s files/directories"
                            (length normalized-file-names))))))
-    ;; FIXME: confirm should be in upper level DVC code.
     (when (or (not dvc-confirm-ignore)
               (y-or-n-p (format "Ignore %s in monotone tree %s? " msg root)))
       (xmtn--add-patterns-to-mtnignore
@@ -958,7 +918,7 @@ where `status' is 'ok or 'need-commit."
   (xmtn--add-files (dvc-tree-root) files))
 
 ;; Appears redundant, given that there is `xmtn-dvc-add-files'.  But
-;; it's part of the DVC API.  FIXME.
+;; it's part of the DVC API.
 ;;;###autoload
 (defun xmtn-dvc-add (file)
   (xmtn--add-files (dvc-tree-root) (list file)))
@@ -1129,7 +1089,7 @@ finished."
   nil)
 
 (defun xmtn-propagate-from (other &optional cached-branch)
-  "Propagate from OTHER branch to local tree branch."
+  "Propagate from OTHER branch to CACHED-BRANCH (default local tree branch)."
   (interactive "MPropagate from branch: ")
   (let*
       ((root (dvc-tree-root))
@@ -1205,7 +1165,7 @@ finished."
     ;; mtn progress messages are put to stderr, and there is typically
     ;; nothing written to stdout from this command, so put both in the
     ;; same buffer.
-    ;; FIXME: this output is not useful; need to use automation
+    ;; This output is not useful; xmtn-sync, xmtn-sync-review is much better
     (xmtn--run-command-async root `("pull" ,other)
                              :output-buffer name
                              :error-buffer name

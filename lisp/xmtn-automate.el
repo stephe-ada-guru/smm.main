@@ -172,17 +172,15 @@ string."
          (handle (xmtn-automate--new-command session command)))
     (xmtn-automate-command-wait-until-finished handle)
     (with-current-buffer (xmtn-automate-command-buffer handle)
-      (goto-char (point-min))
-      ;; FIXME: goto point-max to eliminate nreverse
+      (goto-char (point-max))
       (let (result)
-	(while (< (point) (point-max))
+	(while (= 0 (forward-line -1))
 	  (setq result (cons (buffer-substring-no-properties
 			      (point)
 			      (progn (end-of-line) (point)))
-			     result))
-	  (forward-line 1))
+			     result)))
 	(xmtn-automate--cleanup-command handle)
-	(nreverse result)))))
+	result))))
 
 (defun xmtn-automate-command-output-line (root command)
   "Return the one line output from mtn automate as a string.

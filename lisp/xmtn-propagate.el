@@ -314,7 +314,10 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
 
     (with-current-buffer (xmtn-propagate-data-conflicts-buffer data)
       (let ((xmtn-confirm-operation nil))
-        (xmtn-conflicts-do-propagate (xmtn-propagate-data-to-branch data))))
+	(save-some-buffers t); log buffer
+	;; save-some-buffers does not save the conflicts buffer, which is the current buffer
+	(save-buffer)
+	(xmtn-propagate-from xmtn-conflicts-left-branch (xmtn-propagate-data-to-branch data))))
     (xmtn-propagate-refresh-one data nil)
     (ewoc-invalidate xmtn-propagate-ewoc elem)))
 
