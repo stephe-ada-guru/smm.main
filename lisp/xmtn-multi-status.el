@@ -230,7 +230,7 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
          (member (xmtn-status-data-local-changes data)
                  '(need-scan need-commit)))))
 
-(defun xmtn-status-review-update ()
+(defun xmtn-status-update-review ()
   "Review last update for current workspace."
   (interactive)
   (let* ((elem (ewoc-locate xmtn-status-ewoc))
@@ -238,10 +238,10 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
     ;; assume they are adding FIXMEs
     (xmtn-status-need-refresh elem data 'need-scan)
     (setf (xmtn-status-data-update-review data) 'done)
-    (xmtn-review-update (xmtn-status-work data))))
+    (xmtn-update-review (xmtn-status-work data))))
 
-(defun xmtn-status-review-updatep ()
-  "Non-nil if xmtn-status-review-update is appropriate for current workspace."
+(defun xmtn-status-update-reviewp ()
+  "Non-nil if xmtn-status-update-review is appropriate for current workspace."
   (let* ((data (ewoc-data (ewoc-locate xmtn-status-ewoc))))
     (and (not (xmtn-status-data-need-refresh data))
          (eq 'need-review (xmtn-status-data-update-review data)))))
@@ -299,9 +299,9 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
     (define-key map [?i]  '(menu-item "i) ignore local changes"
                                       xmtn-status-status-ok
                                       :visible (xmtn-status-statusp)))
-    (define-key map [?5]  '(menu-item "5) review update"
-                                      xmtn-status-review-update
-                                      :visible (xmtn-status-review-updatep)))
+    (define-key map [?5]  '(menu-item "5) update review"
+                                      xmtn-status-update-review
+                                      :visible (xmtn-status-update-reviewp)))
     (define-key map [?4]  '(menu-item "4) update"
                                       xmtn-status-update
                                       :visible (xmtn-status-updatep)))

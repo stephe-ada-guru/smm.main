@@ -347,7 +347,7 @@ Perform the merge, using the conflict resolutions.
 @item update
 Update the workspace to the current head revision (must be merged).
 
-@item review update
+@item update review
 Open an @dfn{*xmtn-revlist*} buffer to review the revisions in the
 most recent update.
 
