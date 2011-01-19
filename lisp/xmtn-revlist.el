@@ -398,7 +398,7 @@ from the merge."
   nil)
 
 ;;;###autoload
-(defun xmtn-review-update (root)
+(defun xmtn-update-review (root)
   "Review revisions in last update of ROOT workspace."
   (interactive "D")
   (xmtn--setup-revlist
