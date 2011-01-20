@@ -327,11 +327,11 @@ from the merge."
      ((string= (substring changelog 0 5) "merge")
       (setq start (+ 4 (string-match "of" changelog)))
       (setq end (string-match "'" changelog start))
-      (setq left-rev (substring changelog start (1- end)))
+      (setq left-rev (substring changelog start end))
 
       (setq start (+ 5 (string-match "and" changelog start)))
       (setq end (string-match "'" changelog start))
-      (setq right-rev (substring changelog start (1- end))))
+      (setq right-rev (substring changelog start end)))
 
      (t
       (error "not on a two parent revision")))
