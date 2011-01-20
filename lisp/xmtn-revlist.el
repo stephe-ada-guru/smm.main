@@ -94,7 +94,7 @@ arg; root. Result is of the form:
                 (eql (length dates) len)
                 (eql (length changelogs) len)))
       (loop
-       ;; FIXME: Matching the k-th author cert with the k-th date cert
+       ;; Matching the k-th author cert with the k-th date cert
        ;; and the k-th changelog cert, like we do here, is unlikely to
        ;; be correct in general.  That the relationship between date,
        ;; message and author of a commit is lost appears to be a

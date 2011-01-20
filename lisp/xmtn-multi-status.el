@@ -235,7 +235,7 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
   (interactive)
   (let* ((elem (ewoc-locate xmtn-status-ewoc))
          (data (ewoc-data elem)))
-    ;; assume they are adding FIXMEs
+    ;; assume they are adding fixmes
     (xmtn-status-need-refresh elem data 'need-scan)
     (setf (xmtn-status-data-update-review data) 'done)
     (xmtn-update-review (xmtn-status-work data))))

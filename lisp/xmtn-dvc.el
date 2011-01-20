@@ -466,16 +466,6 @@ otherwise newer."
 (defun xmtn-dvc-command-version ()
   (fourth (xmtn--command-version xmtn-executable)))
 
-(defvar xmtn-dvc-automate-version nil
-  "Cached value of mtn automate interface version.")
-
-(defun xmtn-dvc-automate-version ()
-  "Return mtn automate version as a number."
-  (if xmtn-dvc-automate-version
-      xmtn-dvc-automate-version
-    (setq xmtn-dvc-automate-version
-          (string-to-number (xmtn--command-output-line nil '("automate" "interface_version"))))))
-
 (defun xmtn--changes-image (change)
   (ecase change
     (content "content")
