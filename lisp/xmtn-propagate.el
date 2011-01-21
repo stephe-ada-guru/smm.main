@@ -148,7 +148,7 @@ The elements must all be of class xmtn-propagate-data.")
               (need-review-resolve-internal
                (insert (dvc-face-add "  need review resolve internal\n" 'dvc-header))
                (insert (dvc-face-add "  need propagate\n" 'dvc-conflict)))
-              (ok
+              (none
                (insert (dvc-face-add "  need propagate\n" 'dvc-conflict)))))
 
       (if (eq 'at-head (xmtn-propagate-data-to-heads data))
