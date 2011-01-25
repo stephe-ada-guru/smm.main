@@ -75,7 +75,7 @@
   "Buffer-local variable holding right branch.")
 (make-variable-buffer-local 'xmtn-conflicts-right-author)
 
-(defvar xmtn-conflicts-ancestor-revision ""
+(defvar xmtn-conflicts-ancestor-revision nil
   "Buffer-local variable holding ancestor revision id.")
 (make-variable-buffer-local 'xmtn-conflicts-ancestor-revision)
 

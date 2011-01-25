@@ -317,7 +317,10 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
 	(save-some-buffers t); log buffer
 	;; save-some-buffers does not save the conflicts buffer, which is the current buffer
 	(save-buffer)
-	(xmtn-propagate-from xmtn-conflicts-left-branch (xmtn-propagate-data-to-branch data))))
+	(xmtn-propagate-from
+	 (xmtn-propagate-data-from-branch data) ; = left
+	 (xmtn-propagate-data-to-branch data) ; = right
+	 )))
     (xmtn-propagate-refresh-one data nil)
     (ewoc-invalidate xmtn-propagate-ewoc elem)))
 
@@ -329,7 +332,7 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
          (eq 'at-head (xmtn-propagate-data-from-heads data))
          (eq 'at-head (xmtn-propagate-data-to-heads data))
          (member (xmtn-propagate-data-conflicts data)
-                 '(ok need-review-resolve-internal)))))
+                 '(need-review-resolve-internal resolved none)))))
 
 (defun xmtn-propagate-resolve-conflicts ()
   "Resolve conflicts for current workspace."
@@ -550,15 +553,16 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
 
 (defun xmtn-propagate-conflicts (data)
   "Return value for xmtn-propagate-data-conflicts for DATA."
-  ;; only called if neither side needs merge
+  ;; Only called if neither side needs merge. See
+  ;; xmtn-propagate-conflicts for assignment of 'left' = 'from'.
   (let ((result (xmtn-conflicts-status
 		 (xmtn-propagate-data-conflicts-buffer data) ; buffer
-		 (xmtn-propagate-to-work data) ; left-work
-		 (xmtn-propagate-data-to-head-revs data) ; left-rev
-		 (xmtn-propagate-from-work data) ; right-work
-		 (xmtn-propagate-data-from-head-revs data) ; right-rev
-		 (xmtn-propagate-data-to-branch data) ; left-branch
-		 (xmtn-propagate-data-from-branch data) ; right-branch
+		 (xmtn-propagate-from-work data) ; left-work
+		 (xmtn-propagate-data-from-head-revs data) ; left-rev
+		 (xmtn-propagate-to-work data) ; right-work
+		 (xmtn-propagate-data-to-head-revs data) ; right-rev
+		 (xmtn-propagate-data-from-branch data) ; left-branch
+		 (xmtn-propagate-data-to-branch data) ; right-branch
 		 )))
     (setf (xmtn-propagate-data-conflicts-buffer data) (car result))
     (cadr result)))
