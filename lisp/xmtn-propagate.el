@@ -169,29 +169,15 @@ The elements must all be of class xmtn-propagate-data.")
 
 (defun xmtn-propagate-create-to-status-buffer (data)
   "Create to-status buffer for DATA"
-  (if (buffer-live-p (xmtn-propagate-data-to-status-buffer data))
-      (with-current-buffer (xmtn-propagate-data-to-status-buffer data)
-	(xmtn-dvc-status)
-	(setf (xmtn-propagate-data-to-local-changes data)
-	      (if (not (ewoc-locate dvc-fileinfo-ewoc))
-		  'ok
-		'need-commit)))
-    (let ((result (xmtn--status-inventory-sync (xmtn-propagate-to-work data))))
-      (setf (xmtn-propagate-data-to-status-buffer data) (car result)
-	    (xmtn-propagate-data-to-local-changes data) (cadr result))) ))
+  (let ((result (xmtn--status-inventory-sync (xmtn-propagate-to-work data))))
+    (setf (xmtn-propagate-data-to-status-buffer data) (car result)
+	  (xmtn-propagate-data-to-local-changes data) (cadr result))))
 
 (defun xmtn-propagate-create-from-status-buffer (data)
   "Create from-status buffer for DATA"
-  (if (buffer-live-p (xmtn-propagate-data-from-status-buffer data))
-      (with-current-buffer (xmtn-propagate-data-from-status-buffer data)
-	(xmtn-dvc-status)
-	(setf (xmtn-propagate-data-from-local-changes data)
-	      (if (not (ewoc-locate dvc-fileinfo-ewoc))
-		  'ok
-		'need-commit)))
-    (let ((result (xmtn--status-inventory-sync (xmtn-propagate-from-work data))))
-      (setf (xmtn-propagate-data-from-status-buffer data) (car result)
-	    (xmtn-propagate-data-from-local-changes data) (cadr result))) ))
+  (let ((result (xmtn--status-inventory-sync (xmtn-propagate-from-work data))))
+    (setf (xmtn-propagate-data-from-status-buffer data) (car result)
+	  (xmtn-propagate-data-from-local-changes data) (cadr result))))
 
 (defun xmtn-propagate-kill-status-buffers (data)
   (if (buffer-live-p (xmtn-propagate-data-from-status-buffer data))

@@ -80,7 +80,7 @@ The elements must all be of class xmtn-status-data.")
       (insert (dvc-face-add "  need refresh\n" 'dvc-conflict))
 
     (ecase (xmtn-status-data-local-changes data)
-      (need-scan (insert "  local changes unknown\n"))
+      (need-scan (insert "  local changes not checked\n"))
       (need-commit (insert (dvc-face-add "  need commit\n" 'dvc-header)))
       (ok nil))
 
