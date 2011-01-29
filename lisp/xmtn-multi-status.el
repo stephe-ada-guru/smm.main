@@ -187,6 +187,14 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
     (and (not (xmtn-status-data-need-refresh data))
          (eq 'need-update (xmtn-status-data-heads data)))))
 
+(defun xmtn-status-update-preview ()
+  "Preview update for current workspace."
+  (interactive)
+  (let* ((elem (ewoc-locate xmtn-status-ewoc))
+         (data (ewoc-data elem))
+	 (default-directory (xmtn-status-work data)))
+    (xmtn-dvc-missing)))
+
 (defun xmtn-status-resolve-conflicts ()
   "Resolve conflicts for current workspace."
   (interactive)
@@ -299,6 +307,9 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
     (define-key map [?i]  '(menu-item "i) ignore local changes"
                                       xmtn-status-status-ok
                                       :visible (xmtn-status-statusp)))
+    (define-key map [?6]  '(menu-item "6) preview update"
+                                      xmtn-status-update-preview
+                                      :visible (xmtn-status-updatep)))
     (define-key map [?5]  '(menu-item "5) update review"
                                       xmtn-status-update-review
                                       :visible (xmtn-status-update-reviewp)))
@@ -327,8 +338,10 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
   (let ((map (make-sparse-keymap)))
     (define-key map "\M-d" xmtn-status-actions-map)
     (define-key map [?g]  'xmtn-status-refresh)
+    (define-key map [?m]  'xmtn-status-update-preview)
     (define-key map [?n]  'xmtn-status-next)
     (define-key map [?p]  'xmtn-status-prev)
+    (define-key map [?r]  'xmtn-status-update-review)
     (define-key map [?s]  'xmtn-status-quit-save)
     (define-key map [?q]  'dvc-buffer-quit)
     map)
@@ -340,6 +353,8 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
     ["Do the right thing"    xmtn-status-actions-map t]
     ["Quit, clean conflicts" dvc-buffer-quit t]
     ["Quit, save conflicts"  xmtn-status-quit-save t]
+    ["Preview update"        xmtn-status-update-preview t]
+    ["Review update"         xmtn-status-update-review t]
     ))
 
 (define-derived-mode xmtn-multiple-status-mode nil "xmtn-multiple-status"
