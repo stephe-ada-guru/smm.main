@@ -196,11 +196,21 @@ The elements must all be of type xmtn-sync-sync.")
 	   (list 'xmtn-sync-branch-alist)
 	   (expand-file-name xmtn-sync-branch-file dvc-config-directory))))))
 
+(defun xmtn-sync-update ()
+  "Start xmtn-status-on for current ewoc element, do update if possible."
+  (interactive)
+  (xmtn-sync-status)
+  (if (xmtn-status-updatep)
+      (xmtn-status-update)))
+
 (defun xmtn-sync-clean ()
   "Clean and delete current ewoc element."
   (interactive)
   (let* ((elem (ewoc-locate xmtn-sync-ewoc))
+	 (status-buffer (get-buffer-create "*xmtn-multi-status*"))
          (inhibit-read-only t))
+    (if (buffer-live-p status-buffer)
+	(kill-buffer status-buffer))
     (ewoc-delete xmtn-sync-ewoc elem)))
 
 (dvc-make-ewoc-next xmtn-sync-next xmtn-sync-ewoc)
@@ -213,6 +223,7 @@ The elements must all be of type xmtn-sync-sync.")
     (define-key map [?f]  '(menu-item "f) full" xmtn-sync-full))
     (define-key map [?b]  '(menu-item "b) brief" xmtn-sync-brief))
     (define-key map [?s]  '(menu-item "s) status" xmtn-sync-status))
+    (define-key map [?u]  '(menu-item "u) update" xmtn-sync-update))
     map)
   "Keyboard menu keymap used in `xmtn-sync-mode'.")
 
@@ -226,6 +237,7 @@ The elements must all be of type xmtn-sync-sync.")
     (define-key map [?p]  'xmtn-sync-prev)
     (define-key map [?q]  'dvc-buffer-quit)
     (define-key map [?s]  'xmtn-sync-status)
+    (define-key map [?u]  'xmtn-sync-update)
     (define-key map [?S]  'xmtn-sync-save)
     map)
   "Keymap used in `xmtn-sync-mode'.")
@@ -556,12 +568,16 @@ Remote-db should include branch pattern in URI syntax."
   "Display sync results in FILE (defaults to `xmtn-sync-review-file'), appended to content of `xmtn-sync-save-file'.
 FILE should be output of 'automate sync'. (external sync handles tickers better)."
   (interactive)
-  ;; first load xmtn-sync-save-file
-  (pop-to-buffer (get-buffer-create "*xmtn-sync*"))
-  (setq buffer-read-only nil)
-  (delete-region (point-min) (point-max))
-  (xmtn-sync-mode)
-  (xmtn-sync-load-file)
+  (if (buffer-live-p (get-buffer "*xmtn-sync*"))
+      (progn
+	(pop-to-buffer "*xmtn-sync*")
+	(xmtn-sync-save))
+    ;; else create
+    (pop-to-buffer (get-buffer-create "*xmtn-sync*"))
+    (setq buffer-read-only nil)
+    (delete-region (point-min) (point-max))
+    (xmtn-sync-mode)
+    (xmtn-sync-load-file))
 
   ;; now add FILE
   (setq file (or file

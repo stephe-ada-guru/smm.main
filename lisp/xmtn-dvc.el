@@ -364,27 +364,6 @@
             ;; rev is ancestor of workspace; workspace is 'to'
             (xmtn-dvc-delta rev workspace dont-switch))))))
 
-(defvar xmtn-diff-mode-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map "CC" 'xmtn-conflicts-clean)
-    (define-key map "MH" 'xmtn-view-heads-revlist)
-    (define-key map "MP" 'xmtn-propagate-from)
-    map))
-
-;; items added here should probably also be added to xmtn-revlist-mode-menu, -map in xmtn-revlist.el
-(easy-menu-define xmtn-diff-mode-menu xmtn-diff-mode-map
-  "Mtn specific diff menu."
-  `("DVC-Mtn"
-    ["View Heads" xmtn-view-heads-revlist t]
-    ["Propagate branch" xmtn-propagate-from t]
-    ["Clean conflicts resolutions" xmtn-conflicts-clean t]
-    ))
-
-(define-derived-mode xmtn-diff-mode dvc-diff-mode "xmtn-diff"
-  "Add back-end-specific commands for dvc-diff.")
-
-(dvc-add-uniquify-directory-mode 'xmtn-diff-mode)
-
 (defun xmtn--rev-to-option (resolved from)
   "Return a string contaiing the mtn diff command-line option for RESOLVED.
 If FROM is non-nil, RESOLVED is assumed older than workspace;
@@ -423,26 +402,6 @@ otherwise newer."
 
       ;; The call site in `dvc-revlist-diff' needs this return value.
       diff-buffer)))
-
-(defvar xmtn-status-mode-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map "CC" 'xmtn-conflicts-clean)
-    (define-key map "MP" 'xmtn-propagate-from)
-    (define-key map "MH" 'xmtn-view-heads-revlist)
-    map))
-
-(easy-menu-define xmtn-status-mode-menu xmtn-status-mode-map
-  "Mtn specific status menu."
-  `("DVC-Mtn"
-    ["View Heads" xmtn-view-heads-revlist t]
-    ["Propagate branch" xmtn-propagate-from t]
-    ["Clean conflicts resolutions" xmtn-conflicts-clean t]
-    ))
-
-(define-derived-mode xmtn-status-mode dvc-status-mode "xmtn-status"
-  "Add back-end-specific commands for dvc-status.")
-
-(add-to-list 'uniquify-list-buffers-directory-modes 'xmtn-status-mode)
 
 (defun xmtn--remove-content-hashes-from-diff ()
   ;; Hack: Remove mtn's file content hashes from diff headings since
