@@ -58,6 +58,12 @@ overrides xmtn-automate-arguments.")
   "User-supplied function to guess workspace location given branch.
 Called with a string containing the mtn branch name; return a workspace root or nil.")
 
+(defvar xmtn-sync-sort nil
+  "User-supplied function to sort branches.
+Called with a string containing the mtn branch name; return
+'(node key) where node is the ewoc node to insert before (nil to
+insert at end), key is the sort-key. Sync buffer is current.")
+
 ;;; Internal variables
 (defconst xmtn-sync-save-file "sync"
   "File to save sync review state for later; relative to `dvc-config-directory'.")
@@ -105,6 +111,7 @@ The elements must all be of type xmtn-sync-sync.")
   rev-alist ;; alist of '(revid (date author changelog)) for received revs
   send-count ;; integer count of sent revs
   print-mode ;; 'summary | 'brief | 'full | 'started
+  sort-key ;; for use by xmtn-sync-sort
   )
 
 (defun xmtn-sync-print-rev (rev print-mode)
@@ -326,21 +333,29 @@ The elements must all be of type xmtn-sync-sync.")
      xmtn-sync-ewoc)
 
     (if (not old-branch)
-	(ewoc-enter-last
-	 xmtn-sync-ewoc
-	 (ecase direction
-	   ('receive
-	    (make-xmtn-sync-branch
-	     :name branch
-	     :rev-alist (list (list revid (list date author changelog)))
-	     :send-count 0
-	     :print-mode 'summary))
-	   ('send
-	    (make-xmtn-sync-branch
-	     :name branch
-	     :rev-alist nil
-	     :send-count 1
-	     :print-mode 'summary)))))))
+	(let*
+	    ((node-key (and (functionp xmtn-sync-sort)
+			    (funcall xmtn-sync-sort branch)))
+	     (data
+	      (ecase direction
+		('receive
+		 (make-xmtn-sync-branch
+		  :name branch
+		  :rev-alist (list (list revid (list date author changelog)))
+		  :send-count 0
+		  :print-mode 'summary
+		  :sort-key (nth 1 node-key)))
+		('send
+		 (make-xmtn-sync-branch
+		  :name branch
+		  :rev-alist nil
+		  :send-count 1
+		  :print-mode 'summary
+		  :sort-key (nth 1 node-key))))))
+	  (if (nth 0 node-key)
+	      (ewoc-enter-before xmtn-sync-ewoc (nth 0 node-key) data)
+	    (ewoc-enter-last xmtn-sync-ewoc data))
+	  ))))
 
 (defun xmtn-sync-parse-revisions (direction)
   "Parse revisions with associated certs."
@@ -577,7 +592,7 @@ FILE should be output of 'automate sync'. (external sync handles tickers better)
     (setq buffer-read-only nil)
     (delete-region (point-min) (point-max))
     (xmtn-sync-mode)
-    (xmtn-sync-load-file))
+    (xmtn-sync-load-file file))
 
   ;; now add FILE
   (setq file (or file
