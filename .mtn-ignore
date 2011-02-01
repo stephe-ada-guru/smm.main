@@ -8,6 +8,7 @@
 ^config\.status$
 ^config\.status\.lineno$
 ^configure$
+^configure\.lineno$
 ^dvc-load-install\.el$
 ^dvc-load\.el$
 ^lisp/Makefile$
