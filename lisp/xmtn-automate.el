@@ -306,7 +306,7 @@ Signals an error if output contains zero lines or more than one line."
   (let ((session (assoc (dvc-uniquify-file-name root) xmtn-automate--*sessions*)))
     ;; session may have already been killed
     (when session
-      (when (xmtn-automate--session-error-file session)
+      (when (xmtn-automate--session-error-file (cdr session))
 	(delete-file (xmtn-automate--session-error-file session)))
       (xmtn-automate--close-session (cdr session))
       (setq xmtn-automate--*sessions*
