@@ -1038,7 +1038,9 @@ finished."
   nil)
 
 (defun xmtn-propagate-from (other &optional cached-branch)
-  "Propagate from OTHER branch to CACHED-BRANCH (default local tree branch)."
+  "Propagate from OTHER branch to CACHED-BRANCH (default local tree branch).
+Conflict resolution taken from `default-directory', which must be
+a workspace for CACHED-BRANCH."
   (interactive "MPropagate from branch: ")
   (let*
       ((root (dvc-tree-root))

@@ -148,7 +148,7 @@ The elements must all be of class xmtn-propagate-data.")
               (need-review-resolve-internal
                (insert (dvc-face-add "  need review resolve internal\n" 'dvc-header))
                (insert (dvc-face-add "  need propagate\n" 'dvc-conflict)))
-              (none
+              ((resolved none)
                (insert (dvc-face-add "  need propagate\n" 'dvc-conflict)))))
 
       (if (eq 'at-head (xmtn-propagate-data-to-heads data))
@@ -242,6 +242,8 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
   (let* ((elem (ewoc-locate xmtn-propagate-ewoc))
          (data (ewoc-data elem)))
     (xmtn-propagate-need-refresh elem data)
+    ;; assume the commit is successful
+    (setf (xmtn-propagate-data-to-local-changes data) 'ok)
     (if (not (buffer-live-p (xmtn-propagate-data-to-status-buffer data)))
 	(xmtn-propagate-create-to-status-buffer data))
     (pop-to-buffer (xmtn-propagate-data-to-status-buffer data))))
@@ -258,6 +260,8 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
   (let* ((elem (ewoc-locate xmtn-propagate-ewoc))
          (data (ewoc-data elem)))
     (xmtn-propagate-need-refresh elem data)
+    ;; assume the commit is successful
+    (setf (xmtn-propagate-data-from-local-changes data) 'ok)
     (if (not (buffer-live-p (xmtn-propagate-data-from-status-buffer data)))
 	(xmtn-propagate-create-from-status-buffer data))
     (pop-to-buffer (xmtn-propagate-data-from-status-buffer data))))
@@ -540,7 +544,7 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
 (defun xmtn-propagate-conflicts (data)
   "Return value for xmtn-propagate-data-conflicts for DATA."
   ;; Only called if neither side needs merge. See
-  ;; xmtn-propagate-conflicts for assignment of 'left' = 'from'.
+  ;; xmtn-propagate-propagate for assignment of 'left' = 'from'.
   (let ((result (xmtn-conflicts-status
 		 (xmtn-propagate-data-conflicts-buffer data) ; buffer
 		 (xmtn-propagate-from-work data) ; left-work

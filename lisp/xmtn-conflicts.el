@@ -494,6 +494,8 @@ header."
   (goto-char begin)
   (xmtn-conflicts-parse-header)
   (if xmtn-conflicts-ancestor-revision
+      ;; if there is no ancestor revision, then left is ancestor of
+      ;; right or vice versa, and there can be no conflicts.
       (xmtn-conflicts-parse-conflicts (1- end)); off-by-one somewhere.
     ;; else no conflicts
     )
@@ -524,7 +526,7 @@ header."
   "Write revisions from EWOC-BUFFER header info in basic-io format to current buffer."
   (xmtn-basic-io-write-id "left" (with-current-buffer ewoc-buffer xmtn-conflicts-left-revision))
   (xmtn-basic-io-write-id "right" (with-current-buffer ewoc-buffer xmtn-conflicts-right-revision))
-  (if xmtn-conflicts-ancestor-revision
+  (if (with-current-buffer ewoc-buffer xmtn-conflicts-ancestor-revision)
       (xmtn-basic-io-write-id "ancestor" (with-current-buffer ewoc-buffer xmtn-conflicts-ancestor-revision)))
   )
 
@@ -1257,9 +1259,9 @@ to right.  Stores conflict file in RIGHT-WORK/_MTN."
   "Review conflicts between LEFT-WORK (a directory), rev LEFT-REV,
 and RIGHT-WORK, rev RIGHT-REV.  If LEFT_WORK/_MTN/conflicts
 exists and is current, display it. Otherwise generate a new
-LEFT_WORK/_MTN/conflicts file and display that. Return the
+RIGHT_WORK/_MTN/conflicts file and display that. Return the
 conflicts buffer."
-  (let ((default-directory left-work)
+  (let ((default-directory right-work)
 	(dvc-switch-to-buffer-first show))
     (if (file-exists-p "_MTN/conflicts")
 	(progn
@@ -1276,9 +1278,10 @@ conflicts buffer."
   (current-buffer))
 
 (defun xmtn-conflicts-status (buffer left-work left-rev right-work right-rev left-branch right-branch)
-  "Return '(status buffer), where status is one of
-'need-resolve | 'need-review-resolve-internal | 'resolved | 'none
-for BUFFER. Regenerate conflicts if not current."
+  "Return '(status buffer), where status is one of 'need-resolve
+| 'need-review-resolve-internal | 'resolved | 'none for
+BUFFER. Regenerate conflicts if not current. Conflicts stored in
+RIGHT-WORK."
   (if (buffer-live-p buffer)
       ;; check if buffer still current
       (with-current-buffer buffer
