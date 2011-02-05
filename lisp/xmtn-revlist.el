@@ -324,7 +324,9 @@ from the merge."
       (setq right-rev (substring changelog start end)))
 
 
-     ((string= (substring changelog 0 5) "merge")
+     ((or
+       (string= (substring changelog 0 5) "merge")
+       (string= (substring changelog 0 14) "explicit merge"))
       (setq start (+ 4 (string-match "of" changelog)))
       (setq end (string-match "'" changelog start))
       (setq left-rev (substring changelog start end))
