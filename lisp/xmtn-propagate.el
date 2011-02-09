@@ -291,6 +291,25 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
 	 (eq (xmtn-propagate-data-to-heads data)
 	     'need-update))))
 
+(defun xmtn-propagate-update-from ()
+  "Update current `from' workspace."
+  (interactive)
+  (let* ((elem (ewoc-locate xmtn-propagate-ewoc))
+         (data (ewoc-data elem)))
+    (xmtn-propagate-need-refresh elem data)
+    (xmtn--update (xmtn-propagate-from-work data)
+                  (xmtn-propagate-data-from-head-revs data)
+                  nil t)
+    (xmtn-propagate-refresh-one data nil)
+    (ewoc-invalidate xmtn-propagate-ewoc elem)))
+
+(defun xmtn-propagate-update-fromp ()
+  "Non-nil if update is appropriate for current `from' workspace."
+  (let* ((data (ewoc-data (ewoc-locate xmtn-propagate-ewoc))))
+    (and (not (xmtn-propagate-data-need-refresh data))
+	 (eq (xmtn-propagate-data-from-heads data)
+	     'need-update))))
+
 (defun xmtn-propagate-propagate ()
   "Propagate current workspace."
   (interactive)
@@ -439,15 +458,12 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
     (define-key map [?g]  '(menu-item "g) refresh"
                                       xmtn-propagate-do-refresh-one
                                       :visible (xmtn-propagate-refreshp)))
-    (define-key map [?8]  '(menu-item (concat "8) update " (xmtn-propagate-to-name))
+    (define-key map [?7]  '(menu-item (concat "7) update " (xmtn-propagate-to-name))
                                       xmtn-propagate-update-to
                                       :visible (xmtn-propagate-update-top)))
-    (define-key map [?7]  '(menu-item (concat "7) commit " (xmtn-propagate-to-name))
-                                      xmtn-propagate-commit-to
-                                      :visible (xmtn-propagate-commit-top)))
-    (define-key map [?6]  '(menu-item (concat "6) commit " (xmtn-propagate-from-name))
-                                      xmtn-propagate-commit-from
-                                      :visible (xmtn-propagate-commit-fromp)))
+    (define-key map [?6]  '(menu-item (concat "6) update " (xmtn-propagate-from-name))
+                                      xmtn-propagate-update-from
+                                      :visible (xmtn-propagate-update-fromp)))
     (define-key map [?5]  '(menu-item "5) propagate"
                                       xmtn-propagate-propagate
                                       :visible (xmtn-propagate-propagatep)))
@@ -460,12 +476,12 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
     (define-key map [?2]  '(menu-item (concat "2) ignore local changes " (xmtn-propagate-from-name))
                                       xmtn-propagate-local-changes-from-ok
                                       :visible (xmtn-propagate-local-changes-fromp)))
-    (define-key map [?1]  '(menu-item (concat "1) status " (xmtn-propagate-to-name))
-                                      xmtn-propagate-status-to
-                                      :visible (xmtn-propagate-status-top)))
-    (define-key map [?0]  '(menu-item (concat "0) status " (xmtn-propagate-from-name))
-                                      xmtn-propagate-status-from
-                                      :visible (xmtn-propagate-status-fromp)))
+    (define-key map [?1]  '(menu-item (concat "1) commit " (xmtn-propagate-to-name))
+                                      xmtn-propagate-commit-to
+                                      :visible (xmtn-propagate-commit-top)))
+    (define-key map [?0]  '(menu-item (concat "0) commit " (xmtn-propagate-from-name))
+                                      xmtn-propagate-commit-from
+                                      :visible (xmtn-propagate-commit-fromp)))
     map)
   "Keyboard menu keymap used to manage propagates.")
 
