@@ -140,7 +140,6 @@
                          (if session (xmtn-automate--close-session session)))
                        (read-from-minibuffer "branch: " (xmtn--tree-default-branch root)))
                    (xmtn--tree-default-branch root))))
-    ;; Saving the buffer will automatically delete any log edit hints.
     (save-buffer)
     (dvc-save-some-buffers root)
 
@@ -211,6 +210,31 @@
        ;; debugging message.
        (message "%s... " progress-message))
     (set-window-configuration dvc-pre-commit-window-configuration)))
+
+(defun xmtn-show-commit ()
+  "Show commit command for use on command line"
+  (interactive)
+  (let ((excluded-files
+	 (with-current-buffer dvc-partner-buffer
+	   (xmtn--normalize-file-names default-directory (dvc-fileinfo-excluded-files)))))
+
+    (save-buffer)
+    (dvc-save-some-buffers default-directory)
+
+    ;; check that the first line says something; it should be a summary of the rest
+    (goto-char (point-min))
+    (forward-line)
+    (if (= (point) (1+ (point-min)))
+        (error "Please put a summary comment on the first line"))
+
+    (message
+     (concat
+      "mtn commit "
+      (xmtn-dvc-log-message)
+      " "
+      (if excluded-files
+	  (mapconcat (lambda (file) (concat "--exclude=" file)) excluded-files " "))))
+    (pop-to-buffer "*Messages*")))
 
 ;; The term "normalization" here has nothing to do with Unicode
 ;; normalization.

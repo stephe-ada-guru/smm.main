@@ -124,7 +124,7 @@ The elements must all be of class xmtn-propagate-data.")
        (insert (dvc-face-add (concat "  need update " (xmtn-propagate-data-from-name data) "\n")
                              'dvc-conflict)))
       (need-merge
-       (insert (dvc-face-add (concat "  need merge " (xmtn-propagate-data-from-name data) "\n")
+       (insert (dvc-face-add (concat "  need status for merge " (xmtn-propagate-data-from-name data) "\n")
                              'dvc-conflict))))
 
     (ecase (xmtn-propagate-data-to-heads data)
@@ -133,7 +133,7 @@ The elements must all be of class xmtn-propagate-data.")
        (insert (dvc-face-add (concat "  need update " (xmtn-propagate-data-to-name data) "\n")
                              'dvc-conflict)))
       (need-merge
-       (insert (dvc-face-add (concat "  need merge " (xmtn-propagate-data-to-name data) "\n")
+       (insert (dvc-face-add (concat "  need status for merge " (xmtn-propagate-data-to-name data) "\n")
                                    'dvc-conflict))))
 
     (if (xmtn-propagate-data-propagate-needed data)
@@ -458,6 +458,12 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
     (define-key map [?g]  '(menu-item "g) refresh"
                                       xmtn-propagate-do-refresh-one
                                       :visible (xmtn-propagate-refreshp)))
+    (define-key map [?9]  '(menu-item (concat "9) status " (xmtn-propagate-to-name))
+                                      xmtn-propagate-status-to
+                                      :visible (xmtn-propagate-status-top)))
+    (define-key map [?8]  '(menu-item (concat "8) status " (xmtn-propagate-from-name))
+                                      xmtn-propagate-status-from
+                                      :visible (xmtn-propagate-status-fromp)))
     (define-key map [?7]  '(menu-item (concat "7) update " (xmtn-propagate-to-name))
                                       xmtn-propagate-update-to
                                       :visible (xmtn-propagate-update-top)))
