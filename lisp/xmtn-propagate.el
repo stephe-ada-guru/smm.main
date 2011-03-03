@@ -618,19 +618,15 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
           (setf (xmtn-propagate-data-from-local-changes data) 'need-scan)
           (setf (xmtn-propagate-data-to-local-changes data) 'need-scan)))
 
-    (if (or refresh-local-changes
-            (xmtn-propagate-data-propagate-needed data))
-        ;; these checks are slow, so don't do them if they probably are not needed.
-        (progn
-          (ecase (xmtn-propagate-data-from-local-changes data)
-            (need-scan
-             (xmtn-propagate-create-from-status-buffer data))
-            (t nil))
+    (ecase (xmtn-propagate-data-from-local-changes data)
+      (need-scan
+       (xmtn-propagate-create-from-status-buffer data))
+      (t nil))
 
-          (ecase (xmtn-propagate-data-to-local-changes data)
-            (need-scan
-             (xmtn-propagate-create-to-status-buffer data))
-            (t nil))))
+    (ecase (xmtn-propagate-data-to-local-changes data)
+      (need-scan
+       (xmtn-propagate-create-to-status-buffer data))
+      (t nil))
 
     (if (xmtn-propagate-data-propagate-needed data)
         (progn
