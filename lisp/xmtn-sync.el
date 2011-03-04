@@ -128,7 +128,10 @@ The elements must all be of type xmtn-sync-sync.")
 
 (defun xmtn-sync-printer (branch)
   "Print an ewoc element; BRANCH must be of type xmtn-sync-branch."
-  (insert (dvc-face-add (xmtn-sync-branch-name branch) 'dvc-keyword))
+  ;; sometimes mtn will allow a revision with no branch!
+  (if (xmtn-sync-branch-name branch)
+      (insert (dvc-face-add (xmtn-sync-branch-name branch) 'dvc-keyword))
+    (insert (dvc-face-add "<no branch>" 'dvc-keyword)))
   (insert (format " rx %d tx %d\n"
 		  (length (xmtn-sync-branch-rev-alist branch))
 		  (xmtn-sync-branch-send-count branch)))
