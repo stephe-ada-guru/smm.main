@@ -378,7 +378,6 @@ The elements must all be of type xmtn-sync-sync.")
 
 (defun xmtn-sync-parse-certs (direction)
   "Parse certs not associated with revisions."
-  ;; The only case we care about is a new branch created from an existing revision.
   (let ((keyword (ecase direction
 		   ('receive "receive_cert")
 		   ('send    "send_cert")))
@@ -387,12 +386,14 @@ The elements must all be of type xmtn-sync-sync.")
 	branch
 	(date "")
 	(author "")
-	(changelog "create branch\n")
+	(changelog "create or propagate branch\n")
 	old-branch)
 
     (while (xmtn-basic-io-optional-line keyword (setq cert-label (cadar value)))
       (cond
        ((string= cert-label "branch")
+	;; This happens when a new branch is created, or a branch is
+	;; propagated without any conflicts.
 	(xmtn-basic-io-check-line "value" (setq branch (cadar value)))
 	(xmtn-basic-io-skip-line "key")
 	(xmtn-basic-io-check-line "revision" (setq revid (cadar value)))
