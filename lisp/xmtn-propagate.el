@@ -124,7 +124,7 @@ The elements must all be of class xmtn-propagate-data.")
        (insert (dvc-face-add (concat "  need update " (xmtn-propagate-data-from-name data) "\n")
                              'dvc-conflict)))
       (need-merge
-       (insert (dvc-face-add (concat "  need merge " (xmtn-propagate-data-from-name data) "\n")
+       (insert (dvc-face-add (concat "  need status for merge " (xmtn-propagate-data-from-name data) "\n")
                              'dvc-conflict))))
 
     (ecase (xmtn-propagate-data-to-heads data)
@@ -133,7 +133,7 @@ The elements must all be of class xmtn-propagate-data.")
        (insert (dvc-face-add (concat "  need update " (xmtn-propagate-data-to-name data) "\n")
                              'dvc-conflict)))
       (need-merge
-       (insert (dvc-face-add (concat "  need merge " (xmtn-propagate-data-to-name data) "\n")
+       (insert (dvc-face-add (concat "  need status for merge " (xmtn-propagate-data-to-name data) "\n")
                                    'dvc-conflict))))
 
     (if (xmtn-propagate-data-propagate-needed data)
@@ -148,7 +148,7 @@ The elements must all be of class xmtn-propagate-data.")
               (need-review-resolve-internal
                (insert (dvc-face-add "  need review resolve internal\n" 'dvc-header))
                (insert (dvc-face-add "  need propagate\n" 'dvc-conflict)))
-              (none
+              ((resolved none)
                (insert (dvc-face-add "  need propagate\n" 'dvc-conflict)))))
 
       (if (eq 'at-head (xmtn-propagate-data-to-heads data))
@@ -242,6 +242,8 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
   (let* ((elem (ewoc-locate xmtn-propagate-ewoc))
          (data (ewoc-data elem)))
     (xmtn-propagate-need-refresh elem data)
+    ;; assume the commit is successful
+    (setf (xmtn-propagate-data-to-local-changes data) 'ok)
     (if (not (buffer-live-p (xmtn-propagate-data-to-status-buffer data)))
 	(xmtn-propagate-create-to-status-buffer data))
     (pop-to-buffer (xmtn-propagate-data-to-status-buffer data))))
@@ -258,6 +260,8 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
   (let* ((elem (ewoc-locate xmtn-propagate-ewoc))
          (data (ewoc-data elem)))
     (xmtn-propagate-need-refresh elem data)
+    ;; assume the commit is successful
+    (setf (xmtn-propagate-data-from-local-changes data) 'ok)
     (if (not (buffer-live-p (xmtn-propagate-data-from-status-buffer data)))
 	(xmtn-propagate-create-from-status-buffer data))
     (pop-to-buffer (xmtn-propagate-data-from-status-buffer data))))
@@ -285,6 +289,25 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
   (let* ((data (ewoc-data (ewoc-locate xmtn-propagate-ewoc))))
     (and (not (xmtn-propagate-data-need-refresh data))
 	 (eq (xmtn-propagate-data-to-heads data)
+	     'need-update))))
+
+(defun xmtn-propagate-update-from ()
+  "Update current `from' workspace."
+  (interactive)
+  (let* ((elem (ewoc-locate xmtn-propagate-ewoc))
+         (data (ewoc-data elem)))
+    (xmtn-propagate-need-refresh elem data)
+    (xmtn--update (xmtn-propagate-from-work data)
+                  (xmtn-propagate-data-from-head-revs data)
+                  nil t)
+    (xmtn-propagate-refresh-one data nil)
+    (ewoc-invalidate xmtn-propagate-ewoc elem)))
+
+(defun xmtn-propagate-update-fromp ()
+  "Non-nil if update is appropriate for current `from' workspace."
+  (let* ((data (ewoc-data (ewoc-locate xmtn-propagate-ewoc))))
+    (and (not (xmtn-propagate-data-need-refresh data))
+	 (eq (xmtn-propagate-data-from-heads data)
 	     'need-update))))
 
 (defun xmtn-propagate-propagate ()
@@ -435,15 +458,18 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
     (define-key map [?g]  '(menu-item "g) refresh"
                                       xmtn-propagate-do-refresh-one
                                       :visible (xmtn-propagate-refreshp)))
-    (define-key map [?8]  '(menu-item (concat "8) update " (xmtn-propagate-to-name))
+    (define-key map [?9]  '(menu-item (concat "9) status " (xmtn-propagate-to-name))
+                                      xmtn-propagate-status-to
+                                      :visible (xmtn-propagate-status-top)))
+    (define-key map [?8]  '(menu-item (concat "8) status " (xmtn-propagate-from-name))
+                                      xmtn-propagate-status-from
+                                      :visible (xmtn-propagate-status-fromp)))
+    (define-key map [?7]  '(menu-item (concat "7) update " (xmtn-propagate-to-name))
                                       xmtn-propagate-update-to
                                       :visible (xmtn-propagate-update-top)))
-    (define-key map [?7]  '(menu-item (concat "7) commit " (xmtn-propagate-to-name))
-                                      xmtn-propagate-commit-to
-                                      :visible (xmtn-propagate-commit-top)))
-    (define-key map [?6]  '(menu-item (concat "6) commit " (xmtn-propagate-from-name))
-                                      xmtn-propagate-commit-from
-                                      :visible (xmtn-propagate-commit-fromp)))
+    (define-key map [?6]  '(menu-item (concat "6) update " (xmtn-propagate-from-name))
+                                      xmtn-propagate-update-from
+                                      :visible (xmtn-propagate-update-fromp)))
     (define-key map [?5]  '(menu-item "5) propagate"
                                       xmtn-propagate-propagate
                                       :visible (xmtn-propagate-propagatep)))
@@ -456,12 +482,12 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
     (define-key map [?2]  '(menu-item (concat "2) ignore local changes " (xmtn-propagate-from-name))
                                       xmtn-propagate-local-changes-from-ok
                                       :visible (xmtn-propagate-local-changes-fromp)))
-    (define-key map [?1]  '(menu-item (concat "1) status " (xmtn-propagate-to-name))
-                                      xmtn-propagate-status-to
-                                      :visible (xmtn-propagate-status-top)))
-    (define-key map [?0]  '(menu-item (concat "0) status " (xmtn-propagate-from-name))
-                                      xmtn-propagate-status-from
-                                      :visible (xmtn-propagate-status-fromp)))
+    (define-key map [?1]  '(menu-item (concat "1) commit " (xmtn-propagate-to-name))
+                                      xmtn-propagate-commit-to
+                                      :visible (xmtn-propagate-commit-top)))
+    (define-key map [?0]  '(menu-item (concat "0) commit " (xmtn-propagate-from-name))
+                                      xmtn-propagate-commit-from
+                                      :visible (xmtn-propagate-commit-fromp)))
     map)
   "Keyboard menu keymap used to manage propagates.")
 
@@ -540,7 +566,7 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
 (defun xmtn-propagate-conflicts (data)
   "Return value for xmtn-propagate-data-conflicts for DATA."
   ;; Only called if neither side needs merge. See
-  ;; xmtn-propagate-conflicts for assignment of 'left' = 'from'.
+  ;; xmtn-propagate-propagate for assignment of 'left' = 'from'.
   (let ((result (xmtn-conflicts-status
 		 (xmtn-propagate-data-conflicts-buffer data) ; buffer
 		 (xmtn-propagate-from-work data) ; left-work
@@ -592,19 +618,15 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
           (setf (xmtn-propagate-data-from-local-changes data) 'need-scan)
           (setf (xmtn-propagate-data-to-local-changes data) 'need-scan)))
 
-    (if (or refresh-local-changes
-            (xmtn-propagate-data-propagate-needed data))
-        ;; these checks are slow, so don't do them if they probably are not needed.
-        (progn
-          (ecase (xmtn-propagate-data-from-local-changes data)
-            (need-scan
-             (xmtn-propagate-create-from-status-buffer data))
-            (t nil))
+    (ecase (xmtn-propagate-data-from-local-changes data)
+      (need-scan
+       (xmtn-propagate-create-from-status-buffer data))
+      (t nil))
 
-          (ecase (xmtn-propagate-data-to-local-changes data)
-            (need-scan
-             (xmtn-propagate-create-to-status-buffer data))
-            (t nil))))
+    (ecase (xmtn-propagate-data-to-local-changes data)
+      (need-scan
+       (xmtn-propagate-create-to-status-buffer data))
+      (t nil))
 
     (if (xmtn-propagate-data-propagate-needed data)
         (progn

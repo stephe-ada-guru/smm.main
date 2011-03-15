@@ -547,7 +547,7 @@ in that directory. Then move to previous ewoc entry."
        (error "not on a file or directory")))))
 
 (dvc-make-ewoc-next dvc-fileinfo-next dvc-fileinfo-ewoc)
-(dvc-make-ewoc-next dvc-fileinfo-prev dvc-fileinfo-ewoc)
+(dvc-make-ewoc-prev dvc-fileinfo-prev dvc-fileinfo-ewoc)
 
 (defun dvc-fileinfo-find-file (file)
   "Return ewoc element for FILE (full path)."

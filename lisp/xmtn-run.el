@@ -43,6 +43,11 @@
 
 (define-coding-system-alias 'xmtn--monotone-normal-form 'utf-8-unix)
 
+(defun xmtn-dvc-prepare-environment (env)
+  "Prepare the environment to run mtn."
+  ;; DVC expects monotone messages in the C locale
+  (cons "LC_MESSAGES=C" env))
+
 (defun* xmtn--run-command-sync (root arguments)
   (xmtn--check-cached-command-version)
   (let ((default-directory (file-truename (or root default-directory))))
