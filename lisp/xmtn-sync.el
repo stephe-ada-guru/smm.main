@@ -257,6 +257,7 @@ The elements must all be of type xmtn-sync-sync.")
   `("Xmtn-sync"
     ;; first item is top in display
     ["Status"        xmtn-sync-status t]
+    ["Update"        xmtn-sync-update t]
     ["Brief display" xmtn-sync-brief t]
     ["Full display"  xmtn-sync-full t]
     ["Clean/delete"  xmtn-sync-clean t]
@@ -493,9 +494,7 @@ Return non-nil if anything parsed."
 	  (setq buffer-read-only nil)
 	  (dolist (data stuff) (ewoc-enter-last xmtn-sync-ewoc data))
 	  (setq buffer-read-only t)
-	  (set-buffer-modified-p nil))
-      (unless noerror
-	(error "%s file not found" save-file)))))
+	  (set-buffer-modified-p nil)))))
 
 ;;;###autoload
 (defun xmtn-sync-sync (local-db scheme remote-host remote-db)
