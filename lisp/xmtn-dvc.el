@@ -236,6 +236,23 @@
 	  (mapconcat (lambda (file) (concat "--exclude=" file)) excluded-files " "))))
     (pop-to-buffer "*Messages*")))
 
+;; Add xmtn-show-commit to dvc-log-edit menu
+(defvar xmtn-log-edit-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map [(control ?c) (control ?s)] 'xmtn-show-commit)
+    map))
+
+(easy-menu-define xmtn-log-edit-mode-menu xmtn-log-edit-mode-map
+  "Mtn specific log-edit menu."
+  `("DVC-Mtn"
+    ["Show commit command" xmtn-show-commit t]
+    ))
+
+(define-derived-mode xmtn-log-edit-mode dvc-log-edit-mode "xmtn-log-edit"
+  "Add back-end-specific commands for dvc-log-edit.")
+
+(dvc-add-uniquify-directory-mode 'xmtn-log-edit-mode)
+
 ;; The term "normalization" here has nothing to do with Unicode
 ;; normalization.
 (defun xmtn--normalize-file-name (root file-name)
