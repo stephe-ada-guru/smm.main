@@ -347,7 +347,7 @@ Signals an error if output contains zero lines or more than one line."
 			   "-c"
 			   (mapconcat
 			    'concat
-			    (append (list xmtn-executable "automate" "stdio")
+			    (append (list xmtn-executable "--db=:memory:" "automate" "stdio")
 				    xmtn-automate-arguments
 				    (list "2>"
 					  (xmtn-automate--session-error-file session)))
