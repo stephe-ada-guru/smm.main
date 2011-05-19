@@ -2,7 +2,7 @@
 --
 --  see spec
 --
---  Copyright (C) 2008, 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008, 2009, 2011 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -188,19 +188,22 @@ package body SMM is
       --  database.
       --
       --  When a new album is added, we want it to be mixed in
-      --  gradually, not all in one playlist.
+      --  gradually, not all in one playlist. We do this by ensuring
+      --  that more than an album's worth of songs is included in the
+      --  randomize list.
       --
       --  Algorithm:
       --
       --  First read all songs with matching category into Time_List,
       --  grouped by Last_Downloaded.
       --
-      --  Then build a list of twice desired_file_count from least
-      --  recent sections
+      --  Then build a list of Min_Randomize_Count from least recent
+      --  sections
       --
       --  Randomize list, return Song_Count songs from it.
 
-      Time_List : Time_Lists.List_Type;
+      Min_Randomize_Count : constant := Integer'Max (60, 2 * Song_Count);
+      Time_List           : Time_Lists.List_Type;
    begin
       declare
          use SAL.Config_Files;
@@ -220,7 +223,7 @@ package body SMM is
          end loop;
       end;
 
-      if Count (Time_Lists.Head (Time_List).Songs) >= 2 * Song_Count then
+      if Count (Time_Lists.Head (Time_List).Songs) >= Min_Randomize_Count then
          Songs := Time_Lists.Head (Time_List).Songs;
          Randomize (Songs, Seed);
          Song_Lists.Truncate (Songs, Song_Count);
@@ -230,7 +233,7 @@ package body SMM is
             I : Time_Lists.Iterator_Type := Time_Lists.First (Time_List);
          begin
             loop
-               exit when Count (Songs) >= 2 * Song_Count or
+               exit when Count (Songs) >= Min_Randomize_Count or
                  Time_Lists.Is_Null (I);
 
                declare

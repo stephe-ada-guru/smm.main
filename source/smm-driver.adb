@@ -2,7 +2,7 @@
 --
 --  main procedure for SMM application
 --
---  Copyright (C) 2008 - 2010 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2011 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -34,7 +34,7 @@ procedure SMM.Driver
 is
    procedure Put_Usage
    is begin
-      Put_Line ("smm [--db=<db_file>] [--verbosity=<int>] <operation> [arg]...");
+      Put_Line ("smm [--db=<db_file>] [--verbosity=<int>] [--max-song-count=<int>] <operation> [arg]...");
       Put_Line ("  <db_file> : defaults to ~/.smm/smm.db or $APPDATA/smm or $SMM_HOME");
       Put_Line ("  categories: {instrumental | vocal | ...}");
       Put_Line ("  operations:");
@@ -103,6 +103,16 @@ begin
       Verbosity := 0;
    end if;
 
+   if Argument (Next_Arg)'Length > 17 and then
+     Argument (Next_Arg)(1 .. 17) = "--max-song-count="
+
+   then
+      Max_Song_Count := Integer'Value (Argument (Next_Arg)(18 .. Argument (Next_Arg)'Last));
+      Next_Arg       := Next_Arg + 1;
+   else
+      Max_Song_Count := 60;
+   end if;
+
    SAL.Config_Files.Open
      (Db,
       Db_File_Name.all,
@@ -120,19 +130,19 @@ begin
 
    case Command is
    when Download =>
-      SMM.Download (Db, Argument (Next_Arg), As_Directory (Argument (Next_Arg + 1)));
+      SMM.Download (Db, Argument (Next_Arg), As_Directory (Argument (Next_Arg + 1)), Max_Song_Count);
 
    when Download_Playlist =>
       declare
          Category   : constant String := Argument (Next_Arg);
          Root_Dir   : constant String := As_Directory (Argument (Next_Arg + 1));
-         File_Count : Integer;
+         Song_Count : Integer;
       begin
          Verbosity := Verbosity + 1;
-         SMM.First_Pass (Category, Root_Dir, File_Count);
-         if File_Count < Download_File_Count then
+         SMM.First_Pass (Category, Root_Dir, Song_Count);
+         if Song_Count < Max_Song_Count then
             Verbosity := Verbosity - 1;
-            SMM.Download (Db, Category, Root_Dir & Category & '/');
+            SMM.Download (Db, Category, Root_Dir & Category & '/', Max_Song_Count - Song_Count);
             Verbosity := Verbosity + 1;
             SMM.Second_Pass (Category, Root_Dir);
          end if;
@@ -165,7 +175,7 @@ begin
               (As_Directory (SAL.Config_Files.Read (Db, Playlist_Key)) & Category & ".m3u");
          end if;
 
-         SMM.Playlist (Db, Category, File_Name.all, Replace, Max_Song_Count => 30);
+         SMM.Playlist (Db, Category, File_Name.all, Replace, Max_Song_Count);
       end;
 
    when Import =>

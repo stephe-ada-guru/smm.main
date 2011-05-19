@@ -2,7 +2,7 @@
 --
 --  Root of Stephe's Music Manager packages
 --
---  Copyright (C) 2008 - 2010 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2011 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -28,11 +28,10 @@ with SAL.Poly.Lists.Double;
 with SAL.Storage_Pools;
 package SMM is
 
-   Verbosity : Integer;
+   Verbosity      : Integer;
+   Max_Song_Count : Integer;
 
    Playlist_Error : exception;
-
-   Download_File_Count : constant := 30;
 
    function Normalize (Path : in String) return String;
    --  convert '\' to '/'

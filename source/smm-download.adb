@@ -2,7 +2,7 @@
 --
 --  download files to a music player
 --
---  Copyright (C) 2008 - 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2009, 2011 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -18,15 +18,17 @@
 
 pragma License (GPL);
 
-with Ada.Real_Time;
+with Ada.IO_Exceptions;
 with Ada.Directories;
+with Ada.Real_Time;
 with Ada.Text_IO;
 with SAL.Config_Files;
 with SAL.Time_Conversions;
 procedure SMM.Download
   (Db          : in out SAL.Config_Files.Configuration_Type;
    Category    : in String;
-   Destination : in String)
+   Destination : in String;
+   Song_Count  : in Integer)
 is
    use Song_Lists;
    Songs       : List_Type;
@@ -38,7 +40,7 @@ is
      (SAL.Time_Conversions.To_Time (Ada.Real_Time.Clock));
 
 begin
-   Least_Recent_Songs (Db, Category, Song_Count => Download_File_Count, Songs => Songs);
+   Least_Recent_Songs (Db, Category, Songs, Song_Count);
 
    I := First (Songs);
    loop
@@ -67,4 +69,8 @@ begin
          Count := Count + 1;
       end;
    end loop;
+exception
+when Ada.IO_Exceptions.Use_Error =>
+   --  Just stop downloading; nothing else we can do.
+   Ada.Text_IO.Put_Line (Destination & " Use_Error; probably disk full");
 end SMM.Download;
