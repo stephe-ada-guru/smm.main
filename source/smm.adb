@@ -202,7 +202,7 @@ package body SMM is
       --
       --  Randomize list, return Song_Count songs from it.
 
-      Min_Randomize_Count : constant := Integer'Max (60, 2 * Song_Count);
+      Min_Randomize_Count : constant Integer := Integer'Max (60, 2 * Song_Count);
       Time_List           : Time_Lists.List_Type;
    begin
       declare
