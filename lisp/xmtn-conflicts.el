@@ -830,7 +830,7 @@ header."
 (defun xmtn-conflicts-resolve-ediff (side)
   "Resolve the current conflict via ediff SIDE."
   (interactive)
-  (if xmtn-conflicts-current-conflict-buffer
+  (if (buffer-live-p xmtn-conflicts-current-conflict-buffer)
       (error "another conflict resolution is already in progress."))
 
   (let* ((elem (ewoc-locate xmtn-conflicts-ewoc))
