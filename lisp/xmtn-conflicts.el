@@ -954,7 +954,7 @@ header."
       (ewoc-invalidate xmtn-conflicts-ewoc elem)))
 
 (defun xmtn-conflicts-left_resolution-needed (conflict)
-  (let (res (xmtn-conflicts-conflict-left_resolution conflict))
+  (let ((res (xmtn-conflicts-conflict-left_resolution conflict)))
     (or (not res)
       (eq (car res) 'resolved_internal))))
 
@@ -970,7 +970,7 @@ header."
                   (xmtn-conflicts-conflict-left_file_id conflict))) )))
 
 (defun xmtn-conflicts-right_resolution-needed (conflict)
-  (let (res (xmtn-conflicts-conflict-right_resolution conflict))
+  (let ((res (xmtn-conflicts-conflict-right_resolution conflict)))
     (or (not res)
       (eq (car res) 'resolved_internal))))
 
