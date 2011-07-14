@@ -488,7 +488,8 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
   (setq xmtn-status-root (expand-file-name (concat (file-name-as-directory default-directory) "../")))
   (setq xmtn-status-ewoc (ewoc-create 'xmtn-status-printer))
   ;; FIXME: sometimes, this causes problems for ewoc-set-hf (deletes bad region)
-  ;; (let ((inhibit-read-only t)) (delete-region (point-min) (point-max)))
+  ;; But otherwise it is necessary to clean out old ewoc before creating new one.
+  (let ((inhibit-read-only t)) (delete-region (point-min) (point-max)))
   (ewoc-set-hf xmtn-status-ewoc (format "Root : %s\n" xmtn-status-root) "")
   (ewoc-enter-last xmtn-status-ewoc
                    (make-xmtn-status-data
