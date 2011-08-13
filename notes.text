@@ -1,61 +1,26 @@
-build/x86_gnu_windows_debug/Makefile
-build/x86_gnu_windows_release/Makefile
-doc/C/books.texinfo
-file://c:/Gnu/GtkAda-2.2.0/share/gtk-doc/html/gtk/index.html
 
- general
-last button does nothing in collection
+c:/Apps/Android/android-sdk/samples/android-10/ApiDemos/src/com/example/android/apis/media/MediaPlayerDemo_Audio.java
+    not much help
 
-can't shrink window below config geometry
+c:/Projects/MusicDroid
+    from http://www.helloandroid.com/apps/musicdroid
+    runs MediaPlayer as a service
+        but that doesn't appear to be necessary?
+            in emulator, can switch to browser while music is playing
+            but getting  AudioFlinger write blocked
 
-should not be able to type in display fields
+need stop, quit
+    use mediaController widget
 
-don't declare all radio buttons; only those needed (don't just hide)
+clean up author string
+    currently "Shawn ColvinShawn Colvinnull"
 
-consider gnatcoll orm, gtk
+ car mode
+    see 'car home' in default emulator image
+    see home sample app in sdk
 
-When delete item, delete associated links
+ references
+c:/Archive/android/langspec-3.0.pdf
 
-review fixme
-
-text box
-    C-e = end
-    C-a = select all (toggle?)
-        need to find gtk source for widget, editable
-
-update linked sibling views on insert_database
-
-need 'enter' key for double-click on list
-
-add keyboard shortcuts for links in Add windows
-
-replace obsolescent gtk packages with new ones
-    clist => tree_view
-        way more complicated to use!
-
-(books.exe:4016): GLib-WARNING **: Passing a non-NULL package to g_win32_get_package_installation_directory() is deprecated and will not work in GLib after 2.18.
-
-add main menu
-    add import, export
-
-clean up private stuff
-    only keep things that are referenced after creation
-
-release_process.text
-
- GtkAda issues
-
-GtkAda.MDI.put calls show_all! destroying my carefully setup show/hide structure
-    offered to submit patch; wait for response.
-
- other
-use pkg-config
-
-use gtkada.dialogs in body of gtk_more/gtk.message_box
-
-see GPS source c:/Gnu/GPS-1.4.1/glide/src/gps.adb
-(ada-parse-prj-file "c:/Gnu/GPS-1.4.1/glide/gps.prj")
-
-show database name, location in main screen
-
-(end of file)
+ installation
+    requires Android 2.3.3 (AT&T software update available 8 Aug 2011)
