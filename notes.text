@@ -1,21 +1,65 @@
 src/org/stephe_leake/music_player/Stephes_Music_PlayerActivity.java
 
-c:/Apps/Android/android-sdk/samples/android-10/ApiDemos/src/com/example/android/apis/media/MediaPlayerDemo_Audio.java
-    not much help
+need file dialog
+    http://developer.android.com/guide/topics/data/data-storage.html#filesExternal
+        just implements naming conventions; not a browser
+    c:/Apps/Android/android-sdk/samples/android-10/ApiDemos/src/com/example/android/apis/content/ExternalStorage
+        LayoutInflater inflater = (LayoutInflater)getSystemService(LAYOUT_INFLATER_SERVICE)
 
-c:/Projects/MusicDroid/src/com/helloandroid/android/musicdroid/
-    from http://www.helloandroid.com/apps/musicdroid
-    runs MediaPlayer as a service
-        but that doesn't appear to be necessary?
-            in emulator, can switch to browser while music is playing
-            but getting  AudioFlinger write blocked
-
-need quit
-
-imageButton vs Button
+    nothing!
+        just use Ghost Commander, register music player intent?
 
 clean up author string
     currently "Shawn ColvinShawn Colvinnull"
+
+need About
+
+imageButton vs Button
+    need checked_find_As_ID
+    which should I use?
+
+need service
+    c:/Projects/MusicDroid/src/com/helloandroid/android/musicdroid/
+        from http://www.helloandroid.com/apps/musicdroid
+        in emulator, can switch to browser while music is playing
+            but getting  AudioFlinger write blocked
+        works on real phone, too
+            can turn off screen - keeps playing
+        but starts song from beginning if rotate screen!
+
+(dvc-status)
+
+ open source projects
+http://www.alexc.me/android-music-app-service-currently-playing-song/231/
+    implies there's an Android/Google MediaPlaybackService, with source code
+    but can't find it.
+
+http://code.google.com/p/andless/
+    has a file browser!
+        plays playlists or directories
+    and bookmarks
+    no notification control; just a note
+    nothing on lock screen
+    uses it's own service
+        needed for bookmarks?
+    nice icon
+
+http://www.cuteandroid.com/open-source-android-apps-for-developers-musicqueueproject-android-music-player
+    UI sucks, but it has a service
+    c:/Projects/eclipse_scratch/svn/trunk/src/com/yannickstucki/android/musicqueue
+
+https://github.com/pydave/LibListenScreen
+    claims to show app in front of lock screen
+
+http://tango.freedesktop.org/Tango_Icon_Library
+
+http://www.doubletwist.com/
+    wireless sync
+
+http://www.getsongbird.com/
+
+http://mpd.wikia.com/wiki/Clients
+    serve laptop music to Android
 
  car mode
     see 'car home' in default emulator image

@@ -1,4 +1,4 @@
-package org.stephe_leake.music_player;
+package org.stephe_leake.android.music_player;
 
 import java.io.IOException;
 
