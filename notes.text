@@ -1,16 +1,18 @@
+src/org/stephe_leake/music_player/Stephes_Music_PlayerActivity.java
 
 c:/Apps/Android/android-sdk/samples/android-10/ApiDemos/src/com/example/android/apis/media/MediaPlayerDemo_Audio.java
     not much help
 
-c:/Projects/MusicDroid
+c:/Projects/MusicDroid/src/com/helloandroid/android/musicdroid/
     from http://www.helloandroid.com/apps/musicdroid
     runs MediaPlayer as a service
         but that doesn't appear to be necessary?
             in emulator, can switch to browser while music is playing
             but getting  AudioFlinger write blocked
 
-need stop, quit
-    use mediaController widget
+need quit
+
+imageButton vs Button
 
 clean up author string
     currently "Shawn ColvinShawn Colvinnull"
