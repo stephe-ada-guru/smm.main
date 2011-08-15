@@ -1,4 +1,10 @@
-src/org/stephe_leake/music_player/Stephes_Music_PlayerActivity.java
+src/org/stephe_leake/android/music_player/Stephes_Music_PlayerActivity.java
+
+http://en.wikipedia.org/wiki/M3U
+    .m3u -> audio/x-mpegurl
+    can contain urls
+
+not terminating when there is an error
 
 clean up author string
     currently "Shawn ColvinShawn Colvinnull"
@@ -10,8 +16,6 @@ imageButton vs Button
     which should I use?
 
 need service
-    c:/Projects/MusicDroid/src/com/helloandroid/android/musicdroid/
-        from http://www.helloandroid.com/apps/musicdroid
         in emulator, can switch to browser while music is playing
             but getting  AudioFlinger write blocked
         works on real phone, too
@@ -28,6 +32,9 @@ need file dialog
 (dvc-status)
 
  open source projects
+http://www.helloandroid.com/apps/musicdroid
+    c:/Projects/MusicDroid/src/com/helloandroid/android/musicdroid/
+
 http://www.alexc.me/android-music-app-service-currently-playing-song/231/
     implies there's an Android/Google MediaPlaybackService, with source code
     but can't find it.

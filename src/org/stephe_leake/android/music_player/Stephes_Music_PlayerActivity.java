@@ -43,12 +43,12 @@ public class Stephes_Music_PlayerActivity extends Activity
          // Get the song we are supposed to play
          android.content.Intent Intent = getIntent();
 
-         if (Intent.getAction() == android.content.Intent.ACTION_VIEW)
+         if (Intent.getAction().equals(android.content.Intent.ACTION_VIEW))
          {
             String Song_Path = getIntent().getData().getPath();
 
-            // Ghost Commander uses mime type audio/x-mpegurl for .m3u files; we specify that in our intent filter in AndroidManifest.xml.
-            if (Intent.getType() == "audio/x-mpegurl")
+            // mime type audio/x-mpegurl maps to .m3u files (http://en.wikipedia.org/wiki/M3U)
+            if (Intent.getType().equals("audio/x-mpegurl"))
             {
                Play_List (Song_Path);
             }
@@ -57,18 +57,25 @@ public class Stephes_Music_PlayerActivity extends Activity
                Play_Single (Song_Path);
             };
          }
-         else
+         else if (Intent.getAction().equals(android.content.Intent.ACTION_MAIN))
          {
-            // assume launched directly by user
-            // FIXME: present file browser
+            // launched directly by user
+            // FIXME: resume last bookmark, or present file browser, or do nothing.
             // default Song_Path is a playlist
             Play_List (Default_Song_Path);
+         }
+         else
+         {
+            Song_Title.setText("Unexpected intent action: '" + Intent.getAction() + "'");
+            finish();
+            return;
          }
       }
       catch (RuntimeException e)
       {
          // From somewhere
-         android.widget.Toast.makeText(this, "That does not compute " + e.getMessage(), 10).show();
+         android.widget.Toast.makeText(this, "That does not compute " + e.getMessage(), 100).show();
+         finish();
          return;
       }
    }
@@ -83,7 +90,6 @@ public class Stephes_Music_PlayerActivity extends Activity
          }
          catch (RuntimeException e)
          {
-            // From Meta.setDataSource
             Song_Title.setText("MetaDataRetriever(" + Song_Path + ") error: " + e.getMessage());
             return;
          }
