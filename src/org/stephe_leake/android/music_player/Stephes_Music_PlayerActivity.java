@@ -1,13 +1,11 @@
 package org.stephe_leake.android.music_player;
 
-import java.io.IOException;
-
 import android.app.Activity;
+import android.media.MediaMetadataRetriever;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.TextView;
-import android.media.MediaMetadataRetriever;
 import android.widget.Button;
+import android.widget.TextView;
 
 public class Stephes_Music_PlayerActivity extends Activity
 {
@@ -18,17 +16,18 @@ public class Stephes_Music_PlayerActivity extends Activity
    private android.widget.Button Play_Button;
    private android.widget.Button Pause_Button;
 
-   private String Song_URI = "/mnt/sdcard/Audio/Vocal/01 - Fill Me Up.mp3";
+   //   private String Song_PATH = "/mnt/sdcard/Audio/Vocal/01 - Fill Me Up.mp3";
+   static private String Default_Song_Path = "/mnt/sdcard/Audio/vocal.m3u";
 
    /** Called when the activity is first created. */
-   @Override
-      public void onCreate(Bundle savedInstanceState)
+   @Override public void onCreate(Bundle savedInstanceState)
    {
       try
       {
          super.onCreate(savedInstanceState);
          setContentView(R.layout.main);
 
+         // Set up text displays
          Song_Title = (TextView) findViewById(R.id.Song_Title);
          Album_Title = (TextView) findViewById(R.id.Album_Title);
          Artist_Title = (TextView) findViewById(R.id.Artist_Title);
@@ -41,47 +40,30 @@ public class Stephes_Music_PlayerActivity extends Activity
 
          ((Button)findViewById(R.id.Quit)).setOnClickListener(Quit_Listener);
 
-         MediaMetadataRetriever Meta = new MediaMetadataRetriever();
+         // Get the song we are supposed to play
+         android.content.Intent Intent = getIntent();
 
-         try
+         if (Intent.getAction() == android.content.Intent.ACTION_VIEW)
          {
-            Meta.setDataSource(Song_URI);
+            String Song_Path = getIntent().getData().getPath();
+
+            // Ghost Commander uses mime type audio/x-mpegurl for .m3u files; we specify that in our intent filter in AndroidManifest.xml.
+            if (Intent.getType() == "audio/x-mpegurl")
+            {
+               Play_List (Song_Path);
+            }
+            else
+            {
+               Play_Single (Song_Path);
+            };
          }
-         catch (RuntimeException e)
+         else
          {
-            // From Meta.setDataSource
-            Song_Title.setText(Song_URI + " NOT FOUND");
-            return;
+            // assume launched directly by user
+            // FIXME: present file browser
+            // default Song_Path is a playlist
+            Play_List (Default_Song_Path);
          }
-
-         Player = new android.media.MediaPlayer();
-
-         try
-         {
-            Player.setDataSource(Song_URI);
-            Player.prepare();
-         }
-         catch (IOException e) {
-            // from Player.setDataSource
-            Song_Title.setText(Song_URI + " CANNOT BE PLAYED : " + e.getMessage());
-            return;
-         }
-
-         Player.start();
-
-         Song_Title.setText(Meta.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_TITLE));
-
-         Album_Title.setText(Meta.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ALBUM));
-
-         // FIXME: avoid duplicates and nulls
-         Artist_Title.setText
-            (Meta.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST) +
-             Meta.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ARTIST) +
-             Meta.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_AUTHOR) +
-             Meta.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_COMPOSER));
-
-         Pause_Button.setVisibility(android.view.View.VISIBLE);
-         Play_Button.setVisibility(android.view.View.GONE);
       }
       catch (RuntimeException e)
       {
@@ -91,8 +73,90 @@ public class Stephes_Music_PlayerActivity extends Activity
       }
    }
 
-   @Override
-      protected void onDestroy()
+   private void Play_Single (String Song_Path)
+   {
+      MediaMetadataRetriever Meta = new MediaMetadataRetriever();
+
+      try
+         {
+            Meta.setDataSource(Song_Path.toString());
+         }
+         catch (RuntimeException e)
+         {
+            // From Meta.setDataSource
+            Song_Title.setText("MetaDataRetriever(" + Song_Path + ") error: " + e.getMessage());
+            return;
+         }
+
+      if (Player == null)
+      {
+         Player = new android.media.MediaPlayer();
+      }
+
+      try
+      {
+         Player.setDataSource(Song_Path.toString());
+         Player.prepare();
+      }
+      catch (java.io.IOException e)
+      {
+         Song_Title.setText("setDataSource(" + Song_Path + ") error: " + e.getMessage());
+         return;
+      }
+
+      Player.start();
+
+      Song_Title.setText(Meta.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_TITLE));
+
+      Album_Title.setText(Meta.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ALBUM));
+
+      // FIXME: avoid duplicates and nulls
+      Artist_Title.setText
+         (Meta.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST) +
+          Meta.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ARTIST) +
+          Meta.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_AUTHOR) +
+          Meta.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_COMPOSER));
+
+      Pause_Button.setVisibility(android.view.View.VISIBLE);
+      Play_Button.setVisibility(android.view.View.GONE);
+   }
+
+   private void Play_List (String List_Path)
+   {
+      java.io.BufferedReader reader;
+      String line;
+
+      // FIXME: just playing the first entry; testing intents vs file browser
+      try
+      {
+         reader = new java.io.BufferedReader
+                         (new java.io.InputStreamReader
+                                         (new java.io.FileInputStream(List_Path)), 8192);
+      }
+      catch (java.io.FileNotFoundException e)
+      {
+         Song_Title.setText("open file (" + List_Path + ") error: " + e.getMessage());
+         return;
+      }
+
+      try
+      {
+         line = reader.readLine();
+      }
+      catch (java.io.IOException e)
+      {
+         Song_Title.setText("readline (" + List_Path + ") error: " + e.getMessage());
+         return;
+      }
+
+      // .m3u playlist entries can be relative or absolute; assume relative (FIXME:)
+      // Play_Single needs an absolute path; add the path to List_Path
+
+      Play_Single((new java.io.File(List_Path)).getParent() + "/" + line);
+   }
+
+
+   @Override protected void onDestroy()
    {
       super.onDestroy();
       if (Player != null)
@@ -104,8 +168,7 @@ public class Stephes_Music_PlayerActivity extends Activity
 
    private android.widget.Button.OnClickListener Play_Listener = new android.widget.Button.OnClickListener()
       {
-         @Override
-            public void onClick(View v)
+         @Override public void onClick(View v)
          {
             Player.start();
             Play_Button.setVisibility(android.view.View.GONE);
@@ -116,8 +179,7 @@ public class Stephes_Music_PlayerActivity extends Activity
 
    private android.widget.Button.OnClickListener Pause_Listener = new android.widget.Button.OnClickListener()
       {
-         @Override
-            public void onClick(View v)
+         @Override public void onClick(View v)
          {
             Player.pause();
             Pause_Button.setVisibility(android.view.View.GONE);
@@ -127,8 +189,7 @@ public class Stephes_Music_PlayerActivity extends Activity
 
    private android.widget.Button.OnClickListener Quit_Listener = new android.widget.Button.OnClickListener()
       {
-         @Override
-            public void onClick(View v)
+         @Override public void onClick(View v)
          {
             finish();
          }

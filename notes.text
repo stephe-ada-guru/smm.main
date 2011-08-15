@@ -1,14 +1,5 @@
 src/org/stephe_leake/music_player/Stephes_Music_PlayerActivity.java
 
-need file dialog
-    http://developer.android.com/guide/topics/data/data-storage.html#filesExternal
-        just implements naming conventions; not a browser
-    c:/Apps/Android/android-sdk/samples/android-10/ApiDemos/src/com/example/android/apis/content/ExternalStorage
-        LayoutInflater inflater = (LayoutInflater)getSystemService(LAYOUT_INFLATER_SERVICE)
-
-    nothing!
-        just use Ghost Commander, register music player intent?
-
 clean up author string
     currently "Shawn ColvinShawn Colvinnull"
 
@@ -27,6 +18,13 @@ need service
             can turn off screen - keeps playing
         but starts song from beginning if rotate screen!
 
+need file dialog
+    adapt AndLess
+        really badly written!
+        don't need adapter; used for playlists vs directories
+        file browser should be a dialog?
+        probably easier to start from scratch, steal ideas
+
 (dvc-status)
 
  open source projects
@@ -40,7 +38,7 @@ http://code.google.com/p/andless/
     and bookmarks
     no notification control; just a note
     nothing on lock screen
-    uses it's own service
+    uses its own service
         needed for bookmarks?
     nice icon
 
