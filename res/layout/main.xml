@@ -10,21 +10,24 @@
     android:layout_width="fill_parent" 
     android:layout_height="wrap_content" 
     android:text="Song_Title"
-    android:id="@+id/Song_Title" android:gravity="center"
+    android:id="@+id/Song_Title" 
+    android:gravity="center"
 />
 <TextView 
     android:textAppearance="?android:attr/textAppearanceLarge" 
     android:layout_width="match_parent" 
     android:layout_height="wrap_content" 
     android:text="Album_Title" 
-    android:id="@+id/Album_Title" android:gravity="center"
+    android:id="@+id/Album_Title" 
+    android:gravity="center"
     />
 <TextView 
     android:textAppearance="?android:attr/textAppearanceLarge" 
     android:layout_width="match_parent" 
     android:layout_height="wrap_content" 
     android:text="Artist_Title" 
-    android:id="@+id/Artist_Title" android:gravity="center"
+    android:id="@+id/Artist_Title" 
+    android:gravity="center"
     />
 <Button 
     android:id="@+id/Play" 

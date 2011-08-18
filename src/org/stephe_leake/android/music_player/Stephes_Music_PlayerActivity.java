@@ -1,9 +1,11 @@
 package org.stephe_leake.android.music_player;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.media.MediaMetadataRetriever;
 import android.os.Bundle;
 import android.view.View;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -71,40 +73,46 @@ public class Stephes_Music_PlayerActivity extends Activity
             finish();
             return;
          }
-      
-         // look for the Google MusicPlayer service
-         
-         // this doesn't work
-//         android.content.ComponentName found = startService(new android.content.Intent(android.content.Intent.ACTION_VIEW).
-//        		 setDataAndType(android.net.Uri.fromFile(new java.io.File(Default_Song_Path)), "audio/*"));
-  
-         //  this works
-//         startActivity(new android.content.Intent(android.content.Intent.ACTION_VIEW).
-//        		 setDataAndType(android.net.Uri.fromFile(new java.io.File(Default_Song_Path)), "audio/*"));
 
-         // this doesn't work
-       android.content.ComponentName found = startService(new android.content.Intent().
-		 setComponent(new android.content.ComponentName("org.stephe_leake.android.music_player", "MediaPlaybackService")));
-
-         if (found == null)
-         {
-        	 Song_Title.setText("service not found");
-         }
-         else
-         {
-        	 Song_Title.setText("found service " + found.getClassName());
-         }
       }
-      
+
       catch (RuntimeException e)
       {
          // From somewhere
-         Toast.makeText(this, "That does not compute " + e.getMessage(), Toast.LENGTH_LONG).show();
+         Toast.makeText(this, "error; see log", Toast.LENGTH_LONG).show();
+         Log.e("Stephe's Music Player", "onCreate: That does not compute " + e.getMessage());
          finish();
          return;
       }
    }
 
+   protected void onStart()
+   {
+	   super.onStart();
+	   try
+	   {
+		   // start service
+		   android.content.ComponentName found = startService(new Intent(Stephes_Music_PlayerActivity.this, MediaPlaybackService.class));
+
+		   if (found == null)
+		   {
+			   Song_Title.setText("service not found");
+		   }
+		   else
+		   {
+			   Song_Title.setText("found service " + found.getClassName());
+		   }
+	   }
+       catch (RuntimeException e)
+       {
+          // From somewhere
+          Toast.makeText(this, "error; see log", Toast.LENGTH_LONG).show();
+          Log.e("Stephe's Music Player", "onStart: That does not compute " + e.getMessage());
+          finish();
+          return;
+       }
+   }
+   
    private void Play_Single (String Song_Path)
    {
       MediaMetadataRetriever Meta = new MediaMetadataRetriever();

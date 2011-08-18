@@ -4,10 +4,7 @@ src/org/stephe_leake/android/music_player/Stephes_Music_PlayerActivity.java
 
 use final not static for constants
 
-need service
-    use google; very nice, has everything I need, should be on most machines
-        can compile, distribute to add to any machine
-    c:/Projects/android/google/packages/apps/Music/src/com/android/music/MediaPlaybackService.java
+MediaPlaybackService.java
     communicates via broadcast intents
         start it
         broadcast command intents
@@ -16,22 +13,17 @@ need service
 
         search source for "void notifyChange("
 
-arg! http://stackoverflow.com/questions/6146143/control-android-media-player
-    says "don't do that"!
-    so just copy the code, and change the name
-
 todo:
-    find service
-        "com.android.music.MediaPlaybackService"
-        on emulator
-        on htc
-    start it or bind to it
-    send it one song
+    send service one song
+        don't start player in main activity
         Intent i = new Intent("com.android.music.musicservicecommand"); i.putExtra("command", "togglepause"); sendBroadcast(i);
 
     send it one playlist
 
 return error status for bad file in startup intent
+
+register for service broadcast messages
+handle them
 
 clean up author string
     currently "Shawn ColvinShawn Colvinnull"
