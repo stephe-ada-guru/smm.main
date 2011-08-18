@@ -1,10 +1,37 @@
 src/org/stephe_leake/android/music_player/Stephes_Music_PlayerActivity.java
+(dvc-status)
 
-http://en.wikipedia.org/wiki/M3U
-    .m3u -> audio/x-mpegurl
-    can contain urls
 
-not terminating when there is an error
+use final not static for constants
+
+need service
+    use google; very nice, has everything I need, should be on most machines
+        can compile, distribute to add to any machine
+    c:/Projects/android/google/packages/apps/Music/src/com/android/music/MediaPlaybackService.java
+    communicates via broadcast intents
+        start it
+        broadcast command intents
+        register to receive broadcast notification intents
+            http://developer.android.com/reference/android/content/BroadcastReceiver.html
+
+        search source for "void notifyChange("
+
+arg! http://stackoverflow.com/questions/6146143/control-android-media-player
+    says "don't do that"!
+    so just copy the code, and change the name
+
+todo:
+    find service
+        "com.android.music.MediaPlaybackService"
+        on emulator
+        on htc
+    start it or bind to it
+    send it one song
+        Intent i = new Intent("com.android.music.musicservicecommand"); i.putExtra("command", "togglepause"); sendBroadcast(i);
+
+    send it one playlist
+
+return error status for bad file in startup intent
 
 clean up author string
     currently "Shawn ColvinShawn Colvinnull"
@@ -15,31 +42,63 @@ imageButton vs Button
     need checked_find_As_ID
     which should I use?
 
-need service
-        in emulator, can switch to browser while music is playing
-            but getting  AudioFlinger write blocked
-        works on real phone, too
-            can turn off screen - keeps playing
-        but starts song from beginning if rotate screen!
+cache files and/or playlists received from file manager
+    offer to play them
+    offer to clean up list
 
-need file dialog
-    adapt AndLess
-        really badly written!
-        don't need adapter; used for playlists vs directories
-        file browser should be a dialog?
-        probably easier to start from scratch, steal ideas
+need way to choose files without relying on file manager
+    offer to use MediaStore.Audio (like everyone else does
+    offer to use file dialog
+        steal ideas from AndLess
+            really badly written!
+            don't need adapter; used for playlists vs directories
+            file browser should be a dialog?
+            probably easier to start from scratch, steal ideas
+        http://developer.android.com/resources/tutorials/views/hello-autocomplete.html
 
-(dvc-status)
+ later
+smm download_playlist song filenames are not guarrantteed unique
+    use artist/album/song
+
+http://en.wikipedia.org/wiki/M3U
+    can contain urls; used for web streams for example
+    may affect front end handler (detecting playlist)
+
+cache URIs received from browser ???
+    add intent filter for that?
+
+    current browser does not play feeds in background
+        it must be using a different player!
+        and it doesn't resume on switching back to the browser
+
+    at least accept pasted feed urls
+
+server stores bookmarks in MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+    offer to restore from there
+    offer to clean up list
+
+find out what "select player" is all about
+    wireless connection to tv/stereo system?
 
  open source projects
 http://www.helloandroid.com/apps/musicdroid
     c:/Projects/MusicDroid/src/com/helloandroid/android/musicdroid/
+    service supports bookmark, playlists
+    looks cleaner than andless
+    assumes mp3file to get artist etc; change that
+    doesn't start a thread
 
 http://www.alexc.me/android-music-app-service-currently-playing-song/231/
     implies there's an Android/Google MediaPlaybackService, with source code
     but can't find it.
+    no such class in android.jar, but MediaPlayer is there
+    decompile MediaPlayer in Eclipse
+        not there; not an exported interface
+    download Android source on Debian http://source.android.com/source/downloading.html
+    add git, python to cygwin
 
 http://code.google.com/p/andless/
+    c:/Projects/eclipse_scratch/Andless/trunk/src/net/avs234/AndLessSrv.java
     has a file browser!
         plays playlists or directories
     and bookmarks
@@ -47,14 +106,20 @@ http://code.google.com/p/andless/
     nothing on lock screen
     uses its own service
         needed for bookmarks?
+            has get_cur_pos, seek_to
+        handles headset insert/remove
+        runs players other than MediaPlayer
+        supports wakelock
     nice icon
 
 http://www.cuteandroid.com/open-source-android-apps-for-developers-musicqueueproject-android-music-player
     UI sucks, but it has a service
     c:/Projects/eclipse_scratch/svn/trunk/src/com/yannickstucki/android/musicqueue
+    service doesn't play music!
 
 https://github.com/pydave/LibListenScreen
     claims to show app in front of lock screen
+    no service
 
 http://tango.freedesktop.org/Tango_Icon_Library
 

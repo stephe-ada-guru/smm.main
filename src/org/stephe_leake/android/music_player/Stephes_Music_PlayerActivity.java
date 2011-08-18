@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class Stephes_Music_PlayerActivity extends Activity
 {
@@ -17,7 +18,7 @@ public class Stephes_Music_PlayerActivity extends Activity
    private android.widget.Button Pause_Button;
 
    //   private String Song_PATH = "/mnt/sdcard/Audio/Vocal/01 - Fill Me Up.mp3";
-   static private String Default_Song_Path = "/mnt/sdcard/Audio/vocal.m3u";
+   private static final String Default_Song_Path = "/mnt/sdcard/Audio/vocal.m3u";
 
    /** Called when the activity is first created. */
    @Override public void onCreate(Bundle savedInstanceState)
@@ -70,11 +71,35 @@ public class Stephes_Music_PlayerActivity extends Activity
             finish();
             return;
          }
+      
+         // look for the Google MusicPlayer service
+         
+         // this doesn't work
+//         android.content.ComponentName found = startService(new android.content.Intent(android.content.Intent.ACTION_VIEW).
+//        		 setDataAndType(android.net.Uri.fromFile(new java.io.File(Default_Song_Path)), "audio/*"));
+  
+         //  this works
+//         startActivity(new android.content.Intent(android.content.Intent.ACTION_VIEW).
+//        		 setDataAndType(android.net.Uri.fromFile(new java.io.File(Default_Song_Path)), "audio/*"));
+
+         // this doesn't work
+       android.content.ComponentName found = startService(new android.content.Intent().
+		 setComponent(new android.content.ComponentName("org.stephe_leake.android.music_player", "MediaPlaybackService")));
+
+         if (found == null)
+         {
+        	 Song_Title.setText("service not found");
+         }
+         else
+         {
+        	 Song_Title.setText("found service " + found.getClassName());
+         }
       }
+      
       catch (RuntimeException e)
       {
          // From somewhere
-         android.widget.Toast.makeText(this, "That does not compute " + e.getMessage(), 100).show();
+         Toast.makeText(this, "That does not compute " + e.getMessage(), Toast.LENGTH_LONG).show();
          finish();
          return;
       }
