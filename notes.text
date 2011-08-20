@@ -1,8 +1,6 @@
 src/org/stephe_leake/android/music_player/Stephes_Music_PlayerActivity.java
+/Projects/android/google/packages/apps/Music/src/com/android/music/MusicUtils.java
 (dvc-status)
-
-
-use final not static for constants
 
 MediaPlaybackService.java
     communicates via broadcast intents
@@ -15,12 +13,23 @@ MediaPlaybackService.java
 
 todo:
     send service one song
-        don't start player in main activity
-        Intent i = new Intent("com.android.music.musicservicecommand"); i.putExtra("command", "togglepause"); sendBroadcast(i);
+        see code
+        not found in database
+            need to run mediascanner?
+            http://developer.android.com/reference/android/media/MediaScannerConnection.html
+                scanFile
+            MediaScannerConnectionClient
+                receive Uri (not ID!)
+
+            see what happens if you call it twice
 
     send it one playlist
 
+    unbind service in onDestroy
+
 return error status for bad file in startup intent
+    not at all clear how to 'return' data from an activity startup
+        see code in MusicPlayer
 
 register for service broadcast messages
 handle them
@@ -33,6 +42,10 @@ need About
 imageButton vs Button
     need checked_find_As_ID
     which should I use?
+
+server deals with database ids
+    that doesn't handle web streams?
+    maybe a different content provider?
 
 cache files and/or playlists received from file manager
     offer to play them

@@ -1,9 +1,20 @@
 package org.stephe_leake.android.music_player;
 
+import java.io.File;
+
+import org.stephe_leake.android.music_player.MusicUtils.ServiceToken;
+
 import android.app.Activity;
+import android.content.ComponentName;
 import android.content.Intent;
+import android.content.ServiceConnection;
+import android.database.Cursor;
 import android.media.MediaMetadataRetriever;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.IBinder;
+import android.provider.MediaStore;
+import android.provider.MediaStore.Audio;
 import android.view.View;
 import android.util.Log;
 import android.widget.Button;
@@ -12,6 +23,8 @@ import android.widget.Toast;
 
 public class Stephes_Music_PlayerActivity extends Activity
 {
+   // Main UI members
+
    private TextView Song_Title;
    private TextView Album_Title;
    private TextView Artist_Title;
@@ -19,16 +32,22 @@ public class Stephes_Music_PlayerActivity extends Activity
    private android.widget.Button Play_Button;
    private android.widget.Button Pause_Button;
 
-   //   private String Song_PATH = "/mnt/sdcard/Audio/Vocal/01 - Fill Me Up.mp3";
-   private static final String Default_Song_Path = "/mnt/sdcard/Audio/vocal.m3u";
+   // Main other members
+   private ServiceToken Service;
 
-   /** Called when the activity is first created. */
+   ////////// Activity lifetime methods
+
    @Override public void onCreate(Bundle savedInstanceState)
    {
       try
       {
          super.onCreate(savedInstanceState);
          setContentView(R.layout.main);
+
+         // Bind to the service, so we can send it songs. It stops
+         // itself after 60 seconds (MediaPlaybackService.java
+         // IDLE_DELAY) if not bound or playing.
+         Service = MusicUtils.bindToService(this);
 
          // Set up text displays
          Song_Title = (TextView) findViewById(R.id.Song_Title);
@@ -43,125 +62,117 @@ public class Stephes_Music_PlayerActivity extends Activity
 
          ((Button)findViewById(R.id.Quit)).setOnClickListener(Quit_Listener);
 
-         // Get the song we are supposed to play
-         android.content.Intent Intent = getIntent();
+         // Get the song we are supposed to play, if any
+         Intent intent = getIntent();
 
-         if (Intent.getAction().equals(android.content.Intent.ACTION_VIEW))
+         if (intent.getAction().equals(Intent.ACTION_VIEW))
          {
-            String Song_Path = getIntent().getData().getPath();
+            Uri Song_Uri = getIntent().getData();
 
-            // mime type audio/x-mpegurl maps to .m3u files (http://en.wikipedia.org/wiki/M3U)
-            if (Intent.getType().equals("audio/x-mpegurl"))
+            if (intent.getType().equals("audio/x-mpegurl"))
             {
-               Play_List (Song_Path);
+               // .m3u file (http://en.wikipedia.org/wiki/M3U)
+               Play_List (Song_Uri);
             }
             else
             {
-               Play_Single (Song_Path);
+               Send_To_Server (Song_Uri);
             };
          }
-         else if (Intent.getAction().equals(android.content.Intent.ACTION_MAIN))
+         else if (intent.getAction().equals(Intent.ACTION_MAIN))
          {
-            // launched directly by user
-            // FIXME: resume last bookmark, or present file browser, or do nothing.
-            // default Song_Path is a playlist
-            Play_List (Default_Song_Path);
+            // launched directly by user, or destroyed/restored (ie for screen rotate)
+            //
+            // service not affected by destroy/restore, so we don't do anything for that case.
+            //
+            // FIXME: resume last bookmark, or present file or other browser.
+
+            // for initial testing, a hardcoded song
+            Send_To_Server (Uri.fromFile(new File("/mnt/sdcard/Audio/Vocal/01 - Fill Me Up.mp3")));
          }
          else
          {
-            Song_Title.setText("Unexpected intent action: '" + Intent.getAction() + "'");
-            finish();
-            return;
+            MusicUtils.Error_Log(this, "Unexpected intent action: '" + intent.getAction() + "'");
          }
-
       }
 
       catch (RuntimeException e)
       {
          // From somewhere
-         Toast.makeText(this, "error; see log", Toast.LENGTH_LONG).show();
-         Log.e("Stephe's Music Player", "onCreate: That does not compute " + e.getMessage());
+          MusicUtils.Error_Log(this, "onCreate: That does not compute " + e.getMessage());
          finish();
          return;
       }
    }
 
-   protected void onStart()
+   @Override protected void onDestroy()
    {
-	   super.onStart();
-	   try
-	   {
-		   // start service
-		   android.content.ComponentName found = startService(new Intent(Stephes_Music_PlayerActivity.this, MediaPlaybackService.class));
+      // FIXME: unbind from service
 
-		   if (found == null)
-		   {
-			   Song_Title.setText("service not found");
-		   }
-		   else
-		   {
-			   Song_Title.setText("found service " + found.getClassName());
-		   }
-	   }
-       catch (RuntimeException e)
-       {
-          // From somewhere
-          Toast.makeText(this, "error; see log", Toast.LENGTH_LONG).show();
-          Log.e("Stephe's Music Player", "onStart: That does not compute " + e.getMessage());
-          finish();
-          return;
-       }
+      super.onDestroy();
    }
-   
-   private void Play_Single (String Song_Path)
+
+   ////////// private non-UI members and methods
+
+   private void Send_To_Server (Uri Song_Uri)
    {
-      MediaMetadataRetriever Meta = new MediaMetadataRetriever();
+      // Send a single song to the server to play - it is added to the
+      // current playlist.
+      //
+      // FIXME: change it to a list of songs.
+      //
+      // Metadata is displayed by Service_Callback_Handler
+      // when a song starts playing, not here.
 
-      try
-         {
-            Meta.setDataSource(Song_Path.toString());
-         }
-         catch (RuntimeException e)
-         {
-            Song_Title.setText("MetaDataRetriever(" + Song_Path + ") error: " + e.getMessage());
-            return;
-         }
+      // The server uses database ids to identify songs; here we
+      // convert the Song_Uri to a database id. That also serves
+      // to check that it is a readable file. It assumes the
+      // MediaScanner has seen it.
 
-      if (Player == null)
+      if (Service == null)
       {
-         Player = new android.media.MediaPlayer();
-      }
-
-      try
-      {
-         Player.setDataSource(Song_Path.toString());
-         Player.prepare();
-      }
-      catch (java.io.IOException e)
-      {
-         Song_Title.setText("setDataSource(" + Song_Path + ") error: " + e.getMessage());
+         Toast.makeText(this, "service not bound", Toast.LENGTH_LONG).show();
          return;
       }
 
-      Player.start();
+      try
+      {
+         // We're looking for a single song, so this should not take a
+         // long time, so we don't use CursorLoader
+         //
+         // Couldn't find Android documentation that says this should
+         // work; see AudioPreview.java
+         Cursor cursor = getContentResolver().query(Song_Uri, new String[]{Audio.Media._ID}, null, null, null);
+         // cursor is before first result, or null
+         switch (cursor.getCount())
+         {
+         case 1:
+            {
+               final int idColumn = cursor.getColumnIndex(Audio.Media._ID);
+               cursor.moveToFirst();
 
-      Song_Title.setText(Meta.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_TITLE));
-
-      Album_Title.setText(Meta.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ALBUM));
-
-      // FIXME: avoid duplicates and nulls
-      Artist_Title.setText
-         (Meta.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST) +
-          Meta.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ARTIST) +
-          Meta.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_AUTHOR) +
-          Meta.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_COMPOSER));
-
-      Pause_Button.setVisibility(android.view.View.VISIBLE);
-      Play_Button.setVisibility(android.view.View.GONE);
+               MusicUtils.addToCurrentPlaylist(this, new long[]{cursor.getLong(idColumn)});
+            }
+            break;
+         case 0:
+                MusicUtils.Error_Log(this, Song_Uri + ": not found in database");
+            break;
+         default:
+                MusicUtils.Error_Log(this, Song_Uri + ": multiple matches in database");
+            break;
+         }
+         cursor.close();
+      }
+      catch (RuntimeException e)
+      {
+         MusicUtils.Error_Log(this, Song_Uri + ": database query failed");
+      }
    }
 
-   private void Play_List (String List_Path)
+   private void Play_List (Uri List_Uri)
    {
+      // List_Uri is the name of a .m3u file
+
       java.io.BufferedReader reader;
       String line;
 
@@ -170,11 +181,11 @@ public class Stephes_Music_PlayerActivity extends Activity
       {
          reader = new java.io.BufferedReader
                          (new java.io.InputStreamReader
-                                         (new java.io.FileInputStream(List_Path)), 8192);
+                                         (new java.io.FileInputStream(List_Uri.getPath())), 8192);
       }
       catch (java.io.FileNotFoundException e)
       {
-         Song_Title.setText("open file (" + List_Path + ") error: " + e.getMessage());
+         Song_Title.setText("open file (" + List_Uri + ") error: " + e.getMessage());
          return;
       }
 
@@ -184,27 +195,34 @@ public class Stephes_Music_PlayerActivity extends Activity
       }
       catch (java.io.IOException e)
       {
-         Song_Title.setText("readline (" + List_Path + ") error: " + e.getMessage());
+         Song_Title.setText("readline (" + List_Uri + ") error: " + e.getMessage());
          return;
       }
 
       // .m3u playlist entries can be relative or absolute; assume relative (FIXME:)
-      // Play_Single needs an absolute path; add the path to List_Path
+      // Send_To_Server needs an absolute path; add the path to List_Uri
 
-      Play_Single((new java.io.File(List_Path)).getParent() + "/" + line);
+      Send_To_Server (Uri.fromFile(new java.io.File(new java.io.File(List_Uri.getPath()).getParent(), line)));
    }
 
-
-   @Override protected void onDestroy()
+   private void Service_Callback_Handler()
    {
-      super.onDestroy();
-      if (Player != null)
-      {
-         Player.release();
-         Player = null;
-      }
+      // FIXME: show current song metadata
+      // FIXME: delete previous song from playlist
+
+      // Song_Title.setText(Meta.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_TITLE));
+
+      // Album_Title.setText(Meta.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ALBUM));
+
+      // // FIXME: avoid duplicates and nulls
+      // Artist_Title.setText
+      //    (Meta.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST) +
+      //     Meta.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ARTIST) +
+      //     Meta.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_AUTHOR) +
+      //     Meta.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_COMPOSER));
    }
 
+   ////////// private UI methods
    private android.widget.Button.OnClickListener Play_Listener = new android.widget.Button.OnClickListener()
       {
          @Override public void onClick(View v)
@@ -230,7 +248,9 @@ public class Stephes_Music_PlayerActivity extends Activity
       {
          @Override public void onClick(View v)
          {
+            // FIXME: cancel currently playing song
             finish();
          }
       };
+
 }
