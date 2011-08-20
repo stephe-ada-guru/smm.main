@@ -6,10 +6,13 @@ import org.stephe_leake.android.music_player.MusicUtils.ServiceToken;
 
 import android.app.Activity;
 import android.content.ComponentName;
+import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.media.MediaMetadataRetriever;
+import android.media.MediaScannerConnection;
+import android.media.MediaScannerConnection.MediaScannerConnectionClient;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -34,6 +37,7 @@ public class Stephes_Music_PlayerActivity extends Activity
 
    // Main other members
    private ServiceToken Service;
+   private ContentResolver Content_Resolver;
 
    ////////// Activity lifetime methods
 
@@ -49,6 +53,8 @@ public class Stephes_Music_PlayerActivity extends Activity
          // IDLE_DELAY) if not bound or playing.
          Service = MusicUtils.bindToService(this);
 
+         Content_Resolver = getContentResolver();
+         
          // Set up text displays
          Song_Title = (TextView) findViewById(R.id.Song_Title);
          Album_Title = (TextView) findViewById(R.id.Album_Title);
@@ -99,7 +105,7 @@ public class Stephes_Music_PlayerActivity extends Activity
       catch (RuntimeException e)
       {
          // From somewhere
-          MusicUtils.Error_Log(this, "onCreate: That does not compute " + e.getMessage());
+         MusicUtils.Error_Log(this, "onCreate: That does not compute " + e.getMessage());
          finish();
          return;
       }
@@ -107,7 +113,7 @@ public class Stephes_Music_PlayerActivity extends Activity
 
    @Override protected void onDestroy()
    {
-      // FIXME: unbind from service
+      MusicUtils.unbindFromService(Service);
 
       super.onDestroy();
    }
@@ -142,30 +148,73 @@ public class Stephes_Music_PlayerActivity extends Activity
          //
          // Couldn't find Android documentation that says this should
          // work; see AudioPreview.java
-         Cursor cursor = getContentResolver().query(Song_Uri, new String[]{Audio.Media._ID}, null, null, null);
+         Cursor cursor = Content_Resolver.query(Song_Uri, new String[]{Audio.Media._ID}, null, null, null);
          // cursor is before first result, or null
-         switch (cursor.getCount())
-         {
-         case 1:
+         if (cursor != null && cursor.getCount() == 1)
             {
                final int idColumn = cursor.getColumnIndex(Audio.Media._ID);
                cursor.moveToFirst();
+               MusicUtils.Info_Log(this, Song_Uri + ": found in database; sending it to service");
 
                MusicUtils.addToCurrentPlaylist(this, new long[]{cursor.getLong(idColumn)});
+               cursor.close();
+
             }
-            break;
-         case 0:
-                MusicUtils.Error_Log(this, Song_Uri + ": not found in database");
-            break;
-         default:
-                MusicUtils.Error_Log(this, Song_Uri + ": multiple matches in database");
-            break;
+         else if (cursor == null || cursor.getCount() == 0)
+            {
+               MusicUtils.Info_Log(this, Song_Uri + ": not found in database; scanning it");
+
+               if (cursor != null) cursor.close();
+               
+               MediaScannerConnection.OnScanCompletedListener client = new MediaScannerConnection.OnScanCompletedListener() 
+               {
+				   @Override public void onScanCompleted(String Path, Uri Scanned_Uri)
+                     {
+                        try
+                        {
+                           Cursor cursor = Content_Resolver.query(Scanned_Uri, new String[]{Audio.Media._ID}, null, null, null);
+                           // cursor is before first result, or null
+                           switch (cursor.getCount())
+                           {
+                           case 1:
+                              {
+                                 final int idColumn = cursor.getColumnIndex(Audio.Media._ID);
+                                 cursor.moveToFirst();
+
+                                 MusicUtils.addToCurrentPlaylist(Stephes_Music_PlayerActivity.this, new long[]{cursor.getLong(idColumn)});
+                                 cursor.close();
+                              }
+                              break;
+                           case 0:
+                              {
+                                 MusicUtils.Error_Log(Stephes_Music_PlayerActivity.this, Scanned_Uri + ": not found in database; giving up");
+                              }
+                              break;
+                           default:
+                              MusicUtils.Error_Log(Stephes_Music_PlayerActivity.this, Scanned_Uri + ": multiple matches in database");
+                              cursor.close();
+                              break;
+                           }
+                        }
+                        catch (RuntimeException e)
+                        {
+                           MusicUtils.Error_Log(Stephes_Music_PlayerActivity.this, Scanned_Uri + ": database query failed after scan");
+                        }
+                     }
+
+                  };
+               MediaScannerConnection.scanFile(this, new String[]{Song_Uri.getPath()}, null, client);
+            }
+         else	
+         {
+            MusicUtils.Error_Log(this, Song_Uri + ": multiple matches in database");
+            cursor.close();
          }
-         cursor.close();
+
       }
       catch (RuntimeException e)
       {
-         MusicUtils.Error_Log(this, Song_Uri + ": database query failed");
+         MusicUtils.Error_Log(this, Song_Uri + ": database query failed before scan: " + e.toString()+ ": " + e.getMessage());
       }
    }
 
@@ -180,8 +229,8 @@ public class Stephes_Music_PlayerActivity extends Activity
       try
       {
          reader = new java.io.BufferedReader
-                         (new java.io.InputStreamReader
-                                         (new java.io.FileInputStream(List_Uri.getPath())), 8192);
+            (new java.io.InputStreamReader
+             (new java.io.FileInputStream(List_Uri.getPath())), 8192);
       }
       catch (java.io.FileNotFoundException e)
       {

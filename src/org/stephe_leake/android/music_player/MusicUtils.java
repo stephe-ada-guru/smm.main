@@ -217,5 +217,13 @@ public class MusicUtils {
       Log.e(Log_App_Name, msg);
    }
 
+   static void Info_Log(Context context, String msg)
+   {
+      // write msg to Log.e, and show in a Toast
+      Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
+      Log.i(Log_App_Name, msg);
+   }
+
+
 
 }
