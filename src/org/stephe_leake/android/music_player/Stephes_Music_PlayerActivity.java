@@ -46,7 +46,7 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
          setContentView(R.layout.main);
 
          // Bind to the service, so we can send it songs. It stops
-         // itself after 60 seconds (MediaPlaybackService.java
+         // itself after 60 seconds (Stephes_Music_Service.java
          // IDLE_DELAY) if not bound or playing.
          Service = MusicUtils.bindToService(this, (ServiceConnection) this);
 
@@ -75,7 +75,6 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
          // From somewhere
          MusicUtils.Error_Log(this, "onCreate: That does not compute " + e.getMessage());
          finish();
-         return;
       }
    }
 
@@ -85,7 +84,7 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
       try
       {
          IntentFilter f = new IntentFilter();
-         f.addAction(MediaPlaybackService.META_CHANGED);
+         f.addAction(Stephes_Music_Service.META_CHANGED);
          registerReceiver(Service_Listener, f);
       }
       catch (RuntimeException e)
@@ -195,7 +194,7 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
          // long time, so we don't use CursorLoader
          //
          // We don't call open(String path) in
-         // MediaPlaybackService.java, because it doesn't scan the
+         // Stephes_Music_Service.java, because it doesn't scan the
          // file if it's not yet in the database, so it won't be saved
          // in the playlist state. It also plays the song immediately,
          // instead of adding it to the current playlist.
@@ -323,18 +322,26 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
                return;
             }
 
-            if (action.equals(MediaPlaybackService.META_CHANGED))
+            try
             {
-               // redraw the artist/title info and
-               // set new max for progress bar
+               if (action.equals(Stephes_Music_Service.META_CHANGED))
+               {
+                  // redraw the artist/title info and
+                  // set new max for progress bar
 
-               Song_Title.setText(MusicUtils.getTrackName());
-               Album_Title.setText(MusicUtils.getAlbumName());
-               Artist_Title.setText(MusicUtils.getArtistName());
+                  Song_Title.setText(MusicUtils.getTrackName());
+                  Album_Title.setText(MusicUtils.getAlbumName());
+                  Artist_Title.setText(MusicUtils.getArtistName());
+               }
+               else
+               {
+                  // FIXME: register and handle other status intents
+               }
             }
-            else
+            catch (RuntimeException e)
             {
-               // FIXME: register and handle other status intents
+               // From somewhere
+               MusicUtils.Error_Log(Stephes_Music_PlayerActivity.this, "Service_Listener: " + e.getMessage());
             }
          }
       };

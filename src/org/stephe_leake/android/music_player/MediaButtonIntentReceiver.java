@@ -61,9 +61,9 @@ public class MediaButtonIntentReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         String intentAction = intent.getAction();
         if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intentAction)) {
-            Intent i = new Intent(context, MediaPlaybackService.class);
-            i.setAction(MediaPlaybackService.SERVICECMD);
-            i.putExtra(MediaPlaybackService.CMDNAME, MediaPlaybackService.CMDPAUSE);
+            Intent i = new Intent(context, Stephes_Music_Service.class);
+            i.setAction(Stephes_Music_Service.SERVICECMD);
+            i.putExtra(Stephes_Music_Service.CMDNAME, Stephes_Music_Service.CMDPAUSE);
             context.startService(i);
         } else if (Intent.ACTION_MEDIA_BUTTON.equals(intentAction)) {
             KeyEvent event = (KeyEvent)
@@ -84,24 +84,24 @@ public class MediaButtonIntentReceiver extends BroadcastReceiver {
             String command = null;
             switch (keycode) {
                 case KeyEvent.KEYCODE_MEDIA_STOP:
-                    command = MediaPlaybackService.CMDSTOP;
+                    command = Stephes_Music_Service.CMDSTOP;
                     break;
                 case KeyEvent.KEYCODE_HEADSETHOOK:
                 case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
-                    command = MediaPlaybackService.CMDTOGGLEPAUSE;
+                    command = Stephes_Music_Service.CMDTOGGLEPAUSE;
                     break;
                 case KeyEvent.KEYCODE_MEDIA_NEXT:
-                    command = MediaPlaybackService.CMDNEXT;
+                    command = Stephes_Music_Service.CMDNEXT;
                     break;
                 case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
-                    command = MediaPlaybackService.CMDPREVIOUS;
+                    command = Stephes_Music_Service.CMDPREVIOUS;
                     break;
             }
 
             if (command != null) {
                 if (action == KeyEvent.ACTION_DOWN) {
                     if (mDown) {
-                        if (MediaPlaybackService.CMDTOGGLEPAUSE.equals(command)
+                        if (Stephes_Music_Service.CMDTOGGLEPAUSE.equals(command)
                                 && mLastClickTime != 0 
                                 && eventtime - mLastClickTime > LONG_PRESS_DELAY) {
                             mHandler.sendMessage(
@@ -112,15 +112,15 @@ public class MediaButtonIntentReceiver extends BroadcastReceiver {
 
                         // The service may or may not be running, but we need to send it
                         // a command.
-                        Intent i = new Intent(context, MediaPlaybackService.class);
-                        i.setAction(MediaPlaybackService.SERVICECMD);
+                        Intent i = new Intent(context, Stephes_Music_Service.class);
+                        i.setAction(Stephes_Music_Service.SERVICECMD);
                         if (keycode == KeyEvent.KEYCODE_HEADSETHOOK &&
                                 eventtime - mLastClickTime < 300) {
-                            i.putExtra(MediaPlaybackService.CMDNAME, MediaPlaybackService.CMDNEXT);
+                            i.putExtra(Stephes_Music_Service.CMDNAME, Stephes_Music_Service.CMDNEXT);
                             context.startService(i);
                             mLastClickTime = 0;
                         } else {
-                            i.putExtra(MediaPlaybackService.CMDNAME, command);
+                            i.putExtra(Stephes_Music_Service.CMDNAME, command);
                             context.startService(i);
                             mLastClickTime = eventtime;
                         }

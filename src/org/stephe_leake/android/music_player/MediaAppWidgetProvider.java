@@ -49,10 +49,10 @@ public class MediaAppWidgetProvider extends AppWidgetProvider {
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
         defaultAppWidget(context, appWidgetIds);
         
-        // Send broadcast intent to any running MediaPlaybackService so it can
+        // Send broadcast intent to any running Stephes_Music_Service so it can
         // wrap around with an immediate update.
-        Intent updateIntent = new Intent(MediaPlaybackService.SERVICECMD);
-        updateIntent.putExtra(MediaPlaybackService.CMDNAME,
+        Intent updateIntent = new Intent(Stephes_Music_Service.SERVICECMD);
+        updateIntent.putExtra(Stephes_Music_Service.CMDNAME,
                 MediaAppWidgetProvider.CMDAPPWIDGETUPDATE);
         updateIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds);
         updateIntent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY);
@@ -95,12 +95,12 @@ public class MediaAppWidgetProvider extends AppWidgetProvider {
     }
 
     /**
-     * Handle a change notification coming over from {@link MediaPlaybackService}
+     * Handle a change notification coming over from {@link Stephes_Music_Service}
      */
-    void notifyChange(MediaPlaybackService service, String what) {
+    void notifyChange(Stephes_Music_Service service, String what) {
         if (hasInstances(service)) {
-            if (MediaPlaybackService.META_CHANGED.equals(what) ||
-                    MediaPlaybackService.PLAYSTATE_CHANGED.equals(what)) {
+            if (Stephes_Music_Service.META_CHANGED.equals(what) ||
+                    Stephes_Music_Service.PLAYSTATE_CHANGED.equals(what)) {
                 performUpdate(service, null);
             }
         }
@@ -109,7 +109,7 @@ public class MediaAppWidgetProvider extends AppWidgetProvider {
     /**
      * Update all active widget instances by pushing changes 
      */
-    void performUpdate(MediaPlaybackService service, int[] appWidgetIds) {
+    void performUpdate(Stephes_Music_Service service, int[] appWidgetIds) {
         final Resources res = service.getResources();
         final RemoteViews views = new RemoteViews(service.getPackageName(), R.layout.album_appwidget);
         
@@ -174,7 +174,7 @@ public class MediaAppWidgetProvider extends AppWidgetProvider {
         Intent intent;
         PendingIntent pendingIntent;
         
-        final ComponentName serviceName = new ComponentName(context, MediaPlaybackService.class);
+        final ComponentName serviceName = new ComponentName(context, Stephes_Music_Service.class);
         
         if (playerActive) {
             intent = new Intent(context, Stephes_Music_PlayerActivity.class);
@@ -188,13 +188,13 @@ public class MediaAppWidgetProvider extends AppWidgetProvider {
             views.setOnClickPendingIntent(R.id.album_appwidget, pendingIntent);
         }
         
-        intent = new Intent(MediaPlaybackService.TOGGLEPAUSE_ACTION);
+        intent = new Intent(Stephes_Music_Service.TOGGLEPAUSE_ACTION);
         intent.setComponent(serviceName);
         pendingIntent = PendingIntent.getService(context,
                 0 /* no requestCode */, intent, 0 /* no flags */);
         views.setOnClickPendingIntent(R.id.control_play, pendingIntent);
         
-        intent = new Intent(MediaPlaybackService.NEXT_ACTION);
+        intent = new Intent(Stephes_Music_Service.NEXT_ACTION);
         intent.setComponent(serviceName);
         pendingIntent = PendingIntent.getService(context,
                 0 /* no requestCode */, intent, 0 /* no flags */);

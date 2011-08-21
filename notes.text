@@ -2,12 +2,6 @@ src/org/stephe_leake/android/music_player/Stephes_Music_PlayerActivity.java
 /Projects/android/google/packages/apps/Music/src/com/android/music/MusicUtils.java
 (dvc-status)
 
-not connecting to service, even though bindtoservice returns true!
-    onserviceconnected not called (or called with service = null)
-    not quite; just being called after main oncreate completes!
-    none of the Google apps interact with bound service in onCreate
-    intent handler deals with mPlayer directly
-
 need to rename service
     adb shell dumpsys activity service MediaPlaybackService
     confuses it with Google's service
@@ -40,6 +34,7 @@ imageButton vs Button
     which should I use?
 
 what is MediaAppWidgetProvider (in manifest)
+    and MediaButtonIntentReceiver?
 
 edit playlist
     must be in server; don't receive broadcasts while paused

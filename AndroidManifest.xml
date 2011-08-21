@@ -33,7 +33,7 @@
       </intent-filter>
     </activity>
 
-    <service android:name="org.stephe_leake.android.music_player.MediaPlaybackService"
+    <service android:name="org.stephe_leake.android.music_player.Stephes_Music_Service"
              android:exported="false" />
 
     <receiver android:name="org.stephe_leake.android.music_player.MediaAppWidgetProvider">

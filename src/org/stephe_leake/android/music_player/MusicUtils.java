@@ -70,9 +70,16 @@ public class MusicUtils {
          realActivity = context;
       }
       ContextWrapper cw = new ContextWrapper(realActivity);
-      cw.startService(new Intent(cw, MediaPlaybackService.class));
+      cw.startService(new Intent(cw, Stephes_Music_Service.class));
       ServiceBinder sb = new ServiceBinder(callback);
-      if (cw.bindService((new Intent()).setClass(cw, MediaPlaybackService.class), sb, 0)) {
+      if (cw.bindService((new Intent()).setClass(cw, Stephes_Music_Service.class), sb, 0))
+      {
+         // The service is _not_ connected at this point, and won't be
+         // until the activity calling bindToService is fully started.
+         // Thus if the activity cannot use the service from onCreate;
+         // instead, it must implement ServiceConnection, and provide
+         // a callback that handles onServiceConnected; it can then
+         // interact with the service in that callback.
          sConnectionMap.put(cw, sb);
          return new ServiceToken(cw);
       }
@@ -123,12 +130,8 @@ public class MusicUtils {
    }
 
    public static void addToCurrentPlaylist(Context context, long [] list) {
-      if (sService == null) {
-         Error_Log(context, "addToCurrentPlaylist: sService=null");
-         return;
-      }
       try {
-         sService.enqueue(list, MediaPlaybackService.LAST);
+         sService.enqueue(list, Stephes_Music_Service.LAST);
       } catch (RemoteException ex) {
       }
    }
@@ -197,7 +200,7 @@ public class MusicUtils {
       //
       // This is better than just Log, because Log messages are dumped
       // by 'adb logcat', while these are dumped by 'adb shell dumpsys
-      // activity service MediaPlaybackService'. The former shows
+      // activity service Stephes_Music_Service'. The former shows
       // messages from all activities and services; the later just
       // from this log.
       //
@@ -242,54 +245,51 @@ public class MusicUtils {
 
    public static String getAlbumName()
    {
-      if (MusicUtils.sService != null)
+      try
       {
-         try
-         {
-            return sService.getAlbumName();
-         } catch (RemoteException ex) { }
+         return sService.getAlbumName();
+      } 
+      catch (RemoteException ex) 
+      { 
+         return "";
       }
-      return "";
    }
 
    public static String getArtistName()
    {
-      if (MusicUtils.sService != null)
+      try
       {
-         try
-         {
-            return sService.getArtistName();
-         } catch (RemoteException ex) { }
+         return sService.getArtistName();
       }
-      return "";
+      catch (RemoteException ex)
+      {
+         return "";
+      }
    }
 
    public static String getTrackName()
    {
-      if (MusicUtils.sService != null)
+      try
       {
-         try
-         {
-            return sService.getTrackName();
-         } catch (RemoteException ex) { }
+         return sService.getTrackName();
+      } 
+      catch (RemoteException ex) 
+      { 
+         return "";
       }
-      return "";
    }
 
    // Start playing current playlist; noop if already playing
    public static void play()
    {
       // FIXME: replace by broadcast intent command.
-      if (MusicUtils.sService != null)
+      try
       {
-         try
+         if (! sService.isPlaying())
          {
-            if (! sService.isPlaying())
-            {
-               // yes, next does what we want.
-               sService.next();
-            }
-         } catch (RemoteException ex) { }
-      }
+            // yes, next does what we want.
+            sService.next();
+         }
+      } catch (RemoteException ex) { }
    }
 }

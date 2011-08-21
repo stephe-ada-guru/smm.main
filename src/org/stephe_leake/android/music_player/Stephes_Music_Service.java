@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2007, 2011 The Android Open Source Project
+ * Copyright (C) 2011 Stephen Leake
+ * Copyright (C) 2007 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +62,7 @@ import java.util.Vector;
  * Provides "background" audio playback capabilities, allowing the
  * user to switch between activities without stopping playback.
  */
-public class MediaPlaybackService extends Service {
+public class Stephes_Music_Service extends Service {
     /** used to specify whether enqueue() should start playing
      * the new list of files right away, next or once all the currently
      * queued files have been played
@@ -115,7 +116,7 @@ public class MediaPlaybackService extends Service {
     private Vector<Integer> mHistory = new Vector<Integer>(MAX_HISTORY_SIZE);
     private Cursor mCursor; // used by saveBookmarkIfNeeded to get ID, get* to get metadata
     private int mPlayPos = -1;
-    private static final String LOGTAG = "MediaPlaybackService";
+    private static final String LOGTAG = "Stephes_Music_Service";
     private final Shuffler mRand = new Shuffler();
     private int mOpenFailedCounter = 0;
     String[] mCursorCols = new String[] {
@@ -274,7 +275,7 @@ public class MediaPlaybackService extends Service {
                 // Someone asked us to refresh a set of specific widgets, probably
                 // because they were just added.
                 int[] appWidgetIds = intent.getIntArrayExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS);
-                mAppWidgetProvider.performUpdate(MediaPlaybackService.this, appWidgetIds);
+                mAppWidgetProvider.performUpdate(Stephes_Music_Service.this, appWidgetIds);
             }
         }
     };
@@ -285,7 +286,7 @@ public class MediaPlaybackService extends Service {
         }
     };
 
-    public MediaPlaybackService() {
+    public Stephes_Music_Service() {
     }
 
     @Override
@@ -711,7 +712,7 @@ public class MediaPlaybackService extends Service {
                         closeExternalStorageFiles(intent.getData().getPath());
                     } else if (action.equals(Intent.ACTION_MEDIA_MOUNTED)) {
                         mMediaMountedCount++;
-                        mCardId = MusicUtils.getCardId(MediaPlaybackService.this);
+                        mCardId = MusicUtils.getCardId(Stephes_Music_Service.this);
                         reloadQueue();
                         mQueueIsSaveable = true;
                         notifyChange(QUEUE_CHANGED);
@@ -1747,7 +1748,7 @@ public class MediaPlaybackService extends Service {
         private boolean mIsInitialized = false;
 
         public MultiPlayer() {
-            mMediaPlayer.setWakeMode(MediaPlaybackService.this, PowerManager.PARTIAL_WAKE_LOCK);
+            mMediaPlayer.setWakeMode(Stephes_Music_Service.this, PowerManager.PARTIAL_WAKE_LOCK);
         }
 
         public void setDataSource(String path) {
@@ -1755,7 +1756,7 @@ public class MediaPlaybackService extends Service {
                 mMediaPlayer.reset();
                 mMediaPlayer.setOnPreparedListener(null);
                 if (path.startsWith("content://")) {
-                    mMediaPlayer.setDataSource(MediaPlaybackService.this, Uri.parse(path));
+                    mMediaPlayer.setDataSource(Stephes_Music_Service.this, Uri.parse(path));
                 } else {
                     mMediaPlayer.setDataSource(path);
                 }
@@ -1832,7 +1833,7 @@ public class MediaPlaybackService extends Service {
                     // require the media service, so it's OK to do this now, while the
                     // service is still being restarted
                     mMediaPlayer = new MediaPlayer();
-                    mMediaPlayer.setWakeMode(MediaPlaybackService.this, PowerManager.PARTIAL_WAKE_LOCK);
+                    mMediaPlayer.setWakeMode(Stephes_Music_Service.this, PowerManager.PARTIAL_WAKE_LOCK);
                     mHandler.sendMessageDelayed(mHandler.obtainMessage(SERVER_DIED), 2000);
                     return true;
                 default:
@@ -1875,10 +1876,10 @@ public class MediaPlaybackService extends Service {
      * has a remote reference to the stub.
      */
     static class ServiceStub extends IMediaPlaybackService.Stub {
-        WeakReference<MediaPlaybackService> mService;
+        WeakReference<Stephes_Music_Service> mService;
 
-        ServiceStub(MediaPlaybackService service) {
-            mService = new WeakReference<MediaPlaybackService>(service);
+        ServiceStub(Stephes_Music_Service service) {
+            mService = new WeakReference<Stephes_Music_Service>(service);
         }
 
         public void openFile(String path)
