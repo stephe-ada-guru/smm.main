@@ -30,10 +30,10 @@ import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.content.res.Resources;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.RemoteException;
+import android.os.SystemClock;
 import android.text.format.Time;
 import android.util.Log;
 import android.widget.Toast;
@@ -44,6 +44,13 @@ import java.util.HashMap;
 public class MusicUtils {
 
    public static IMediaPlaybackService sService = null;
+
+   // We need a map of context to servicebinder because we support
+   // multiple activities sharing the same service; music player,
+   // music picker.
+   //
+   // On the other hand, I'm not clear why each activity doesn't just
+   // bind directly (Player already implements ServiceConnection)!
    private static HashMap<Context, ServiceBinder> sConnectionMap = new HashMap<Context, ServiceBinder>();
 
    public static class ServiceToken {
@@ -69,6 +76,8 @@ public class MusicUtils {
          sConnectionMap.put(cw, sb);
          return new ServiceToken(cw);
       }
+      // Can't use Error_Log (or debugLog) here, because that is only
+      // dumped by the service.
       Log.e(Log_App_Name, "Failed to bind to service");
       return null;
    }
@@ -115,6 +124,7 @@ public class MusicUtils {
 
    public static void addToCurrentPlaylist(Context context, long [] list) {
       if (sService == null) {
+         Error_Log(context, "addToCurrentPlaylist: sService=null");
          return;
       }
       try {
@@ -183,8 +193,16 @@ public class MusicUtils {
 
    static void debugLog(Object o)
    {
-      // Cache error messages to be dumped by debugDump. Not clear why
-      // this is better than just Log.
+      // Cache error messages to be dumped by debugDump.
+      //
+      // This is better than just Log, because Log messages are dumped
+      // by 'adb logcat', while these are dumped by 'adb shell dumpsys
+      // activity service MediaPlaybackService'. The former shows
+      // messages from all activities and services; the later just
+      // from this log.
+      //
+      // If 'o' is an Exception, it will include a stack trace.
+
       sMusicLog[sLogPtr] = new LogEntry(o);
       sLogPtr++;
       if (sLogPtr >= sMusicLog.length) {
@@ -212,18 +230,66 @@ public class MusicUtils {
 
    static void Error_Log(Context context, String msg)
    {
-      // write msg to Log.e, and show in a Toast
+      debugLog(msg);
       Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
-      Log.e(Log_App_Name, msg);
    }
 
    static void Info_Log(Context context, String msg)
    {
-      // write msg to Log.e, and show in a Toast
-      Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
-      Log.i(Log_App_Name, msg);
+      debugLog(msg);
+      Toast.makeText(context, msg, Toast.LENGTH_SHORT).show();
    }
 
+   public static String getAlbumName()
+   {
+      if (MusicUtils.sService != null)
+      {
+         try
+         {
+            return sService.getAlbumName();
+         } catch (RemoteException ex) { }
+      }
+      return "";
+   }
 
+   public static String getArtistName()
+   {
+      if (MusicUtils.sService != null)
+      {
+         try
+         {
+            return sService.getArtistName();
+         } catch (RemoteException ex) { }
+      }
+      return "";
+   }
 
+   public static String getTrackName()
+   {
+      if (MusicUtils.sService != null)
+      {
+         try
+         {
+            return sService.getTrackName();
+         } catch (RemoteException ex) { }
+      }
+      return "";
+   }
+
+   // Start playing current playlist; noop if already playing
+   public static void play()
+   {
+      // FIXME: replace by broadcast intent command.
+      if (MusicUtils.sService != null)
+      {
+         try
+         {
+            if (! sService.isPlaying())
+            {
+               // yes, next does what we want.
+               sService.next();
+            }
+         } catch (RemoteException ex) { }
+      }
+   }
 }

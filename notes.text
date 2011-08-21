@@ -2,18 +2,15 @@ src/org/stephe_leake/android/music_player/Stephes_Music_PlayerActivity.java
 /Projects/android/google/packages/apps/Music/src/com/android/music/MusicUtils.java
 (dvc-status)
 
-send service one song
-    works
-        but only the first time after package install
-        and doesn't stop on quit
-            need to stop service playing in quit (_not_ onDestroy; rotate screen)
+not connecting to service, even though bindtoservice returns true!
+    onserviceconnected not called (or called with service = null)
+    not quite; just being called after main oncreate completes!
+    none of the Google apps interact with bound service in onCreate
+    intent handler deals with mPlayer directly
 
-send it one playlist
-    MediaProvider has playlist table
-
-return error status for bad file in startup intent
-    not at all clear how to 'return' data from an activity startup
-        see code in MusicPlayer
+need to rename service
+    adb shell dumpsys activity service MediaPlaybackService
+    confuses it with Google's service
 
 register for service broadcast messages
     http://developer.android.com/reference/android/content/BroadcastReceiver.html
@@ -22,8 +19,19 @@ register for service broadcast messages
 
     handle them
 
-clean up author string
-    currently "Shawn ColvinShawn Colvinnull"
+fix pause button to stop service playing
+    use setonclickpendingintent
+    see mediaappwidgetprovider.java
+
+media playbackservice is restoring queue, but no sound
+    maybe not in db anymore?
+
+send it one playlist
+    MediaProvider has playlist table
+
+return error status for bad file in startup intent
+    not at all clear how to 'return' data from an activity startup
+        see code in MusicPlayer
 
 need About
 
@@ -31,9 +39,18 @@ imageButton vs Button
     need checked_find_As_ID
     which should I use?
 
+what is MediaAppWidgetProvider (in manifest)
+
+edit playlist
+    must be in server; don't receive broadcasts while paused
+
+add progress bar
+
 server deals with database ids
     that doesn't handle web streams?
     maybe a different content provider?
+
+server does bookmarks only if isPodcast() is true
 
 cache files and/or playlists received from file manager
     offer to play them
@@ -74,6 +91,9 @@ find out what "select player" is all about
     wireless connection to tv/stereo system?
 
  open source projects
+c:/Projects/eclipse_scratch/Ghost Commander/src/com/ghostsq/commander/FileCommander.java
+    builds intent {uri => file://,  mime_type => audio/*} to invoke music player
+
 http://www.helloandroid.com/apps/musicdroid
     c:/Projects/MusicDroid/src/com/helloandroid/android/musicdroid/
     service supports bookmark, playlists

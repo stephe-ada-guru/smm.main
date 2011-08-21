@@ -113,7 +113,7 @@ public class MediaPlaybackService extends Service {
     private long [] mPlayList = null;
     private int mPlayListLen = 0;
     private Vector<Integer> mHistory = new Vector<Integer>(MAX_HISTORY_SIZE);
-    private Cursor mCursor;
+    private Cursor mCursor; // used by saveBookmarkIfNeeded to get ID, get* to get metadata
     private int mPlayPos = -1;
     private static final String LOGTAG = "MediaPlaybackService";
     private final Shuffler mRand = new Shuffler();
@@ -988,7 +988,14 @@ public class MediaPlaybackService extends Service {
                 return;
             }
 
-            // if mCursor is null, try to associate path with a database cursor
+            // if mCursor is not null, it was set to match path by the
+            // caller. FIXME: not true when called via
+            // IMediaPlaybackService while another song is playing!
+            //
+            // If null, try to associate path with a database cursor.
+            // We don't call MediaScannerConnection.scanFile, because
+            // we assume there is a scanner process running in
+            // parallel.
             if (mCursor == null) {
 
                 ContentResolver resolver = getContentResolver();
@@ -1031,7 +1038,7 @@ public class MediaPlaybackService extends Service {
                     next(false);
                 }
                 if (! mPlayer.isInitialized() && mOpenFailedCounter != 0) {
-                    // need to make sure we only shows this once
+                    // need to make sure we only show this once
                     mOpenFailedCounter = 0;
                     if (!mQuietMode) {
                         Toast.makeText(this, R.string.playback_failed, Toast.LENGTH_SHORT).show();
@@ -1733,10 +1740,7 @@ public class MediaPlaybackService extends Service {
         }
     }
 
-    /**
-     * Provides a unified interface for dealing with midi files and
-     * other media files.
-     */
+    // Wrapper around MediaPlayer, providing completion and error listeners
     private class MultiPlayer {
         private MediaPlayer mMediaPlayer = new MediaPlayer();
         private Handler mHandler;
@@ -1879,6 +1883,7 @@ public class MediaPlaybackService extends Service {
 
         public void openFile(String path)
         {
+           // FIXME: stop current song, set mCursor to null
             mService.get().open(path);
         }
         public void open(long [] list, int position) {
