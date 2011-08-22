@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2007 - 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007 - 2009, 2011 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -18,7 +18,6 @@
 
 pragma License (GPL);
 
-with Ada.Characters.Handling;
 with Ada.Directories; use Ada.Directories;
 with Ada.Text_IO;     use Ada.Text_IO;
 procedure SMM.Second_Pass (Category, Root_Dir : in String)
@@ -32,13 +31,16 @@ is
 
    procedure Process_Dir_Entry (Dir_Entry : in Directory_Entry_Type)
    is
-      Name : constant String := Ada.Characters.Handling.To_Lower (Simple_Name (Dir_Entry));
+      --  Palm wants lowercase names, but Android doesn't
+      Name : constant String := Simple_Name (Dir_Entry);
    begin
       if not String_Lists.Contains (Mentioned_Files, Name) then
          if Verbosity > 0 then
             Put_Line ("adding " & Name);
          end if;
-         Put_Line (File, Target_Dir & "/" & Name);
+         if not Debug then
+            Put_Line (File, Target_Dir & "/" & Name);
+         end if;
       end if;
    end Process_Dir_Entry;
 
@@ -51,13 +53,15 @@ begin
 
    Read_Playlist (Playlist_File_Name, Target_Dir, Mentioned_Files);
 
-   begin
-      Open (File, Append_File, Playlist_File_Name);
-   exception
-   when Ada.Text_IO.Name_Error =>
-      Put_Line ("playlist file " & Playlist_File_Name & " cannot be opened");
-      raise;
-   end;
+   if not Debug then
+      begin
+         Open (File, Append_File, Playlist_File_Name);
+      exception
+      when Ada.Text_IO.Name_Error =>
+         Put_Line ("playlist file " & Playlist_File_Name & " cannot be opened");
+         raise;
+      end;
+   end if;
 
    Search
      (Target_Dir,
@@ -65,6 +69,8 @@ begin
       Filter  => (Ordinary_File => True, others => False),
       Process => Process_Dir_Entry'Access);
 
-   Close (File);
+   if not Debug then
+      Close (File);
+   end if;
 
 end SMM.Second_Pass;

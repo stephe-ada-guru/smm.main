@@ -28,8 +28,8 @@ with SAL.Poly.Lists.Double;
 with SAL.Storage_Pools;
 package SMM is
 
-   Verbosity      : Integer;
-   Max_Song_Count : Integer;
+   Verbosity : Integer;
+   Debug     : Boolean; -- if true, don't change disk, just show what would be done
 
    Playlist_Error : exception;
 

@@ -313,7 +313,7 @@ package body SMM is
    is
       type Item_Type is record
          First_Song_Songs  : Song_Lists.Iterator_Type;
-         First_Song_db     : SAL.Config_Files.Iterator_Type;
+         First_Song_Db     : SAL.Config_Files.Iterator_Type;
          Second_Song_Id    : Integer;
          Second_Song_Songs : Song_Lists.Iterator_Type;
       end record;

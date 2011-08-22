@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2007, 2008, 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007 - 2009, 2011 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -27,7 +27,7 @@ procedure SMM.First_Pass
    File_Count :    out Integer)
 is
    Playlist_File_Name : constant String := Category & ".m3u";
-   Target_Dir : constant String := Category;
+   Target_Dir         : constant String := Category;
 
    Mentioned_Files : String_Lists.List;
 
@@ -43,7 +43,9 @@ is
          if Verbosity > 0 then
             Put_Line ("deleting " & Name);
          end if;
-         Delete_File (Full_Name (Dir_Entry));
+         if not Debug then
+            Delete_File (Full_Name (Dir_Entry));
+         end if;
       end if;
    end Process_Dir_Entry;
 
@@ -78,4 +80,7 @@ begin
 
    File_Count := Integer (String_Lists.Length (Mentioned_Files));
 
+   if Verbosity > 1 then
+      Put_Line (Integer'Image (File_Count) & " mentioned files");
+   end if;
 end SMM.First_Pass;

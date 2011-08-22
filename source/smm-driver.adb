@@ -34,7 +34,9 @@ procedure SMM.Driver
 is
    procedure Put_Usage
    is begin
-      Put_Line ("smm [--db=<db_file>] [--verbosity=<int>] [--max-song-count=<int>] <operation> [arg]...");
+      Put_Line
+        ("smm [--db=<db_file>] [--verbosity=<int>] [--max-song-count=<int>] [--min-download-count=<int>]" &
+           " [--debug] <operation> [arg]...");
       Put_Line ("  <db_file> : defaults to ~/.smm/smm.db or $APPDATA/smm or $SMM_HOME");
       Put_Line ("  categories: {instrumental | vocal | ...}");
       Put_Line ("  operations:");
@@ -61,6 +63,9 @@ is
    Db_File_Name : access String;
    Db           : SAL.Config_Files.Configuration_Type;
    Next_Arg     : Integer := 1;
+
+   Max_Song_Count     : Integer;
+   Min_Download_Count : Integer;
 
    function Find_Home return String
    is
@@ -113,6 +118,24 @@ begin
       Max_Song_Count := 60;
    end if;
 
+   if Argument (Next_Arg)'Length > 21 and then
+     Argument (Next_Arg)(1 .. 21) = "--min-download-count="
+
+   then
+      Min_Download_Count := Integer'Value (Argument (Next_Arg)(22 .. Argument (Next_Arg)'Last));
+      Next_Arg           := Next_Arg + 1;
+   else
+      Min_Download_Count := 30;
+   end if;
+
+   if Argument (Next_Arg) = "--debug" then
+
+      Debug    := True;
+      Next_Arg := Next_Arg + 1;
+   else
+      Debug := False;
+   end if;
+
    SAL.Config_Files.Open
      (Db,
       Db_File_Name.all,
@@ -140,7 +163,7 @@ begin
       begin
          Verbosity := Verbosity + 1;
          SMM.First_Pass (Category, Root_Dir, Song_Count);
-         if Song_Count < Max_Song_Count then
+         if Max_Song_Count - Song_Count >= Min_Download_Count then
             Verbosity := Verbosity - 1;
             SMM.Download (Db, Category, Root_Dir & Category & '/', Max_Song_Count - Song_Count);
             Verbosity := Verbosity + 1;
