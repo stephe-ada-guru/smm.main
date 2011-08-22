@@ -33,7 +33,6 @@ import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.RemoteException;
-import android.os.SystemClock;
 import android.text.format.Time;
 import android.util.Log;
 import android.widget.Toast;
@@ -129,9 +128,9 @@ public class MusicUtils {
       }
    }
 
-   public static void addToCurrentPlaylist(Context context, long [] list) {
+   public static void addToCurrentPlaylist(Context context, long [] list, int action) {
       try {
-         sService.enqueue(list, Stephes_Music_Service.LAST);
+         sService.enqueue(list, action);
       } catch (RemoteException ex) {
       }
    }
@@ -243,14 +242,19 @@ public class MusicUtils {
       Toast.makeText(context, msg, Toast.LENGTH_SHORT).show();
    }
 
+   public static boolean isConnected()
+   {
+      return sService != null;
+   }
+
    public static String getAlbumName()
    {
       try
       {
          return sService.getAlbumName();
-      } 
-      catch (RemoteException ex) 
-      { 
+      }
+      catch (RemoteException ex)
+      {
          return "";
       }
    }
@@ -272,24 +276,22 @@ public class MusicUtils {
       try
       {
          return sService.getTrackName();
-      } 
-      catch (RemoteException ex) 
-      { 
+      }
+      catch (RemoteException ex)
+      {
          return "";
       }
    }
 
-   // Start playing current playlist; noop if already playing
-   public static void play()
+   public static boolean isPlaying()
    {
-      // FIXME: replace by broadcast intent command.
       try
       {
-         if (! sService.isPlaying())
-         {
-            // yes, next does what we want.
-            sService.next();
-         }
-      } catch (RemoteException ex) { }
+         return sService.isPlaying();
+      }
+      catch (RemoteException ex)
+      {
+         return false;
+      }
    }
 }

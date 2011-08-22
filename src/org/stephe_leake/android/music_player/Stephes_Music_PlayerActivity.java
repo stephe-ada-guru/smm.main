@@ -57,6 +57,11 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
          Album_Title = (TextView) findViewById(R.id.Album_Title);
          Artist_Title = (TextView) findViewById(R.id.Artist_Title);
 
+         // The default text in each display is useful in the layout editor; erase it here.
+         Song_Title.setText("");
+         Album_Title.setText("");
+         Artist_Title.setText("");
+
          // Set up buttons.
          Play_Button = (Button)findViewById(R.id.Play);
          Play_Button.setOnClickListener(Play_Listener);
@@ -209,10 +214,13 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
          if (cursor != null && cursor.getCount() == 1)
             {
                cursor.moveToFirst();
-               MusicUtils.addToCurrentPlaylist(this, new long[]{cursor.getLong(idColumn)});
-               MusicUtils.play(); // FIXME: should send intent?
+               MusicUtils.addToCurrentPlaylist
+                  (this,
+                   new long[]{cursor.getLong(idColumn)},
+                   MusicUtils.isPlaying() ? Stephes_Music_Service.LAST : Stephes_Music_Service.NOW);
+               Play_Button.setVisibility(android.view.View.GONE);
+               Pause_Button.setVisibility(android.view.View.VISIBLE);
                cursor.close();
-
             }
          else if (cursor == null || cursor.getCount() == 0)
             {
@@ -235,7 +243,11 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
                                  (Stephes_Music_PlayerActivity.this,
                                   Song_Uri + ": found after scan; sending it to service");
                               MusicUtils.addToCurrentPlaylist
-                                 (Stephes_Music_PlayerActivity.this, new long[]{cursor.getLong(idColumn)});
+                                 (Stephes_Music_PlayerActivity.this,
+                                  new long[]{cursor.getLong(idColumn)},
+                                  MusicUtils.isPlaying() ? Stephes_Music_Service.LAST : Stephes_Music_Service.NOW);
+                              Play_Button.setVisibility(android.view.View.GONE);
+                              Pause_Button.setVisibility(android.view.View.VISIBLE);
                               cursor.close();
                            }
                            else
@@ -310,15 +322,16 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
 
    private BroadcastReceiver Service_Listener = new BroadcastReceiver()
       {
+         // see Stephes_Music_Service.java "void notifyChange(" for
+         // list of intents
+
          @Override public void onReceive(Context context, Intent intent)
          {
             String action = intent.getAction();
 
-            if (Service == null)
+            if (! MusicUtils.isConnected())
             {
-               MusicUtils.Error_Log
-                  (Stephes_Music_PlayerActivity.this, "Service_Listener: service not bound; got intent "
-                   + intent.toString());
+               // startup message from service; just ignore it
                return;
             }
 
@@ -326,9 +339,6 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
             {
                if (action.equals(Stephes_Music_Service.META_CHANGED))
                {
-                  // redraw the artist/title info and
-                  // set new max for progress bar
-
                   Song_Title.setText(MusicUtils.getTrackName());
                   Album_Title.setText(MusicUtils.getAlbumName());
                   Artist_Title.setText(MusicUtils.getArtistName());
@@ -340,7 +350,6 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
             }
             catch (RuntimeException e)
             {
-               // From somewhere
                MusicUtils.Error_Log(Stephes_Music_PlayerActivity.this, "Service_Listener: " + e.getMessage());
             }
          }
@@ -350,7 +359,7 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
       {
          @Override public void onClick(View v)
          {
-            // MusicUtils.pause();
+            sendBroadcast(new Intent(Stephes_Music_Service.TOGGLEPAUSE_ACTION));
             Play_Button.setVisibility(android.view.View.GONE);
             Pause_Button.setVisibility(android.view.View.VISIBLE);
          }
@@ -360,6 +369,7 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
    {
       @Override public void onClick(View v)
       {
+         sendBroadcast(new Intent(Stephes_Music_Service.TOGGLEPAUSE_ACTION));
          Pause_Button.setVisibility(android.view.View.GONE);
          Play_Button.setVisibility(android.view.View.VISIBLE);
       }
@@ -369,7 +379,9 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
       {
          @Override public void onClick(View v)
          {
-            // FIXME: cancel currently playing song
+            if (MusicUtils.isPlaying())
+               sendBroadcast(new Intent(Stephes_Music_Service.TOGGLEPAUSE_ACTION));
+
             finish();
          }
       };

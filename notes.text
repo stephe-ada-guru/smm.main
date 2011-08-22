@@ -2,30 +2,8 @@ src/org/stephe_leake/android/music_player/Stephes_Music_PlayerActivity.java
 /Projects/android/google/packages/apps/Music/src/com/android/music/MusicUtils.java
 (dvc-status)
 
-need to rename service
-    adb shell dumpsys activity service MediaPlaybackService
-    confuses it with Google's service
-
-register for service broadcast messages
-    http://developer.android.com/reference/android/content/BroadcastReceiver.html
-
-    search source for "void notifyChange("
-
-    handle them
-
-fix pause button to stop service playing
-    use setonclickpendingintent
-    see mediaappwidgetprovider.java
-
-media playbackservice is restoring queue, but no sound
-    maybe not in db anymore?
-
 send it one playlist
     MediaProvider has playlist table
-
-return error status for bad file in startup intent
-    not at all clear how to 'return' data from an activity startup
-        see code in MusicPlayer
 
 need About
 
