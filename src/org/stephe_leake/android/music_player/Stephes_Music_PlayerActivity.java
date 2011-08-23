@@ -1,9 +1,5 @@
 package org.stephe_leake.android.music_player;
 
-import java.io.File;
-
-import org.stephe_leake.android.music_player.MusicUtils.ServiceToken;
-
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -13,7 +9,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.database.Cursor;
-import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -21,6 +16,8 @@ import android.provider.MediaStore.Audio;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import java.io.File;
+import org.stephe_leake.android.music_player.MusicUtils.ServiceToken;
 
 public class Stephes_Music_PlayerActivity extends Activity implements ServiceConnection
 {
@@ -57,11 +54,6 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
          Album_Title = (TextView) findViewById(R.id.Album_Title);
          Artist_Title = (TextView) findViewById(R.id.Artist_Title);
 
-         // The default text in each display is useful in the layout editor; erase it here.
-         Song_Title.setText("");
-         Album_Title.setText("");
-         Artist_Title.setText("");
-
          // Set up buttons.
          Play_Button = (Button)findViewById(R.id.Play);
          Play_Button.setOnClickListener(Play_Listener);
@@ -90,7 +82,9 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
       {
          IntentFilter f = new IntentFilter();
          f.addAction(Stephes_Music_Service.META_CHANGED);
+         f.addAction(Stephes_Music_Service.PLAYSTATE_CHANGED);
          registerReceiver(Service_Listener, f);
+         Update_Display();
       }
       catch (RuntimeException e)
       {
@@ -128,16 +122,17 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
 
          if (intent.getAction().equals(Intent.ACTION_VIEW))
          {
-            Uri Song_Uri = intent.getData();
+            Uri Item_Uri = intent.getData();
 
             if (intent.getType().equals("audio/x-mpegurl"))
             {
                // .m3u file (http://en.wikipedia.org/wiki/M3U)
-               Play_List (Song_Uri);
+               // FIXME: add other MIME types; match MediaScanner
+               Play_List (Item_Uri);
             }
             else
             {
-               Send_To_Server (Song_Uri);
+               Add_Song (Item_Uri);
             };
          }
          else if (intent.getAction().equals(Intent.ACTION_MAIN))
@@ -148,8 +143,10 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
             //
             // FIXME: resume last bookmark, or present file or other browser.
 
-            // for initial testing, a hardcoded song
-            Send_To_Server (Uri.fromFile(new File("/mnt/sdcard/Audio/Vocal/01 - Fill Me Up.mp3")));
+            // For initial testing, a hardcoded playlist. REALLY need
+            // to find out how to specify an intent in adb!
+            //Add_Song (Uri.fromFile(new File("/mnt/sdcard/Audio/Vocal/01 - Fill Me Up.mp3")));
+            Play_List (Uri.fromFile(new File("/mnt/sdcard/Audio/vocal.m3u")));
          }
          else
          {
@@ -169,156 +166,134 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
 
    ////////// private non-UI members and methods
 
-   private void Send_To_Server (final Uri Song_Uri)
+   private class Not_Found extends Exception
    {
-      // Send a single song to the server to play - it is added to the
-      // current playlist.
-      //
-      // FIXME: change it to a list of songs.
-      //
-      // Metadata is displayed by Service_Callback_Handler
-      // when a song starts playing, not here.
+      static final long serialVersionUID = 0;
 
-      // The server uses database ids to identify songs; here we
-      // convert the Song_Uri to a database id. That also serves
-      // to check that it is a readable file. It assumes the
-      // MediaScanner has seen it.
-
-      if (Service == null)
+      public Not_Found(String string)
       {
-         MusicUtils.Error_Log(this, "service not bound");
-         return;
+         super(string);
+      }
+   };
+
+   private long Get_ID (final Uri Content_Uri, final Uri Item_Uri) throws Not_Found
+   {
+      final long result;
+
+      final String path        = Item_Uri.getPath();
+      final String[] columns   = new String[]{Audio.Media._ID};
+      final String[] selection = new String[] { path };
+      final String where       = MediaStore.Audio.Media.DATA + "=?";
+      final int    idColumn    = 0;
+      Cursor       cursor      = Content_Resolver.query(Content_Uri, columns, where, selection, null);
+      // cursor is before first result, or null
+      if (cursor != null && cursor.getCount() > 0)
+      {
+         if (cursor.getCount() > 1)
+            MusicUtils.Error_Log(this, Item_Uri + ": multiple matches in database");
+
+         cursor.moveToFirst();
+         result = cursor.getLong(idColumn);
+         cursor.close();
+      }
+      else
+      {
+         throw new Not_Found(path + ": not found in database");
       }
 
-      // FIXME: Currently assumes Song_URI is a file:// URI
-      // try a webcast
+      return result;
+   }
 
+   private void Add_Song (Uri Song_Uri)
+   {
       try
       {
-         // We're looking for a single song, so this should not take a
-         // long time, so we don't use CursorLoader
-         //
-         // We don't call open(String path) in
-         // Stephes_Music_Service.java, because it doesn't scan the
-         // file if it's not yet in the database, so it won't be saved
-         // in the playlist state. It also plays the song immediately,
-         // instead of adding it to the current playlist.
-         final String path = Song_Uri.getPath();
-         final Uri uri = MediaStore.Audio.Media.getContentUriForPath(path);
-         final String[] columns = new String[]{Audio.Media._ID};
-         final String[] selection = new String[] { path };
-         final String where = MediaStore.Audio.Media.DATA + "=?";
-         final int idColumn = 0;
-         Cursor cursor = Content_Resolver.query(uri, columns, where, selection, null);
-         // cursor is before first result, or null
-         if (cursor != null && cursor.getCount() == 1)
-            {
-               cursor.moveToFirst();
-               MusicUtils.addToCurrentPlaylist
-                  (this,
-                   new long[]{cursor.getLong(idColumn)},
-                   MusicUtils.isPlaying() ? Stephes_Music_Service.LAST : Stephes_Music_Service.NOW);
-               Play_Button.setVisibility(android.view.View.GONE);
-               Pause_Button.setVisibility(android.view.View.VISIBLE);
-               cursor.close();
-            }
-         else if (cursor == null || cursor.getCount() == 0)
-            {
-               MusicUtils.Info_Log(this, Song_Uri + ": not found in database; scanning it");
+         final Uri  Content_Uri = MediaStore.Audio.Media.getContentUriForPath(Song_Uri.getPath());
+         final long ID          = Get_ID (Content_Uri, Song_Uri);
 
-               if (cursor != null) cursor.close();
-
-               MediaScannerConnection.OnScanCompletedListener client =
-                  new MediaScannerConnection.OnScanCompletedListener()
-                  {
-                     @Override public void onScanCompleted(String Path, Uri Scanned_Uri)
-                     {
-                        try
-                        {
-                           Cursor cursor = Content_Resolver.query(uri, columns, where, selection, null);
-                           if (cursor != null && cursor.getCount() == 1)
-                           {
-                              cursor.moveToFirst();
-                              MusicUtils.Info_Log
-                                 (Stephes_Music_PlayerActivity.this,
-                                  Song_Uri + ": found after scan; sending it to service");
-                              MusicUtils.addToCurrentPlaylist
-                                 (Stephes_Music_PlayerActivity.this,
-                                  new long[]{cursor.getLong(idColumn)},
-                                  MusicUtils.isPlaying() ? Stephes_Music_Service.LAST : Stephes_Music_Service.NOW);
-                              Play_Button.setVisibility(android.view.View.GONE);
-                              Pause_Button.setVisibility(android.view.View.VISIBLE);
-                              cursor.close();
-                           }
-                           else
-                           {
-                              if (cursor != null) cursor.close();
-                              MusicUtils.Error_Log
-                                 (Stephes_Music_PlayerActivity.this,
-                                  Song_Uri + ": not found after scan; giving up");
-                           }
-                        }
-                        catch (RuntimeException e)
-                        {
-                           MusicUtils.Error_Log
-                              (Stephes_Music_PlayerActivity.this, Scanned_Uri + ": database query failed after scan");
-                        }
-                     }
-                  };
-
-               // This hangs if the file is open in some other app (like the server :)
-               MediaScannerConnection.scanFile(this, new String[]{path}, null, client);
-            }
-         else
-         {
-            MusicUtils.Error_Log(this, Song_Uri + ": multiple matches in database");
-            cursor.close();
-         }
-
+         MusicUtils.addToCurrentPlaylist
+            (this,
+             new long[]{ID},
+             MusicUtils.isPlaying() ? Stephes_Music_Service.LAST : Stephes_Music_Service.NOW);
+      }
+      catch (Not_Found e)
+      {
+         MusicUtils.Info_Log(this, e.getMessage());
       }
       catch (RuntimeException e)
       {
-         MusicUtils.Error_Log(this, Song_Uri + ": database query failed before scan: " + e.toString()+ ": " + e.getMessage());
+         MusicUtils.Error_Log(this, "Add_Song: " + e.toString()+ ": " + e.getMessage());
       }
-   }
+    }
 
    private void Play_List (Uri List_Uri)
    {
-      // List_Uri is the name of a .m3u file
+      // List_Uri is the name of a .m3u file; we assume the
+      // MediaScanner has read it and stored its contents. So just
+      // send its id to the server.
 
-      java.io.BufferedReader reader;
-      String line;
-
-      // FIXME: just playing the first entry for now
-      try
-      {
-         reader = new java.io.BufferedReader
-            (new java.io.InputStreamReader
-             (new java.io.FileInputStream(List_Uri.getPath())), 8192);
-      }
-      catch (java.io.FileNotFoundException e)
-      {
-         Song_Title.setText("open file (" + List_Uri + ") error: " + e.getMessage());
-         return;
-      }
+      // To get the proper content Uri for Playlists, we have to call
+      // Playlists.getContentUri. But that takes a volume name, and
+      // there doesn't seem to be a documented way to get the volume
+      // name from anything. So this is an undocumented hack;
+      // apparently content Uris have the form:
+      //
+      // content://media/<volume name>/
+      final String tmp         = MediaStore.Audio.Media.getContentUriForPath(List_Uri.getPath()).toString();
+      final int    start       = "content://media/".length();
+      final String Volume_Name = tmp.substring(start, tmp.indexOf('/', start));
+      final Uri Content_Uri = MediaStore.Audio.Playlists.getContentUri(Volume_Name);
 
       try
       {
-         line = reader.readLine();
-      }
-      catch (java.io.IOException e)
+         MusicUtils.replaceCurrentPlaylist (Volume_Name, Get_ID (Content_Uri, List_Uri));
+      } catch (Not_Found e)
       {
-         Song_Title.setText("readline (" + List_Uri + ") error: " + e.getMessage());
-         return;
+         MusicUtils.Info_Log(this, e.getMessage());
+         // FIXME: debug, showing playlists that are in database
+         MusicUtils.Info_Log(this, "volume: " + Volume_Name);
+         MusicUtils.Info_Log(this, "playlists in db:");
+         final String[] columns   = new String[]{Audio.Media.DATA};
+         final int    File_Column = 0;
+         final String[] selection = null;
+         final String where       = null;
+         Cursor       cursor      = Content_Resolver.query(Content_Uri, columns, where, selection, null);
+
+         if (cursor != null && cursor.getCount() > 0)
+         {
+            while (!cursor.moveToNext())
+            {
+               MusicUtils.Info_Log(this, cursor.getString(File_Column));
+            }
+            cursor.close();
+         }
+         else
+         {
+            if (cursor != null) cursor.close();
+            MusicUtils.Info_Log(this, "none");
+         }
       }
-
-      // .m3u playlist entries can be relative or absolute; assume relative (FIXME:)
-      // Send_To_Server needs an absolute path; add the path to List_Uri
-
-      Send_To_Server (Uri.fromFile(new java.io.File(new java.io.File(List_Uri.getPath()).getParent(), line)));
    }
 
    ////////// private UI methods
+
+   private void Update_Display()
+   {
+      Song_Title.setText(MusicUtils.getTrackName());
+      Album_Title.setText(MusicUtils.getAlbumName());
+      Artist_Title.setText(MusicUtils.getArtistName());
+
+      if (MusicUtils.isPlaying())
+      {
+            Play_Button.setVisibility(android.view.View.GONE);
+            Pause_Button.setVisibility(android.view.View.VISIBLE);
+      }
+      else
+      {
+         Pause_Button.setVisibility(android.view.View.GONE);
+         Play_Button.setVisibility(android.view.View.VISIBLE);
+      }
+   }
 
    private BroadcastReceiver Service_Listener = new BroadcastReceiver()
       {
@@ -337,11 +312,10 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
 
             try
             {
-               if (action.equals(Stephes_Music_Service.META_CHANGED))
+               if (action.equals(Stephes_Music_Service.META_CHANGED) ||
+                   action.equals(Stephes_Music_Service.PLAYSTATE_CHANGED))
                {
-                  Song_Title.setText(MusicUtils.getTrackName());
-                  Album_Title.setText(MusicUtils.getAlbumName());
-                  Artist_Title.setText(MusicUtils.getArtistName());
+                  Update_Display();
                }
                else
                {
@@ -360,20 +334,16 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
          @Override public void onClick(View v)
          {
             sendBroadcast(new Intent(Stephes_Music_Service.TOGGLEPAUSE_ACTION));
-            Play_Button.setVisibility(android.view.View.GONE);
-            Pause_Button.setVisibility(android.view.View.VISIBLE);
          }
       };
 
    private android.widget.Button.OnClickListener Pause_Listener = new android.widget.Button.OnClickListener()
-   {
-      @Override public void onClick(View v)
       {
-         sendBroadcast(new Intent(Stephes_Music_Service.TOGGLEPAUSE_ACTION));
-         Pause_Button.setVisibility(android.view.View.GONE);
-         Play_Button.setVisibility(android.view.View.VISIBLE);
-      }
-   };
+         @Override public void onClick(View v)
+         {
+            sendBroadcast(new Intent(Stephes_Music_Service.TOGGLEPAUSE_ACTION));
+         }
+      };
 
    private android.widget.Button.OnClickListener Quit_Listener = new android.widget.Button.OnClickListener()
       {

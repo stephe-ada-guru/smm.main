@@ -1,5 +1,4 @@
-/* //device/samples/SampleCode/src/com/android/samples/app/RemoteServiceInterface.java
-**
+/* 
 ** Copyright 2007, The Android Open Source Project
 **
 ** Licensed under the Apache License, Version 2.0 (the "License"); 
@@ -14,12 +13,15 @@
 ** See the License for the specific language governing permissions and 
 ** limitations under the License.
 */
-// Copied from com.android.music in Android 2.3.3; modified to be in my package.
+
+// Copied from com.android.music in Android 2.3.3; modified to be in
+// my package, added new interfaces.
+
 package org.stephe_leake.android.music_player;
 
 import android.graphics.Bitmap;
 
-interface IMediaPlaybackService
+interface IStephes_Music_Service
 {
     void openFile(String path);
     void open(in long [] list, int position);
@@ -52,5 +54,8 @@ interface IMediaPlaybackService
     int getRepeatMode();
     int getMediaMountedCount();
     int getAudioSessionId();
+
+    // my new stuff
+    void replacePlaylist(String Volume, long List_ID);
 }
 

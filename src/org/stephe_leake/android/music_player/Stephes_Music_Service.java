@@ -111,8 +111,19 @@ public class Stephes_Music_Service extends Service {
     private int mRepeatMode = REPEAT_NONE;
     private int mMediaMountedCount = 0;
     private long [] mAutoShuffleList = null;
-    private long [] mPlayList = null;
-    private int mPlayListLen = 0;
+
+   private long [] mPlayList = null;
+   // Each element is the MediaStore.Audio.Media database ID of a file
+   // that MediaPlayer can play.
+
+   private String mPlaylist_Volume = null;
+   // Storage volume where the current playlist resides, for getContentUri
+
+   private long mPlaylist_ID = 0;
+   // MediaStore.Audio.Playlists ID of the playlist file itself, or 0
+   // if we are not playing a playlist file.
+
+   private int mPlayListLen = 0;
     private Vector<Integer> mHistory = new Vector<Integer>(MAX_HISTORY_SIZE);
     private Cursor mCursor; // used by saveBookmarkIfNeeded to get ID, get* to get metadata
     private int mPlayPos = -1;
@@ -294,6 +305,8 @@ public class Stephes_Music_Service extends Service {
         super.onCreate();
 
         mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+
+        // FIXME: do we need to do this both here and in play()?
         mAudioManager.registerMediaButtonEventReceiver(new ComponentName(getPackageName(),
                 MediaButtonIntentReceiver.class.getName()));
 
@@ -852,7 +865,7 @@ public class Stephes_Music_Service extends Service {
      * Replaces the current playlist with a new list,
      * and prepares for starting playback at the specified
      * position in the list, or a random position if the
-     * specified position is 0.
+     * specified position is negative.
      * @param list The new list of tracks.
      */
     public void open(long [] list, int position) {
@@ -891,6 +904,65 @@ public class Stephes_Music_Service extends Service {
             }
         }
     }
+
+   // copied from original MusicUtils
+   private final static long [] sEmptyList = new long[0];
+
+   public long [] getSongListForPlaylist(String Volume, long plid)
+   {
+      final String[] columns       = new String[]
+         {MediaStore.Audio.Playlists.Members.AUDIO_ID,
+          MediaStore.Audio.Playlists.Members.DATA,
+          MediaStore.Audio.Playlists.Members.TITLE,
+          MediaStore.Audio.Playlists.Members._ID};
+      final int Audio_ID_Column    = 0;
+      final int File_Column        = 1;
+      final int Title_Column       = 2;
+      final int Provider_ID_Column = 3;
+
+      Cursor cursor = getContentResolver().query
+         (MediaStore.Audio.Playlists.Members.getContentUri(Volume, plid),
+          columns, null, null, MediaStore.Audio.Playlists.Members.DEFAULT_SORT_ORDER);
+      // DEFAULT_SORT_ORDER has the value "name", let's hope that's
+      // not to be taken literally!
+
+      if (cursor == null) return sEmptyList;
+
+      int len      = cursor.getCount();
+      long [] list = new long[len];
+      cursor.moveToFirst();
+
+      for (int i = 0; i < len; i++)
+      {
+         list[i] = cursor.getLong(Audio_ID_Column);
+         MusicUtils.debugLog
+            ("playlist song audio_id, provider_id, file, title: " + list[i] +
+             ", " + cursor.getString(Provider_ID_Column) +
+             ", " + cursor.getString(File_Column) +
+             ", " + cursor.getString(Title_Column));
+         cursor.moveToNext();
+      }
+
+      cursor.close();
+      return list;
+   }
+
+   public void replacePlaylist(String Volume, long List_ID)
+   {
+      // Do the db queries before acquiring server lock, so we don't
+      // interrupt the current music flow.
+      long[] List = getSongListForPlaylist (Volume, List_ID);
+      synchronized (this)
+      {
+         // FIXME: need to finalize the current playlist?
+         mPlaylist_ID     = List_ID;
+         mPlaylist_Volume = Volume;
+
+         open(List, 0);
+         play();
+         notifyChange(META_CHANGED);
+      }
+   }
 
     /**
      * Moves the item at index1 to index2.
@@ -1752,6 +1824,7 @@ public class Stephes_Music_Service extends Service {
         }
 
         public void setDataSource(String path) {
+           MusicUtils.debugLog("MultiPlayer.setDataSource: " + path);
             try {
                 mMediaPlayer.reset();
                 mMediaPlayer.setOnPreparedListener(null);
@@ -1785,7 +1858,6 @@ public class Stephes_Music_Service extends Service {
         }
 
         public void start() {
-            MusicUtils.debugLog(new Exception("MultiPlayer.start called"));
             mMediaPlayer.start();
         }
 
@@ -1875,7 +1947,7 @@ public class Stephes_Music_Service extends Service {
      * ensure that the Service can be GCd even when the system process still
      * has a remote reference to the stub.
      */
-    static class ServiceStub extends IMediaPlaybackService.Stub {
+    static class ServiceStub extends IStephes_Music_Service.Stub {
         WeakReference<Stephes_Music_Service> mService;
 
         ServiceStub(Stephes_Music_Service service) {
@@ -1976,6 +2048,10 @@ public class Stephes_Music_Service extends Service {
         }
         public int getAudioSessionId() {
             return mService.get().getAudioSessionId();
+        }
+
+        public void replacePlaylist(String Volume, long List_ID) {
+            mService.get().replacePlaylist(Volume, List_ID);
         }
     }
 

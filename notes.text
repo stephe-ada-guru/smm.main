@@ -2,45 +2,82 @@ src/org/stephe_leake/android/music_player/Stephes_Music_PlayerActivity.java
 /Projects/android/google/packages/apps/Music/src/com/android/music/MusicUtils.java
 (dvc-status)
 
-send it one playlist
-    MediaProvider has playlist table
-
-need About
-
-imageButton vs Button
-    need checked_find_As_ID
-    which should I use?
-
-what is MediaAppWidgetProvider (in manifest)
-    and MediaButtonIntentReceiver?
-
 edit playlist
-    must be in server; don't receive broadcasts while paused
+    must be in server; app doesn't receive broadcasts while paused
+    playlist is stored in db
+        apparently in a separate table for playlists (different content uri)
+
+    MusicUtils.deleteTracks
+        deletes tracks from db (and therefore from playlist in db)
+        deletes from artcache
+        deletes .m3p file from disk
+
+    keep that, move into server, adapt smm to cope
+        send playlist id to server, not list of ids (also speeds up ui)
+        just assume playlists are auto-delete for now
+
+                            List_Uri : file:///mnt/sdcard/Audio/vocal.m3u
+Playlists.getContentUri("external")  : content://media/external/audio/playlists
+Playlists.getContentUri("internal")  : content://media/internal/audio/playlists
+Playlists.getContentUri("phone")     : content://media/phone/audio/playlists
+Media.getContentUriForPath(path)     : content://media/external/audio/media
+
+handle AudioManager.ACTION_AUDIO_BECOMING_NOISY (headphone/car/bluetooth unplugged)
+    src/org/stephe_leake/android/music_player/MediaButtonIntentReceiver.java
+        should just work; not modified from original
+
+MediaWidgetProvider
+    goto ghost commander, not stephe's music player
 
 add progress bar
 
+ later (in Ada)
 server deals with database ids
     that doesn't handle web streams?
     maybe a different content provider?
+    can put a web url in a playlist?
 
-server does bookmarks only if isPodcast() is true
+server sets text in RemoteViews!?
 
-cache files and/or playlists received from file manager
-    offer to play them
-    offer to clean up list
+podcasts:
+    download to sdcard via google reader
+        all in one directory
+        at home with wifi, big screen
+    present list of that directory
+        with bookmark info (not started, percent done)
+    delete when done
+
+    google reader should do that, present web api for it
+
+    server does bookmarks only if isPodcast() is true
+        what does scanner use for that criteria?
+        /Projects/android/google/frameworks/base/media/java/android/media/MediaScanner.java
+                        String lowpath = path.toLowerCase();
+                        boolean ringtones = (lowpath.indexOf(RINGTONES_DIR) > 0);
+                        boolean notifications = (lowpath.indexOf(NOTIFICATIONS_DIR) > 0);
+                        boolean alarms = (lowpath.indexOf(ALARMS_DIR) > 0);
+                        boolean podcasts = (lowpath.indexOf(PODCAST_DIR) > 0);
+                        boolean music = (lowpath.indexOf(MUSIC_DIR) > 0) ||
+                            (!ringtones && !notifications && !alarms && !podcasts);
+
 
 need way to choose files without relying on file manager
-    offer to use MediaStore.Audio (like everyone else does
+    offer to use MediaStore.Audio (like everyone else does :)
+        allows search on each list
+        when search on artist, shows songs on disk and in playlists
     offer to use file dialog
-        steal ideas from AndLess
-            really badly written!
-            don't need adapter; used for playlists vs directories
+        steal ideas from AndLess, Music DLNA
             file browser should be a dialog?
-            probably easier to start from scratch, steal ideas
         http://developer.android.com/resources/tutorials/views/hello-autocomplete.html
 
- later
-smm download_playlist song filenames are not guarrantteed unique
+bookmark playlist song index
+
+need About
+
+use image for play/pause
+    get from MediaWidgetProvider
+
+smm download_playlist song filenames are not guarranteed unique
     use artist/album/song
 
 http://en.wikipedia.org/wiki/M3U

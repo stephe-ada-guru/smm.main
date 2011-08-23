@@ -42,7 +42,7 @@ import java.util.HashMap;
 
 public class MusicUtils {
 
-   public static IMediaPlaybackService sService = null;
+   public static IStephes_Music_Service sService = null;
 
    // We need a map of context to servicebinder because we support
    // multiple activities sharing the same service; music player,
@@ -114,7 +114,7 @@ public class MusicUtils {
       }
 
       public void onServiceConnected(ComponentName className, android.os.IBinder service) {
-         sService = IMediaPlaybackService.Stub.asInterface(service);
+         sService = IStephes_Music_Service.Stub.asInterface(service);
          if (mCallback != null) {
             mCallback.onServiceConnected(className, service);
          }
@@ -240,6 +240,14 @@ public class MusicUtils {
    {
       debugLog(msg);
       Toast.makeText(context, msg, Toast.LENGTH_SHORT).show();
+   }
+
+   public static void replaceCurrentPlaylist(String Volume, long List_ID)
+   {
+      try
+      {
+         sService.replacePlaylist(Volume, List_ID);
+      } catch (RemoteException e) {}
    }
 
    public static boolean isConnected()
