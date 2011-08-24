@@ -51,7 +51,10 @@ import android.util.Log;
 import android.widget.RemoteViews;
 import android.widget.Toast;
 
+import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileDescriptor;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.ref.WeakReference;
@@ -112,21 +115,33 @@ public class Stephes_Music_Service extends Service {
     private int mMediaMountedCount = 0;
     private long [] mAutoShuffleList = null;
 
+   private String mPlaylist_Volume = null;
+   // Storage volume where the current playlist file resides, for
+   // getContentUri. FIXME: use this instead of EXTERNAL_CONTENT_URI!
+   // Some Android hardware has large internal storage that is
+   // available to the user.
+
+   private long mPlaylist_ID = 0;
+   // MediaStore.Audio.Playlists ID of the current playlist file, or 0
+   // if we are not playing a playlist file.
+   // FIXME: set to 0 in the right places!
+
    private long [] mPlayList = null;
    // Each element is the MediaStore.Audio.Media database ID of a file
    // that MediaPlayer can play.
 
-   private String mPlaylist_Volume = null;
-   // Storage volume where the current playlist resides, for getContentUri
-
-   private long mPlaylist_ID = 0;
-   // MediaStore.Audio.Playlists ID of the playlist file itself, or 0
-   // if we are not playing a playlist file.
-
    private int mPlayListLen = 0;
-    private Vector<Integer> mHistory = new Vector<Integer>(MAX_HISTORY_SIZE);
-    private Cursor mCursor; // used by saveBookmarkIfNeeded to get ID, get* to get metadata
-    private int mPlayPos = -1;
+   // Count of valid entries in mPlayList
+
+   private Vector<Integer> mHistory = new Vector<Integer>(MAX_HISTORY_SIZE);
+   // Played tracks; used by shuffle algorithm
+
+   private Cursor mCursor;
+   // Audio.Media db cursor for current track
+
+   private int mPlayPos = -1;
+   // Current position in mPlayList
+
     private static final String LOGTAG = "Stephes_Music_Service";
     private final Shuffler mRand = new Shuffler();
     private int mOpenFailedCounter = 0;
@@ -206,7 +221,9 @@ public class Stephes_Music_Service extends Service {
                         seek(0);
                         play();
                     } else {
-                        next(false);
+                       long trackEnded = mPlayList[mPlayPos];
+                       next(false);
+                       maybeDeleteTrack(trackEnded);
                     }
                     break;
                 case RELEASE_WAKELOCK:
@@ -910,21 +927,15 @@ public class Stephes_Music_Service extends Service {
 
    public long [] getSongListForPlaylist(String Volume, long plid)
    {
-      final String[] columns       = new String[]
-         {MediaStore.Audio.Playlists.Members.AUDIO_ID,
-          MediaStore.Audio.Playlists.Members.DATA,
-          MediaStore.Audio.Playlists.Members.TITLE,
-          MediaStore.Audio.Playlists.Members._ID};
-      final int Audio_ID_Column    = 0;
-      final int File_Column        = 1;
-      final int Title_Column       = 2;
-      final int Provider_ID_Column = 3;
+      final String[] columns    = new String[] {MediaStore.Audio.Playlists.Members.AUDIO_ID};
+      final int Audio_ID_Column = 0;
 
       Cursor cursor = getContentResolver().query
          (MediaStore.Audio.Playlists.Members.getContentUri(Volume, plid),
           columns, null, null, MediaStore.Audio.Playlists.Members.DEFAULT_SORT_ORDER);
-      // DEFAULT_SORT_ORDER has the value "name", let's hope that's
-      // not to be taken literally!
+      // DEFAULT_SORT_ORDER has the value "name", but apparently
+      // that's not to be taken literally; the sort order is the order
+      // the items appear in the original file.
 
       if (cursor == null) return sEmptyList;
 
@@ -935,11 +946,6 @@ public class Stephes_Music_Service extends Service {
       for (int i = 0; i < len; i++)
       {
          list[i] = cursor.getLong(Audio_ID_Column);
-         MusicUtils.debugLog
-            ("playlist song audio_id, provider_id, file, title: " + list[i] +
-             ", " + cursor.getString(Provider_ID_Column) +
-             ", " + cursor.getString(File_Column) +
-             ", " + cursor.getString(Title_Column));
          cursor.moveToNext();
       }
 
@@ -1605,6 +1611,159 @@ public class Stephes_Music_Service extends Service {
         }
         return numremoved;
     }
+
+
+   private String toRelative (String fileName, String directoryName)
+   {
+      if (fileName.startsWith(directoryName))
+         return fileName.substring(directoryName.length() + 1);
+      else
+         return fileName;
+   }
+
+   // If we are playing a playlist file marked
+   // auto-delete, delete the just completed item from:
+   //
+   // 1) the current server list
+   // 2) the playlist file.
+   //
+   // We don't edite the database playlist table; we let the media
+   // scanner do that. We assume the user will not request the same
+   // playlist again before the scanner has a chance to run.
+   //
+   // The assumption is the playlist file is generated by
+   // a music manager that is cycling thru some larger
+   // list, and this is how it keeps track of what has
+   // been heard.
+   //
+   // We do not delete the actual media file; it might be
+   // in another playlist, or the larger list might come
+   // around again.
+   //
+   // FIXME: implement a way to designate particular
+   // playlist files auto-delete
+   private void maybeDeleteTrack(long trackID)
+   {
+      if (mPlaylist_ID == 0) return;
+
+      // To delete the item from the playlist file, we write a new
+      // file from the playlist db data, leaving out the deleted item.
+      // So we need to open the playlist file for write.
+      final String playlistFileName;
+      final File   playlistFile;
+      try
+      {
+         final Uri    uri         = MediaStore.Audio.Playlists.getContentUri(mPlaylist_Volume);
+         final String[] columns   = new String[] {MediaStore.Audio.Playlists.Members.DATA};
+         final String where       = MediaStore.Audio.Playlists._ID + "=" + mPlaylist_ID;
+         final int fileNameColumn = 0;
+
+         final Cursor cursor = getContentResolver().query(uri, columns, where, null, null);
+         if (cursor != null)
+         {
+            cursor.moveToFirst();
+            playlistFileName = cursor.getString(fileNameColumn);
+            cursor.close();
+         }
+         else
+         {
+            MusicUtils.debugLog("maybeDeleteTrack: mPlaylist_ID not found in playlist db");
+            return;
+         }
+
+         playlistFile = new File(playlistFileName);
+
+         if (!playlistFile.canWrite())
+         {
+            MusicUtils.debugLog("maybeDeleteTrack: " + playlistFileName + "is not writeable");
+
+            // To avoid getting the same error again, pretend we are
+            // not playing a playlist.
+            mPlaylist_ID = 0;
+
+            // FIXME: notifyChange (ERROR) to inform user
+            return;
+         }
+      }
+      catch (RuntimeException e)
+      {
+         MusicUtils.debugLog("maybeDeleteTrack playlistFileName: " + e.toString() + e.getMessage());
+         return;
+      }
+
+      BufferedWriter out           = null;
+      Cursor         membersCursor = null;
+      try
+      {
+         final Uri membersUri     = MediaStore.Audio.Playlists.Members.getContentUri(mPlaylist_Volume, mPlaylist_ID);
+         String[] columns         = new String[] {MediaStore.Audio.Playlists.Members.AUDIO_ID};
+         final int audioID_Column = 0;
+
+         membersCursor = getContentResolver().query (membersUri, columns, null, null, null);
+
+         if (membersCursor == null)
+         {
+            MusicUtils.debugLog("maybeDeleteTrack: members not found in playlist db for " + playlistFileName);
+
+            // Something is screwed up. To avoid getting the same
+            // error again, pretend we are not playing a playlist.
+            mPlaylist_ID = 0;
+
+            // FIXME: notifyChange (ERROR) to inform user
+            return;
+         }
+
+         // Now we can start changing things.
+
+         // 1) the current server list
+         removeTrack(trackID);
+
+         // 2) the playlist file.
+         final Uri mediaUri        = MediaStore.Audio.Media.getContentUri(mPlaylist_Volume);
+         columns                   = new String[] {MediaStore.Audio.Playlists.Members.DATA};
+         String    where           = "_ID=?";
+         final int fileName_Column = 0;
+
+         final String playlistDirectoryName = playlistFile.getParent();
+
+         out = new BufferedWriter(new FileWriter(playlistFile, false));
+
+         while (!membersCursor.moveToNext())
+         {
+            final long mediaID = membersCursor.getLong(audioID_Column);
+            if (trackID != mediaID)
+            {
+               final Cursor fileCursor = getContentResolver().query (mediaUri, columns, where, new String[]{String.valueOf(mediaID)}, null);
+               if (fileCursor != null && fileCursor.moveToNext())
+               {
+                  out.write(toRelative(fileCursor.getString(fileName_Column), playlistDirectoryName));
+                  out.newLine();
+               }
+               else
+               {
+                  MusicUtils.debugLog("maybeDeleteTrack deleteloop: file not found in Media db: " + mediaID);
+               }
+            }
+         }
+      }
+      catch (Exception e)
+      {
+         MusicUtils.debugLog("maybeDeleteTrack deleteloop: " + e.toString() + e.getMessage());
+      }
+      finally
+      {
+         try
+         {
+            if (out != null) out.close();
+         }
+         catch (IOException e)
+         {
+            MusicUtils.debugLog("maybeDeleteTrack close: " + e.toString() + e.getMessage());
+         }
+         if (membersCursor != null) membersCursor.close();
+      }
+
+   }
 
     public void setShuffleMode(int shufflemode) {
         synchronized(this) {

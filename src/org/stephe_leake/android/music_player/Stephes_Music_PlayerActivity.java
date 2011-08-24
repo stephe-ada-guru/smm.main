@@ -179,8 +179,8 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
 
       final String path        = Item_Uri.getPath();
       final String[] columns   = new String[]{Audio.Media._ID};
-      final String[] selection = new String[] { path };
       final String where       = MediaStore.Audio.Media.DATA + "=?";
+      final String[] selection = new String[] { path };
       final int    idColumn    = 0;
       Cursor       cursor      = Content_Resolver.query(Content_Uri, columns, where, selection, null);
       // cursor is before first result, or null

@@ -3,25 +3,15 @@ src/org/stephe_leake/android/music_player/Stephes_Music_PlayerActivity.java
 (dvc-status)
 
 edit playlist
-    must be in server; app doesn't receive broadcasts while paused
-    playlist is stored in db
-        apparently in a separate table for playlists (different content uri)
-
-    MusicUtils.deleteTracks
-        deletes tracks from playlist db table
-        deletes from artcache
-        deletes .m3p file from disk
-
-    don't delete tracks from disk; they might be in another playlist!
-        delete from playlist db table
-        write playlist from db to file
-        just assume playlists are auto-delete for now
+    edited, doesn't work
+    need progress bar to speed test
 
 handle AudioManager.ACTION_AUDIO_BECOMING_NOISY (headphone/car/bluetooth unplugged)
     src/org/stephe_leake/android/music_player/MediaButtonIntentReceiver.java
         should just work; not modified from original
 
 add progress bar
+    see MediaPlaybackActivity.java
 
  later (in Ada)
 server deals with database ids
