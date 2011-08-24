@@ -84,11 +84,12 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
          f.addAction(Stephes_Music_Service.META_CHANGED);
          f.addAction(Stephes_Music_Service.PLAYSTATE_CHANGED);
          registerReceiver(Service_Listener, f);
+
          Update_Display();
       }
       catch (RuntimeException e)
       {
-         MusicUtils.Error_Log(this, "registerReceiver: " + e.toString() + ": " + e.getMessage());
+         MusicUtils.Error_Log(this, "onResume: " + e.toString() + ": " + e.getMessage());
       }
    }
 
@@ -116,11 +117,19 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
 
    public void onServiceConnected(ComponentName className, android.os.IBinder service)
    {
+      Intent intent = getIntent();
       try
       {
-         Intent intent = getIntent();
+         if (intent == null || // not clear if we can get this
+             intent.getAction() == null || // from widget, or destroyed/restored (ie for screen rotate)
+             intent.getAction().equals(Intent.ACTION_MAIN)) // launched directly by user
+         {
+            // Server may be playing or paused
+            Update_Display();
 
-         if (intent.getAction().equals(Intent.ACTION_VIEW))
+            // FIXME: offer file/db browsers
+         }
+         else if (intent.getAction().equals(Intent.ACTION_VIEW))
          {
             Uri Item_Uri = intent.getData();
 
@@ -135,27 +144,15 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
                Add_Song (Item_Uri);
             };
          }
-         else if (intent.getAction().equals(Intent.ACTION_MAIN))
-         {
-            // launched directly by user, or destroyed/restored (ie for screen rotate)
-            //
-            // service not affected by destroy/restore, so we don't do anything for that case.
-            //
-            // FIXME: resume last bookmark, or present file or other browser.
-
-            // For initial testing, a hardcoded playlist. REALLY need
-            // to find out how to specify an intent in adb!
-            //Add_Song (Uri.fromFile(new File("/mnt/sdcard/Audio/Vocal/01 - Fill Me Up.mp3")));
-            Play_List (Uri.fromFile(new File("/mnt/sdcard/Audio/vocal.m3u")));
-         }
          else
          {
             // These are the only actions we declared in our manifest.
+            MusicUtils.Error_Log(this, "onServiceConnected: unexpected intent " + intent);
          }
       }
       catch (RuntimeException e)
       {
-         MusicUtils.Error_Log(this, "onServiceConnected: That does not compute " + e.getMessage());
+         MusicUtils.Error_Log(this, "onServiceConnected: intent " + intent + ": " + e.getMessage());
       }
    }
 
@@ -279,19 +276,38 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
 
    private void Update_Display()
    {
-      Song_Title.setText(MusicUtils.getTrackName());
-      Album_Title.setText(MusicUtils.getAlbumName());
-      Artist_Title.setText(MusicUtils.getArtistName());
-
-      if (MusicUtils.isPlaying())
+      if (! MusicUtils.isConnected())
       {
+         // can't do anything without the service
+         Song_Title.setText ("");
+         Album_Title.setText ("");
+         Artist_Title.setText ("");
+
+         Play_Button.setVisibility(android.view.View.GONE);
+         Pause_Button.setVisibility(android.view.View.GONE);
+         return;
+      }
+
+      try
+      {
+         Song_Title.setText(MusicUtils.getTrackName());
+         Album_Title.setText(MusicUtils.getAlbumName());
+         Artist_Title.setText(MusicUtils.getArtistName());
+
+         if (MusicUtils.isPlaying())
+         {
             Play_Button.setVisibility(android.view.View.GONE);
             Pause_Button.setVisibility(android.view.View.VISIBLE);
+         }
+         else
+         {
+            Pause_Button.setVisibility(android.view.View.GONE);
+            Play_Button.setVisibility(android.view.View.VISIBLE);
+         }
       }
-      else
+      catch (RuntimeException e)
       {
-         Pause_Button.setVisibility(android.view.View.GONE);
-         Play_Button.setVisibility(android.view.View.VISIBLE);
+         MusicUtils.Error_Log(this, "Update_Display: " + e.toString()+ ": " + e.getMessage());
       }
    }
 

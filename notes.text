@@ -8,26 +8,18 @@ edit playlist
         apparently in a separate table for playlists (different content uri)
 
     MusicUtils.deleteTracks
-        deletes tracks from db (and therefore from playlist in db)
+        deletes tracks from playlist db table
         deletes from artcache
         deletes .m3p file from disk
 
-    keep that, move into server, adapt smm to cope
-        send playlist id to server, not list of ids (also speeds up ui)
+    don't delete tracks from disk; they might be in another playlist!
+        delete from playlist db table
+        write playlist from db to file
         just assume playlists are auto-delete for now
-
-                            List_Uri : file:///mnt/sdcard/Audio/vocal.m3u
-Playlists.getContentUri("external")  : content://media/external/audio/playlists
-Playlists.getContentUri("internal")  : content://media/internal/audio/playlists
-Playlists.getContentUri("phone")     : content://media/phone/audio/playlists
-Media.getContentUriForPath(path)     : content://media/external/audio/media
 
 handle AudioManager.ACTION_AUDIO_BECOMING_NOISY (headphone/car/bluetooth unplugged)
     src/org/stephe_leake/android/music_player/MediaButtonIntentReceiver.java
         should just work; not modified from original
-
-MediaWidgetProvider
-    goto ghost commander, not stephe's music player
 
 add progress bar
 
@@ -69,6 +61,8 @@ need way to choose files without relying on file manager
         steal ideas from AndLess, Music DLNA
             file browser should be a dialog?
         http://developer.android.com/resources/tutorials/views/hello-autocomplete.html
+        start "dialog" with startActivityForResult?
+
 
 bookmark playlist song index
 
@@ -99,6 +93,32 @@ server stores bookmarks in MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
 
 find out what "select player" is all about
     wireless connection to tv/stereo system?
+
+MediaWidgetProvider vs startup
+    sometimes have to click quit multiple times
+
+    from no instances running (as reported by home | settings | applications):
+
+        widget/quit/wait 60 - clean (service, processes gone)
+
+        widget/home/wait 60 - service, processes still there
+            home/widget/quit/wait 60 - clean
+
+        widget/home/widget/quit/wait 60 - clean
+
+        home / app / home / widget / quit - app visible
+            quit - home visible / wait 60 - clean
+
+        am no component, m3u / home - music playing / widget / home | settings - 2 process 1 service
+            home / widget / quit - music stops, app visible in paused state
+            quit - app visible in paused state
+            quit/wait 60 - clean
+
+        maybe need to inspect Bundle to see if we were started before?
+            then don't do setContentView?
+            or quit needs to do something more?
+
+        or just give up on quit :)
 
  open source projects
 c:/Projects/eclipse_scratch/Ghost Commander/src/com/ghostsq/commander/FileCommander.java
@@ -153,10 +173,6 @@ http://www.getsongbird.com/
 
 http://mpd.wikia.com/wiki/Clients
     serve laptop music to Android
-
- car mode
-    see 'car home' in default emulator image
-    see home sample app in sdk
 
  references
 c:/Archive/android/langspec-3.0.pdf

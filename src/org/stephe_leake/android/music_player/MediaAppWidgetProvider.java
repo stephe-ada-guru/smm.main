@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2011 Stephen Leake, stephen_leake@stephe-leake.org
  * Copyright (C) 2009 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// Copied from com.android.music in Android 2.3.3; modified to be in my package.
+
+// Copied from com.android.music in Android 2.3.3; modified to be in
+// and work with my package.
+
 package org.stephe_leake.android.music_player;
 
 import android.app.PendingIntent;
@@ -29,15 +33,15 @@ import android.widget.RemoteViews;
 
 /**
  * Simple widget to show currently playing album art along
- * with play/pause and next track buttons.  
+ * with play/pause and next track buttons.
  */
 public class MediaAppWidgetProvider extends AppWidgetProvider {
     static final String TAG = "MusicAppWidgetProvider";
-    
+
     public static final String CMDAPPWIDGETUPDATE = "appwidgetupdate";
 
     private static MediaAppWidgetProvider sInstance;
-    
+
     static synchronized MediaAppWidgetProvider getInstance() {
         if (sInstance == null) {
             sInstance = new MediaAppWidgetProvider();
@@ -48,7 +52,7 @@ public class MediaAppWidgetProvider extends AppWidgetProvider {
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
         defaultAppWidget(context, appWidgetIds);
-        
+
         // Send broadcast intent to any running Stephes_Music_Service so it can
         // wrap around with an immediate update.
         Intent updateIntent = new Intent(Stephes_Music_Service.SERVICECMD);
@@ -58,7 +62,7 @@ public class MediaAppWidgetProvider extends AppWidgetProvider {
         updateIntent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY);
         context.sendBroadcast(updateIntent);
     }
-    
+
     /**
      * Initialize given widgets to default state, where we launch Music on default click
      * and hide actions if service not running.
@@ -66,14 +70,14 @@ public class MediaAppWidgetProvider extends AppWidgetProvider {
     private void defaultAppWidget(Context context, int[] appWidgetIds) {
         final Resources res = context.getResources();
         final RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.album_appwidget);
-        
+
         views.setViewVisibility(R.id.title, View.GONE);
         views.setTextViewText(R.id.artist, res.getText(R.string.widget_initial_text));
 
         linkButtons(context, views, false /* not playing */);
         pushUpdate(context, appWidgetIds, views);
     }
-    
+
     private void pushUpdate(Context context, int[] appWidgetIds, RemoteViews views) {
         // Update specific list of appWidgetIds if given, otherwise default to all
         final AppWidgetManager gm = AppWidgetManager.getInstance(context);
@@ -83,7 +87,7 @@ public class MediaAppWidgetProvider extends AppWidgetProvider {
             gm.updateAppWidget(new ComponentName(context, this.getClass()), views);
         }
     }
-    
+
     /**
      * Check against {@link AppWidgetManager} if there are any instances of this widget.
      */
@@ -105,18 +109,18 @@ public class MediaAppWidgetProvider extends AppWidgetProvider {
             }
         }
     }
-    
+
     /**
-     * Update all active widget instances by pushing changes 
+     * Update all active widget instances by pushing changes
      */
     void performUpdate(Stephes_Music_Service service, int[] appWidgetIds) {
         final Resources res = service.getResources();
         final RemoteViews views = new RemoteViews(service.getPackageName(), R.layout.album_appwidget);
-        
+
         CharSequence titleName = service.getTrackName();
         CharSequence artistName = service.getArtistName();
         CharSequence errorState = null;
-        
+
         // Format title string with track number, or show SD card message
         String status = Environment.getExternalStorageState();
         if (status.equals(Environment.MEDIA_SHARED) ||
@@ -135,19 +139,19 @@ public class MediaAppWidgetProvider extends AppWidgetProvider {
         } else if (titleName == null) {
             errorState = res.getText(R.string.emptyplaylist);
         }
-        
+
         if (errorState != null) {
             // Show error state to user
             views.setViewVisibility(R.id.title, View.GONE);
             views.setTextViewText(R.id.artist, errorState);
-            
+
         } else {
             // No error, so show normal titles
             views.setViewVisibility(R.id.title, View.VISIBLE);
             views.setTextViewText(R.id.title, titleName);
             views.setTextViewText(R.id.artist, artistName);
         }
-        
+
         // Set correct drawable for pause state
         final boolean playing = service.isPlaying();
         if (playing) {
@@ -158,42 +162,43 @@ public class MediaAppWidgetProvider extends AppWidgetProvider {
 
         // Link actions buttons to intents
         linkButtons(service, views, playing);
-        
+
         pushUpdate(service, appWidgetIds, views);
     }
 
     /**
      * Link up various button actions using {@link PendingIntents}.
-     * 
+     *
      * @param playerActive True if player is active in background, which means
-     *            widget click will launch {@link MediaPlaybackActivity},
-     *            otherwise we launch {@link MusicBrowserActivity}.
+     *            widget click will launch {@link MediaPlaybackActivity} FIXME:,
+     *            otherwise we launch {@link MusicBrowserActivity} FIXME:.
      */
     private void linkButtons(Context context, RemoteViews views, boolean playerActive) {
         // Connect up various buttons and touch events
         Intent intent;
         PendingIntent pendingIntent;
-        
+
         final ComponentName serviceName = new ComponentName(context, Stephes_Music_Service.class);
-        
+
         if (playerActive) {
             intent = new Intent(context, Stephes_Music_PlayerActivity.class);
             pendingIntent = PendingIntent.getActivity(context,
                     0 /* no requestCode */, intent, 0 /* no flags */);
             views.setOnClickPendingIntent(R.id.album_appwidget, pendingIntent);
         } else {
+           // FIXME: don't have a browser yet
             intent = new Intent(context, Stephes_Music_PlayerActivity.class);
             pendingIntent = PendingIntent.getActivity(context,
                     0 /* no requestCode */, intent, 0 /* no flags */);
             views.setOnClickPendingIntent(R.id.album_appwidget, pendingIntent);
         }
-        
+
         intent = new Intent(Stephes_Music_Service.TOGGLEPAUSE_ACTION);
         intent.setComponent(serviceName);
         pendingIntent = PendingIntent.getService(context,
                 0 /* no requestCode */, intent, 0 /* no flags */);
         views.setOnClickPendingIntent(R.id.control_play, pendingIntent);
-        
+
         intent = new Intent(Stephes_Music_Service.NEXT_ACTION);
         intent.setComponent(serviceName);
         pendingIntent = PendingIntent.getService(context,
