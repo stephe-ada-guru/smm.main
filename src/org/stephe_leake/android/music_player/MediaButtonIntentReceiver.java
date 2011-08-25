@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2011 Stephen Leake stephen_leake@stephe-leake.org
  * Copyright (C) 2007 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +15,7 @@
  * limitations under the License.
  */
 
-// Copied from com.android.music in Android 2.3.3; modified to be in my package.
+// Copied from com.android.music in Android 2.3.3; modified to be in my package, simplify
 
 package org.stephe_leake.android.music_player;
 
@@ -22,120 +23,104 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.media.AudioManager;
-import android.os.Handler;
-import android.os.Message;
 import android.view.KeyEvent;
 
-/**
- * 
- */
-public class MediaButtonIntentReceiver extends BroadcastReceiver {
+public class MediaButtonIntentReceiver extends BroadcastReceiver
+{
 
-    private static final int MSG_LONGPRESS_TIMEOUT = 1;
-    private static final int LONG_PRESS_DELAY = 1000;
+   private static long mLastClickTime = 0;
 
-    private static long mLastClickTime = 0;
-    private static boolean mDown = false;
-    private static boolean mLaunched = false;
+   @Override
+      public void onReceive(Context context, Intent intent) {
+      String intentAction = intent.getAction();
 
-    private static Handler mHandler = new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case MSG_LONGPRESS_TIMEOUT:
-                    if (!mLaunched) {
-                        Context context = (Context)msg.obj;
-                        Intent i = new Intent();
-                        i.putExtra("autoshuffle", "true");
-                        i.setClass(context, Stephes_Music_PlayerActivity.class);
-                        i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                        context.startActivity(i);
-                        mLaunched = true;
-                    }
-                    break;
-            }
-        }
-    };
-    
-    @Override
-    public void onReceive(Context context, Intent intent) {
-        String intentAction = intent.getAction();
-        if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intentAction)) {
-            Intent i = new Intent(context, Stephes_Music_Service.class);
-            i.setAction(Stephes_Music_Service.SERVICECMD);
-            i.putExtra(Stephes_Music_Service.CMDNAME, Stephes_Music_Service.CMDPAUSE);
-            context.startService(i);
-        } else if (Intent.ACTION_MEDIA_BUTTON.equals(intentAction)) {
-            KeyEvent event = (KeyEvent)
-                    intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
-            
-            if (event == null) {
-                return;
-            }
+      MusicUtils.debugLog("MediaButtonIntentReceiver: onReceive" + intent);
 
-            int keycode = event.getKeyCode();
-            int action = event.getAction();
-            long eventtime = event.getEventTime();
+      if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intentAction))
+      {
+         //  User has removed headphones (or car connection), so the
+         //  speaker will be activated; assume the user wants to
+         //  pause.
+         Intent i = new Intent(context, Stephes_Music_Service.class);
+         i.setAction(Stephes_Music_Service.SERVICECMD);
+         i.putExtra(Stephes_Music_Service.CMDNAME, Stephes_Music_Service.CMDPAUSE);
+         context.startService(i);
 
-            // single quick press: pause/resume. 
+      } else if (Intent.ACTION_MEDIA_BUTTON.equals(intentAction))
+      {
+         // User pressed a hardware button, such as on a headphone
+         KeyEvent event = (KeyEvent)intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
+
+         if (event == null) return;
+
+         int  keycode   = event.getKeyCode();
+         int  action    = event.getAction();
+         long eventtime = event.getEventTime();
+
+         String command = null;
+         switch (keycode)
+         {
+         case KeyEvent.KEYCODE_MEDIA_STOP:
+            command = Stephes_Music_Service.CMDSTOP;
+            break;
+
+         case KeyEvent.KEYCODE_HEADSETHOOK:
+         case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
+            command = Stephes_Music_Service.CMDTOGGLEPAUSE;
+            break;
+
+         case KeyEvent.KEYCODE_MEDIA_NEXT:
+            command = Stephes_Music_Service.CMDNEXT;
+            break;
+
+         case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
+            command = Stephes_Music_Service.CMDPREVIOUS;
+            break;
+         }
+
+         if (command != null)
+         {
+            // HEADSETHOOK actions are special cased (since often that
+            // is the only button available):
+            //
+            // single quick press: pause/resume.
             // double press: next track
-            // long press: start auto-shuffle mode.
-            
-            String command = null;
-            switch (keycode) {
-                case KeyEvent.KEYCODE_MEDIA_STOP:
-                    command = Stephes_Music_Service.CMDSTOP;
-                    break;
-                case KeyEvent.KEYCODE_HEADSETHOOK:
-                case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
-                    command = Stephes_Music_Service.CMDTOGGLEPAUSE;
-                    break;
-                case KeyEvent.KEYCODE_MEDIA_NEXT:
-                    command = Stephes_Music_Service.CMDNEXT;
-                    break;
-                case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
-                    command = Stephes_Music_Service.CMDPREVIOUS;
-                    break;
+            //
+            // Apparently detecting double and long press is up to
+            // each developer, not supported by the API (dare we site
+            // MS Windows as precedent?). Sigh.
+
+            if (action == KeyEvent.ACTION_DOWN)
+            {
+               // The service may or may not be running, but we need to send it
+               // a command. So we use startService, not broadcast intent.
+               //
+               // Note that BroadcastReceivers survive the shutdown of
+               // the service that registered them!
+
+               Intent i = new Intent(context, Stephes_Music_Service.class).setAction(Stephes_Music_Service.SERVICECMD);
+
+               if (keycode == KeyEvent.KEYCODE_HEADSETHOOK &&
+                   eventtime - mLastClickTime < 300)
+               {
+                  // double press
+                  i.putExtra(Stephes_Music_Service.CMDNAME, Stephes_Music_Service.CMDNEXT);
+                  context.startService(i);
+                  mLastClickTime = 0; // not eventtime, for hysteresis
+               } else
+               {
+                  // other keycode, or HEADSETHOOK single press
+                  i.putExtra(Stephes_Music_Service.CMDNAME, command);
+                  context.startService(i);
+                  mLastClickTime = eventtime;
+               }
             }
 
-            if (command != null) {
-                if (action == KeyEvent.ACTION_DOWN) {
-                    if (mDown) {
-                        if (Stephes_Music_Service.CMDTOGGLEPAUSE.equals(command)
-                                && mLastClickTime != 0 
-                                && eventtime - mLastClickTime > LONG_PRESS_DELAY) {
-                            mHandler.sendMessage(
-                                    mHandler.obtainMessage(MSG_LONGPRESS_TIMEOUT, context));
-                        }
-                    } else {
-                        // if this isn't a repeat event
-
-                        // The service may or may not be running, but we need to send it
-                        // a command.
-                        Intent i = new Intent(context, Stephes_Music_Service.class);
-                        i.setAction(Stephes_Music_Service.SERVICECMD);
-                        if (keycode == KeyEvent.KEYCODE_HEADSETHOOK &&
-                                eventtime - mLastClickTime < 300) {
-                            i.putExtra(Stephes_Music_Service.CMDNAME, Stephes_Music_Service.CMDNEXT);
-                            context.startService(i);
-                            mLastClickTime = 0;
-                        } else {
-                            i.putExtra(Stephes_Music_Service.CMDNAME, command);
-                            context.startService(i);
-                            mLastClickTime = eventtime;
-                        }
-
-                        mLaunched = false;
-                        mDown = true;
-                    }
-                } else {
-                    mHandler.removeMessages(MSG_LONGPRESS_TIMEOUT);
-                    mDown = false;
-                }
-                if (isOrderedBroadcast()) {
-                    abortBroadcast();
-                }
+            if (isOrderedBroadcast())
+            {
+               abortBroadcast();
             }
-        }
-    }
+         }
+      }
+   }
 }

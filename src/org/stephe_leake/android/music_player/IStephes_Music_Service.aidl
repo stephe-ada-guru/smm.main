@@ -57,5 +57,6 @@ interface IStephes_Music_Service
 
     // my new stuff
     void replacePlaylist(String Volume, long List_ID);
+    String getPlaylistName();
 }
 

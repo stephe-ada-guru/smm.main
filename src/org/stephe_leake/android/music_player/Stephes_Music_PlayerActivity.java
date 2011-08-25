@@ -11,27 +11,44 @@ import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
+import android.os.SystemClock;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Audio;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.SeekBar;
+import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
-import java.io.File;
 import org.stephe_leake.android.music_player.MusicUtils.ServiceToken;
 
 public class Stephes_Music_PlayerActivity extends Activity implements ServiceConnection
 {
+   // constants
+   private static final int Progress_Max = 1000;
+   private static final int REFRESH      = 1;
+
    // Main UI members
 
-   private TextView Song_Title;
-   private TextView Album_Title;
-   private TextView Artist_Title;
-   private android.widget.Button Play_Button;
-   private android.widget.Button Pause_Button;
+   private TextView    Playlist_Title;
+   private TextView    Artist_Title;
+   private TextView    Album_Title;
+   private TextView    Song_Title;
+   private TextView    Current_Time;
+   private TextView    Total_Time;
+   private ImageButton Play_Pause_Button;
+   private SeekBar     Progress_Bar;
 
    // Main other members
-   private ServiceToken Service;
+   private ServiceToken    Service;
    private ContentResolver Content_Resolver;
+
+   // Cached values, set by Update_Display
+
+   private long    Duration  = 0; // track duration in milliseconds
+   private boolean isPlaying = false;
 
    ////////// Activity lifetime methods (in lifecycle order)
 
@@ -49,16 +66,28 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
 
          Content_Resolver = getContentResolver();
 
-         // Set up text displays
-         Song_Title = (TextView) findViewById(R.id.Song_Title);
-         Album_Title = (TextView) findViewById(R.id.Album_Title);
-         Artist_Title = (TextView) findViewById(R.id.Artist_Title);
+         // Set up displays, top to bottom left to right
 
-         // Set up buttons.
-         Play_Button = (Button)findViewById(R.id.Play);
-         Play_Button.setOnClickListener(Play_Listener);
-         Pause_Button = (Button)findViewById(R.id.Pause);
-         Pause_Button.setOnClickListener(Pause_Listener);
+         Playlist_Title = (TextView) findViewById(R.id.Playlist_Title);
+         Artist_Title   = (TextView) findViewById(R.id.Artist_Title);
+         Album_Title    = (TextView) findViewById(R.id.Album_Title);
+         Song_Title     = (TextView) findViewById(R.id.Song_Title);
+
+         ((ImageButton)findViewById(R.id.prev)).setOnClickListener(Prev_Listener);
+
+         Current_Time = (TextView)findViewById(R.id.currenttime);
+
+         Play_Pause_Button = (ImageButton)findViewById(R.id.play_pause);
+         Play_Pause_Button.setOnClickListener(Play_Pause_Listener);
+         Play_Pause_Button.requestFocus();
+
+         ((ImageButton)findViewById(R.id.next)).setOnClickListener(Next_Listener);
+
+         Total_Time = (TextView)findViewById(R.id.totaltime);
+
+         Progress_Bar = (SeekBar) findViewById(android.R.id.progress);
+         Progress_Bar.setOnSeekBarChangeListener(Progress_Listener);
+         Progress_Bar.setMax(Progress_Max);
 
          ((Button)findViewById(R.id.Quit)).setOnClickListener(Quit_Listener);
 
@@ -70,7 +99,7 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
       catch (RuntimeException e)
       {
          // From somewhere
-         MusicUtils.Error_Log(this, "onCreate: That does not compute " + e.getMessage());
+         MusicUtils.Error_Log(this, "onCreate: That does not compute " + e.toString());
          finish();
       }
    }
@@ -89,20 +118,22 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
       }
       catch (RuntimeException e)
       {
-         MusicUtils.Error_Log(this, "onResume: " + e.toString() + ": " + e.getMessage());
+         MusicUtils.Error_Log(this, "onResume: " + e.toString());
       }
    }
 
    @Override protected void onPause()
    {
       super.onPause();
+      Message_Handler.removeMessages(REFRESH);
+
       try
       {
          unregisterReceiver(Service_Listener);
       }
       catch (RuntimeException e)
       {
-         MusicUtils.Error_Log(this, "registerReceiver: " + e.toString() + ": " + e.getMessage());
+         MusicUtils.Error_Log(this, "registerReceiver: " + e.toString());
       }
    }
 
@@ -118,6 +149,7 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
    public void onServiceConnected(ComponentName className, android.os.IBinder service)
    {
       Intent intent = getIntent();
+      MusicUtils.debugLog("onServiceConnected: " + intent);
       try
       {
          if (intent == null || // not clear if we can get this
@@ -219,7 +251,7 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
       }
       catch (RuntimeException e)
       {
-         MusicUtils.Error_Log(this, "Add_Song: " + e.toString()+ ": " + e.getMessage());
+         MusicUtils.Error_Log(this, "Add_Song: " + e.toString());
       }
     }
 
@@ -246,29 +278,7 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
          MusicUtils.replaceCurrentPlaylist (Volume_Name, Get_ID (Content_Uri, List_Uri));
       } catch (Not_Found e)
       {
-         MusicUtils.Info_Log(this, e.getMessage());
-         // FIXME: debug, showing playlists that are in database
-         MusicUtils.Info_Log(this, "volume: " + Volume_Name);
-         MusicUtils.Info_Log(this, "playlists in db:");
-         final String[] columns   = new String[]{Audio.Media.DATA};
-         final int    File_Column = 0;
-         final String[] selection = null;
-         final String where       = null;
-         Cursor       cursor      = Content_Resolver.query(Content_Uri, columns, where, selection, null);
-
-         if (cursor != null && cursor.getCount() > 0)
-         {
-            while (!cursor.moveToNext())
-            {
-               MusicUtils.Info_Log(this, cursor.getString(File_Column));
-            }
-            cursor.close();
-         }
-         else
-         {
-            if (cursor != null) cursor.close();
-            MusicUtils.Info_Log(this, "none");
-         }
+         MusicUtils.Info_Log(this, List_Uri + ": " + e.toString());
       }
    }
 
@@ -279,35 +289,42 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
       if (! MusicUtils.isConnected())
       {
          // can't do anything without the service
-         Song_Title.setText ("");
-         Album_Title.setText ("");
+         Playlist_Title.setText ("");
          Artist_Title.setText ("");
+         Album_Title.setText ("");
+         Song_Title.setText ("");
 
-         Play_Button.setVisibility(android.view.View.GONE);
-         Pause_Button.setVisibility(android.view.View.GONE);
          return;
       }
 
       try
       {
-         Song_Title.setText(MusicUtils.getTrackName());
-         Album_Title.setText(MusicUtils.getAlbumName());
+         // FIXME: this data is in the notify change intent; either
+         // get it from there, or delete it (see widget)
+         Playlist_Title.setText(MusicUtils.getPlaylistName());
          Artist_Title.setText(MusicUtils.getArtistName());
+         Album_Title.setText(MusicUtils.getAlbumName());
+         Song_Title.setText(MusicUtils.getTrackName());
 
-         if (MusicUtils.isPlaying())
+         isPlaying = MusicUtils.isPlaying();
+
+         if (isPlaying)
          {
-            Play_Button.setVisibility(android.view.View.GONE);
-            Pause_Button.setVisibility(android.view.View.VISIBLE);
+            Play_Pause_Button.setImageResource(android.R.drawable.ic_media_pause);
          }
          else
          {
-            Pause_Button.setVisibility(android.view.View.GONE);
-            Play_Button.setVisibility(android.view.View.VISIBLE);
+            Play_Pause_Button.setImageResource(android.R.drawable.ic_media_play);
          }
+
+         Duration = MusicUtils.getDuration();
+         Total_Time.setText(MusicUtils.makeTimeString(this, Duration));
+
+         queueNextRefresh(refreshNow());
       }
       catch (RuntimeException e)
       {
-         MusicUtils.Error_Log(this, "Update_Display: " + e.toString()+ ": " + e.getMessage());
+         MusicUtils.Error_Log(this, "Update_Display: " + e.toString());
       }
    }
 
@@ -345,7 +362,15 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
          }
       };
 
-   private android.widget.Button.OnClickListener Play_Listener = new android.widget.Button.OnClickListener()
+   private ImageButton.OnClickListener Prev_Listener = new ImageButton.OnClickListener()
+      {
+         @Override public void onClick(View v)
+         {
+            sendBroadcast(new Intent(Stephes_Music_Service.PREVIOUS_ACTION));
+         }
+      };
+
+   private ImageButton.OnClickListener Play_Pause_Listener = new ImageButton.OnClickListener()
       {
          @Override public void onClick(View v)
          {
@@ -353,15 +378,103 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
          }
       };
 
-   private android.widget.Button.OnClickListener Pause_Listener = new android.widget.Button.OnClickListener()
+   private ImageButton.OnClickListener Next_Listener = new ImageButton.OnClickListener()
       {
          @Override public void onClick(View v)
          {
-            sendBroadcast(new Intent(Stephes_Music_Service.TOGGLEPAUSE_ACTION));
+            sendBroadcast(new Intent(Stephes_Music_Service.NEXT_ACTION));
          }
       };
 
-   private android.widget.Button.OnClickListener Quit_Listener = new android.widget.Button.OnClickListener()
+    private OnSeekBarChangeListener Progress_Listener = new OnSeekBarChangeListener()
+       {
+          long LastSeekEventTime = 0;
+
+          public void onStartTrackingTouch(SeekBar bar)
+          {
+             LastSeekEventTime = SystemClock.elapsedRealtime();
+          }
+
+          public void onProgressChanged(SeekBar bar, int progress, boolean fromuser)
+          {
+             if (!fromuser || !MusicUtils.isConnected()) return;
+
+             long now = SystemClock.elapsedRealtime();
+             if ((now - LastSeekEventTime) > 250)
+             {
+                LastSeekEventTime = now;
+                MusicUtils.seek(Duration * progress / Progress_Max);
+             }
+          }
+          public void onStopTrackingTouch(SeekBar bar)
+          {
+          }
+       };
+
+   private long refreshNow()
+   {
+      // Update progress bar and time display; return milliseconds until next update
+      if (Service == null) return 500;
+
+      long pos = MusicUtils.getPosition();
+
+      // Default return the number of milliseconds until the next
+      // full second, so the counter can be updated at just the
+      // right time.
+      long remaining = 1000 - (pos % 1000);
+
+      if (pos >= 0 && Duration > 0)
+      {
+         Current_Time.setText(MusicUtils.makeTimeString(this, pos));
+
+         if (isPlaying)
+         {
+            Current_Time.setVisibility(View.VISIBLE);
+         } else
+         {
+            // blink the counter
+            int vis = Current_Time.getVisibility();
+            Current_Time.setVisibility(vis == View.INVISIBLE ? View.VISIBLE : View.INVISIBLE);
+            remaining = 500;
+         }
+
+         Progress_Bar.setProgress((int) (Progress_Max * pos / Duration));
+
+      } else
+      {
+         Current_Time.setText("--:--");
+         Progress_Bar.setProgress(Progress_Max);
+      }
+
+      return remaining;
+    }
+
+    private final Handler Message_Handler = new Handler()
+       {
+          @Override public void handleMessage(Message msg)
+          {
+             switch (msg.what)
+             {
+             case REFRESH:
+                queueNextRefresh(refreshNow());
+                break;
+             default:
+                break;
+             }
+          }
+       };
+
+   private void queueNextRefresh(long delay)
+   {
+      if (isPlaying)
+      {
+         Message msg = Message_Handler.obtainMessage(REFRESH);
+         Message_Handler.removeMessages(REFRESH);
+         Message_Handler.sendMessageDelayed(msg, delay);
+        }
+    }
+
+   private Button.OnClickListener Quit_Listener = new Button.OnClickListener()
       {
          @Override public void onClick(View v)
          {

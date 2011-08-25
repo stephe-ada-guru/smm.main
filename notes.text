@@ -2,18 +2,48 @@ src/org/stephe_leake/android/music_player/Stephes_Music_PlayerActivity.java
 /Projects/android/google/packages/apps/Music/src/com/android/music/MusicUtils.java
 (dvc-status)
 
+blink doesn't work; delete it
+
 edit playlist
-    edited, doesn't work
-    need progress bar to speed test
+    works!!!!!!!
+        well, the file gets edited
+        but the scanner doesn't notice the change?
+        check lastmodified date when starting a playlist, rescan
 
-handle AudioManager.ACTION_AUDIO_BECOMING_NOISY (headphone/car/bluetooth unplugged)
-    src/org/stephe_leake/android/music_player/MediaButtonIntentReceiver.java
-        should just work; not modified from original
+        scanner apparently runs when sdcard mounted/unmounted.
 
-add progress bar
-    see MediaPlaybackActivity.java
+    delete track on next; don't want to here it again
+
+move quit to menu
+
+bluetooth button doesn't work
+    no music playing:
+        gets error beep in headset
+        no messages in service log
+    music playing:
+        no error beep
+        double click; starts call to Kathy
+    need system event sniffer!
+    /Projects/eclipse_scratch/IntentSniffer - doesn't do wild cards!
+    long press gives voice dialer :)
+    check plantronics website
+        nothing; sent email
+
+    log keycodes in 'default:' case
+
+need playlist chooser
+    try scroll list of playlists from db
+    see playlist browser
+
+check intent in notification
 
  later (in Ada)
+set up JUnit/AUnit tests that send various messages, observe results
+
+speak metadata!
+
+edit calendar event db to add song notes, link to audio recording
+
 server deals with database ids
     that doesn't handle web streams?
     maybe a different content provider?
@@ -83,32 +113,6 @@ server stores bookmarks in MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
 
 find out what "select player" is all about
     wireless connection to tv/stereo system?
-
-MediaWidgetProvider vs startup
-    sometimes have to click quit multiple times
-
-    from no instances running (as reported by home | settings | applications):
-
-        widget/quit/wait 60 - clean (service, processes gone)
-
-        widget/home/wait 60 - service, processes still there
-            home/widget/quit/wait 60 - clean
-
-        widget/home/widget/quit/wait 60 - clean
-
-        home / app / home / widget / quit - app visible
-            quit - home visible / wait 60 - clean
-
-        am no component, m3u / home - music playing / widget / home | settings - 2 process 1 service
-            home / widget / quit - music stops, app visible in paused state
-            quit - app visible in paused state
-            quit/wait 60 - clean
-
-        maybe need to inspect Bundle to see if we were started before?
-            then don't do setContentView?
-            or quit needs to do something more?
-
-        or just give up on quit :)
 
  open source projects
 c:/Projects/eclipse_scratch/Ghost Commander/src/com/ghostsq/commander/FileCommander.java

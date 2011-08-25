@@ -38,7 +38,9 @@ import android.util.Log;
 import android.widget.Toast;
 
 import java.io.PrintWriter;
+import java.util.Formatter;
 import java.util.HashMap;
+import java.util.Locale;
 
 public class MusicUtils {
 
@@ -155,6 +157,37 @@ public class MusicUtils {
    public static Cursor query(Context context, Uri uri, String[] projection,
                               String selection, String[] selectionArgs, String sortOrder) {
       return query(context, uri, projection, selection, selectionArgs, sortOrder, 0);
+   }
+
+   // We don't use String.format(), because it creates a new Formatter
+   // every time you call it, which is very inefficient.
+
+   private static StringBuilder sFormatBuilder = new StringBuilder();
+   private static Formatter sFormatter = new Formatter(sFormatBuilder, Locale.getDefault());
+   // FIXME: compare to android.text.Formatter, android.text.format.time
+
+   private static final Object[] sTimeArgs = new Object[5];
+
+   public static String makeTimeString(Context context, long millisecs)
+   {
+      final long secs = millisecs / 1000;
+      String durationformat = context.getString
+         (secs < 3600 ? R.string.durationformatshort : R.string.durationformatlong);
+
+      /* Provide multiple arguments so the format can be changed easily
+       * by modifying the xml.
+       */
+      sFormatBuilder.setLength(0);
+
+      final Object[] timeArgs = sTimeArgs;
+
+      timeArgs[0] = secs / 3600; // hours
+      timeArgs[1] = secs / 60;  // minutes
+      timeArgs[2] = (secs / 60) % 60; // minutes_in_hour
+      timeArgs[3] = secs;       // seconds
+      timeArgs[4] = secs % 60;  // seconds_in_minute
+
+      return sFormatter.format(durationformat, timeArgs).toString();
    }
 
    static int getCardId(Context context) {
@@ -279,6 +312,42 @@ public class MusicUtils {
       }
    }
 
+   public static long getDuration()
+   {
+      try
+      {
+         return sService.duration();
+      }
+      catch (RemoteException ex)
+      {
+         return 0;
+      }
+   }
+
+   public static String getPlaylistName()
+   {
+      try
+      {
+         return sService.getPlaylistName();
+      }
+      catch (RemoteException ex)
+      {
+         return "";
+      }
+   }
+
+   public static long getPosition()
+   {
+      try
+      {
+         return sService.position();
+      }
+      catch (RemoteException ex)
+      {
+         return 0;
+      }
+   }
+
    public static String getTrackName()
    {
       try
@@ -301,5 +370,14 @@ public class MusicUtils {
       {
          return false;
       }
+   }
+
+   public static void seek(long pos)
+   {
+      try
+      {
+         sService.seek(pos);
+      }
+      catch (RemoteException ex){}
    }
 }

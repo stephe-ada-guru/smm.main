@@ -83,11 +83,11 @@ public class Stephes_Music_Service extends Service {
     public static final int REPEAT_CURRENT = 1;
     public static final int REPEAT_ALL = 2;
 
-    public static final String PLAYSTATE_CHANGED = "com.android.music.playstatechanged";
-    public static final String META_CHANGED = "com.android.music.metachanged";
-    public static final String QUEUE_CHANGED = "com.android.music.queuechanged";
+    public static final String PLAYSTATE_CHANGED = "org.stephe_leake.android.music_player.playstatechanged";
+    public static final String META_CHANGED = "org.stephe_leake.android.music_player.metachanged";
+    public static final String QUEUE_CHANGED = "org.stephe_leake.android.music_player.queuechanged";
 
-    public static final String SERVICECMD = "com.android.music.musicservicecommand";
+    public static final String SERVICECMD = "org.stephe_leake.android.music_player.musicservicecommand";
     public static final String CMDNAME = "command";
     public static final String CMDTOGGLEPAUSE = "togglepause";
     public static final String CMDSTOP = "stop";
@@ -95,10 +95,10 @@ public class Stephes_Music_Service extends Service {
     public static final String CMDPREVIOUS = "previous";
     public static final String CMDNEXT = "next";
 
-    public static final String TOGGLEPAUSE_ACTION = "com.android.music.musicservicecommand.togglepause";
-    public static final String PAUSE_ACTION = "com.android.music.musicservicecommand.pause";
-    public static final String PREVIOUS_ACTION = "com.android.music.musicservicecommand.previous";
-    public static final String NEXT_ACTION = "com.android.music.musicservicecommand.next";
+    public static final String TOGGLEPAUSE_ACTION = "org.stephe_leake.android.music_player.musicservicecommand.togglepause";
+    public static final String PAUSE_ACTION = "org.stephe_leake.android.music_player.musicservicecommand.pause";
+    public static final String PREVIOUS_ACTION = "org.stephe_leake.android.music_player.musicservicecommand.previous";
+    public static final String NEXT_ACTION = "org.stephe_leake.android.music_player.musicservicecommand.next";
 
     private static final int TRACK_ENDED = 1;
     private static final int RELEASE_WAKELOCK = 2;
@@ -125,6 +125,9 @@ public class Stephes_Music_Service extends Service {
    // MediaStore.Audio.Playlists ID of the current playlist file, or 0
    // if we are not playing a playlist file.
    // FIXME: set to 0 in the right places!
+
+   private String mPlaylist_Name = "";
+   // "" if not playing a playlist.
 
    private long [] mPlayList = null;
    // Each element is the MediaStore.Audio.Media database ID of a file
@@ -284,7 +287,12 @@ public class Stephes_Music_Service extends Service {
             if (CMDNEXT.equals(cmd) || NEXT_ACTION.equals(action)) {
                 next(true);
             } else if (CMDPREVIOUS.equals(cmd) || PREVIOUS_ACTION.equals(action)) {
-                prev();
+                if (position() < 2000) {
+                    prev();
+                } else {
+                    seek(0);
+                    play();
+                }
             } else if (CMDTOGGLEPAUSE.equals(cmd) || TOGGLEPAUSE_ACTION.equals(action)) {
                 if (isPlaying()) {
                     pause();
@@ -323,7 +331,9 @@ public class Stephes_Music_Service extends Service {
 
         mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 
-        // FIXME: do we need to do this both here and in play()?
+        // We need to do this both here and in play(); here so the
+        // receiver can start us later via a pausetoggle, in play() to
+        // steal the button focus back from some other app. Sigh.
         mAudioManager.registerMediaButtonEventReceiver(new ComponentName(getPackageName(),
                 MediaButtonIntentReceiver.class.getName()));
 
@@ -405,8 +415,8 @@ public class Stephes_Music_Service extends Service {
         }
 
         Editor ed = mPreferences.edit();
-        //long start = System.currentTimeMillis();
-        if (full) {
+        if (full)
+        {
             StringBuilder q = new StringBuilder();
 
             // The current playlist is saved as a list of "reverse hexadecimal"
@@ -454,6 +464,9 @@ public class Stephes_Music_Service extends Service {
                 ed.putString("history", q.toString());
             }
         }
+        ed.putLong("curPlaylistID", mPlaylist_ID);
+        ed.putString("curPlaylistName", mPlaylist_Name);
+        ed.putString("curPlaylistVolume", mPlaylist_Volume);
         ed.putInt("curpos", mPlayPos);
         if (mPlayer.isInitialized()) {
             ed.putLong("seekpos", mPlayer.position());
@@ -461,8 +474,6 @@ public class Stephes_Music_Service extends Service {
         ed.putInt("repeatmode", mRepeatMode);
         ed.putInt("shufflemode", mShuffleMode);
         ed.apply();
-
-        //Log.i("@@@@ service", "saved state in " + (System.currentTimeMillis() - start) + " ms");
     }
 
     private void reloadQueue() {
@@ -610,6 +621,10 @@ public class Stephes_Music_Service extends Service {
                 }
             }
             mShuffleMode = shufmode;
+
+            mPlaylist_ID     = mPreferences.getLong("curPlaylistID", 0);
+            mPlaylist_Name   = mPreferences.getString("curPlaylistName", "");
+            mPlaylist_Volume = mPreferences.getString("curPlaylistVolume", "");
         }
     }
 
@@ -764,13 +779,14 @@ public class Stephes_Music_Service extends Service {
      * for the currently playing track:
      * "id" - Integer: the database row ID
      * "artist" - String: the name of the artist
+     * "playlist" - String: the name of the playlist
      * "album" - String: the name of the album
      * "track" - String: the name of the track
      * The intent has an action that is one of
-     * "com.android.music.metachanged"
-     * "com.android.music.queuechanged",
-     * "com.android.music.playbackcomplete"
-     * "com.android.music.playstatechanged"
+     * "org.stephe_leake.android.music_player.metachanged"
+     * "org.stephe_leake.android.music_player.queuechanged",
+     * "org.stephe_leake.android.music_player.playbackcomplete"
+     * "org.stephe_leake.android.music_player.playstatechanged"
      * respectively indicating that a new track has
      * started playing, that the playback queue has
      * changed, that playback has stopped because
@@ -781,6 +797,7 @@ public class Stephes_Music_Service extends Service {
 
         Intent i = new Intent(what);
         i.putExtra("id", Long.valueOf(getAudioId()));
+        i.putExtra("playlist", getPlaylistName());
         i.putExtra("artist", getArtistName());
         i.putExtra("album",getAlbumName());
         i.putExtra("track", getTrackName());
@@ -854,6 +871,21 @@ public class Stephes_Music_Service extends Service {
      */
     public void enqueue(long [] list, int action) {
         synchronized(this) {
+           if (mPlaylist_ID != 0)
+           {
+              // No longer playing the current playlist
+              mPlayListLen   = 0;
+              mPlayPos       = 0;
+              if (mCursor != null)
+              {
+                 mCursor.close();
+                 mCursor = null;
+              }
+
+              mPlaylist_ID   = 0;
+              mPlaylist_Name = "";
+           }
+
             if (action == NEXT && mPlayPos + 1 < mPlayListLen) {
                 addToPlayList(list, mPlayPos + 1);
                 notifyChange(QUEUE_CHANGED);
@@ -953,15 +985,48 @@ public class Stephes_Music_Service extends Service {
       return list;
    }
 
+   private String getPlaylistFileName(String Volume, long List_ID)
+   {
+      String result = null;
+      try
+      {
+         final Uri    uri         = MediaStore.Audio.Playlists.getContentUri(Volume);
+         final String[] columns   = new String[] {MediaStore.Audio.Playlists.Members.DATA};
+         final String where       = MediaStore.Audio.Playlists._ID + "=" + List_ID;
+         final int fileNameColumn = 0;
+
+         final Cursor cursor = getContentResolver().query(uri, columns, where, null, null);
+         if (cursor != null)
+         {
+            cursor.moveToFirst();
+            result = cursor.getString(fileNameColumn);
+            cursor.close();
+         }
+         else
+         {
+            MusicUtils.debugLog
+               ("getPlaylistFileName: List_ID " + String.valueOf(List_ID) + " not found in playlist db");
+         }
+         return result;
+      }
+      catch (RuntimeException e)
+      {
+         MusicUtils.debugLog("getPlaylistFileName: " + e.toString() + e.getMessage());
+         return result;
+      }
+   }
    public void replacePlaylist(String Volume, long List_ID)
    {
       // Do the db queries before acquiring server lock, so we don't
       // interrupt the current music flow.
-      long[] List = getSongListForPlaylist (Volume, List_ID);
+      final String playlistFileName = getPlaylistFileName(Volume, List_ID);
+      if (playlistFileName == null) return;
+
+      final long[] List = getSongListForPlaylist (Volume, List_ID);
       synchronized (this)
       {
-         // FIXME: need to finalize the current playlist?
          mPlaylist_ID     = List_ID;
+         mPlaylist_Name   = (new File(playlistFileName)).getName();
          mPlaylist_Volume = Volume;
 
          open(List, 0);
@@ -1159,7 +1224,9 @@ public class Stephes_Music_Service extends Service {
                 // streaming
                 views.setTextViewText(R.id.trackname, getPath());
                 views.setTextViewText(R.id.artistalbum, null);
-            } else {
+            } else
+            {
+               // FIXME: add playlist to statusbar?
                 String artist = getArtistName();
                 views.setTextViewText(R.id.trackname, getTrackName());
                 if (artist == null || artist.equals(MediaStore.UNKNOWN_STRING)) {
@@ -1171,7 +1238,6 @@ public class Stephes_Music_Service extends Service {
                 }
 
                 views.setTextViewText(R.id.artistalbum, artist + "\n" + album);
-//                        getString(R.string.notification_artist_album, artist, album)
             }
 
             Notification status = new Notification();
@@ -1179,7 +1245,7 @@ public class Stephes_Music_Service extends Service {
             status.flags |= Notification.FLAG_ONGOING_EVENT;
             status.icon = R.drawable.stat_notify_musicplayer;
             status.contentIntent = PendingIntent.getActivity(this, 0,
-                    new Intent("com.android.music.PLAYBACK_VIEWER")
+                    new Intent("org.stephe_leake.android.music_player.PLAYBACK_VIEWER")
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), 0);
             startForeground(PLAYBACKSERVICE_STATUS, status);
             if (!mIsSupposedToBePlaying) {
@@ -1368,6 +1434,7 @@ public class Stephes_Music_Service extends Service {
                 doAutoShuffleUpdate();
                 mPlayPos++;
             } else {
+               // SHUFFLE_NONE
                 if (mPlayPos >= mPlayListLen - 1) {
                     // we're at the end of the list
                     if (mRepeatMode == REPEAT_NONE && !force) {
@@ -1649,45 +1716,21 @@ public class Stephes_Music_Service extends Service {
       // To delete the item from the playlist file, we write a new
       // file from the playlist db data, leaving out the deleted item.
       // So we need to open the playlist file for write.
-      final String playlistFileName;
-      final File   playlistFile;
-      try
+      final String playlistFileName = getPlaylistFileName(mPlaylist_Volume, mPlaylist_ID);
+      if (playlistFileName == null) return;
+
+      final File playlistFile = new File(playlistFileName);
+
+      if (!playlistFile.canWrite())
       {
-         final Uri    uri         = MediaStore.Audio.Playlists.getContentUri(mPlaylist_Volume);
-         final String[] columns   = new String[] {MediaStore.Audio.Playlists.Members.DATA};
-         final String where       = MediaStore.Audio.Playlists._ID + "=" + mPlaylist_ID;
-         final int fileNameColumn = 0;
+         MusicUtils.debugLog("maybeDeleteTrack: " + playlistFileName + "is not writeable");
 
-         final Cursor cursor = getContentResolver().query(uri, columns, where, null, null);
-         if (cursor != null)
-         {
-            cursor.moveToFirst();
-            playlistFileName = cursor.getString(fileNameColumn);
-            cursor.close();
-         }
-         else
-         {
-            MusicUtils.debugLog("maybeDeleteTrack: mPlaylist_ID not found in playlist db");
-            return;
-         }
+         // To avoid getting the same error again, pretend we are
+         // not playing a playlist.
+         mPlaylist_ID   = 0;
+         mPlaylist_Name = "";
 
-         playlistFile = new File(playlistFileName);
-
-         if (!playlistFile.canWrite())
-         {
-            MusicUtils.debugLog("maybeDeleteTrack: " + playlistFileName + "is not writeable");
-
-            // To avoid getting the same error again, pretend we are
-            // not playing a playlist.
-            mPlaylist_ID = 0;
-
-            // FIXME: notifyChange (ERROR) to inform user
-            return;
-         }
-      }
-      catch (RuntimeException e)
-      {
-         MusicUtils.debugLog("maybeDeleteTrack playlistFileName: " + e.toString() + e.getMessage());
+         // FIXME: notifyChange (ERROR) to inform user
          return;
       }
 
@@ -1707,7 +1750,8 @@ public class Stephes_Music_Service extends Service {
 
             // Something is screwed up. To avoid getting the same
             // error again, pretend we are not playing a playlist.
-            mPlaylist_ID = 0;
+            mPlaylist_ID   = 0;
+            mPlaylist_Name = "";
 
             // FIXME: notifyChange (ERROR) to inform user
             return;
@@ -1869,6 +1913,12 @@ public class Stephes_Music_Service extends Service {
                 return -1;
             }
             return mCursor.getLong(mCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST_ID));
+        }
+    }
+
+    public String getPlaylistName() {
+        synchronized(this) {
+           return mPlaylist_Name;
         }
     }
 
@@ -2160,6 +2210,9 @@ public class Stephes_Music_Service extends Service {
         public long getArtistId() {
             return mService.get().getArtistId();
         }
+        public String getPlaylistName() {
+            return mService.get().getPlaylistName();
+        }
         public void enqueue(long [] list , int action) {
             mService.get().enqueue(list, action);
         }
@@ -2218,6 +2271,7 @@ public class Stephes_Music_Service extends Service {
     protected void dump(FileDescriptor fd, PrintWriter writer, String[] args) {
         writer.println("" + mPlayListLen + " items in queue, currently at index " + mPlayPos);
         writer.println("Currently loaded:");
+        writer.println(getPlaylistName());
         writer.println(getArtistName());
         writer.println(getAlbumName());
         writer.println(getTrackName());

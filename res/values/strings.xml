@@ -16,14 +16,24 @@
      Copied from com.android.music in Android 2.3.3; modified to contain only strings needed by my app.
 -->
 <resources>
-    <string name="app_name">&quot;Stephe's Music Player&quot;</string>
-    <string name="emptyplaylist">Selected playlist is empty.</string>
-    <string name="playback_failed">Sorry, the player does not support this type of audio file.</string>
-    <string name="sdcard_busy_title">SD card unavailable</string>
-	<string name="sdcard_busy_title_nosdcard" msgid="1162763571147174655">USB storage unavailable</string>	
-    <string name="sdcard_missing_title">No SD card</string>
-    <string name="sdcard_missing_title_nosdcard" msgid="9008284946643270850">No USB storage</string>
-    <string name="unknown_artist_name">Unknown artist</string>
-    <string name="unknown_album_name">Unknown album</string>
- 	<string name="widget_initial_text">Touch to select music.</string>
+  <!--  translate -->
+  <string name="app_name">&quot;Stephe's Music Player&quot;</string>
+  <string name="emptyplaylist">Selected playlist is empty.</string>
+  <string name="playback_failed">Sorry, the player does not support this type of audio file.</string>
+  <string name="sdcard_busy_title">SD card unavailable</string>
+  <string name="sdcard_busy_title_nosdcard" msgid="1162763571147174655">USB storage unavailable</string>	
+  <string name="sdcard_missing_title">No SD card</string>
+  <string name="sdcard_missing_title_nosdcard" msgid="9008284946643270850">No USB storage</string>
+  <string name="unknown_artist_name">Unknown artist</string>
+  <string name="unknown_album_name">Unknown album</string>
+  <string name="widget_initial_text">Touch to select music.</string>
+  
+  <!-- Do not translate. -->
+  
+  <!-- Duration format for duration < 1 hour -->
+  <string translatable="false" name="durationformatshort">%2$d:%5$02d</string>
+
+  <!-- Duration format for duration >= 1 hour -->
+  <string translatable="false" name="durationformatlong">%1$d:%3$02d:%5$02d</string>
+  
 </resources>
