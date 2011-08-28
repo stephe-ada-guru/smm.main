@@ -55,19 +55,19 @@
     <ImageButton 
     android:id="@+id/prev" 
     style="@android:style/MediaButton.Previous" 
-    android:background="#ff5a5a5a"
+    android:background="#00000000"
     />
 
     <ImageButton 
     android:id="@+id/play_pause" 
     style="@android:style/MediaButton.Play" 
-    android:background="#ff5a5a5a"
+    android:background="#00000000"
     />
 
     <ImageButton 
     android:id="@+id/next" 
     style="@android:style/MediaButton.Next" 
-    android:background="#ff5a5a5a"
+    android:background="#00000000"
     />
 
   </LinearLayout>

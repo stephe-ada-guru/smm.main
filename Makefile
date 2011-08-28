@@ -1,10 +1,15 @@
 # misc tasks; use Eclipse for most stuff
 
+# start an emulator
+emu :
+	emulator -avd HTC_Inspire_2.3 &
+
 # push music files to running android emulator
 sdcard :
 	adb push "/Projects/Music/Shawn Colvin/These Four Walls/01 - Fill Me Up.mp3" /sdcard/Audio/Vocal/
 	adb push "/Projects/Music/Shawn Colvin/These Four Walls/02 - These Four Walls.mp3" /sdcard/Audio/Vocal/
-	adb shell echo "Vocal/01 - Fill Me Up.mp3\\nVocal/02 - These Four Walls.mp3\\n" > /sdcard/Audio/vocal.m3u
+	adb shell echo "Vocal/01 - Fill Me Up.mp3" > /sdcard/Audio/vocal.m3u
+	adb shell echo "Vocal/02 - These Four Walls.mp3" >> /sdcard/Audio/vocal.m3u
 
 log :
 	adb shell dumpsys activity service Stephes_Music_Service

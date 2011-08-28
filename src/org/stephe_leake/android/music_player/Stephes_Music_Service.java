@@ -1772,7 +1772,7 @@ public class Stephes_Music_Service extends Service {
 
          out = new BufferedWriter(new FileWriter(playlistFile, false));
 
-         while (!membersCursor.moveToNext())
+         while (membersCursor.moveToNext())
          {
             final long mediaID = membersCursor.getLong(audioID_Column);
             if (trackID != mediaID)
@@ -1780,7 +1780,8 @@ public class Stephes_Music_Service extends Service {
                final Cursor fileCursor = getContentResolver().query (mediaUri, columns, where, new String[]{String.valueOf(mediaID)}, null);
                if (fileCursor != null && fileCursor.moveToNext())
                {
-                  out.write(toRelative(fileCursor.getString(fileName_Column), playlistDirectoryName));
+                  final String fileName = toRelative(fileCursor.getString(fileName_Column), playlistDirectoryName);
+                  out.write(fileName);
                   out.newLine();
                }
                else

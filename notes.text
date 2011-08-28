@@ -2,7 +2,9 @@ src/org/stephe_leake/android/music_player/Stephes_Music_PlayerActivity.java
 /Projects/android/google/packages/apps/Music/src/com/android/music/MusicUtils.java
 (dvc-status)
 
-blink doesn't work; delete it
+something changed in HTC USB connection
+    (I killed the sync server, sigh)
+    adb can only see it if android is in htc sync mode
 
 edit playlist
     works!!!!!!!
@@ -11,8 +13,26 @@ edit playlist
         check lastmodified date when starting a playlist, rescan
 
         scanner apparently runs when sdcard mounted/unmounted.
+            don't see how to do that in emulator
 
-    delete track on next; don't want to here it again
+        scanning .m3u file in emulator did not put it in db
+            scan says it succeeded
+            give it a mime (from intent)
+
+        scanning a modified file did work (with mime)
+            not really
+
+        MediaScannerWait is not waiting?
+            'null uri' message comes after others
+            add verbosity; it is _not_ waiting!
+            apparently current lock owner can lock again; yes, that's what 'reentrant' means.
+                don't see any way to fix that!
+                    well, short of polling (yuck!)
+
+            if did suspend thread, it would not process message queue, and probably not call onCompletion
+            move scan into service, put playlist in queue in oncomplete
+
+    delete track on next; don't want to hear it again
 
 move quit to menu
 
@@ -113,6 +133,13 @@ server stores bookmarks in MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
 
 find out what "select player" is all about
     wireless connection to tv/stereo system?
+
+button color/background
+    HTC has different .png than android-10!
+    workaround; set button background to transparent
+        that loses the orange flash on press - good/bad?
+    better: see /Apps/Android/android-sdk/platforms/android-10/data/res/drawable/media_button_background.xml;
+        replace state_pressed=false case with transparent image
 
  open source projects
 c:/Projects/eclipse_scratch/Ghost Commander/src/com/ghostsq/commander/FileCommander.java
