@@ -8,6 +8,16 @@ something changed in HTC USB connection
 
 move quit to menu
 
+need playlist chooser
+    try scroll list of playlists from db
+    see playlist browser
+
+check intent in notification
+
+test scan new files
+
+
+ later (in Ada)
 bluetooth button doesn't work
     no music playing:
         gets error beep in headset
@@ -23,16 +33,6 @@ bluetooth button doesn't work
 
     log keycodes in 'default:' case
 
-need playlist chooser
-    try scroll list of playlists from db
-    see playlist browser
-
-check intent in notification
-
-test scan new files
-
-
- later (in Ada)
 set up JUnit/AUnit tests that send various messages, observe results
 
 speak metadata!

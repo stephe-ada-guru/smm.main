@@ -17,8 +17,9 @@ import android.os.Message;
 import android.os.SystemClock;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Audio;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
@@ -30,6 +31,8 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
    // constants
    private static final int Progress_Max = 1000;
    private static final int REFRESH      = 1;
+
+   private static final int MENU_QUIT = 0;
 
    // Main UI members
 
@@ -89,8 +92,6 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
          Progress_Bar = (SeekBar) findViewById(android.R.id.progress);
          Progress_Bar.setOnSeekBarChangeListener(Progress_Listener);
          Progress_Bar.setMax(Progress_Max);
-
-         ((Button)findViewById(R.id.Quit)).setOnClickListener(Quit_Listener);
 
          // We can't call any MusicUtils functions that use the
          // service yet; it won't be bound until this activity is
@@ -164,6 +165,33 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
    public void onServiceDisconnected(ComponentName className)
    {
       // nothing to do here.
+   }
+
+   //////////
+   // Options Menu (main menu)
+   @Override public boolean onCreateOptionsMenu(Menu menu)
+   {
+      super.onCreateOptionsMenu(menu);
+      menu.add(0, MENU_QUIT, 0, "quit");
+      return true;
+   }
+
+   @Override public boolean onOptionsItemSelected(MenuItem item)
+   {
+      switch (item.getItemId())
+      {
+      case MENU_QUIT:
+         if (MusicUtils.isPlaying())
+            sendBroadcast(new Intent(Stephes_Music_Service.TOGGLEPAUSE_ACTION));
+
+         finish();
+         break;
+
+      default:
+         MusicUtils.Error_Log
+            (this, "PlayerActivity.onOptionsItemSelected: unknown MenuItemId " + String.valueOf(item.getItemId()));
+      }
+      return false;
    }
 
    ////////// private non-UI members and methods
@@ -492,15 +520,4 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
          Message_Handler.sendMessageDelayed(msg, delay);
         }
     }
-
-   private Button.OnClickListener Quit_Listener = new Button.OnClickListener()
-      {
-         @Override public void onClick(View v)
-         {
-            if (MusicUtils.isPlaying())
-               sendBroadcast(new Intent(Stephes_Music_Service.TOGGLEPAUSE_ACTION));
-
-            finish();
-         }
-      };
 }
