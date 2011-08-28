@@ -12,10 +12,12 @@ edit playlist
         but the scanner doesn't notice the change when we run it
             it is returning null
             system log says it was scanned, with no errors!
-            hmm. didn't get 'scan complete' message!
+            hmm. didn't get 'scan complete' message; scan never calls onScanCompleted!
 
         scanner apparently runs (correctly) when sdcard mounted/unmounted.
             don't see how to do that in emulator
+
+        so don't scan modified files; do scan new ones (not tested yet)
 
     delete track on next; don't want to hear it again
 

@@ -1,7 +1,5 @@
 package org.stephe_leake.android.music_player;
 
-import java.io.File;
-
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -19,7 +17,6 @@ import android.os.Message;
 import android.os.SystemClock;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Audio;
-import android.provider.MediaStore.MediaColumns;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -33,7 +30,6 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
    // constants
    private static final int Progress_Max = 1000;
    private static final int REFRESH      = 1;
-   private static final long millisecondsPerSecond = 1000;
 
    // Main UI members
 
@@ -218,33 +214,15 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
       }
    };
 
-   private class getIDResults
+   private long Get_ID (final Uri contentURI, final Uri Item_URI) throws Not_Found
    {
-      // no out params in Java
-      public String path;
-      public long ID;
-      public long dbLastModified; // seconds
-      public long fileLastModified; // seconds
-
-      getIDResults (String path)
-      {
-         this.path             = path;
-         this.ID               = 0;
-         this.dbLastModified   = 0;
-         this.fileLastModified = new File(path).lastModified() / millisecondsPerSecond;
-      }
-   }
-
-   private getIDResults Get_ID (final Uri contentURI, final Uri Item_URI) throws Not_Found
-   {
-      getIDResults result = new getIDResults(Item_URI.getPath());
-
-      final String[] columns      = new String[]{Audio.Media._ID, MediaColumns.DATE_MODIFIED};
-      final String where          = MediaStore.Audio.Media.DATA + "=?";
-      final int    idColumn       = 0;
-      final int    modifiedColumn = 1;
-      final String[] selection    = new String[] {result.path};
-      Cursor       cursor         = Content_Resolver.query(contentURI, columns, where, selection, null);
+      long         ID;
+      final String path        = Item_URI.getPath();
+      final String[] columns   = new String[]{Audio.Media._ID};
+      final String where       = MediaStore.Audio.Media.DATA + "=?";
+      final int    idColumn    = 0;
+      final String[] selection = new String[] {path};
+      Cursor       cursor      = Content_Resolver.query(contentURI, columns, where, selection, null);
 
       // cursor is before first result, or null
       if (cursor != null && cursor.getCount() > 0)
@@ -253,15 +231,14 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
             MusicUtils.Error_Log(Stephes_Music_PlayerActivity.this, Item_URI + ": multiple matches in database");
 
          cursor.moveToFirst();
-         result.ID             = cursor.getLong(idColumn);
-         result.dbLastModified = cursor.getLong(modifiedColumn); // seconds
+         ID = cursor.getLong(idColumn);
          cursor.close();
       }
       else
       {
-         throw new Not_Found(result.path + ": not found in database");
+         throw new Not_Found(path + ": not found in database");
       }
-      return result;
+      return ID;
    }
 
    private void Add_Song (Uri Song_URI, String mimeType)
@@ -270,17 +247,14 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
       {
          final Uri  contentURI = MediaStore.Audio.Media.getContentUriForPath(Song_URI.getPath());
 
-         // We don't bother to check modified times on single files;
-         // the player will play the actual file anyway.
-
          MusicUtils.addToCurrentPlaylist
             (this,
-             new long[]{Get_ID(contentURI, Song_URI).ID},
+             new long[]{Get_ID(contentURI, Song_URI)},
              MusicUtils.isPlaying() ? Stephes_Music_Service.LAST : Stephes_Music_Service.NOW);
       }
       catch (Not_Found e)
       {
-         // FIXME: scan here; the media scanner runs when sdcard is
+         // FIXME: scan here? the media scanner runs when sdcard is
          // unmounted, but there are other ways to get files on the
          // sdcard (via wifi or phone)
          MusicUtils.Info_Log(this, e.getMessage());
@@ -311,19 +285,7 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
 
       try
       {
-         getIDResults result = Get_ID(contentURI, listURI);
-
-         // First check to see if the actual file has been modified since
-         // scanned; the service deletes files as they are played from
-         // .m3u files.
-         if (!alreadyScanned && (result.dbLastModified != result.fileLastModified))
-         {
-            MusicUtils.debugLog("Modified; scanning " + listURI.toString());
-            MediaScannerConnection.scanFile(this, new String[] {result.path}, new String[] {mimeType}, ScanListener);
-         } else
-         {
-            MusicUtils.replaceCurrentPlaylist (Volume_Name, result.ID);
-         }
+         MusicUtils.replaceCurrentPlaylist (Volume_Name, Get_ID(contentURI, listURI));
       } catch (Not_Found e)
       {
          if (alreadyScanned)
@@ -348,7 +310,8 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
 
          // FIXME: could be a new intent while we were waiting for
          // scan; need a queue.
-         MusicUtils.debugLog("scan complete; starting " + getIntent().toString);
+         MusicUtils.debugLog("scan complete; got " + uri.toString());
+         MusicUtils.debugLog(" ... starting " + getIntent().toString());
          handleStartIntent(getIntent(), true);
       }
    };
