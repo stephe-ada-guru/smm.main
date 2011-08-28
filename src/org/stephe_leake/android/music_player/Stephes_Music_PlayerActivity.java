@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.database.Cursor;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -32,6 +33,7 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
    // constants
    private static final int Progress_Max = 1000;
    private static final int REFRESH      = 1;
+   private static final long millisecondsPerSecond = 1000;
 
    // Main UI members
 
@@ -155,38 +157,7 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
       MusicUtils.debugLog("onServiceConnected: " + intent);
       try
       {
-         if (intent == null || // not clear if we can get this
-             intent.getAction() == null || // from widget, or destroyed/restored (ie for screen rotate)
-             intent.getAction().equals(Intent.ACTION_MAIN)) // launched directly by user
-         {
-            // Server may be playing or paused
-            Update_Display();
-
-            // FIXME: offer file/db browsers
-         }
-         else if (intent.getAction().equals(Intent.ACTION_VIEW))
-         {
-            Uri Item_Uri = intent.getData();
-            String mimeType = intent.getType();
-
-            // list from /Projects/android/google/frameworks/base/media/java/android/media/MediaFile.java
-            // assuming these are the only playlist formats supported by the MediaScanner
-            if (mimeType.equals("audio/x-mpegurl") ||
-                mimeType.equals("audio/x-scpls") ||
-                 mimeType.equals("application/vnd.ms-wpl"))
-            {
-               Play_List (Item_Uri, mimeType);
-            }
-            else
-            {
-               Add_Song (Item_Uri, mimeType);
-            };
-         }
-         else
-         {
-            // These are the only actions we declared in our manifest.
-            MusicUtils.Error_Log(this, "onServiceConnected: unexpected intent " + intent);
-         }
+         handleStartIntent(intent, false);
       }
       catch (RuntimeException e)
       {
@@ -201,6 +172,42 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
 
    ////////// private non-UI members and methods
 
+   private void handleStartIntent(Intent intent, boolean alreadyScanned)
+   {
+      if (intent == null || // not clear if we can get this
+          intent.getAction() == null || // from widget, or destroyed/restored (ie for screen rotate)
+          intent.getAction().equals(Intent.ACTION_MAIN)) // launched directly by user
+      {
+         // Server may be playing or paused
+         Update_Display();
+
+         // FIXME: offer file/db browsers
+      }
+      else if (intent.getAction().equals(Intent.ACTION_VIEW))
+      {
+         Uri Item_Uri = intent.getData();
+         String mimeType = intent.getType();
+
+         // list from /Projects/android/google/frameworks/base/media/java/android/media/MediaFile.java
+         // assuming these are the only playlist formats supported by the MediaScanner
+         if (mimeType.equals("audio/x-mpegurl") ||
+             mimeType.equals("audio/x-scpls") ||
+             mimeType.equals("application/vnd.ms-wpl"))
+         {
+            Play_List (Item_Uri, mimeType, alreadyScanned);
+         }
+         else
+         {
+            Add_Song (Item_Uri, mimeType);
+         };
+      }
+      else
+      {
+         // These are the only actions we declared in our manifest.
+         MusicUtils.Error_Log(this, "unexpected intent " + intent);
+      }
+   }
+
    private class Not_Found extends Exception
    {
       static final long serialVersionUID = 0;
@@ -211,122 +218,71 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
       }
    };
 
-   private class ID_Helper
+   private class getIDResults
    {
-      public final String path;
+      // no out params in Java
+      public String path;
       public long ID;
       public long dbLastModified; // seconds
-      public final long fileLastModified; // seconds
+      public long fileLastModified; // seconds
 
-      private final Uri    Content_URI;
-      private final Uri    Item_URI;
-      private final String[] columns      = new String[]{Audio.Media._ID, MediaColumns.DATE_MODIFIED};
-      private final String where          = MediaStore.Audio.Media.DATA + "=?";
-      private final int    idColumn       = 0;
-      private final int    modifiedColumn = 1;
-
-      // Run db query, return results in ID, dbLastModified, fileLastModified
-      public ID_Helper (final Uri Content_URI, final Uri Item_URI) throws Not_Found
+      getIDResults (String path)
       {
-         this.Content_URI = Content_URI;
-         this.Item_URI    = Item_URI;
-         path        = Item_URI.getPath();
-         final File   file        = new File(path);
-
-         fileLastModified = file.lastModified() / 1000; // convert milliseconds to seconds
-         dbLastModified = 0;
-         ID = 0;
-      }
-
-      public void query() throws Not_Found
-      {
-         final String[] selection = new String[] { path };
-         Cursor cursor = Content_Resolver.query(Content_URI, columns, where, selection, null);
-
-         // cursor is before first result, or null
-         if (cursor != null && cursor.getCount() > 0)
-         {
-            if (cursor.getCount() > 1)
-               MusicUtils.Error_Log(Stephes_Music_PlayerActivity.this, Item_URI + ": multiple matches in database");
-
-            cursor.moveToFirst();
-            ID             = cursor.getLong(idColumn);
-            dbLastModified = cursor.getLong(modifiedColumn); // seconds
-            cursor.close();
-         }
-         else
-         {
-            dbLastModified = 0;
-            throw new Not_Found(path + ": not found in database");
-         }
+         this.path             = path;
+         this.ID               = 0;
+         this.dbLastModified   = 0;
+         this.fileLastModified = new File(path).lastModified() / millisecondsPerSecond;
       }
    }
 
-   private long Get_ID (final Uri Content_URI, final Uri Item_URI, final String mimeType) throws Not_Found
+   private getIDResults Get_ID (final Uri contentURI, final Uri Item_URI) throws Not_Found
    {
-      ID_Helper helper = new ID_Helper(Content_URI, Item_URI);
-      try
+      getIDResults result = new getIDResults(Item_URI.getPath());
+
+      final String[] columns      = new String[]{Audio.Media._ID, MediaColumns.DATE_MODIFIED};
+      final String where          = MediaStore.Audio.Media.DATA + "=?";
+      final int    idColumn       = 0;
+      final int    modifiedColumn = 1;
+      final String[] selection    = new String[] {result.path};
+      Cursor       cursor         = Content_Resolver.query(contentURI, columns, where, selection, null);
+
+      // cursor is before first result, or null
+      if (cursor != null && cursor.getCount() > 0)
       {
-         helper.query();
+         if (cursor.getCount() > 1)
+            MusicUtils.Error_Log(Stephes_Music_PlayerActivity.this, Item_URI + ": multiple matches in database");
 
-         // If the service or the user has edited the file since it was
-         // last scanned, rescan now
-         if (helper.dbLastModified != helper.fileLastModified)
-         {
-            MusicUtils.debugLog("Modified; scanning " + Item_URI.toString());
-            MediaScannerWait wait = new MediaScannerWait(this, new String[] {helper.path}, null);
-            // FIXME: this doesn't work, because MediaScannerWait
-            // doesn't actually wait. Which is a good thing; if the
-            // thread was suspended, it would not receive the
-            // completion message, and the wait would never return.
-            if (wait.scanComplete())
-               MusicUtils.debugLog(" ... succeeded ");
-            else
-               MusicUtils.debugLog(" ... failed ");
-         }
-
-         return helper.ID;
+         cursor.moveToFirst();
+         result.ID             = cursor.getLong(idColumn);
+         result.dbLastModified = cursor.getLong(modifiedColumn); // seconds
+         cursor.close();
       }
-      catch (Not_Found e)
+      else
       {
-         MusicUtils.debugLog("Not found; scanning " + Item_URI.toString());
-         MediaScannerWait wait = new MediaScannerWait(this, new String[] {Item_URI.getPath()}, new String[]{mimeType});
-         if (wait.scanComplete())
-         {
-            MusicUtils.debugLog(" ... succeeded ");
-            try
-            {
-               helper.query();
-
-               return helper.ID;
-            }
-            catch (Not_Found f)
-            {
-               throw new Not_Found(Item_URI + " not found in db after scan");
-            }
-         }
-         else
-         {
-            MusicUtils.debugLog(this);
-            throw new Not_Found(" ... failed");
-         }
+         throw new Not_Found(result.path + ": not found in database");
       }
+      return result;
    }
 
-   private void Add_Song (Uri Song_Uri, String mimeType)
+   private void Add_Song (Uri Song_URI, String mimeType)
    {
       try
       {
-         final Uri  Content_Uri = MediaStore.Audio.Media.getContentUriForPath(Song_Uri.getPath());
-         final long ID          = Get_ID (Content_Uri, Song_Uri, mimeType);
+         final Uri  contentURI = MediaStore.Audio.Media.getContentUriForPath(Song_URI.getPath());
+
+         // We don't bother to check modified times on single files;
+         // the player will play the actual file anyway.
 
          MusicUtils.addToCurrentPlaylist
             (this,
-             new long[]{ID},
+             new long[]{Get_ID(contentURI, Song_URI).ID},
              MusicUtils.isPlaying() ? Stephes_Music_Service.LAST : Stephes_Music_Service.NOW);
       }
       catch (Not_Found e)
       {
+         // FIXME: scan here; the media scanner runs when sdcard is
+         // unmounted, but there are other ways to get files on the
+         // sdcard (via wifi or phone)
          MusicUtils.Info_Log(this, e.getMessage());
       }
       catch (RuntimeException e)
@@ -335,9 +291,9 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
       }
     }
 
-   private void Play_List (Uri List_Uri, String mimeType)
+   private void Play_List (Uri listURI, String mimeType, boolean alreadyScanned)
    {
-      // List_Uri is the name of a playlist file of MIME type
+      // listURI is the name of a playlist file of MIME type
       // mimeType. If found in the db, send its id to the server.
       // Otherwise scan it, then send its id to the server.
 
@@ -348,19 +304,54 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
       // apparently content Uris have the form:
       //
       // content://media/<volume name>/
-      final String tmp         = MediaStore.Audio.Media.getContentUriForPath(List_Uri.getPath()).toString();
+      final String tmp         = MediaStore.Audio.Media.getContentUriForPath(listURI.getPath()).toString();
       final int    start       = "content://media/".length();
       final String Volume_Name = tmp.substring(start, tmp.indexOf('/', start));
-      final Uri    Content_Uri = MediaStore.Audio.Playlists.getContentUri(Volume_Name);
+      final Uri    contentURI = MediaStore.Audio.Playlists.getContentUri(Volume_Name);
 
       try
       {
-         MusicUtils.replaceCurrentPlaylist (Volume_Name, Get_ID (Content_Uri, List_Uri, mimeType));
+         getIDResults result = Get_ID(contentURI, listURI);
+
+         // First check to see if the actual file has been modified since
+         // scanned; the service deletes files as they are played from
+         // .m3u files.
+         if (!alreadyScanned && (result.dbLastModified != result.fileLastModified))
+         {
+            MusicUtils.debugLog("Modified; scanning " + listURI.toString());
+            MediaScannerConnection.scanFile(this, new String[] {result.path}, new String[] {mimeType}, ScanListener);
+         } else
+         {
+            MusicUtils.replaceCurrentPlaylist (Volume_Name, result.ID);
+         }
       } catch (Not_Found e)
       {
-         MusicUtils.Info_Log(this, e.toString());
+         if (alreadyScanned)
+         {
+            MusicUtils.Error_Log(this, listURI.toString() + " not found after scan");
+         } else
+         {
+            // A brand new playlist; scan it
+            MusicUtils.debugLog("new playlist; scanning " + listURI.toString());
+            MediaScannerConnection.scanFile
+               (this, new String[] {listURI.getPath()}, new String[] {mimeType}, ScanListener);
+         }
       }
    }
+
+   private MediaScannerConnection.OnScanCompletedListener ScanListener = new MediaScannerConnection.OnScanCompletedListener()
+   {
+      public void onScanCompleted (String path, Uri uri)
+      {
+         // uri is always null for playlists; not clear why. So we
+         // have to look for the ID to tell if the scan succeeded.
+
+         // FIXME: could be a new intent while we were waiting for
+         // scan; need a queue.
+         MusicUtils.debugLog("scan complete; starting " + getIntent().toString);
+         handleStartIntent(getIntent(), true);
+      }
+   };
 
    ////////// private UI methods
 

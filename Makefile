@@ -11,8 +11,11 @@ sdcard :
 	adb shell echo "Vocal/01 - Fill Me Up.mp3" > /sdcard/Audio/vocal.m3u
 	adb shell echo "Vocal/02 - These Four Walls.mp3" >> /sdcard/Audio/vocal.m3u
 
-log :
+applog :
 	adb shell dumpsys activity service Stephes_Music_Service
+
+syslog :
+	adb shell logcat -d
 
 app-intent-main :
 	adb shell am start -n org.stephe_leake.android.music_player/.Stephes_Music_PlayerActivity -a android.intent.action.MAIN -c android.intent.category.LAUNCHER

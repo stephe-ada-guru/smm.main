@@ -9,28 +9,13 @@ something changed in HTC USB connection
 edit playlist
     works!!!!!!!
         well, the file gets edited
-        but the scanner doesn't notice the change?
-        check lastmodified date when starting a playlist, rescan
+        but the scanner doesn't notice the change when we run it
+            it is returning null
+            system log says it was scanned, with no errors!
+            hmm. didn't get 'scan complete' message!
 
-        scanner apparently runs when sdcard mounted/unmounted.
+        scanner apparently runs (correctly) when sdcard mounted/unmounted.
             don't see how to do that in emulator
-
-        scanning .m3u file in emulator did not put it in db
-            scan says it succeeded
-            give it a mime (from intent)
-
-        scanning a modified file did work (with mime)
-            not really
-
-        MediaScannerWait is not waiting?
-            'null uri' message comes after others
-            add verbosity; it is _not_ waiting!
-            apparently current lock owner can lock again; yes, that's what 'reentrant' means.
-                don't see any way to fix that!
-                    well, short of polling (yuck!)
-
-            if did suspend thread, it would not process message queue, and probably not call onCompletion
-            move scan into service, put playlist in queue in oncomplete
 
     delete track on next; don't want to hear it again
 
