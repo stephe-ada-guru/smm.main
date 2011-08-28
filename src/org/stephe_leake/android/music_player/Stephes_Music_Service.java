@@ -281,40 +281,59 @@ public class Stephes_Music_Service extends Service {
     private BroadcastReceiver mIntentReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            String cmd = intent.getStringExtra("command");
-            MusicUtils.debugLog("mIntentReceiver.onReceive " + action + " / " + cmd);
-            if (CMDNEXT.equals(cmd) || NEXT_ACTION.equals(action)) {
-                next(true);
-            } else if (CMDPREVIOUS.equals(cmd) || PREVIOUS_ACTION.equals(action)) {
-                if (position() < 2000) {
-                    prev();
-                } else {
-                    seek(0);
-                    play();
-                }
-            } else if (CMDTOGGLEPAUSE.equals(cmd) || TOGGLEPAUSE_ACTION.equals(action)) {
-                if (isPlaying()) {
-                    pause();
-                    mPausedByTransientLossOfFocus = false;
-                } else {
-                    play();
-                }
-            } else if (CMDPAUSE.equals(cmd) || PAUSE_ACTION.equals(action)) {
-                pause();
-                mPausedByTransientLossOfFocus = false;
-            } else if (CMDSTOP.equals(cmd)) {
-                pause();
-                mPausedByTransientLossOfFocus = false;
-                seek(0);
-            } else if (MediaAppWidgetProvider.CMDAPPWIDGETUPDATE.equals(cmd)) {
-                // Someone asked us to refresh a set of specific widgets, probably
-                // because they were just added.
-                int[] appWidgetIds = intent.getIntArrayExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS);
-                mAppWidgetProvider.performUpdate(Stephes_Music_Service.this, appWidgetIds);
-            }
+           MusicUtils.debugLog("mIntentReceiver.onReceive " + intent.toString());
+           handleIntent(intent);
         }
-    };
+       };
+
+   private void handleIntent(Intent intent)
+   {
+      final String action = intent.getAction();
+      final String cmd    = intent.getStringExtra("command");
+
+      if (CMDNEXT.equals(cmd) || NEXT_ACTION.equals(action))
+      {
+         long trackEnded = mPlayList[mPlayPos];
+         next(true);
+         maybeDeleteTrack(trackEnded);
+      }
+      else if (CMDPREVIOUS.equals(cmd) || PREVIOUS_ACTION.equals(action))
+      {
+         if (position() < 2000) {
+            prev();
+         } else {
+            seek(0);
+            play();
+         }
+      }
+      else if (CMDTOGGLEPAUSE.equals(cmd) || TOGGLEPAUSE_ACTION.equals(action))
+      {
+         if (isPlaying()) {
+            pause();
+            mPausedByTransientLossOfFocus = false;
+         } else {
+            play();
+         }
+      }
+      else if (CMDPAUSE.equals(cmd) || PAUSE_ACTION.equals(action))
+      {
+         pause();
+         mPausedByTransientLossOfFocus = false;
+      }
+      else if (CMDSTOP.equals(cmd))
+      {
+         pause();
+         mPausedByTransientLossOfFocus = false;
+         seek(0);
+      }
+      else if (MediaAppWidgetProvider.CMDAPPWIDGETUPDATE.equals(cmd))
+      {
+         // Someone asked us to refresh a set of specific widgets, probably
+         // because they were just added.
+         int[] appWidgetIds = intent.getIntArrayExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS);
+         mAppWidgetProvider.performUpdate(Stephes_Music_Service.this, appWidgetIds);
+      }
+   }
 
     private OnAudioFocusChangeListener mAudioFocusListener = new OnAudioFocusChangeListener() {
         public void onAudioFocusChange(int focusChange) {
@@ -646,36 +665,7 @@ public class Stephes_Music_Service extends Service {
         mServiceStartId = startId;
         mDelayedStopHandler.removeCallbacksAndMessages(null);
 
-        if (intent != null) {
-            String action = intent.getAction();
-            String cmd = intent.getStringExtra("command");
-            MusicUtils.debugLog("onStartCommand " + action + " / " + cmd);
-
-            if (CMDNEXT.equals(cmd) || NEXT_ACTION.equals(action)) {
-                next(true);
-            } else if (CMDPREVIOUS.equals(cmd) || PREVIOUS_ACTION.equals(action)) {
-                if (position() < 2000) {
-                    prev();
-                } else {
-                    seek(0);
-                    play();
-                }
-            } else if (CMDTOGGLEPAUSE.equals(cmd) || TOGGLEPAUSE_ACTION.equals(action)) {
-                if (isPlaying()) {
-                    pause();
-                    mPausedByTransientLossOfFocus = false;
-                } else {
-                    play();
-                }
-            } else if (CMDPAUSE.equals(cmd) || PAUSE_ACTION.equals(action)) {
-                pause();
-                mPausedByTransientLossOfFocus = false;
-            } else if (CMDSTOP.equals(cmd)) {
-                pause();
-                mPausedByTransientLossOfFocus = false;
-                seek(0);
-            }
-        }
+        if (intent != null) handleIntent(intent);
 
         // make sure the service will shut down on its own if it was
         // just started but not bound to and nothing is playing

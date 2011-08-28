@@ -6,21 +6,6 @@ something changed in HTC USB connection
     (I killed the sync server, sigh)
     adb can only see it if android is in htc sync mode
 
-edit playlist
-    works!!!!!!!
-        well, the file gets edited
-        but the scanner doesn't notice the change when we run it
-            it is returning null
-            system log says it was scanned, with no errors!
-            hmm. didn't get 'scan complete' message; scan never calls onScanCompleted!
-
-        scanner apparently runs (correctly) when sdcard mounted/unmounted.
-            don't see how to do that in emulator
-
-        so don't scan modified files; do scan new ones (not tested yet)
-
-    delete track on next; don't want to hear it again
-
 move quit to menu
 
 bluetooth button doesn't work
@@ -43,6 +28,9 @@ need playlist chooser
     see playlist browser
 
 check intent in notification
+
+test scan new files
+
 
  later (in Ada)
 set up JUnit/AUnit tests that send various messages, observe results
