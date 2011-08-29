@@ -2,19 +2,15 @@ src/org/stephe_leake/android/music_player/Stephes_Music_PlayerActivity.java
 /Projects/android/google/packages/apps/Music/src/com/android/music/MusicUtils.java
 (dvc-status)
 
-something changed in HTC USB connection
-    (I killed the sync server, sigh)
-    adb can only see it if android is in htc sync mode
-
-move quit to menu
-
-need playlist chooser
-    try scroll list of playlists from db
-    see playlist browser
+add song count in playlist name display (current and list)
 
 check intent in notification
 
 test scan new files
+    doesn't work
+    emulator scans files on startup (when sd is mounted to android)
+        created two vocal playlists
+        dump all metadata for each, see what the difference is
 
 
  later (in Ada)

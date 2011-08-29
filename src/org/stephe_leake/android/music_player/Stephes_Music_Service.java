@@ -124,7 +124,6 @@ public class Stephes_Music_Service extends Service {
    private long mPlaylist_ID = 0;
    // MediaStore.Audio.Playlists ID of the current playlist file, or 0
    // if we are not playing a playlist file.
-   // FIXME: set to 0 in the right places!
 
    private String mPlaylist_Name = "";
    // "" if not playing a playlist.
@@ -816,8 +815,7 @@ public class Stephes_Music_Service extends Service {
             }
             mPlayList = newlist;
         }
-        // FIXME: shrink the array when the needed size is much smaller
-        // than the allocated size
+        // FIXME: use a list container
     }
 
     // insert the list of songs at the specified position in the playlist
@@ -981,7 +979,7 @@ public class Stephes_Music_Service extends Service {
       try
       {
          final Uri    uri         = MediaStore.Audio.Playlists.getContentUri(Volume);
-         final String[] columns   = new String[] {MediaStore.Audio.Playlists.Members.DATA};
+         final String[] columns   = new String[] {MediaStore.Audio.Playlists.DATA};
          final String where       = MediaStore.Audio.Playlists._ID + "=" + List_ID;
          final int fileNameColumn = 0;
 
@@ -995,34 +993,67 @@ public class Stephes_Music_Service extends Service {
          else
          {
             MusicUtils.debugLog
-               ("getPlaylistFileName: List_ID " + String.valueOf(List_ID) + " not found in playlist db");
+               ("getPlaylistFileName: List_ID " + List_ID + " not found in playlist db");
          }
          return result;
       }
       catch (RuntimeException e)
       {
-         MusicUtils.debugLog("getPlaylistFileName: " + e.toString() + e.getMessage());
+         MusicUtils.debugLog("getPlaylistFileName: " + e.toString());
          return result;
       }
    }
-   public void replacePlaylist(String Volume, long List_ID)
+
+   private String getPlaylistName(String Volume, long List_ID)
+   {
+      String result = null;
+      try
+      {
+         final Uri    uri        = MediaStore.Audio.Playlists.getContentUri(Volume);
+         final String[] columns  = new String[] {MediaStore.Audio.Playlists.NAME};
+         final String where      = MediaStore.Audio.Playlists._ID + "=" + List_ID;
+         final int    nameColumn = 0;
+
+         final Cursor cursor = getContentResolver().query(uri, columns, where, null, null);
+         if (cursor != null)
+         {
+            cursor.moveToFirst();
+            result = cursor.getString(nameColumn);
+            cursor.close();
+         }
+         else
+         {
+            MusicUtils.debugLog
+               ("getPlaylistName: List_ID " + List_ID + " not found in playlist db");
+         }
+         return result;
+      }
+      catch (RuntimeException e)
+      {
+         MusicUtils.debugLog("getPlaylistName: " + e.toString());
+         return result;
+      }
+   }
+   public void replacePlaylist(String volume, long listId)
    {
       // Do the db queries before acquiring server lock, so we don't
       // interrupt the current music flow.
-      final String playlistFileName = getPlaylistFileName(Volume, List_ID);
-      if (playlistFileName == null) return;
+      final String playlistName = getPlaylistName(volume, listId);
+      if (playlistName == null) return;
 
-      final long[] List = getSongListForPlaylist (Volume, List_ID);
-      synchronized (this)
-      {
-         mPlaylist_ID     = List_ID;
-         mPlaylist_Name   = (new File(playlistFileName)).getName();
-         mPlaylist_Volume = Volume;
+      final long[] list = getSongListForPlaylist (volume, listId);
 
-         open(List, 0);
-         play();
-         notifyChange(META_CHANGED);
-      }
+      if (list.length > 0)
+         synchronized (this)
+         {
+            mPlaylist_ID     = listId;
+            mPlaylist_Name   = playlistName;
+            mPlaylist_Volume = volume;
+
+            open(list, 0);
+            play();
+            notifyChange(META_CHANGED);
+         }
    }
 
     /**
@@ -1783,18 +1814,17 @@ public class Stephes_Music_Service extends Service {
          }
 
          // 3) the playlist members db
-         Uri       contentUri  = MediaStore.Audio.Playlists.Members.getContentUri(mPlaylist_Volume, mPlaylist_ID);
-         columns      = new String[] {MediaStore.Audio.Playlists.Members._ID};
-         where          = MediaStore.Audio.Playlists.Members.AUDIO_ID + "=" + String.valueOf(trackID);
-         final Cursor cursor = getContentResolver().query (contentUri, columns, where, null, null);
+         Uri          contentUri = MediaStore.Audio.Playlists.Members.getContentUri(mPlaylist_Volume, mPlaylist_ID);
+         columns                 = new String[] {MediaStore.Audio.Playlists.Members._ID};
+         where                   = MediaStore.Audio.Playlists.Members.AUDIO_ID + "=" + trackID;
+         final Cursor cursor     = getContentResolver().query (contentUri, columns, where, null, null);
          if (cursor != null && cursor.moveToNext())
          {
             contentUri            = ContentUris.withAppendedId(contentUri, cursor.getLong(0));
             final int rowsDeleted = this.getContentResolver().delete(contentUri, null, null);
 
             if (rowsDeleted != 1)
-               MusicUtils.debugLog("maybeDeleteTrack db: deleted " + String.valueOf(rowsDeleted) + " rows");
-
+               MusicUtils.debugLog("maybeDeleteTrack db: deleted " + rowsDeleted + " rows");
          }
          else
          {

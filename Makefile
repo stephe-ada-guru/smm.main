@@ -1,5 +1,10 @@
 # misc tasks; use Eclipse for most stuff
 
+# adb can't install on HTC unless HTC sync is running, and that won't connect anymore (sigh)
+# so we do this, then install the apk via Android Tweak | Tools
+install:
+	cp bin/Stephes_Music_PlayerActivity.apk e:/download
+
 # start an emulator
 emu :
 	emulator -avd HTC_Inspire_2.3 &

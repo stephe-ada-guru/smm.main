@@ -1,9 +1,8 @@
 package org.stephe_leake.android.music_player;
 
-import android.app.Activity;
+import android.app.ListActivity;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -21,12 +20,15 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.ListAdapter;
+import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
+import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 import org.stephe_leake.android.music_player.MusicUtils.ServiceToken;
 
-public class Stephes_Music_PlayerActivity extends Activity implements ServiceConnection
+public class Stephes_Music_PlayerActivity extends ListActivity implements ServiceConnection
 {
    // constants
    private static final int Progress_Max = 1000;
@@ -46,8 +48,9 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
    private SeekBar     Progress_Bar;
 
    // Main other members
-   private ServiceToken    Service;
-   private ContentResolver Content_Resolver;
+   private ServiceToken Service;
+   private String       playlistVolumeName;
+   private Cursor       playlistCursor;
 
    // Cached values, set by Update_Display
 
@@ -67,8 +70,6 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
          // itself after 60 seconds (Stephes_Music_Service.java
          // IDLE_DELAY) if not bound or playing.
          Service = MusicUtils.bindToService(this, (ServiceConnection) this);
-
-         Content_Resolver = getContentResolver();
 
          // Set up displays, top to bottom left to right
 
@@ -92,6 +93,24 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
          Progress_Bar = (SeekBar) findViewById(android.R.id.progress);
          Progress_Bar.setOnSeekBarChangeListener(Progress_Listener);
          Progress_Bar.setMax(Progress_Max);
+
+         // setup playlist list
+
+         // FIXME: need to enumerate available volumes that might have
+         // playlists on them.
+         playlistVolumeName = "external";
+         Uri playlistContentUri = MediaStore.Audio.Playlists.getContentUri(playlistVolumeName);
+         playlistCursor     = this.getContentResolver().query(playlistContentUri, null, null, null, null);
+         startManagingCursor(playlistCursor);
+
+         ListAdapter adapter = new SimpleCursorAdapter
+            (this,
+             android.R.layout.simple_list_item_1,
+             playlistCursor,
+             new String[] {MediaStore.Audio.Playlists.NAME},
+             new int[] {android.R.id.text1});
+
+         setListAdapter(adapter);
 
          // We can't call any MusicUtils functions that use the
          // service yet; it won't be bound until this activity is
@@ -169,6 +188,7 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
 
    //////////
    // Options Menu (main menu)
+
    @Override public boolean onCreateOptionsMenu(Menu menu)
    {
       super.onCreateOptionsMenu(menu);
@@ -189,7 +209,7 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
 
       default:
          MusicUtils.Error_Log
-            (this, "PlayerActivity.onOptionsItemSelected: unknown MenuItemId " + String.valueOf(item.getItemId()));
+            (this, "PlayerActivity.onOptionsItemSelected: unknown MenuItemId " + item.getItemId());
       }
       return false;
    }
@@ -250,7 +270,7 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
       final String where       = MediaStore.Audio.Media.DATA + "=?";
       final int    idColumn    = 0;
       final String[] selection = new String[] {path};
-      Cursor       cursor      = Content_Resolver.query(contentURI, columns, where, selection, null);
+      Cursor       cursor      = getContentResolver().query(contentURI, columns, where, selection, null);
 
       // cursor is before first result, or null
       if (cursor != null && cursor.getCount() > 0)
@@ -472,6 +492,18 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
           {
           }
        };
+
+   protected void onListItemClick (ListView listView, View view, int position, long id)
+   {
+      try
+      {
+         MusicUtils.replaceCurrentPlaylist (playlistVolumeName, id);
+      }
+      catch (Exception e)
+      {
+         MusicUtils.Error_Log(this, "onListItemClick: " + e.toString());
+      }
+   }
 
    private long refreshNow()
    {
