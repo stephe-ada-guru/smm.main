@@ -38,10 +38,10 @@ public class Stephes_Music_PlayerActivity extends ListActivity implements Servic
 
    // Main UI members
 
-   private TextView    Playlist_Title;
-   private TextView    Artist_Title;
-   private TextView    Album_Title;
-   private TextView    Song_Title;
+   private TextView    playlistTitle;
+   private TextView    artistTitle;
+   private TextView    albumTitle;
+   private TextView    songTitle;
    private TextView    Current_Time;
    private TextView    Total_Time;
    private ImageButton Play_Pause_Button;
@@ -51,6 +51,7 @@ public class Stephes_Music_PlayerActivity extends ListActivity implements Servic
    private ServiceToken Service;
    private String       playlistVolumeName;
    private Cursor       playlistCursor;
+   private boolean      connected = true;
 
    // Cached values, set by Update_Display
 
@@ -73,10 +74,17 @@ public class Stephes_Music_PlayerActivity extends ListActivity implements Servic
 
          // Set up displays, top to bottom left to right
 
-         Playlist_Title = (TextView) findViewById(R.id.Playlist_Title);
-         Artist_Title   = (TextView) findViewById(R.id.Artist_Title);
-         Album_Title    = (TextView) findViewById(R.id.Album_Title);
-         Song_Title     = (TextView) findViewById(R.id.Song_Title);
+         playlistTitle = (TextView) findViewById(R.id.playlistTitle);
+         artistTitle   = (TextView) findViewById(R.id.artistTitle);
+         albumTitle    = (TextView) findViewById(R.id.albumTitle);
+         songTitle     = (TextView) findViewById(R.id.songTitle);
+
+         // FIXME: get scale from preferences
+         final float scale = 1.3f;
+         playlistTitle.setTextSize(playlistTitle.getTextSize()); // not as important, save screen space
+         artistTitle.setTextSize(scale * artistTitle.getTextSize());
+         albumTitle.setTextSize(scale * albumTitle.getTextSize());
+         songTitle.setTextSize(scale * songTitle.getTextSize());
 
          ((ImageButton)findViewById(R.id.prev)).setOnClickListener(Prev_Listener);
 
@@ -125,6 +133,30 @@ public class Stephes_Music_PlayerActivity extends ListActivity implements Servic
       }
    }
 
+   @Override protected void onNewIntent(Intent intent)
+   {
+      MusicUtils.debugLog("onNewIntent: " + intent);
+      if (connected)
+         try
+         {
+            handleStartIntent(intent, false);
+         }
+         catch (RuntimeException e)
+         {
+            MusicUtils.Error_Log(this, "onNewIntent: intent " + intent + ": " + e.toString());
+         }
+      else
+      {
+         // Main app has started, but service is not connected.
+         // Override original intent with this one, so
+         // onServiceConnected will use it.
+         //
+         // FIXME: should queue them both; someone could be adding
+         // songs in a hurry.
+         setIntent(intent);
+      }
+   }
+
    @Override protected void onResume()
    {
       super.onResume();
@@ -170,6 +202,7 @@ public class Stephes_Music_PlayerActivity extends ListActivity implements Servic
    public void onServiceConnected(ComponentName className, android.os.IBinder service)
    {
       Intent intent = getIntent();
+      connected = true;
       MusicUtils.debugLog("onServiceConnected: " + intent);
       try
       {
@@ -177,7 +210,7 @@ public class Stephes_Music_PlayerActivity extends ListActivity implements Servic
       }
       catch (RuntimeException e)
       {
-         MusicUtils.Error_Log(this, "onServiceConnected: intent " + intent + ": " + e.getMessage());
+         MusicUtils.Error_Log(this, "onServiceConnected: intent " + intent + ": " + e.toString());
       }
    }
 
@@ -371,10 +404,10 @@ public class Stephes_Music_PlayerActivity extends ListActivity implements Servic
       if (! MusicUtils.isConnected())
       {
          // can't do anything without the service
-         Playlist_Title.setText ("");
-         Artist_Title.setText ("");
-         Album_Title.setText ("");
-         Song_Title.setText ("");
+         playlistTitle.setText ("");
+         artistTitle.setText ("");
+         albumTitle.setText ("");
+         songTitle.setText ("");
 
          return;
       }
@@ -383,10 +416,12 @@ public class Stephes_Music_PlayerActivity extends ListActivity implements Servic
       {
          // FIXME: this data is in the notify change intent; either
          // get it from there, or delete it (see widget)
-         Playlist_Title.setText(MusicUtils.getPlaylistName());
-         Artist_Title.setText(MusicUtils.getArtistName());
-         Album_Title.setText(MusicUtils.getAlbumName());
-         Song_Title.setText(MusicUtils.getTrackName());
+         playlistTitle.setText
+            (MusicUtils.getPlaylistName() +
+             " (" + MusicUtils.getQueuePosition() + "/" + MusicUtils.getQueueLength() + ")");
+         artistTitle.setText(MusicUtils.getArtistName());
+         albumTitle.setText(MusicUtils.getAlbumName());
+         songTitle.setText(MusicUtils.getTrackName());
 
          isPlaying = MusicUtils.isPlaying();
 
@@ -439,7 +474,7 @@ public class Stephes_Music_PlayerActivity extends ListActivity implements Servic
             }
             catch (RuntimeException e)
             {
-               MusicUtils.Error_Log(Stephes_Music_PlayerActivity.this, "Service_Listener: " + e.getMessage());
+               MusicUtils.Error_Log(Stephes_Music_PlayerActivity.this, "Service_Listener: " + e.toString());
             }
          }
       };

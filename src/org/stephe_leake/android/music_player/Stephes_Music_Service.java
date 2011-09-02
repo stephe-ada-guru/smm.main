@@ -115,7 +115,7 @@ public class Stephes_Music_Service extends Service {
     private int         mMediaMountedCount = 0;
     private long [] mAutoShuffleList       = null;
 
-   private String mPlaylist_Volume = null;
+   private String mPlaylistVolume = null;
    // Storage volume where the current playlist file resides, for
    // getContentUri. FIXME: use this instead of EXTERNAL_CONTENT_URI!
    // Some Android hardware has large internal storage that is
@@ -156,12 +156,10 @@ public class Stephes_Music_Service extends Service {
             MediaStore.Audio.Media.MIME_TYPE,
             MediaStore.Audio.Media.ALBUM_ID,
             MediaStore.Audio.Media.ARTIST_ID,
-            MediaStore.Audio.Media.IS_PODCAST, // index must match PODCASTCOLIDX below
             MediaStore.Audio.Media.BOOKMARK    // index must match BOOKMARKCOLIDX below
     };
     private final static int IDCOLIDX = 0;
-    private final static int PODCASTCOLIDX = 8;
-    private final static int BOOKMARKCOLIDX = 9;
+    private final static int BOOKMARKCOLIDX = 8;
     private BroadcastReceiver mUnmountReceiver = null;
     private WakeLock mWakeLock;
     private int mServiceStartId = -1;
@@ -277,13 +275,14 @@ public class Stephes_Music_Service extends Service {
         }
     };
 
-    private BroadcastReceiver mIntentReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-           MusicUtils.debugLog("mIntentReceiver.onReceive " + intent.toString());
-           handleIntent(intent);
-        }
-       };
+   private BroadcastReceiver mIntentReceiver = new BroadcastReceiver()
+      {
+         @Override public void onReceive(Context context, Intent intent)
+         {
+            MusicUtils.debugLog("mIntentReceiver.onReceive " + intent.toString());
+            handleIntent(intent);
+         }
+      };
 
    private void handleIntent(Intent intent)
    {
@@ -484,7 +483,7 @@ public class Stephes_Music_Service extends Service {
         }
         ed.putLong("curPlaylistID", mPlaylist_ID);
         ed.putString("curPlaylistName", mPlaylist_Name);
-        ed.putString("curPlaylistVolume", mPlaylist_Volume);
+        ed.putString("curPlaylistVolume", mPlaylistVolume);
         ed.putInt("curpos", mPlayPos);
         if (mPlayer.isInitialized()) {
             ed.putLong("seekpos", mPlayer.position());
@@ -642,7 +641,7 @@ public class Stephes_Music_Service extends Service {
 
             mPlaylist_ID     = mPreferences.getLong("curPlaylistID", 0);
             mPlaylist_Name   = mPreferences.getString("curPlaylistName", "");
-            mPlaylist_Volume = mPreferences.getString("curPlaylistVolume", "");
+            mPlaylistVolume = mPreferences.getString("curPlaylistVolume", "");
         }
     }
 
@@ -1048,7 +1047,7 @@ public class Stephes_Music_Service extends Service {
          {
             mPlaylist_ID     = listId;
             mPlaylist_Name   = playlistName;
-            mPlaylist_Volume = volume;
+            mPlaylistVolume = volume;
 
             open(list, 0);
             play();
@@ -1111,36 +1110,39 @@ public class Stephes_Music_Service extends Service {
         }
     }
 
-    private void openCurrent() {
-        synchronized (this) {
-            if (mCursor != null) {
-                mCursor.close();
-                mCursor = null;
-            }
+   public int getQueueLength()
+   {
+      return mPlayListLen;
+   }
 
-            if (mPlayListLen == 0) {
-                return;
-            }
-            stop(false);
+   private void openCurrent()
+   {
+      synchronized (this)
+      {
+         if (mCursor != null)
+         {
+            mCursor.close();
+            mCursor = null;
+         }
 
-            String id = String.valueOf(mPlayList[mPlayPos]);
+         if (mPlayListLen == 0) return;
 
-            mCursor = getContentResolver().query(
-                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                    mCursorCols, "_id=" + id , null, null);
-            if (mCursor != null) {
-                mCursor.moveToFirst();
-                open(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI + "/" + id);
-                // go to bookmark if needed
-                if (isPodcast()) {
-                    long bookmark = getBookmark();
-                    // Start playing a little bit before the bookmark,
-                    // so it's easier to get back in to the narrative.
-                    seek(bookmark - 5000);
-                }
-            }
-        }
-    }
+         stop(false);
+
+         String id = String.valueOf(mPlayList[mPlayPos]);
+
+         mCursor = getContentResolver().query
+            (MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, mCursorCols, "_id=" + id , null, null);
+
+         if (mCursor != null)
+         {
+            mCursor.moveToFirst();
+            open(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI + "/" + id);
+            long bookmark = getBookmark();
+            seek(bookmark);
+         }
+      }
+   }
 
     /**
      * Opens the specified file and readies it for playback.
@@ -1486,32 +1488,22 @@ public class Stephes_Music_Service extends Service {
         stopForeground(true);
     }
 
-    private void saveBookmarkIfNeeded() {
-        try {
-            if (isPodcast()) {
-                long pos = position();
-                long bookmark = getBookmark();
-                long duration = duration();
-                if ((pos < bookmark && (pos + 10000) > bookmark) ||
-                        (pos > bookmark && (pos - 10000) < bookmark)) {
-                    // The existing bookmark is close to the current
-                    // position, so don't update it.
-                    return;
-                }
-                if (pos < 15000 || (pos + 10000) > duration) {
-                    // if we're near the start or end, clear the bookmark
-                    pos = 0;
-                }
-
-                // write 'pos' to the bookmark field
-                ContentValues values = new ContentValues();
-                values.put(MediaStore.Audio.Media.BOOKMARK, pos);
-                Uri uri = ContentUris.withAppendedId(
-                        MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, mCursor.getLong(IDCOLIDX));
-                getContentResolver().update(uri, values, null, null);
-            }
-        } catch (SQLiteException ex) {
-        }
+   private void saveBookmarkIfNeeded()
+   {
+      try
+      {
+         ContentValues values = new ContentValues();
+         values.put(MediaStore.Audio.Media.BOOKMARK, position());
+         Uri uri = ContentUris.withAppendedId
+            (mPlaylistVolume == null ?
+             MediaStore.Audio.Media.EXTERNAL_CONTENT_URI :
+             MediaStore.Audio.Media.getContentUri(mPlaylistVolume),
+             mCursor.getLong(IDCOLIDX));
+         getContentResolver().update(uri, values, null, null);
+      } catch (SQLiteException e)
+      {
+         MusicUtils.debugLog("saveBookmark: " + e.toString());
+      }
     }
 
     // Make sure there are at least 5 items after the currently playing item
@@ -1738,7 +1730,7 @@ public class Stephes_Music_Service extends Service {
       // To delete the item from the playlist file, we write a new
       // file from the playlist db data, leaving out the deleted item.
       // So we need to open the playlist file for write.
-      final String playlistFileName = getPlaylistFileName(mPlaylist_Volume, mPlaylist_ID);
+      final String playlistFileName = getPlaylistFileName(mPlaylistVolume, mPlaylist_ID);
       if (playlistFileName == null) return;
 
       final File playlistFile = new File(playlistFileName);
@@ -1760,7 +1752,7 @@ public class Stephes_Music_Service extends Service {
       Cursor         membersCursor = null;
       try
       {
-         final Uri membersUri     = MediaStore.Audio.Playlists.Members.getContentUri(mPlaylist_Volume, mPlaylist_ID);
+         final Uri membersUri     = MediaStore.Audio.Playlists.Members.getContentUri(mPlaylistVolume, mPlaylist_ID);
          String[] columns         = new String[] {MediaStore.Audio.Playlists.Members.AUDIO_ID};
          final int audioID_Column = 0;
 
@@ -1785,7 +1777,7 @@ public class Stephes_Music_Service extends Service {
          removeTrack(trackID);
 
          // 2) the playlist file.
-         final Uri mediaUri        = MediaStore.Audio.Media.getContentUri(mPlaylist_Volume);
+         final Uri mediaUri        = MediaStore.Audio.Media.getContentUri(mPlaylistVolume);
          columns                   = new String[] {MediaStore.Audio.Playlists.Members.DATA};
          String    where           = "_ID=?";
          final int fileName_Column = 0;
@@ -1814,7 +1806,7 @@ public class Stephes_Music_Service extends Service {
          }
 
          // 3) the playlist members db
-         Uri          contentUri = MediaStore.Audio.Playlists.Members.getContentUri(mPlaylist_Volume, mPlaylist_ID);
+         Uri          contentUri = MediaStore.Audio.Playlists.Members.getContentUri(mPlaylistVolume, mPlaylist_ID);
          columns                 = new String[] {MediaStore.Audio.Playlists.Members._ID};
          where                   = MediaStore.Audio.Playlists.Members.AUDIO_ID + "=" + trackID;
          final Cursor cursor     = getContentResolver().query (contentUri, columns, where, null, null);
@@ -1988,15 +1980,6 @@ public class Stephes_Music_Service extends Service {
                 return null;
             }
             return mCursor.getString(mCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE));
-        }
-    }
-
-    private boolean isPodcast() {
-        synchronized (this) {
-            if (mCursor == null) {
-                return false;
-            }
-            return (mCursor.getInt(PODCASTCOLIDX) > 0);
         }
     }
 
@@ -2306,6 +2289,9 @@ public class Stephes_Music_Service extends Service {
 
         public void replacePlaylist(String Volume, long List_ID) {
             mService.get().replacePlaylist(Volume, List_ID);
+        }
+        public int getQueueLength() {
+            return mService.get().getQueueLength();
         }
     }
 

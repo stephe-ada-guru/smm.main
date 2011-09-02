@@ -348,6 +348,30 @@ public class MusicUtils {
       }
    }
 
+   public static int getQueueLength()
+   {
+      try
+      {
+         return sService.getQueueLength();
+      }
+      catch (RemoteException ex)
+      {
+         return 0;
+      }
+   }
+
+   public static int getQueuePosition()
+   {
+      try
+      {
+         return sService.getQueuePosition();
+      }
+      catch (RemoteException ex)
+      {
+         return 0;
+      }
+   }
+
    public static String getTrackName()
    {
       try

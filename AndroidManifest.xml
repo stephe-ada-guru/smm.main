@@ -1,19 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <!-- Copyright (C) 2011 Stephen Leake stephen_leake@stephe-leake.org
 
-     FIXME: change to GPLv3+
-     
-     Licensed under the Apache License, Version 2.0 (the "License");
-     you may not use this file except in compliance with the License.
-     You may obtain a copy of the License at
-  
-          http://www.apache.org/licenses/LICENSE-2.0
-  
-     Unless required by applicable law or agreed to in writing, software
-     distributed under the License is distributed on an "AS IS" BASIS,
-     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-     See the License for the specific language governing permissions and
-     limitations under the License.
+This application is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation; either version 3, or (at
+your option) any later version.
+
+This application is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.
+
 -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
@@ -22,16 +24,22 @@
           android:versionName="1.0">
   <uses-sdk android:minSdkVersion="10" />
 
-    <uses-permission android:name="android.permission.WRITE_SETTINGS" /> <!-- preferences -->
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.READ_PHONE_STATE" /> <!-- pause for phone call -->
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /> <!-- edit playlists -->
-    <uses-permission android:name="android.permission.BROADCAST_STICKY" /> <!-- FIXME: why? -->
+  <uses-permission android:name="android.permission.WRITE_SETTINGS" /> <!-- preferences -->
+  <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+  <uses-permission android:name="android.permission.WAKE_LOCK" />
+  <uses-permission android:name="android.permission.READ_PHONE_STATE" /> <!-- pause for phone call -->
+  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /> <!-- edit playlists -->
+  <uses-permission android:name="android.permission.BROADCAST_STICKY" /> <!-- FIXME: why? -->
 
   <application 
-	android:icon="@drawable/icon" 
-  	android:label="@string/app_name">
+      android:icon="@drawable/icon" 
+      android:label="@string/app_name">
+
+    <!-- We use "singleTask" to make it easier for the user to quit
+         all instances. An alternative would be to use "standard" and
+         exit each instance in onPause. But that would be a race
+         condition with waiting for the service connection, and with
+         waiting for the media scanner. -->
     <activity android:name=".Stephes_Music_PlayerActivity"
               android:label="@string/app_name"
               android:taskAffinity=""
@@ -58,16 +66,16 @@
 
     <receiver android:name="org.stephe_leake.android.music_player.MediaAppWidgetProvider">
       <intent-filter>
-            <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
       </intent-filter>
       <meta-data android:name="android.appwidget.provider" android:resource="@xml/appwidget_info" />
 
     </receiver>
-        <receiver android:name="org.stephe_leake.android.music_player.MediaButtonIntentReceiver">
-            <intent-filter>
-                <action android:name="android.intent.action.MEDIA_BUTTON" />
-                <action android:name="android.media.AUDIO_BECOMING_NOISY" />
-            </intent-filter>
-        </receiver>
+    <receiver android:name="org.stephe_leake.android.music_player.MediaButtonIntentReceiver">
+      <intent-filter>
+        <action android:name="android.intent.action.MEDIA_BUTTON" />
+        <action android:name="android.media.AUDIO_BECOMING_NOISY" />
+      </intent-filter>
+    </receiver>
   </application>
 </manifest>

@@ -2,18 +2,40 @@ src/org/stephe_leake/android/music_player/Stephes_Music_PlayerActivity.java
 /Projects/android/google/packages/apps/Music/src/com/android/music/MusicUtils.java
 (dvc-status)
 
-add song count in playlist name display (current and list)
+playlist list
+    display current playlist below controls
+    onclick, show dialog containing scrollable list of playlists
+        see c:/Apps/Android/android-sdk/samples/android-10/ApiDemos/src/com/example/android/apis/app/
+            DIALOG_LIST
+            use setAdapter instead of setItems?
 
-check intent in notification
+speak metadata!
+    textToSpeech
+
+lockscreen widget
+
+server play: PLAYBACK_VIEWER
+    used for notification widget controller?
 
 test scan new files
     doesn't work
     emulator scans files on startup (when sd is mounted to android)
-        created two vocal playlists
-        dump all metadata for each, see what the difference is
+    ask online
 
 
  later (in Ada)
+separate screen for playlist list
+    swipe to get there
+
+Google TV version!
+    blog says market is coming to Google TV
+
+get text scale from preference
+    new activity that extends PreferenceActivity
+
+add song count in playlist name list
+    can't modify bound list display, need to reimplement!
+
 bluetooth button doesn't work
     no music playing:
         gets error beep in headset
@@ -30,8 +52,6 @@ bluetooth button doesn't work
     log keycodes in 'default:' case
 
 set up JUnit/AUnit tests that send various messages, observe results
-
-speak metadata!
 
 edit calendar event db to add song notes, link to audio recording
 
