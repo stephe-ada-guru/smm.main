@@ -10,13 +10,6 @@
     android:layout_width="match_parent" 
     android:layout_height="wrap_content" 
     android:weightSum="1">
-<TextView 
-	android:layout_width="match_parent" 
-	android:layout_height="wrap_content" 
-	android:gravity="center" 
-	android:id="@+id/playlistTitle" 
-	android:text="Playlist_Title" 
-	android:textAppearance="?android:attr/textAppearanceLarge"/>
 <View 
     android:layout_width="match_parent"
     android:layout_height="1px"
@@ -129,13 +122,13 @@
     android:paddingLeft="8dip"
     android:paddingRight="8dip"
     android:paddingBottom="4dip" />
+<TextView 
+	android:layout_width="match_parent" 
+	android:layout_height="wrap_content" 
+	android:gravity="center" 
+	android:id="@+id/playlistTitle" 
+	android:text="Playlist_Title" 
+	android:textAppearance="?android:attr/textAppearanceLarge"/>
          
-<!-- ListView is internally scrollable, so if we specify layout_height=wrap_content, it only shows one item. 
-     Give it enough space for several items; not clear how to make it scroll within the larger scroller! -->
-<ListView 
-	android:id="@android:id/list"
-    android:layout_width="match_parent"
-    android:layout_height="200dip"/>
-
 </LinearLayout>
 </ScrollView>

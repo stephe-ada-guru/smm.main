@@ -19,6 +19,7 @@
   <!--  translate -->
   <string name="app_name">&quot;Stephe's Music Player&quot;</string>
   <string name="emptyplaylist">Selected playlist is empty.</string>
+  <string name="dialog_playlist">Select a playlist</string>
   <string name="playback_failed">Sorry, the player does not support this type of audio file.</string>
   <string name="sdcard_busy_title">SD card unavailable</string>
   <string name="sdcard_busy_title_nosdcard" msgid="1162763571147174655">USB storage unavailable</string>	

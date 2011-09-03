@@ -19,8 +19,6 @@
 
 package org.stephe_leake.android.music_player;
 
-import android.app.Notification;
-import android.app.PendingIntent;
 import android.app.Service;
 import android.appwidget.AppWidgetManager;
 import android.content.ComponentName;
@@ -34,7 +32,6 @@ import android.content.BroadcastReceiver;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteException;
 import android.media.audiofx.AudioEffect;
 import android.media.AudioManager;
 import android.media.AudioManager.OnAudioFocusChangeListener;
@@ -100,13 +97,16 @@ public class Stephes_Music_Service extends Service {
     public static final String PREVIOUS_ACTION = "org.stephe_leake.android.music_player.musicservicecommand.previous";
     public static final String NEXT_ACTION = "org.stephe_leake.android.music_player.musicservicecommand.next";
 
-    private static final int TRACK_ENDED = 1;
-    private static final int RELEASE_WAKELOCK = 2;
-    private static final int SERVER_DIED = 3;
-    private static final int FOCUSCHANGE = 4;
-    private static final int FADEDOWN = 5;
-    private static final int FADEUP = 6;
-    private static final int MAX_HISTORY_SIZE = 100;
+   // Messages used for delays, and to communicate from callbacks to service.
+   private static final int TRACK_ENDED      = 1;
+   private static final int RELEASE_WAKELOCK = 2;
+   private static final int SERVER_DIED      = 3;
+   private static final int FOCUSCHANGE      = 4;
+   private static final int FADEDOWN         = 5;
+   private static final int FADEUP           = 6;
+
+   // Misc constants
+   private static final int MAX_HISTORY_SIZE = 100;
 
     private MultiPlayer mPlayer;
     private String      mFileToPlay;
@@ -148,7 +148,7 @@ public class Stephes_Music_Service extends Service {
     private final Shuffler mRand = new Shuffler();
     private int mOpenFailedCounter = 0;
     String[] mCursorCols = new String[] {
-            "audio._id AS _id",             // index must match IDCOLIDX below
+            "audio._id AS _id", // index must match IDCOLIDX below
             MediaStore.Audio.Media.ARTIST,
             MediaStore.Audio.Media.ALBUM,
             MediaStore.Audio.Media.TITLE,
@@ -156,20 +156,20 @@ public class Stephes_Music_Service extends Service {
             MediaStore.Audio.Media.MIME_TYPE,
             MediaStore.Audio.Media.ALBUM_ID,
             MediaStore.Audio.Media.ARTIST_ID,
-            MediaStore.Audio.Media.BOOKMARK    // index must match BOOKMARKCOLIDX below
+            MediaStore.Audio.Media.BOOKMARK // index must match BOOKMARKCOLIDX below
     };
-    private final static int IDCOLIDX = 0;
-    private final static int BOOKMARKCOLIDX = 8;
-    private BroadcastReceiver mUnmountReceiver = null;
-    private WakeLock mWakeLock;
-    private int mServiceStartId = -1;
-    private boolean mServiceInUse = false;
-    private boolean mIsSupposedToBePlaying = false;
-    private boolean mQuietMode = false;
-    private AudioManager mAudioManager;
-    private boolean mQueueIsSaveable = true;
+    private final static int  IDCOLIDX                      = 0;
+    private final static int  BOOKMARKCOLIDX                = 8;
+    private BroadcastReceiver mUnmountReceiver              = null;
+    private WakeLock          mWakeLock;
+    private int               mServiceStartId               = -1;
+    private boolean           mServiceInUse                 = false;
+    private boolean           mIsSupposedToBePlaying        = false;
+    private boolean           mQuietMode                    = false;
+    private AudioManager      mAudioManager;
+    private boolean           mQueueIsSaveable              = true;
     // used to track what type of audio focus loss caused the playback to pause
-    private boolean mPausedByTransientLossOfFocus = false;
+    private boolean           mPausedByTransientLossOfFocus = false;
 
     private SharedPreferences mPreferences;
     // We use this to distinguish between different cards when saving/restoring playlists.
@@ -189,8 +189,11 @@ public class Stephes_Music_Service extends Service {
             switch (msg.what) {
                 case FADEDOWN:
                     mCurrentVolume -= .05f;
-                    if (mCurrentVolume > .2f) {
-                        mMediaplayerHandler.sendEmptyMessageDelayed(FADEDOWN, 10);
+                    if (mCurrentVolume > .2f)
+                    {
+                       // fade up in 0.05 steps every 10 milliseconds;
+                       // send ourselves another message in 10 ms.
+                       mMediaplayerHandler.sendEmptyMessageDelayed(FADEDOWN, 10);
                     } else {
                         mCurrentVolume = .2f;
                     }
@@ -206,14 +209,9 @@ public class Stephes_Music_Service extends Service {
                     mPlayer.setVolume(mCurrentVolume);
                     break;
                 case SERVER_DIED:
-                    if (mIsSupposedToBePlaying) {
-                        next(true);
-                    } else {
-                        // the server died when we were idle, so just
-                        // reopen the same song (it will start again
-                        // from the beginning though when the user
-                        // restarts)
-                        openCurrent();
+                    if (mIsSupposedToBePlaying)
+                    {
+                       openCurrent();
                     }
                     break;
                 case TRACK_ENDED:
@@ -231,49 +229,55 @@ public class Stephes_Music_Service extends Service {
                     break;
 
                 case FOCUSCHANGE:
-                    // This code is here so we can better synchronize it with the code that
-                    // handles fade-in
-                    switch (msg.arg1) {
-                        case AudioManager.AUDIOFOCUS_LOSS:
-                            Log.v(LOGTAG, "AudioFocus: received AUDIOFOCUS_LOSS");
-                            if(isPlaying()) {
-                                mPausedByTransientLossOfFocus = false;
-                            }
-                            pause();
-                            break;
-                        case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
-                            mMediaplayerHandler.removeMessages(FADEUP);
-                            mMediaplayerHandler.sendEmptyMessage(FADEDOWN);
-                            break;
-                        case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
-                            Log.v(LOGTAG, "AudioFocus: received AUDIOFOCUS_LOSS_TRANSIENT");
-                            if(isPlaying()) {
-                                mPausedByTransientLossOfFocus = true;
-                            }
-                            pause();
-                            break;
-                        case AudioManager.AUDIOFOCUS_GAIN:
-                            Log.v(LOGTAG, "AudioFocus: received AUDIOFOCUS_GAIN");
-                            if(!isPlaying() && mPausedByTransientLossOfFocus) {
-                                mPausedByTransientLossOfFocus = false;
-                                mCurrentVolume = 0f;
-                                mPlayer.setVolume(mCurrentVolume);
-                                play(); // also queues a fade-in
-                            } else {
-                                mMediaplayerHandler.removeMessages(FADEDOWN);
-                                mMediaplayerHandler.sendEmptyMessage(FADEUP);
-                            }
-                            break;
-                        default:
-                            Log.e(LOGTAG, "Unknown audio focus change code");
-                    }
-                    break;
+                   // This code is here so we can better synchronize it with the code that
+                   // handles fade-in
+                   switch (msg.arg1)
+                   {
+                   case AudioManager.AUDIOFOCUS_LOSS:
+                      MusicUtils.debugLog("received AUDIOFOCUS_LOSS");
+                      if(mIsSupposedToBePlaying)
+                      {
+                         mPausedByTransientLossOfFocus = false;
+                      }
+                      pause();
+                      break;
+                   case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+                      MusicUtils.debugLog("received AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK");
+                      // "DUCK" means can lower volume; not clear when this might happen
+                      mMediaplayerHandler.removeMessages(FADEUP);
+                      mMediaplayerHandler.sendEmptyMessage(FADEDOWN);
+                      break;
+                   case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+                      MusicUtils.debugLog("received AUDIOFOCUS_LOSS_TRANSIENT");
+                      if (mIsSupposedToBePlaying)
+                      {
+                         mPausedByTransientLossOfFocus = true;
+                         pause();
+                      }
+                      break;
+                   case AudioManager.AUDIOFOCUS_GAIN:
+                      MusicUtils.debugLog("received AUDIOFOCUS_GAIN");
+                      if (!mIsSupposedToBePlaying && mPausedByTransientLossOfFocus)
+                      {
+                         mPausedByTransientLossOfFocus = false;
+                         mCurrentVolume = 0f;
+                         mPlayer.setVolume(mCurrentVolume);
+                         play(); // also queues a fade-in
+                      } else {
+                         mMediaplayerHandler.removeMessages(FADEDOWN);
+                         mMediaplayerHandler.sendEmptyMessage(FADEUP);
+                      }
+                      break;
+                   default:
+                      MusicUtils.debugLog("Unknown FOCUSCHANGE code " + msg.arg1);
+                   }
+                   break;
 
-                default:
-                    break;
+            default:
+               break;
             }
         }
-    };
+       };
 
    private BroadcastReceiver mIntentReceiver = new BroadcastReceiver()
       {
@@ -306,7 +310,7 @@ public class Stephes_Music_Service extends Service {
       }
       else if (CMDTOGGLEPAUSE.equals(cmd) || TOGGLEPAUSE_ACTION.equals(action))
       {
-         if (isPlaying()) {
+         if (mIsSupposedToBePlaying) {
             pause();
             mPausedByTransientLossOfFocus = false;
          } else {
@@ -388,7 +392,7 @@ public class Stephes_Music_Service extends Service {
     @Override
     public void onDestroy() {
         // Check that we're not being destroyed while something is still playing.
-        if (isPlaying()) {
+        if (mIsSupposedToBePlaying) {
             Log.e(LOGTAG, "Service being destroyed while still playing.");
         }
         // release all MediaPlayer resources, including the native player and wakelocks
@@ -680,7 +684,7 @@ public class Stephes_Music_Service extends Service {
         // Take a snapshot of the current playlist
         saveQueue(true);
 
-        if (isPlaying() || mPausedByTransientLossOfFocus) {
+        if (mIsSupposedToBePlaying || mPausedByTransientLossOfFocus) {
             // something is currently playing, or will be playing once
             // an in-progress action requesting audio focus ends, so don't stop the service now.
             return true;
@@ -704,7 +708,7 @@ public class Stephes_Music_Service extends Service {
         @Override
         public void handleMessage(Message msg) {
             // Check again to make sure nothing is playing right now
-            if (isPlaying() || mPausedByTransientLossOfFocus || mServiceInUse
+            if (mIsSupposedToBePlaying || mPausedByTransientLossOfFocus || mServiceInUse
                     || mMediaplayerHandler.hasMessages(TRACK_ENDED)) {
                 return;
             }
@@ -789,7 +793,7 @@ public class Stephes_Music_Service extends Service {
         i.putExtra("artist", getArtistName());
         i.putExtra("album",getAlbumName());
         i.putExtra("track", getTrackName());
-        i.putExtra("playing", isPlaying());
+        i.putExtra("playing", mIsSupposedToBePlaying);
         sendStickyBroadcast(i);
 
         if (what.equals(QUEUE_CHANGED)) {
@@ -1263,15 +1267,8 @@ public class Stephes_Music_Service extends Service {
                 views.setTextViewText(R.id.artistalbum, artist + "\n" + album);
             }
 
-            Notification status = new Notification();
-            status.contentView = views;
-            status.flags |= Notification.FLAG_ONGOING_EVENT;
-            status.icon = R.drawable.stat_notify_musicplayer;
-            status.contentIntent = PendingIntent.getActivity(this, 0,
-                    new Intent("org.stephe_leake.android.music_player.PLAYBACK_VIEWER")
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), 0);
-            startForeground(PLAYBACKSERVICE_STATUS, status);
-            if (!mIsSupposedToBePlaying) {
+            if (!mIsSupposedToBePlaying)
+            {
                 mIsSupposedToBePlaying = true;
                 notifyChange(PLAYSTATE_CHANGED);
             }
@@ -1316,7 +1313,7 @@ public class Stephes_Music_Service extends Service {
     public void pause() {
         synchronized(this) {
             mMediaplayerHandler.removeMessages(FADEUP);
-            if (isPlaying()) {
+            if (mIsSupposedToBePlaying) {
                 mPlayer.pause();
                 gotoIdleState();
                 mIsSupposedToBePlaying = false;
@@ -1490,20 +1487,21 @@ public class Stephes_Music_Service extends Service {
 
    private void saveBookmarkIfNeeded()
    {
-      try
-      {
-         ContentValues values = new ContentValues();
-         values.put(MediaStore.Audio.Media.BOOKMARK, position());
-         Uri uri = ContentUris.withAppendedId
-            (mPlaylistVolume == null ?
-             MediaStore.Audio.Media.EXTERNAL_CONTENT_URI :
-             MediaStore.Audio.Media.getContentUri(mPlaylistVolume),
-             mCursor.getLong(IDCOLIDX));
-         getContentResolver().update(uri, values, null, null);
-      } catch (SQLiteException e)
-      {
-         MusicUtils.debugLog("saveBookmark: " + e.toString());
-      }
+      if (mCursor != null)
+         try
+         {
+            ContentValues values = new ContentValues();
+            values.put(MediaStore.Audio.Media.BOOKMARK, position());
+            Uri uri = ContentUris.withAppendedId
+               (mPlaylistVolume == null ?
+                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI :
+                MediaStore.Audio.Media.getContentUri(mPlaylistVolume),
+                mCursor.getLong(IDCOLIDX));
+            getContentResolver().update(uri, values, null, null);
+         } catch (Exception e)
+         {
+            MusicUtils.debugLog("saveBookmark: " + e.toString());
+         }
     }
 
     // Make sure there are at least 5 items after the currently playing item
@@ -1657,7 +1655,7 @@ public class Stephes_Music_Service extends Service {
                     if (mPlayPos >= mPlayListLen) {
                         mPlayPos = 0;
                     }
-                    boolean wasPlaying = isPlaying();
+                    boolean wasPlaying = mIsSupposedToBePlaying;
                     stop(false);
                     openCurrent();
                     if (wasPlaying) {
@@ -2129,26 +2127,29 @@ public class Stephes_Music_Service extends Service {
             }
         };
 
-        MediaPlayer.OnErrorListener errorListener = new MediaPlayer.OnErrorListener() {
-            public boolean onError(MediaPlayer mp, int what, int extra) {
-                switch (what) {
+       MediaPlayer.OnErrorListener errorListener = new MediaPlayer.OnErrorListener()
+          {
+             public boolean onError(MediaPlayer mp, int what, int extra)
+             {
+                Log.d("MediaPlayer server died", "Error: " + what + "," + extra);
+                switch (what)
+                {
                 case MediaPlayer.MEDIA_ERROR_SERVER_DIED:
-                    mIsInitialized = false;
-                    mMediaPlayer.release();
-                    // Creating a new MediaPlayer and settings its wakemode does not
-                    // require the media service, so it's OK to do this now, while the
-                    // service is still being restarted
-                    mMediaPlayer = new MediaPlayer();
-                    mMediaPlayer.setWakeMode(Stephes_Music_Service.this, PowerManager.PARTIAL_WAKE_LOCK);
-                    mHandler.sendMessageDelayed(mHandler.obtainMessage(SERVER_DIED), 2000);
-                    return true;
+                   mIsInitialized = false;
+                   mMediaPlayer.release();
+                   // Creating a new MediaPlayer and settings its wakemode does not
+                   // require the media service, so it's OK to do this now, while the
+                   // service is still being restarted
+                   mMediaPlayer = new MediaPlayer();
+                   mMediaPlayer.setWakeMode(Stephes_Music_Service.this, PowerManager.PARTIAL_WAKE_LOCK);
+                   mHandler.sendMessageDelayed(mHandler.obtainMessage(SERVER_DIED), 2000);
+                   return true;
                 default:
-                    Log.d("MultiPlayer", "Error: " + what + "," + extra);
-                    break;
+                   break;
                 }
                 return false;
-           }
-        };
+             }
+          };
 
         public long duration() {
             return mMediaPlayer.getDuration();

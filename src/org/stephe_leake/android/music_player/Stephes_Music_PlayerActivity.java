@@ -1,9 +1,12 @@
 package org.stephe_leake.android.music_player;
 
-import android.app.ListActivity;
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
@@ -20,19 +23,18 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageButton;
-import android.widget.ListAdapter;
-import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
-import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 import org.stephe_leake.android.music_player.MusicUtils.ServiceToken;
 
-public class Stephes_Music_PlayerActivity extends ListActivity implements ServiceConnection
+public class Stephes_Music_PlayerActivity extends Activity implements ServiceConnection
 {
    // constants
    private static final int Progress_Max = 1000;
    private static final int REFRESH      = 1;
+
+   private static final int DIALOG_PLAYLIST = 1;
 
    private static final int MENU_QUIT = 0;
 
@@ -49,9 +51,11 @@ public class Stephes_Music_PlayerActivity extends ListActivity implements Servic
 
    // Main other members
    private ServiceToken Service;
-   private String       playlistVolumeName;
-   private Cursor       playlistCursor;
-   private boolean      connected = true;
+
+   // FIXME: need to enumerate available volumes that might have
+   // playlists on them.
+   private String  playlistVolumeName = "external";
+   private boolean connected          = true;
 
    // Cached values, set by Update_Display
 
@@ -62,6 +66,9 @@ public class Stephes_Music_PlayerActivity extends ListActivity implements Servic
 
    @Override public void onCreate(Bundle savedInstanceState)
    {
+      // FIXME: get scale from preferences
+      final float scale = 1.3f;
+
       try
       {
          super.onCreate(savedInstanceState);
@@ -74,14 +81,10 @@ public class Stephes_Music_PlayerActivity extends ListActivity implements Servic
 
          // Set up displays, top to bottom left to right
 
-         playlistTitle = (TextView) findViewById(R.id.playlistTitle);
          artistTitle   = (TextView) findViewById(R.id.artistTitle);
          albumTitle    = (TextView) findViewById(R.id.albumTitle);
          songTitle     = (TextView) findViewById(R.id.songTitle);
 
-         // FIXME: get scale from preferences
-         final float scale = 1.3f;
-         playlistTitle.setTextSize(playlistTitle.getTextSize()); // not as important, save screen space
          artistTitle.setTextSize(scale * artistTitle.getTextSize());
          albumTitle.setTextSize(scale * albumTitle.getTextSize());
          songTitle.setTextSize(scale * songTitle.getTextSize());
@@ -102,23 +105,9 @@ public class Stephes_Music_PlayerActivity extends ListActivity implements Servic
          Progress_Bar.setOnSeekBarChangeListener(Progress_Listener);
          Progress_Bar.setMax(Progress_Max);
 
-         // setup playlist list
-
-         // FIXME: need to enumerate available volumes that might have
-         // playlists on them.
-         playlistVolumeName = "external";
-         Uri playlistContentUri = MediaStore.Audio.Playlists.getContentUri(playlistVolumeName);
-         playlistCursor     = this.getContentResolver().query(playlistContentUri, null, null, null, null);
-         startManagingCursor(playlistCursor);
-
-         ListAdapter adapter = new SimpleCursorAdapter
-            (this,
-             android.R.layout.simple_list_item_1,
-             playlistCursor,
-             new String[] {MediaStore.Audio.Playlists.NAME},
-             new int[] {android.R.id.text1});
-
-         setListAdapter(adapter);
+         playlistTitle = (TextView) findViewById(R.id.playlistTitle);
+         playlistTitle.setTextSize(playlistTitle.getTextSize()); // not as important, save screen space
+         playlistTitle.setOnClickListener(playlistListener);
 
          // We can't call any MusicUtils functions that use the
          // service yet; it won't be bound until this activity is
@@ -528,17 +517,61 @@ public class Stephes_Music_PlayerActivity extends ListActivity implements Servic
           }
        };
 
-   protected void onListItemClick (ListView listView, View view, int position, long id)
+   @Override protected Dialog onCreateDialog(int id)
    {
-      try
+      switch (id)
       {
-         MusicUtils.replaceCurrentPlaylist (playlistVolumeName, id);
-      }
-      catch (Exception e)
+        case DIALOG_PLAYLIST:
+           {
+              try
+              {
+                 // Apparently the projection must include the _ID column. However, 'which' is _not_ the id.
+                 final Uri    uri            = Audio.Playlists.getContentUri(playlistVolumeName);
+                 final String[] columns      = new String[]{Audio.Playlists._ID, Audio.Playlists.NAME};
+                 final int    idColumn       = 0;
+                 final Cursor playlistCursor = this.getContentResolver().query(uri, columns, null, null, null);
+
+                 return new AlertDialog.Builder(this)
+                    .setTitle("Select a Playlist")
+                    .setCursor
+                    (playlistCursor,
+                     new DialogInterface.OnClickListener()
+                     {
+                        public void onClick(DialogInterface dialog, int which)
+                        {
+                           try
+                           {
+                              playlistCursor.moveToPosition(which);
+                              MusicUtils.replaceCurrentPlaylist (playlistVolumeName, playlistCursor.getLong(idColumn));
+                           }
+                           catch (Exception e)
+                           {
+                              MusicUtils.debugLog("playlist dialog onClick: " + e.toString());
+                           }
+                        };
+                     },
+                     Audio.Playlists.NAME
+                     ).create();
+              }
+              catch (Exception e)
+              {
+                 MusicUtils.debugLog("create playlist dialog " + e.toString());
+                 return null;
+              }
+           }
+        default:
+           MusicUtils.debugLog("unknown dialog id " + id);
+           return null;
+        }
+    }
+
+   private TextView.OnClickListener playlistListener = new TextView.OnClickListener()
       {
-         MusicUtils.Error_Log(this, "onListItemClick: " + e.toString());
-      }
-   }
+         @Override public void onClick(View v)
+         {
+            showDialog(DIALOG_PLAYLIST);
+         }
+      };
 
    private long refreshNow()
    {

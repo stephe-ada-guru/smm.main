@@ -2,20 +2,10 @@ src/org/stephe_leake/android/music_player/Stephes_Music_PlayerActivity.java
 /Projects/android/google/packages/apps/Music/src/com/android/music/MusicUtils.java
 (dvc-status)
 
-playlist list
-    display current playlist below controls
-    onclick, show dialog containing scrollable list of playlists
-        see c:/Apps/Android/android-sdk/samples/android-10/ApiDemos/src/com/example/android/apis/app/
-            DIALOG_LIST
-            use setAdapter instead of setItems?
-
 speak metadata!
     textToSpeech
 
 lockscreen widget
-
-server play: PLAYBACK_VIEWER
-    used for notification widget controller?
 
 test scan new files
     doesn't work
@@ -24,6 +14,13 @@ test scan new files
 
 
  later (in Ada)
+need ff/rew
+
+race condition/error on next song; activity closed, sent pause
+
+playlist over smb
+    can't use scanner?
+
 separate screen for playlist list
     swipe to get there
 
