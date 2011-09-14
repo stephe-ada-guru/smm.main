@@ -462,8 +462,15 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
   (setq default-directory (file-name-as-directory (expand-file-name (substitute-in-file-name dir))))
   (if (not workspaces) (setq workspaces (xmtn--filter-non-ws default-directory)))
   (setq xmtn-status-root (file-name-as-directory default-directory))
+  (if xmtn-status-ewoc
+      ;; ewoc previously created in this buffer; erase it. There
+      ;; doesn't seem to be a good way to call ewoc-delete; just erase
+      ;; the buffer and clobber the variable.
+      (let ((inhibit-read-only t))
+	(delete-region (point-min) (point-max))
+	(setq xmtn-status-ewoc nil)))
+
   (setq xmtn-status-ewoc (ewoc-create 'xmtn-status-printer))
-  (let ((inhibit-read-only t)) (delete-region (point-min) (point-max)))
   (ewoc-set-hf xmtn-status-ewoc (format "Root : %s\n" xmtn-status-root) "")
   (dolist (workspace workspaces)
     (ewoc-enter-last xmtn-status-ewoc
@@ -486,10 +493,15 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
   ;; allow WORK to be relative, and ensure it is a workspace root
   (setq default-directory (xmtn-tree-root (expand-file-name (substitute-in-file-name work))))
   (setq xmtn-status-root (expand-file-name (concat (file-name-as-directory default-directory) "../")))
+  (if xmtn-status-ewoc
+      ;; ewoc previously created in this buffer; erase it. There
+      ;; doesn't seem to be a good way to call ewoc-delete; just erase
+      ;; the buffer and clobber the variable.
+      (let ((inhibit-read-only t))
+	(delete-region (point-min) (point-max))
+	(setq xmtn-status-ewoc nil)))
+
   (setq xmtn-status-ewoc (ewoc-create 'xmtn-status-printer))
-  ;; FIXME: sometimes, this causes problems for ewoc-set-hf (deletes bad region)
-  ;; But otherwise it is necessary to clean out old ewoc before creating new one.
-  (let ((inhibit-read-only t)) (delete-region (point-min) (point-max)))
   (ewoc-set-hf xmtn-status-ewoc (format "Root : %s\n" xmtn-status-root) "")
   (ewoc-enter-last xmtn-status-ewoc
                    (make-xmtn-status-data
