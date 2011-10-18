@@ -2,6 +2,15 @@ src/org/stephe_leake/android/music_player/Stephes_Music_PlayerActivity.java
 /Projects/android/google/packages/apps/Music/src/com/android/music/MusicUtils.java
 (dvc-status)
 
+when sdcard goes away, widget puts up garbage for text
+
+add to menu:
+    playlist
+    dump log
+    clear server state
+
+don't keep list in service; just use db
+
 speak metadata!
     textToSpeech
 
@@ -10,28 +19,30 @@ lockscreen widget
 test scan new files
     doesn't work
     emulator scans files on startup (when sd is mounted to android)
+    HTC scans files when sd card is restored to android
     ask online
 
-
  later (in Ada)
+/Projects/android/hello_ada/notes.text
+
 need ff/rew
 
 race condition/error on next song; activity closed, sent pause
 
 playlist over smb
     can't use scanner?
-
-separate screen for playlist list
-    swipe to get there
+    only Ghost Commander can see files!
 
 Google TV version!
-    blog says market is coming to Google TV
+    blog says market is coming to Google TV (no dates)
 
 get text scale from preference
     new activity that extends PreferenceActivity
 
 add song count in playlist name list
     can't modify bound list display, need to reimplement!
+
+write played file instead of edit file?
 
 bluetooth button doesn't work
     no music playing:
@@ -128,6 +139,9 @@ button color/background
         that loses the orange flash on press - good/bad?
     better: see /Apps/Android/android-sdk/platforms/android-10/data/res/drawable/media_button_background.xml;
         replace state_pressed=false case with transparent image
+
+ even later
+replace dar.fm
 
  open source projects
 c:/Projects/eclipse_scratch/Ghost Commander/src/com/ghostsq/commander/FileCommander.java

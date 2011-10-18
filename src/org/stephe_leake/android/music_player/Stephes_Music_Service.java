@@ -46,8 +46,6 @@ import android.os.PowerManager.WakeLock;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.widget.RemoteViews;
-import android.widget.Toast;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileDescriptor;
@@ -146,7 +144,6 @@ public class Stephes_Music_Service extends Service {
 
     private static final String LOGTAG = "Stephes_Music_Service";
     private final Shuffler mRand = new Shuffler();
-    private int mOpenFailedCounter = 0;
     String[] mCursorCols = new String[] {
             "audio._id AS _id", // index must match IDCOLIDX below
             MediaStore.Audio.Media.ARTIST,
@@ -165,7 +162,6 @@ public class Stephes_Music_Service extends Service {
     private int               mServiceStartId               = -1;
     private boolean           mServiceInUse                 = false;
     private boolean           mIsSupposedToBePlaying        = false;
-    private boolean           mQuietMode                    = false;
     private AudioManager      mAudioManager;
     private boolean           mQueueIsSaveable              = true;
     // used to track what type of audio focus loss caused the playback to pause
@@ -565,20 +561,7 @@ public class Stephes_Music_Service extends Service {
                 crsr.close();
             }
 
-            // Make sure we don't auto-skip to the next song, since that
-            // also starts playback. What could happen in that case is:
-            // - music is paused
-            // - go to UMS and delete some files, including the currently playing one
-            // - come back from UMS
-            // (time passes)
-            // - music app is killed for some reason (out of memory)
-            // - music service is restarted, service restores state, doesn't find
-            //   the "current" file, goes to the next and: playback starts on its
-            //   own, potentially at some random inconvenient time.
-            mOpenFailedCounter = 20;
-            mQuietMode = true;
             openCurrent();
-            mQuietMode = false;
             if (!mPlayer.isInitialized()) {
                 // couldn't restore the saved state
                 mPlayListLen = 0;
@@ -1202,29 +1185,14 @@ public class Stephes_Music_Service extends Service {
             }
             mFileToPlay = path;
             mPlayer.setDataSource(mFileToPlay);
-            if (! mPlayer.isInitialized()) {
+            if (! mPlayer.isInitialized())
+            {
                 stop(true);
-                if (mOpenFailedCounter++ < 10 &&  mPlayListLen > 1) {
-                    // beware: this ends up being recursive because next() calls open() again.
-                    next(false);
-                }
-                if (! mPlayer.isInitialized() && mOpenFailedCounter != 0) {
-                    // need to make sure we only show this once
-                    mOpenFailedCounter = 0;
-                    if (!mQuietMode) {
-                        Toast.makeText(this, R.string.playback_failed, Toast.LENGTH_SHORT).show();
-                    }
-                    Log.d(LOGTAG, "Failed to open file for playback");
-                }
-            } else {
-                mOpenFailedCounter = 0;
+                MusicUtils.Error_Log(this, "can't play: " + mFileToPlay);
             }
         }
     }
 
-    /**
-     * Starts playback of a previously opened file.
-     */
     public void play() {
         mAudioManager.requestAudioFocus(mAudioFocusListener, AudioManager.STREAM_MUSIC,
                 AudioManager.AUDIOFOCUS_GAIN);
@@ -1232,13 +1200,6 @@ public class Stephes_Music_Service extends Service {
                 MediaButtonIntentReceiver.class.getName()));
 
         if (mPlayer.isInitialized()) {
-            // if we are at the end of the song, go to the next song first
-            long duration = mPlayer.duration();
-            if (mRepeatMode != REPEAT_CURRENT && duration > 2000 &&
-                mPlayer.position() >= duration - 2000) {
-                next(true);
-            }
-
             mPlayer.start();
             // make sure we fade in, in case a previous fadein was stopped because
             // of another focus loss
@@ -2046,76 +2007,73 @@ public class Stephes_Music_Service extends Service {
     }
 
     // Wrapper around MediaPlayer, providing completion and error listeners
-    private class MultiPlayer {
-        private MediaPlayer mMediaPlayer = new MediaPlayer();
-        private Handler mHandler;
-        private boolean mIsInitialized = false;
+    private class MultiPlayer
+    {
+       private MediaPlayer mMediaPlayer = new MediaPlayer();
+       private Handler mHandler;
+       private boolean mIsInitialized = false;
 
-        public MultiPlayer() {
-            mMediaPlayer.setWakeMode(Stephes_Music_Service.this, PowerManager.PARTIAL_WAKE_LOCK);
-        }
+       public MultiPlayer() {
+          mMediaPlayer.setWakeMode(Stephes_Music_Service.this, PowerManager.PARTIAL_WAKE_LOCK);
+       }
 
-        public void setDataSource(String path) {
-           MusicUtils.debugLog("MultiPlayer.setDataSource: " + path);
-            try {
-                mMediaPlayer.reset();
-                mMediaPlayer.setOnPreparedListener(null);
-                if (path.startsWith("content://")) {
-                    mMediaPlayer.setDataSource(Stephes_Music_Service.this, Uri.parse(path));
-                } else {
-                    mMediaPlayer.setDataSource(path);
-                }
-                mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-                mMediaPlayer.prepare();
-            } catch (IOException ex) {
-                // TODO: notify the user why the file couldn't be opened
-                mIsInitialized = false;
-                return;
-            } catch (IllegalArgumentException ex) {
-                // TODO: notify the user why the file couldn't be opened
-                mIsInitialized = false;
-                return;
-            }
-            mMediaPlayer.setOnCompletionListener(listener);
-            mMediaPlayer.setOnErrorListener(errorListener);
-            Intent i = new Intent(AudioEffect.ACTION_OPEN_AUDIO_EFFECT_CONTROL_SESSION);
-            i.putExtra(AudioEffect.EXTRA_AUDIO_SESSION, getAudioSessionId());
-            i.putExtra(AudioEffect.EXTRA_PACKAGE_NAME, getPackageName());
-            sendBroadcast(i);
-            mIsInitialized = true;
-        }
+       public void setDataSource(String path) {
+          MusicUtils.debugLog("MultiPlayer.setDataSource: " + path);
+          try {
+             mMediaPlayer.reset();
+             mMediaPlayer.setOnPreparedListener(null);
+             if (path.startsWith("content://")) {
+                mMediaPlayer.setDataSource(Stephes_Music_Service.this, Uri.parse(path));
+             } else {
+                mMediaPlayer.setDataSource(path);
+             }
+             mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+             mMediaPlayer.prepare();
+          } catch (IOException ex)
+          {
+             mIsInitialized = false;
+             return;
+          } catch (IllegalArgumentException ex) {
+             mIsInitialized = false;
+             return;
+          }
+          mMediaPlayer.setOnCompletionListener(listener);
+          mMediaPlayer.setOnErrorListener(errorListener);
+          Intent i = new Intent(AudioEffect.ACTION_OPEN_AUDIO_EFFECT_CONTROL_SESSION);
+          i.putExtra(AudioEffect.EXTRA_AUDIO_SESSION, getAudioSessionId());
+          i.putExtra(AudioEffect.EXTRA_PACKAGE_NAME, getPackageName());
+          sendBroadcast(i);
+          mIsInitialized = true;
+       }
 
-        public boolean isInitialized() {
-            return mIsInitialized;
-        }
+       public boolean isInitialized() {
+          return mIsInitialized;
+       }
 
-        public void start() {
-            mMediaPlayer.start();
-        }
+       public void start() {
+          mMediaPlayer.start();
+       }
 
-        public void stop() {
-            mMediaPlayer.reset();
-            mIsInitialized = false;
-        }
+       public void stop() {
+          mMediaPlayer.reset();
+          mIsInitialized = false;
+       }
 
-        /**
-         * You CANNOT use this player anymore after calling release()
-         */
-        public void release() {
-            stop();
-            mMediaPlayer.release();
-        }
+       public void release() {
+          stop();
+          mMediaPlayer.release();
+       }
 
-        public void pause() {
-            mMediaPlayer.pause();
-        }
+       public void pause() {
+          mMediaPlayer.pause();
+       }
 
-        public void setHandler(Handler handler) {
-            mHandler = handler;
-        }
+       public void setHandler(Handler handler) {
+          mHandler = handler;
+       }
 
-        MediaPlayer.OnCompletionListener listener = new MediaPlayer.OnCompletionListener() {
-            public void onCompletion(MediaPlayer mp) {
+       MediaPlayer.OnCompletionListener listener = new MediaPlayer.OnCompletionListener() {
+             public void onCompletion(MediaPlayer mp) {
                 // Acquire a temporary wakelock, since when we return from
                 // this callback the MediaPlayer will release its wakelock
                 // and allow the device to go to sleep.
@@ -2124,8 +2082,8 @@ public class Stephes_Music_Service extends Service {
                 mWakeLock.acquire(30000);
                 mHandler.sendEmptyMessage(TRACK_ENDED);
                 mHandler.sendEmptyMessage(RELEASE_WAKELOCK);
-            }
-        };
+             }
+          };
 
        MediaPlayer.OnErrorListener errorListener = new MediaPlayer.OnErrorListener()
           {
@@ -2151,30 +2109,30 @@ public class Stephes_Music_Service extends Service {
              }
           };
 
-        public long duration() {
-            return mMediaPlayer.getDuration();
-        }
+       public long duration() {
+          return mMediaPlayer.getDuration();
+       }
 
-        public long position() {
-            return mMediaPlayer.getCurrentPosition();
-        }
+       public long position() {
+          return mMediaPlayer.getCurrentPosition();
+       }
 
-        public long seek(long whereto) {
-            mMediaPlayer.seekTo((int) whereto);
-            return whereto;
-        }
+       public long seek(long whereto) {
+          mMediaPlayer.seekTo((int) whereto);
+          return whereto;
+       }
 
-        public void setVolume(float vol) {
-            mMediaPlayer.setVolume(vol, vol);
-        }
+       public void setVolume(float vol) {
+          mMediaPlayer.setVolume(vol, vol);
+       }
 
-        public void setAudioSessionId(int sessionId) {
-            mMediaPlayer.setAudioSessionId(sessionId);
-        }
+       public void setAudioSessionId(int sessionId) {
+          mMediaPlayer.setAudioSessionId(sessionId);
+       }
 
-        public int getAudioSessionId() {
-            return mMediaPlayer.getAudioSessionId();
-        }
+       public int getAudioSessionId() {
+          return mMediaPlayer.getAudioSessionId();
+       }
     }
 
     /*
