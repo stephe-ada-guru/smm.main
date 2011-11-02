@@ -672,7 +672,7 @@ non-nil, show log-edit buffer in other frame."
   (dvc-log-edit other-frame t)
   (undo-boundary)
   (goto-char (point-max))
-  (newline 2)
+  (newline 1)
   (insert "* ")
   (insert (dvc-fileinfo-path fileinfo))
   (insert ": ")
@@ -680,7 +680,9 @@ non-nil, show log-edit buffer in other frame."
   (if (typep fileinfo 'dvc-fileinfo-file)
       (ecase (dvc-fileinfo-file-status fileinfo)
         (added
-         (insert "New file.")
+	 (if (file-directory-p (dvc-fileinfo-path fileinfo))
+	     (insert "New directory.")
+	   (insert "New file."))
          (newline))
 
         ((copy-source copy-target)
@@ -691,8 +693,11 @@ non-nil, show log-edit buffer in other frame."
          (insert "renamed")
          (newline))
 
+        (deleted
+         (insert "deleted")
+         (newline))
+
         ((conflict
-          deleted
           ignored
           invalid
           known
