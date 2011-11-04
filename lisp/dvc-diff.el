@@ -1,6 +1,6 @@
 ;;; dvc-diff.el --- A generic diff mode for DVC
 
-;; Copyright (C) 2005-2010 by all contributors
+;; Copyright (C) 2005-2011 by all contributors
 
 ;; Author: Matthieu Moy <Matthieu.Moy@imag.fr>
 ;; Contributions from:
@@ -806,6 +806,23 @@ Useful to clear diff buffers after a commit."
                    (last-revision
                     ,(dvc-tree-root file t)
                     1)))))
+      (with-current-buffer pristine-buffer
+        (set-buffer-modified-p nil)
+        (setq buffer-read-only t)
+        (let ((buffer-file-name file))
+          (set-auto-mode t)))
+      (dvc-ediff-buffers pristine-buffer file-buffer))))
+
+(defun dvc-file-ediff-rev (rev)
+  "Run ediff current buffer file against REV (a back end revision string)."
+  (interactive "Mbackend revision string: ")
+  ;; see dvc-file-ediff for comment on 'enable-local-variables'
+  (let ((enable-local-variables nil)
+	(file (buffer-file-name)))
+    (let ((file-buffer (find-file-noselect file))
+          (pristine-buffer
+           (dvc-revision-get-file-in-buffer
+            file (list (dvc-current-active-dvc) (list 'revision rev)))))
       (with-current-buffer pristine-buffer
         (set-buffer-modified-p nil)
         (setq buffer-read-only t)
