@@ -1,0 +1,107 @@
+top level requirements:
+    easy to read titles in car
+
+    coordinate with Stephe's Music Manager (smm) playlists
+        smm downloads .mp3 files and .m3u playlist
+        generates new playlist based on least recently played
+        edits downloaded playlist to delete already played
+            uses 'last played' file written by music player
+        deletes played .mp3 files
+        downloads new .mp3 files
+        adds new files to .m3u
+
+Android framework issues:
+
+    Activities and services run in the same thread. Activities are
+    created whenever they are brought to the screen, and destroyed
+    when another activity is brought to the screen. Services are more
+    persistent. So the service interacts with the actual media player
+    (which is itself a service, in a separate process), and stores all
+    persistent state.
+
+    The Android API does not provide a way for the activity to get a
+    reference to the service object (nor vice versa) - this makes it
+    possible for services to be in a different process from the
+    activity. So all communication between the two objects must be via
+    messages; either simple Intents or structured Binding methods.
+
+Design:
+    Don't use Android music provider databases
+
+    User preference stores root directory to find playlists
+
+    Store current state of each known playlist in app data:
+        playlist file name
+        current song file name
+        current song position
+
+    On user select "choose playlist":
+        activity: present list of .m3u files in root directory
+
+    On user choose playlist:
+        activity: tell server which playlist
+        service: if not same as current,
+            call pause
+            read playlist into internal list, note playlist file date/time.
+            fetch current position from playlist bookmarks
+            play
+
+    On user select pause,
+    and on ACTION_MEDIA_EJECT if playlist root directory is being unmounted:
+        (user and/or smm may edit playlist)
+
+        service:
+            write current bookmark to app data
+            write playlist name, playlist file date/time and last
+            played song filename to <playlist>.last_played (for smm)
+
+    On user select play
+    and on ACTION_MEDIA_MOUNTED:
+        check playlist file date/time;
+            if same, and user selected play, resume play
+            if different:
+                read new
+                search for bookmarked song, resume there
+
+    On service destroy:
+        call pause
+
+    On service create:
+        read app data
+        restore playlist state
+
+    We use Intents for all messages between the Activity and the
+    Service, partly because they are all simple, and partly because
+    that way we don't have to generate the Ada code for the binding,
+    and we don't have to deal with binder threads.
+
+
+    The service is strictly background (it does not call
+    Service.startForeground). It will only be killed if the user does
+    something that requires lots of resources; we assume the user
+    wants the resources for the new task, and will restart the music
+    if they really want to.
+
+Rationale:
+    earlier version used Android music provider databases
+        this proved error-prone; scanner would create new playlists instead of overwriting old ones
+        there is an api to get metadata from .mp3 file; don't need the scanner for that
+
+    earlier version edited playlist directly, instead of writing out .last_played
+        this proved error-prone; the app would crash while doing that, corrupting (emptying) the playlist
+        current design also allows normal use of playlists; just ignore the last-played file.
+
+    use sendBroadcast, because that's the Android Way:
+        sendBroadcast:
+            doesn't start the service if it is not running
+                start the service in onCreate
+
+            doesn't return an error if the service has died
+                services are automatically restarted by the system, so
+                this should never happen.
+
+        startService:
+            starts the service if it is not running
+            returns a component name we don't need
+                except to check that it is not null (service is running).
+

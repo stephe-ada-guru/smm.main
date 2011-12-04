@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- see helloada copy for full help comments -->
+<project name="org.stephe_leake.android_player.stephes_music.activity" default="help">
+
+    <property file="local.properties" />
+
+    <property name="target" value="android-10" />
+
+    <import file="${sdk.dir}/tools/ant/pre_setup.xml" />
+    <setup/>
+
+    <!-- generate R.java, compile it -->
+    <target name="resource-src" depends="-resource-src"/>
+
+    <!-- we don't use the android standard -dex target, because that
+         compiles R.java again, which we don't want. -->
+    <target name="dex">
+      <dex-helper />
+    </target>
+
+    <target name="release" depends="dex, -package-resources">
+      <package-helper output.filepath="${out.unsigned.file}"/>
+      <echo>Signing final apk...</echo>
+      <signjar
+          jar="${out.unsigned.file}"
+          signedjar="${out.unaligned.file}"
+          keystore="${key.store}"
+          storepass="${key.store.password}"
+          alias="${key.alias}"
+          keypass="${key.alias.password}"
+          verbose="${verbose}" />
+
+        <zipalign-helper in.package="${out.unaligned.file}" out.package="${out.release.file}" />
+        <echo>Release Package: ${out.release.file}</echo>
+    </target>
+
+</project>

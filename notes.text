@@ -1,6 +1,19 @@
+ convert to Makefile build
+
 src/org/stephe_leake/android/music_player/Stephes_Music_PlayerActivity.java
 /Projects/android/google/packages/apps/Music/src/com/android/music/MusicUtils.java
 (dvc-status)
+
+E/IMemory ( 7474): binder=0x5331e8 transaction failed fd=-2147483647, size=0, err=-2147483646 (Unknown error: 2147483646)
+
+I/ActivityManager( 1312): Process android.process.media (pid 7474) has died.
+I/ActivityManager( 1312): Kill org.stephe_leake.android.music_player (pid 7465): provider com.android.providers.media.MediaProvider in dying process android.process.media
+
+E/InputDispatcher( 1312): channel '40a41a98 org.stephe_leake.android.music_player/org.stephe_leake.android.music_player.Stephes_Music_PlayerActivity (server)' ~ Consumer closed input channel or an error occurred.  events=0x8
+E/InputDispatcher( 1312): channel '40a41a98 org.stephe_leake.android.music_player/org.stephe_leake.android.music_player.Stephes_Music_PlayerActivity (server)' ~ Channel is unrecoverably broken and will be disposed!
+
+
+    something screwed up access to the .mp3 while player still playing it?
 
 when sdcard goes away, widget puts up garbage for text
 
@@ -22,8 +35,15 @@ test scan new files
     HTC scans files when sd card is restored to android
     ask online
 
- later (in Ada)
-/Projects/android/hello_ada/notes.text
+ later
+monitor broadcasts from astro player
+    write smm file
+
+android scanner sometimes duplicates playlist
+    because stephes_music.service is holding a cursor open into it, so it can't be deleted?
+
+audio getting noisy
+    distinguish bluetooth from headphone disconnect?
 
 need ff/rew
 
@@ -139,6 +159,8 @@ button color/background
         that loses the orange flash on press - good/bad?
     better: see /Apps/Android/android-sdk/platforms/android-10/data/res/drawable/media_button_background.xml;
         replace state_pressed=false case with transparent image
+
+preference to run service in foreground
 
  even later
 replace dar.fm

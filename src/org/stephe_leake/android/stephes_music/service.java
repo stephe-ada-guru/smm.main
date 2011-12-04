@@ -78,8 +78,6 @@ public class Stephes_Music_Service extends Service {
     public static final int REPEAT_CURRENT = 1;
     public static final int REPEAT_ALL = 2;
 
-    public static final String PLAYSTATE_CHANGED = "org.stephe_leake.android.music_player.playstatechanged";
-    public static final String META_CHANGED = "org.stephe_leake.android.music_player.metachanged";
     public static final String QUEUE_CHANGED = "org.stephe_leake.android.music_player.queuechanged";
 
     public static final String SERVICECMD = "org.stephe_leake.android.music_player.musicservicecommand";
@@ -181,7 +179,7 @@ public class Stephes_Music_Service extends Service {
         float mCurrentVolume = 1.0f;
         @Override
         public void handleMessage(Message msg) {
-            MusicUtils.debugLog("mMediaplayerHandler.handleMessage " + msg.what);
+            MusicUtils.debugThreadLog("mMediaplayerHandler.handleMessage " + msg.what);
             switch (msg.what) {
                 case FADEDOWN:
                     mCurrentVolume -= .05f;
@@ -279,7 +277,7 @@ public class Stephes_Music_Service extends Service {
       {
          @Override public void onReceive(Context context, Intent intent)
          {
-            MusicUtils.debugLog("mIntentReceiver.onReceive " + intent.toString());
+            MusicUtils.debugThreadLog("mIntentReceiver.onReceive " + intent.toString());
             handleIntent(intent);
          }
       };

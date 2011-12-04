@@ -1,3 +1,21 @@
+//  Abstract :
+//
+//  Provides User Interface to Stephe's Music Player.
+//
+//  Copyright (C) 2011 Stephen Leake.  All Rights Reserved.
+//
+//  This program is free software; you can redistribute it and/or
+//  modify it under terms of the GNU General Public License as
+//  published by the Free Software Foundation; either version 3, or
+//  (at your option) any later version. This program is distributed in
+//  the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+//  even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+//  PARTICULAR PURPOSE. See the GNU General Public License for more
+//  details. You should have received a copy of the GNU General Public
+//  License distributed with this program; see file COPYING. If not,
+//  write to the Free Software Foundation, 51 Franklin Street, Suite
+//  500, Boston, MA 02110-1335, USA.
+
 package org.stephe_leake.android.music_player;
 
 import android.app.Activity;
@@ -26,9 +44,8 @@ import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
-import org.stephe_leake.android.music_player.MusicUtils.ServiceToken;
-
-public class Stephes_Music_PlayerActivity extends Activity implements ServiceConnection
+import org.stephe_leake.android.stephes_music.utils;
+public class activity extends android.app.Activity
 {
    // constants
    private static final int Progress_Max = 1000;
@@ -50,7 +67,6 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
    private SeekBar     Progress_Bar;
 
    // Main other members
-   private ServiceToken Service;
 
    // FIXME: need to enumerate available volumes that might have
    // playlists on them.
@@ -74,16 +90,11 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
          super.onCreate(savedInstanceState);
          setContentView(R.layout.main);
 
-         // Bind to the service, so we can send it songs. It stops
-         // itself after 60 seconds (Stephes_Music_Service.java
-         // IDLE_DELAY) if not bound or playing.
-         Service = MusicUtils.bindToService(this, (ServiceConnection) this);
-
          // Set up displays, top to bottom left to right
 
-         artistTitle   = (TextView) findViewById(R.id.artistTitle);
-         albumTitle    = (TextView) findViewById(R.id.albumTitle);
-         songTitle     = (TextView) findViewById(R.id.songTitle);
+         artistTitle = (TextView) findViewById(R.id.artistTitle);
+         albumTitle  = (TextView) findViewById(R.id.albumTitle);
+         songTitle   = (TextView) findViewById(R.id.songTitle);
 
          artistTitle.setTextSize(scale * artistTitle.getTextSize());
          albumTitle.setTextSize(scale * albumTitle.getTextSize());
@@ -117,14 +128,14 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
       catch (RuntimeException e)
       {
          // From somewhere
-         MusicUtils.Error_Log(this, "onCreate: That does not compute " + e.toString());
+         utils.Error_Log(this, "onCreate: That does not compute " + e.toString());
          finish();
       }
    }
 
    @Override protected void onNewIntent(Intent intent)
    {
-      MusicUtils.debugLog("onNewIntent: " + intent);
+      utils.debugLog("onNewIntent: " + intent);
       if (connected)
          try
          {
@@ -132,7 +143,7 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
          }
          catch (RuntimeException e)
          {
-            MusicUtils.Error_Log(this, "onNewIntent: intent " + intent + ": " + e.toString());
+            utils.Error_Log(this, "onNewIntent: intent " + intent + ": " + e.toString());
          }
       else
       {
@@ -152,15 +163,15 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
       try
       {
          IntentFilter f = new IntentFilter();
-         f.addAction(Stephes_Music_Service.META_CHANGED);
-         f.addAction(Stephes_Music_Service.PLAYSTATE_CHANGED);
+         f.addAction(utils.META_CHANGED);
+         f.addAction(utils.PLAYSTATE_CHANGED);
          registerReceiver(Service_Listener, f);
 
          Update_Display();
       }
       catch (RuntimeException e)
       {
-         MusicUtils.Error_Log(this, "onResume: " + e.toString());
+         utils.Error_Log(this, "onResume: " + e.toString());
       }
    }
 
@@ -175,37 +186,8 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
       }
       catch (RuntimeException e)
       {
-         MusicUtils.Error_Log(this, "registerReceiver: " + e.toString());
+         utils.Error_Log(this, "registerReceiver: " + e.toString());
       }
-   }
-
-   @Override protected void onDestroy()
-   {
-      MusicUtils.unbindFromService(Service);
-
-      super.onDestroy();
-   }
-
-   ////////// ServiceConnection lifetime methods
-
-   public void onServiceConnected(ComponentName className, android.os.IBinder service)
-   {
-      Intent intent = getIntent();
-      connected = true;
-      MusicUtils.debugLog("onServiceConnected: " + intent);
-      try
-      {
-         handleStartIntent(intent, false);
-      }
-      catch (RuntimeException e)
-      {
-         MusicUtils.Error_Log(this, "onServiceConnected: intent " + intent + ": " + e.toString());
-      }
-   }
-
-   public void onServiceDisconnected(ComponentName className)
-   {
-      // nothing to do here.
    }
 
    //////////
@@ -223,14 +205,14 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
       switch (item.getItemId())
       {
       case MENU_QUIT:
-         if (MusicUtils.isPlaying())
-            sendBroadcast(new Intent(Stephes_Music_Service.TOGGLEPAUSE_ACTION));
+         // FIXME: does this cause the service to terminate?
+         sendBroadcast(new Intent(utils.INTENT_PAUSE));
 
          finish();
          break;
 
       default:
-         MusicUtils.Error_Log
+         utils.Error_Log
             (this, "PlayerActivity.onOptionsItemSelected: unknown MenuItemId " + item.getItemId());
       }
       return false;
@@ -270,7 +252,7 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
       else
       {
          // These are the only actions we declared in our manifest.
-         MusicUtils.Error_Log(this, "unexpected intent " + intent);
+         utils.Error_Log(this, "unexpected intent " + intent);
       }
    }
 
@@ -298,7 +280,7 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
       if (cursor != null && cursor.getCount() > 0)
       {
          if (cursor.getCount() > 1)
-            MusicUtils.Error_Log(Stephes_Music_PlayerActivity.this, Item_URI + ": multiple matches in database");
+            utils.Error_Log(Stephes_Music_PlayerActivity.this, Item_URI + ": multiple matches in database");
 
          cursor.moveToFirst();
          ID = cursor.getLong(idColumn);
@@ -317,21 +299,21 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
       {
          final Uri  contentURI = MediaStore.Audio.Media.getContentUriForPath(Song_URI.getPath());
 
-         MusicUtils.addToCurrentPlaylist
+         utils.addToCurrentPlaylist
             (this,
              new long[]{Get_ID(contentURI, Song_URI)},
-             MusicUtils.isPlaying() ? Stephes_Music_Service.LAST : Stephes_Music_Service.NOW);
+             utils.isPlaying() ? utils.LAST : utils.NOW);
       }
       catch (Not_Found e)
       {
          // FIXME: scan here? the media scanner runs when sdcard is
          // unmounted, but there are other ways to get files on the
          // sdcard (via wifi or phone)
-         MusicUtils.Info_Log(this, e.getMessage());
+         utils.Info_Log(this, e.getMessage());
       }
       catch (RuntimeException e)
       {
-         MusicUtils.Error_Log(this, "Add_Song: " + e.toString());
+         utils.Error_Log(this, "Add_Song: " + e.toString());
       }
     }
 
@@ -355,16 +337,16 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
 
       try
       {
-         MusicUtils.replaceCurrentPlaylist (Volume_Name, Get_ID(contentURI, listURI));
+         utils.replaceCurrentPlaylist (Volume_Name, Get_ID(contentURI, listURI));
       } catch (Not_Found e)
       {
          if (alreadyScanned)
          {
-            MusicUtils.Error_Log(this, listURI.toString() + " not found after scan");
+            utils.Error_Log(this, listURI.toString() + " not found after scan");
          } else
          {
             // A brand new playlist; scan it
-            MusicUtils.debugLog("new playlist; scanning " + listURI.toString());
+            utils.debugLog("new playlist; scanning " + listURI.toString());
             MediaScannerConnection.scanFile
                (this, new String[] {listURI.getPath()}, new String[] {mimeType}, ScanListener);
          }
@@ -380,8 +362,8 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
 
          // FIXME: could be a new intent while we were waiting for
          // scan; need a queue.
-         MusicUtils.debugLog("scan complete; got " + uri.toString());
-         MusicUtils.debugLog(" ... starting " + getIntent().toString());
+         utils.debugLog("scan complete; got " + uri.toString());
+         utils.debugLog(" ... starting " + getIntent().toString());
          handleStartIntent(getIntent(), true);
       }
    };
@@ -390,7 +372,7 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
 
    private void Update_Display()
    {
-      if (! MusicUtils.isConnected())
+      if (! utils.isConnected())
       {
          // can't do anything without the service
          playlistTitle.setText ("");
@@ -406,13 +388,13 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
          // FIXME: this data is in the notify change intent; either
          // get it from there, or delete it (see widget)
          playlistTitle.setText
-            (MusicUtils.getPlaylistName() +
-             " (" + MusicUtils.getQueuePosition() + "/" + MusicUtils.getQueueLength() + ")");
-         artistTitle.setText(MusicUtils.getArtistName());
-         albumTitle.setText(MusicUtils.getAlbumName());
-         songTitle.setText(MusicUtils.getTrackName());
+            (utils.getPlaylistName() +
+             " (" + utils.getQueuePosition() + "/" + utils.getQueueLength() + ")");
+         artistTitle.setText(utils.getArtistName());
+         albumTitle.setText(utils.getAlbumName());
+         songTitle.setText(utils.getTrackName());
 
-         isPlaying = MusicUtils.isPlaying();
+         isPlaying = utils.isPlaying();
 
          if (isPlaying)
          {
@@ -423,27 +405,27 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
             Play_Pause_Button.setImageResource(android.R.drawable.ic_media_play);
          }
 
-         Duration = MusicUtils.getDuration();
-         Total_Time.setText(MusicUtils.makeTimeString(this, Duration));
+         Duration = utils.getDuration();
+         Total_Time.setText(utils.makeTimeString(this, Duration));
 
          queueNextRefresh(refreshNow());
       }
       catch (RuntimeException e)
       {
-         MusicUtils.Error_Log(this, "Update_Display: " + e.toString());
+         utils.Error_Log(this, "Update_Display: " + e.toString());
       }
    }
 
    private BroadcastReceiver Service_Listener = new BroadcastReceiver()
       {
-         // see Stephes_Music_Service.java "void notifyChange(" for
+         // see utils.java "void notifyChange(" for
          // list of intents
 
          @Override public void onReceive(Context context, Intent intent)
          {
             String action = intent.getAction();
 
-            if (! MusicUtils.isConnected())
+            if (! utils.isConnected())
             {
                // startup message from service; just ignore it
                return;
@@ -451,8 +433,8 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
 
             try
             {
-               if (action.equals(Stephes_Music_Service.META_CHANGED) ||
-                   action.equals(Stephes_Music_Service.PLAYSTATE_CHANGED))
+               if (action.equals(utils.META_CHANGED) ||
+                   action.equals(utils.PLAYSTATE_CHANGED))
                {
                   Update_Display();
                }
@@ -463,7 +445,7 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
             }
             catch (RuntimeException e)
             {
-               MusicUtils.Error_Log(Stephes_Music_PlayerActivity.this, "Service_Listener: " + e.toString());
+               utils.Error_Log(Stephes_Music_PlayerActivity.this, "Service_Listener: " + e.toString());
             }
          }
       };
@@ -472,7 +454,7 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
       {
          @Override public void onClick(View v)
          {
-            sendBroadcast(new Intent(Stephes_Music_Service.PREVIOUS_ACTION));
+            sendBroadcast(new Intent(utils.PREVIOUS_ACTION));
          }
       };
 
@@ -480,7 +462,7 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
       {
          @Override public void onClick(View v)
          {
-            sendBroadcast(new Intent(Stephes_Music_Service.TOGGLEPAUSE_ACTION));
+            sendBroadcast(new Intent(utils.TOGGLEPAUSE_ACTION));
          }
       };
 
@@ -488,7 +470,7 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
       {
          @Override public void onClick(View v)
          {
-            sendBroadcast(new Intent(Stephes_Music_Service.NEXT_ACTION));
+            sendBroadcast(new Intent(utils.NEXT_ACTION));
          }
       };
 
@@ -503,13 +485,13 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
 
           public void onProgressChanged(SeekBar bar, int progress, boolean fromuser)
           {
-             if (!fromuser || !MusicUtils.isConnected()) return;
+             if (!fromuser || !utils.isConnected()) return;
 
              long now = SystemClock.elapsedRealtime();
              if ((now - LastSeekEventTime) > 250)
              {
                 LastSeekEventTime = now;
-                MusicUtils.seek(Duration * progress / Progress_Max);
+                utils.seek(Duration * progress / Progress_Max);
              }
           }
           public void onStopTrackingTouch(SeekBar bar)
@@ -542,11 +524,11 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
                            try
                            {
                               playlistCursor.moveToPosition(which);
-                              MusicUtils.replaceCurrentPlaylist (playlistVolumeName, playlistCursor.getLong(idColumn));
+                              utils.replaceCurrentPlaylist (playlistVolumeName, playlistCursor.getLong(idColumn));
                            }
                            catch (Exception e)
                            {
-                              MusicUtils.debugLog("playlist dialog onClick: " + e.toString());
+                              utils.debugLog("playlist dialog onClick: " + e.toString());
                            }
                         };
                      },
@@ -555,12 +537,12 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
               }
               catch (Exception e)
               {
-                 MusicUtils.debugLog("create playlist dialog " + e.toString());
+                 utils.debugLog("create playlist dialog " + e.toString());
                  return null;
               }
            }
         default:
-           MusicUtils.debugLog("unknown dialog id " + id);
+           utils.debugLog("unknown dialog id " + id);
            return null;
         }
     }
@@ -578,11 +560,11 @@ public class Stephes_Music_PlayerActivity extends Activity implements ServiceCon
       // Update progress bar and time display; return milliseconds until next update
       if (Service == null) return 500;
 
-      long pos = MusicUtils.getPosition();
+      long pos = utils.getPosition();
 
       if (pos >= 0 && Duration > 0)
       {
-         Current_Time.setText(MusicUtils.makeTimeString(this, pos));
+         Current_Time.setText(utils.makeTimeString(this, pos));
          Progress_Bar.setProgress((int) (Progress_Max * pos / Duration));
 
       } else
