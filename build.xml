@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- see helloada copy for full help comments -->
-<project name="org.stephe_leake.android_player.stephes_music.activity" default="help">
+<project name="org.stephe_leake.android.stephes_music.activity" default="help">
 
     <property file="local.properties" />
 

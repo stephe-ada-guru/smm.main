@@ -29,7 +29,7 @@ install :
 
 ANDROID_JAR := $(ANDROID_SDK)/platforms/android-10/android.jar
 %.class : %.java | ../bin/classes
-	javac -g -deprecation -cp $(ANDROID_JAR) -sourcepath "../src;../gen" -s ../bin/classes -target 1.5 $<
+	javac -g -deprecation -cp $(ANDROID_JAR) -sourcepath "../src;../gen" -d ../bin/classes -target 1.5 $<
 
 ../bin/classes :
 	mkdir -p ../bin/classes

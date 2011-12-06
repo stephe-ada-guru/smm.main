@@ -1,2271 +1,509 @@
-/*
- * Copyright (C) 2011 Stephen Leake
- * Copyright (C) 2007 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+//  Abstract :
+//
+//  Provides background audio playback capabilities, allowing the
+//  user to switch between activities without stopping playback.
+//
+//  Copyright (C) 2011 Stephen Leake.  All Rights Reserved.
+//
+//  This program is free software; you can redistribute it and/or
+//  modify it under terms of the GNU General Public License as
+//  published by the Free Software Foundation; either version 3, or
+//  (at your option) any later version. This program is distributed in
+//  the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+//  even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+//  PARTICULAR PURPOSE. See the GNU General Public License for more
+//  details. You should have received a copy of the GNU General Public
+//  License distributed with this program; see file COPYING. If not,
+//  write to the Free Software Foundation, 51 Franklin Street, Suite
+//  500, Boston, MA 02110-1335, USA.
 
-// Copied from com.android.music in Android 2.3.3; modified to be in my package.
-
-package org.stephe_leake.android.music_player;
+package org.stephe_leake.android.stephes_music;
 
 import android.app.Service;
-import android.appwidget.AppWidgetManager;
-import android.content.ComponentName;
-import android.content.ContentResolver;
-import android.content.ContentUris;
-import android.content.ContentValues;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.BroadcastReceiver;
-import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
-import android.database.Cursor;
-import android.media.audiofx.AudioEffect;
-import android.media.AudioManager;
 import android.media.AudioManager.OnAudioFocusChangeListener;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.net.Uri;
+import android.media.MediaMetadataRetriever;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
-import android.os.PowerManager;
-import android.os.SystemClock;
 import android.os.PowerManager.WakeLock;
-import android.provider.MediaStore;
-import android.util.Log;
-import android.widget.RemoteViews;
+import android.os.PowerManager;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.ref.WeakReference;
-import java.util.Random;
-import java.util.Vector;
+import java.util.LinkedList;
+import java.util.ListIterator;
 
-/**
- * Provides "background" audio playback capabilities, allowing the
- * user to switch between activities without stopping playback.
- */
-public class Stephes_Music_Service extends Service {
-    /** used to specify whether enqueue() should start playing
-     * the new list of files right away, next or once all the currently
-     * queued files have been played
-     */
-    public static final int NOW = 1;
-    public static final int NEXT = 2;
-    public static final int LAST = 3;
-    public static final int PLAYBACKSERVICE_STATUS = 1;
+public class service extends Service
+{
+   // used to specify whether enqueue() should start playing
+   // the new list of files right away, next or once all the currently
+   // queued files have been played
 
-    public static final int SHUFFLE_NONE = 0;
-    public static final int SHUFFLE_NORMAL = 1;
-    public static final int SHUFFLE_AUTO = 2;
+   //  Internal Messages used for delays
+   private static final int FADEDOWN = 5;
+   private static final int FADEUP   = 6;
 
-    public static final int REPEAT_NONE = 0;
-    public static final int REPEAT_CURRENT = 1;
-    public static final int REPEAT_ALL = 2;
+   enum PlayState
+   {
+      Idle,
+     //  Media_Player has no song Loaded
 
-    public static final String QUEUE_CHANGED = "org.stephe_leake.android.music_player.queuechanged";
+     Playing,
+     //  Media_Player has song, is playing it
 
-    public static final String SERVICECMD = "org.stephe_leake.android.music_player.musicservicecommand";
-    public static final String CMDNAME = "command";
-    public static final String CMDTOGGLEPAUSE = "togglepause";
-    public static final String CMDSTOP = "stop";
-    public static final String CMDPAUSE = "pause";
-    public static final String CMDPREVIOUS = "previous";
-    public static final String CMDNEXT = "next";
+     Paused,
+     //  Media_Player has song, is not playing it, at request of user
 
-    public static final String TOGGLEPAUSE_ACTION = "org.stephe_leake.android.music_player.musicservicecommand.togglepause";
-    public static final String PAUSE_ACTION = "org.stephe_leake.android.music_player.musicservicecommand.pause";
-    public static final String PREVIOUS_ACTION = "org.stephe_leake.android.music_player.musicservicecommand.previous";
-    public static final String NEXT_ACTION = "org.stephe_leake.android.music_player.musicservicecommand.next";
+     Paused_Transient
+     //  Media_Player has song, is not playing it, at request of
+     //  system (phone call, navigation announcement, etc).
+   };
 
-   // Messages used for delays, and to communicate from callbacks to service.
-   private static final int TRACK_ENDED      = 1;
-   private static final int RELEASE_WAKELOCK = 2;
-   private static final int SERVER_DIED      = 3;
-   private static final int FOCUSCHANGE      = 4;
-   private static final int FADEDOWN         = 5;
-   private static final int FADEUP           = 6;
+   ////////// private methods (alphabetical)
 
-   // Misc constants
-   private static final int MAX_HISTORY_SIZE = 100;
+   private void createMediaPlayer()
+   {
+      mediaPlayer = new MediaPlayer();
+      mediaPlayer.setWakeMode(service.this, PowerManager.PARTIAL_WAKE_LOCK);
+      mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+      mediaPlayer.setOnCompletionListener(completionListener);
+      mediaPlayer.setOnErrorListener(errorListener);
 
-    private MultiPlayer mPlayer;
-    private String      mFileToPlay;
-    private int         mShuffleMode       = SHUFFLE_NONE;
-    private int         mRepeatMode        = REPEAT_NONE;
-    private int         mMediaMountedCount = 0;
-    private long [] mAutoShuffleList       = null;
+      // FIXME: wake up and recover if mediaPlayer dies
+      // handler.sendMessageDelayed(mHandler.obtainMessage(PLAYER_DIED), 2000);
+   }
 
-   private String mPlaylistVolume = null;
-   // Storage volume where the current playlist file resides, for
-   // getContentUri. FIXME: use this instead of EXTERNAL_CONTENT_URI!
-   // Some Android hardware has large internal storage that is
-   // available to the user.
+   private String currentFullPath()
+   {
+      return playlistDirectory + playlistFilename + ".m3u";
+   }
 
-   private long mPlaylist_ID = 0;
-   // MediaStore.Audio.Playlists ID of the current playlist file, or 0
-   // if we are not playing a playlist file.
+   private void next()
+   {
+      stop();
 
-   private String mPlaylist_Name = "";
-   // "" if not playing a playlist.
+      if (playlistPos.hasNext())
+      {
+         play(playlistPos.next());
+      }
+      else
+      {
+         // at end of playlist
+      };
+   }
 
-   private long [] mPlayList = null;
-   // Each element is the MediaStore.Audio.Media database ID of a file
-   // that MediaPlayer can play.
+   private void notifyChange(String what)
+   {
+      // Notify the activity that something has changed.
+      //
+      // 'What' must be one of the *_CHANGED constants in utils.java
 
-   private int mPlayListLen = 0;
-   // Count of valid entries in mPlayList
+      if (what.equals(utils.META_CHANGED))
+      {
+         final MediaMetadataRetriever retriever = new MediaMetadataRetriever();
 
-   private Vector<Integer> mHistory = new Vector<Integer>(MAX_HISTORY_SIZE);
-   // Played tracks; used by shuffle algorithm
+         try
+         {
+            retriever.setDataSource(currentFullPath());
 
-   private Cursor mCursor;
-   // Audio.Media db cursor for current track
+            sendStickyBroadcast
+               (new Intent (utils.META_CHANGED).
+                putExtra ("artist", retriever.extractMetadata (MediaMetadataRetriever.METADATA_KEY_ARTIST)).
+                putExtra ("album", retriever.extractMetadata (MediaMetadataRetriever.METADATA_KEY_ALBUM)).
+                putExtra ("track", retriever.extractMetadata (MediaMetadataRetriever.METADATA_KEY_TITLE)).
+                putExtra ("duration", retriever.extractMetadata (MediaMetadataRetriever.METADATA_KEY_DURATION)).
+                putExtra
+                ("playlist",
+                 playlistFilename + playlistPosInt + " /" + playlist.size()));
+         }
+         catch (RuntimeException e)
+         {
+            utils.Error_Log (this, "Notify_Change SetDataSource: " + e.toString());
+         };
+      }
+      else if (what.equals(utils.PLAYSTATE_CHANGED))
+      {
+         sendStickyBroadcast
+            (new Intent (utils.PLAYSTATE_CHANGED).
+             putExtra ("playing", playing == PlayState.Playing));
+      }
+      else
+      {
+         utils.Error_Log (this, "Notify_Change: unexpected 'what'");
+      };
+   }
 
-   private int mPlayPos = -1;
-   // Current position in mPlayList
+   private void pause(PlayState pausedState)
+   {
+      if (playing == PlayState.Playing)
+      {
+         mediaPlayer.pause();
 
-    private static final String LOGTAG = "Stephes_Music_Service";
-    private final Shuffler mRand = new Shuffler();
-    String[] mCursorCols = new String[] {
-            "audio._id AS _id", // index must match IDCOLIDX below
-            MediaStore.Audio.Media.ARTIST,
-            MediaStore.Audio.Media.ALBUM,
-            MediaStore.Audio.Media.TITLE,
-            MediaStore.Audio.Media.DATA,
-            MediaStore.Audio.Media.MIME_TYPE,
-            MediaStore.Audio.Media.ALBUM_ID,
-            MediaStore.Audio.Media.ARTIST_ID,
-            MediaStore.Audio.Media.BOOKMARK // index must match BOOKMARKCOLIDX below
-    };
-    private final static int  IDCOLIDX                      = 0;
-    private final static int  BOOKMARKCOLIDX                = 8;
-    private BroadcastReceiver mUnmountReceiver              = null;
-    private WakeLock          mWakeLock;
-    private int               mServiceStartId               = -1;
-    private boolean           mServiceInUse                 = false;
-    private boolean           mIsSupposedToBePlaying        = false;
-    private AudioManager      mAudioManager;
-    private boolean           mQueueIsSaveable              = true;
-    // used to track what type of audio focus loss caused the playback to pause
-    private boolean           mPausedByTransientLossOfFocus = false;
+         audioManager.abandonAudioFocus(audioFocusListener);
 
-    private SharedPreferences mPreferences;
-    // We use this to distinguish between different cards when saving/restoring playlists.
-    // This will have to change if we want to support multiple simultaneous cards.
-    private int mCardId;
+         playing = pausedState;
 
-    private MediaAppWidgetProvider mAppWidgetProvider = MediaAppWidgetProvider.getInstance();
+         notifyChange(utils.PLAYSTATE_CHANGED);
 
-    // interval after which we stop the service when idle
-    private static final int IDLE_DELAY = 60000;
+         saveBookmark();
+         writeSMMFile();
+      }
+   }
 
-    private Handler mMediaplayerHandler = new Handler() {
-        float mCurrentVolume = 1.0f;
-        @Override
-        public void handleMessage(Message msg) {
-            MusicUtils.debugThreadLog("mMediaplayerHandler.handleMessage " + msg.what);
-            switch (msg.what) {
-                case FADEDOWN:
-                    mCurrentVolume -= .05f;
-                    if (mCurrentVolume > .2f)
-                    {
-                       // fade up in 0.05 steps every 10 milliseconds;
-                       // send ourselves another message in 10 ms.
-                       mMediaplayerHandler.sendEmptyMessageDelayed(FADEDOWN, 10);
-                    } else {
-                        mCurrentVolume = .2f;
-                    }
-                    mPlayer.setVolume(mCurrentVolume);
-                    break;
-                case FADEUP:
-                    mCurrentVolume += .01f;
-                    if (mCurrentVolume < 1.0f) {
-                        mMediaplayerHandler.sendEmptyMessageDelayed(FADEUP, 10);
-                    } else {
-                        mCurrentVolume = 1.0f;
-                    }
-                    mPlayer.setVolume(mCurrentVolume);
-                    break;
-                case SERVER_DIED:
-                    if (mIsSupposedToBePlaying)
-                    {
-                       openCurrent();
-                    }
-                    break;
-                case TRACK_ENDED:
-                    if (mRepeatMode == REPEAT_CURRENT) {
-                        seek(0);
-                        play();
-                    } else {
-                       long trackEnded = mPlayList[mPlayPos];
-                       next(false);
-                       maybeDeleteTrack(trackEnded);
-                    }
-                    break;
-                case RELEASE_WAKELOCK:
-                    mWakeLock.release();
-                    break;
+   private void play (String path)
+   {
+      // service.playing must be Idle (call Stop first)
+      //
+      // FIXME: merge stop here to avoid double notification on next, prev?
 
-                case FOCUSCHANGE:
-                   // This code is here so we can better synchronize it with the code that
-                   // handles fade-in
-                   switch (msg.arg1)
-                   {
-                   case AudioManager.AUDIOFOCUS_LOSS:
-                      MusicUtils.debugLog("received AUDIOFOCUS_LOSS");
-                      if(mIsSupposedToBePlaying)
-                      {
-                         mPausedByTransientLossOfFocus = false;
-                      }
-                      pause();
-                      break;
-                   case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
-                      MusicUtils.debugLog("received AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK");
-                      // "DUCK" means can lower volume; not clear when this might happen
-                      mMediaplayerHandler.removeMessages(FADEUP);
-                      mMediaplayerHandler.sendEmptyMessage(FADEDOWN);
-                      break;
-                   case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
-                      MusicUtils.debugLog("received AUDIOFOCUS_LOSS_TRANSIENT");
-                      if (mIsSupposedToBePlaying)
-                      {
-                         mPausedByTransientLossOfFocus = true;
-                         pause();
-                      }
-                      break;
-                   case AudioManager.AUDIOFOCUS_GAIN:
-                      MusicUtils.debugLog("received AUDIOFOCUS_GAIN");
-                      if (!mIsSupposedToBePlaying && mPausedByTransientLossOfFocus)
-                      {
-                         mPausedByTransientLossOfFocus = false;
-                         mCurrentVolume = 0f;
-                         mPlayer.setVolume(mCurrentVolume);
-                         play(); // also queues a fade-in
-                      } else {
-                         mMediaplayerHandler.removeMessages(FADEDOWN);
-                         mMediaplayerHandler.sendEmptyMessage(FADEUP);
-                      }
-                      break;
-                   default:
-                      MusicUtils.debugLog("Unknown FOCUSCHANGE code " + msg.arg1);
-                   }
-                   break;
+      try
+      {
+         mediaPlayer.reset();
+         mediaPlayer.setDataSource (path);
+         mediaPlayer.prepare();
+
+         currentFile = path;
+
+         unpause();
+
+         notifyChange(utils.META_CHANGED);
+      }
+      catch (IOException e)
+      {
+         // From SetDataSource
+         utils.Error_Log (this, "can't play: " + path + ": " + e.toString());
+      };
+   }
+
+   private void previous()
+   {
+      stop();
+      if (playlistPos.hasPrevious())
+      {
+         play(playlistPos.previous());
+      }
+      else
+      {
+         // at start of playlist
+      }
+   }
+
+   private void saveBookmark()
+   {
+      // FIXME: implement
+   }
+
+   private void stop()
+   {
+      if (currentFile != null)
+      {
+         mediaPlayer.reset();
+
+         currentFile = null;
+         playing = PlayState.Idle;
+
+         notifyChange(utils.PLAYSTATE_CHANGED);
+      };
+   }
+
+   private void unpause()
+   {
+      final int result = audioManager.requestAudioFocus
+         (audioFocusListener,
+          android.media.AudioManager.STREAM_MUSIC,
+          android.media.AudioManager.AUDIOFOCUS_GAIN);
+
+      if (result != android.media.AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
+      {
+         utils.Error_Log (this, "can't get audio focus");
+      }
+      else
+      {
+         mediaPlayer.start();
+
+         playing = PlayState.Playing;
+         notifyChange (utils.PLAYSTATE_CHANGED);
+      }
+   }
+
+   private void writeSMMFile()
+   {
+      // FIXME: implement
+   }
+
+   ////////// main members
+
+   private MediaPlayer mediaPlayer;
+
+   public service() {}
+
+   ////////// nested classes
+
+   private Handler handler = new Handler()
+      {
+         float volume = 1.0f;
+
+         @Override public void handleMessage(Message msg)
+         {
+            utils.debugLog("handleMessage " + msg.what);
+            switch (msg.what)
+            {
+            case FADEDOWN:
+               // gradually reduce volume to 0.2
+               //
+               // changes volume in steps of 0.05 every 10 milliseconds
+
+               volume -= .05f;
+               if (volume > 0.2f)
+               {
+                  sendEmptyMessageDelayed(FADEDOWN, 10);
+               }
+               else
+               {
+                  volume = .2f;
+               }
+               mediaPlayer.setVolume(volume, volume);
+               break;
+
+            case FADEUP:
+               // gradually increase volume to 1.0
+               //
+               // changes volume in steps of 0.01 every 10 milliseconds
+
+               volume += .01f;
+               if (volume < 1.0f)
+               {
+                  sendEmptyMessageDelayed(FADEUP, 10);
+               }
+               else
+               {
+                  volume = 1.0f;
+               }
+               mediaPlayer.setVolume(volume, volume);
+               break;
 
             default:
                break;
             }
-        }
-       };
-
-   private BroadcastReceiver mIntentReceiver = new BroadcastReceiver()
-      {
-         @Override public void onReceive(Context context, Intent intent)
-         {
-            MusicUtils.debugThreadLog("mIntentReceiver.onReceive " + intent.toString());
-            handleIntent(intent);
          }
       };
 
-   private void handleIntent(Intent intent)
-   {
-      final String action = intent.getAction();
-      final String cmd    = intent.getStringExtra("command");
-
-      if (CMDNEXT.equals(cmd) || NEXT_ACTION.equals(action))
+   private BroadcastReceiver broadcastReceiver = new BroadcastReceiver()
       {
-         long trackEnded = mPlayList[mPlayPos];
-         next(true);
-         maybeDeleteTrack(trackEnded);
-      }
-      else if (CMDPREVIOUS.equals(cmd) || PREVIOUS_ACTION.equals(action))
-      {
-         if (position() < 2000) {
-            prev();
-         } else {
-            seek(0);
-            play();
-         }
-      }
-      else if (CMDTOGGLEPAUSE.equals(cmd) || TOGGLEPAUSE_ACTION.equals(action))
-      {
-         if (mIsSupposedToBePlaying) {
-            pause();
-            mPausedByTransientLossOfFocus = false;
-         } else {
-            play();
-         }
-      }
-      else if (CMDPAUSE.equals(cmd) || PAUSE_ACTION.equals(action))
-      {
-         pause();
-         mPausedByTransientLossOfFocus = false;
-      }
-      else if (CMDSTOP.equals(cmd))
-      {
-         pause();
-         mPausedByTransientLossOfFocus = false;
-         seek(0);
-      }
-      else if (MediaAppWidgetProvider.CMDAPPWIDGETUPDATE.equals(cmd))
-      {
-         // Someone asked us to refresh a set of specific widgets, probably
-         // because they were just added.
-         int[] appWidgetIds = intent.getIntArrayExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS);
-         mAppWidgetProvider.performUpdate(Stephes_Music_Service.this, appWidgetIds);
-      }
-   }
-
-    private OnAudioFocusChangeListener mAudioFocusListener = new OnAudioFocusChangeListener() {
-        public void onAudioFocusChange(int focusChange) {
-            mMediaplayerHandler.obtainMessage(FOCUSCHANGE, focusChange, 0).sendToTarget();
-        }
-    };
-
-    public Stephes_Music_Service() {
-    }
-
-    @Override
-    public void onCreate() {
-        super.onCreate();
-
-        mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-
-        // We need to do this both here and in play(); here so the
-        // receiver can start us later via a pausetoggle, in play() to
-        // steal the button focus back from some other app. Sigh.
-        mAudioManager.registerMediaButtonEventReceiver(new ComponentName(getPackageName(),
-                MediaButtonIntentReceiver.class.getName()));
-
-        // FIXME: make sure this is not shared with original Android
-        // app? Or does "shared" mean it _is_ shared?
-        mPreferences = getSharedPreferences("Music", MODE_WORLD_READABLE | MODE_WORLD_WRITEABLE);
-        mCardId = MusicUtils.getCardId(this);
-
-        registerExternalStorageListener();
-
-        // Needs to be done in this thread, since otherwise ApplicationContext.getPowerManager() crashes.
-        mPlayer = new MultiPlayer();
-        mPlayer.setHandler(mMediaplayerHandler);
-
-        reloadQueue();
-
-        IntentFilter commandFilter = new IntentFilter();
-        commandFilter.addAction(SERVICECMD);
-        commandFilter.addAction(TOGGLEPAUSE_ACTION);
-        commandFilter.addAction(PAUSE_ACTION);
-        commandFilter.addAction(NEXT_ACTION);
-        commandFilter.addAction(PREVIOUS_ACTION);
-        registerReceiver(mIntentReceiver, commandFilter);
-
-        PowerManager pm = (PowerManager)getSystemService(Context.POWER_SERVICE);
-        mWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, this.getClass().getName());
-        mWakeLock.setReferenceCounted(false);
-
-        // If the service was idle, but got killed before it stopped itself, the
-        // system will relaunch it. Make sure it gets stopped again in that case.
-        Message msg = mDelayedStopHandler.obtainMessage();
-        mDelayedStopHandler.sendMessageDelayed(msg, IDLE_DELAY);
-    }
-
-    @Override
-    public void onDestroy() {
-        // Check that we're not being destroyed while something is still playing.
-        if (mIsSupposedToBePlaying) {
-            Log.e(LOGTAG, "Service being destroyed while still playing.");
-        }
-        // release all MediaPlayer resources, including the native player and wakelocks
-        Intent i = new Intent(AudioEffect.ACTION_CLOSE_AUDIO_EFFECT_CONTROL_SESSION);
-        i.putExtra(AudioEffect.EXTRA_AUDIO_SESSION, getAudioSessionId());
-        i.putExtra(AudioEffect.EXTRA_PACKAGE_NAME, getPackageName());
-        sendBroadcast(i);
-        mPlayer.release();
-        mPlayer = null;
-
-        mAudioManager.abandonAudioFocus(mAudioFocusListener);
-
-        // make sure there aren't any other messages coming
-        mDelayedStopHandler.removeCallbacksAndMessages(null);
-        mMediaplayerHandler.removeCallbacksAndMessages(null);
-
-        if (mCursor != null) {
-            mCursor.close();
-            mCursor = null;
-        }
-
-        unregisterReceiver(mIntentReceiver);
-        if (mUnmountReceiver != null) {
-            unregisterReceiver(mUnmountReceiver);
-            mUnmountReceiver = null;
-        }
-        mWakeLock.release();
-        super.onDestroy();
-    }
-
-    private final char hexdigits [] = new char [] {
-            '0', '1', '2', '3',
-            '4', '5', '6', '7',
-            '8', '9', 'a', 'b',
-            'c', 'd', 'e', 'f'
-    };
-
-    private void saveQueue(boolean full) {
-        if (!mQueueIsSaveable) {
-            return;
-        }
-
-        Editor ed = mPreferences.edit();
-        if (full)
-        {
-            StringBuilder q = new StringBuilder();
-
-            // The current playlist is saved as a list of "reverse hexadecimal"
-            // numbers, which we can generate faster than normal decimal or
-            // hexadecimal numbers, which in turn allows us to save the playlist
-            // more often without worrying too much about performance.
-            // (saving the full state takes about 40 ms under no-load conditions
-            // on the phone)
-            int len = mPlayListLen;
-            for (int i = 0; i < len; i++) {
-                long n = mPlayList[i];
-                if (n < 0) {
-                    continue;
-                } else if (n == 0) {
-                    q.append("0;");
-                } else {
-                    while (n != 0) {
-                        int digit = (int)(n & 0xf);
-                        n >>>= 4;
-                        q.append(hexdigits[digit]);
-                    }
-                    q.append(";");
-                }
-            }
-            //Log.i("@@@@ service", "created queue string in " + (System.currentTimeMillis() - start) + " ms");
-            ed.putString("queue", q.toString());
-            ed.putInt("cardid", mCardId);
-            if (mShuffleMode != SHUFFLE_NONE) {
-                // In shuffle mode we need to save the history too
-                len = mHistory.size();
-                q.setLength(0);
-                for (int i = 0; i < len; i++) {
-                    int n = mHistory.get(i);
-                    if (n == 0) {
-                        q.append("0;");
-                    } else {
-                        while (n != 0) {
-                            int digit = (n & 0xf);
-                            n >>>= 4;
-                            q.append(hexdigits[digit]);
-                        }
-                        q.append(";");
-                    }
-                }
-                ed.putString("history", q.toString());
-            }
-        }
-        ed.putLong("curPlaylistID", mPlaylist_ID);
-        ed.putString("curPlaylistName", mPlaylist_Name);
-        ed.putString("curPlaylistVolume", mPlaylistVolume);
-        ed.putInt("curpos", mPlayPos);
-        if (mPlayer.isInitialized()) {
-            ed.putLong("seekpos", mPlayer.position());
-        }
-        ed.putInt("repeatmode", mRepeatMode);
-        ed.putInt("shufflemode", mShuffleMode);
-        ed.apply();
-    }
-
-    private void reloadQueue() {
-        String q = null;
-
-        int id = mCardId;
-        if (mPreferences.contains("cardid")) {
-            id = mPreferences.getInt("cardid", ~mCardId);
-        }
-        if (id == mCardId) {
-            // Only restore the saved playlist if the card is still
-            // the same one as when the playlist was saved
-            q = mPreferences.getString("queue", "");
-        }
-        int qlen = q != null ? q.length() : 0;
-        if (qlen > 1) {
-            //Log.i("@@@@ service", "loaded queue: " + q);
-            int plen = 0;
-            int n = 0;
-            int shift = 0;
-            for (int i = 0; i < qlen; i++) {
-                char c = q.charAt(i);
-                if (c == ';') {
-                    ensurePlayListCapacity(plen + 1);
-                    mPlayList[plen] = n;
-                    plen++;
-                    n = 0;
-                    shift = 0;
-                } else {
-                    if (c >= '0' && c <= '9') {
-                        n += ((c - '0') << shift);
-                    } else if (c >= 'a' && c <= 'f') {
-                        n += ((10 + c - 'a') << shift);
-                    } else {
-                        // bogus playlist data
-                        plen = 0;
-                        break;
-                    }
-                    shift += 4;
-                }
-            }
-            mPlayListLen = plen;
-
-            int pos = mPreferences.getInt("curpos", 0);
-            if (pos < 0 || pos >= mPlayListLen) {
-                // The saved playlist is bogus, discard it
-                mPlayListLen = 0;
-                return;
-            }
-            mPlayPos = pos;
-
-            // When reloadQueue is called in response to a card-insertion,
-            // we might not be able to query the media provider right away.
-            // To deal with this, try querying for the current file, and if
-            // that fails, wait a while and try again. If that too fails,
-            // assume there is a problem and don't restore the state.
-            Cursor crsr = MusicUtils.query(this,
-                        MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                        new String [] {"_id"}, "_id=" + mPlayList[mPlayPos] , null, null);
-            if (crsr == null || crsr.getCount() == 0) {
-                // wait a bit and try again
-                SystemClock.sleep(3000);
-                crsr = getContentResolver().query(
-                        MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                        mCursorCols, "_id=" + mPlayList[mPlayPos] , null, null);
-            }
-            if (crsr != null) {
-                crsr.close();
-            }
-
-            openCurrent();
-            if (!mPlayer.isInitialized()) {
-                // couldn't restore the saved state
-                mPlayListLen = 0;
-                return;
-            }
-
-            long seekpos = mPreferences.getLong("seekpos", 0);
-            seek(seekpos >= 0 && seekpos < duration() ? seekpos : 0);
-            Log.d(LOGTAG, "restored queue, currently at position "
-                    + position() + "/" + duration()
-                    + " (requested " + seekpos + ")");
-
-            int repmode = mPreferences.getInt("repeatmode", REPEAT_NONE);
-            if (repmode != REPEAT_ALL && repmode != REPEAT_CURRENT) {
-                repmode = REPEAT_NONE;
-            }
-            mRepeatMode = repmode;
-
-            int shufmode = mPreferences.getInt("shufflemode", SHUFFLE_NONE);
-            if (shufmode != SHUFFLE_AUTO && shufmode != SHUFFLE_NORMAL) {
-                shufmode = SHUFFLE_NONE;
-            }
-            if (shufmode != SHUFFLE_NONE) {
-                // in shuffle mode we need to restore the history too
-                q = mPreferences.getString("history", "");
-                qlen = q != null ? q.length() : 0;
-                if (qlen > 1) {
-                    plen = 0;
-                    n = 0;
-                    shift = 0;
-                    mHistory.clear();
-                    for (int i = 0; i < qlen; i++) {
-                        char c = q.charAt(i);
-                        if (c == ';') {
-                            if (n >= mPlayListLen) {
-                                // bogus history data
-                                mHistory.clear();
-                                break;
-                            }
-                            mHistory.add(n);
-                            n = 0;
-                            shift = 0;
-                        } else {
-                            if (c >= '0' && c <= '9') {
-                                n += ((c - '0') << shift);
-                            } else if (c >= 'a' && c <= 'f') {
-                                n += ((10 + c - 'a') << shift);
-                            } else {
-                                // bogus history data
-                                mHistory.clear();
-                                break;
-                            }
-                            shift += 4;
-                        }
-                    }
-                }
-            }
-            if (shufmode == SHUFFLE_AUTO) {
-                if (! makeAutoShuffleList()) {
-                    shufmode = SHUFFLE_NONE;
-                }
-            }
-            mShuffleMode = shufmode;
-
-            mPlaylist_ID     = mPreferences.getLong("curPlaylistID", 0);
-            mPlaylist_Name   = mPreferences.getString("curPlaylistName", "");
-            mPlaylistVolume = mPreferences.getString("curPlaylistVolume", "");
-        }
-    }
-
-    @Override
-    public IBinder onBind(Intent intent) {
-        mDelayedStopHandler.removeCallbacksAndMessages(null);
-        mServiceInUse = true;
-        return mBinder;
-    }
-
-    @Override
-    public void onRebind(Intent intent) {
-        mDelayedStopHandler.removeCallbacksAndMessages(null);
-        mServiceInUse = true;
-    }
-
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        mServiceStartId = startId;
-        mDelayedStopHandler.removeCallbacksAndMessages(null);
-
-        if (intent != null) handleIntent(intent);
-
-        // make sure the service will shut down on its own if it was
-        // just started but not bound to and nothing is playing
-        mDelayedStopHandler.removeCallbacksAndMessages(null);
-        Message msg = mDelayedStopHandler.obtainMessage();
-        mDelayedStopHandler.sendMessageDelayed(msg, IDLE_DELAY);
-        return START_STICKY;
-    }
-
-    @Override
-    public boolean onUnbind(Intent intent) {
-        mServiceInUse = false;
-
-        // Take a snapshot of the current playlist
-        saveQueue(true);
-
-        if (mIsSupposedToBePlaying || mPausedByTransientLossOfFocus) {
-            // something is currently playing, or will be playing once
-            // an in-progress action requesting audio focus ends, so don't stop the service now.
-            return true;
-        }
-
-        // If there is a playlist but playback is paused, then wait a while
-        // before stopping the service, so that pause/resume isn't slow.
-        // Also delay stopping the service if we're transitioning between tracks.
-        if (mPlayListLen > 0  || mMediaplayerHandler.hasMessages(TRACK_ENDED)) {
-            Message msg = mDelayedStopHandler.obtainMessage();
-            mDelayedStopHandler.sendMessageDelayed(msg, IDLE_DELAY);
-            return true;
-        }
-
-        // No active playlist, OK to stop the service right now
-        stopSelf(mServiceStartId);
-        return true;
-    }
-
-    private Handler mDelayedStopHandler = new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-            // Check again to make sure nothing is playing right now
-            if (mIsSupposedToBePlaying || mPausedByTransientLossOfFocus || mServiceInUse
-                    || mMediaplayerHandler.hasMessages(TRACK_ENDED)) {
-                return;
-            }
-            // save the queue again, because it might have changed
-            // since the user exited the music app (because of
-            // party-shuffle or because the play-position changed)
-            saveQueue(true);
-            stopSelf(mServiceStartId);
-        }
-    };
-
-    /**
-     * Called when we receive a ACTION_MEDIA_EJECT notification.
-     *
-     * @param storagePath path to mount point for the removed media
-     */
-    public void closeExternalStorageFiles(String storagePath) {
-        // stop playback and clean up if the SD card is going to be unmounted.
-        stop(true);
-        notifyChange(QUEUE_CHANGED);
-        notifyChange(META_CHANGED);
-    }
-
-    /**
-     * Registers an intent to listen for ACTION_MEDIA_EJECT notifications.
-     * The intent will call closeExternalStorageFiles() if the external media
-     * is going to be ejected, so applications can clean up any files they have open.
-     */
-    public void registerExternalStorageListener() {
-        if (mUnmountReceiver == null) {
-            mUnmountReceiver = new BroadcastReceiver() {
-                @Override
-                public void onReceive(Context context, Intent intent) {
-                    String action = intent.getAction();
-                    if (action.equals(Intent.ACTION_MEDIA_EJECT)) {
-                        saveQueue(true);
-                        mQueueIsSaveable = false;
-                        closeExternalStorageFiles(intent.getData().getPath());
-                    } else if (action.equals(Intent.ACTION_MEDIA_MOUNTED)) {
-                        mMediaMountedCount++;
-                        mCardId = MusicUtils.getCardId(Stephes_Music_Service.this);
-                        reloadQueue();
-                        mQueueIsSaveable = true;
-                        notifyChange(QUEUE_CHANGED);
-                        notifyChange(META_CHANGED);
-                    }
-                }
-            };
-            IntentFilter iFilter = new IntentFilter();
-            iFilter.addAction(Intent.ACTION_MEDIA_EJECT);
-            iFilter.addAction(Intent.ACTION_MEDIA_MOUNTED);
-            iFilter.addDataScheme("file");
-            registerReceiver(mUnmountReceiver, iFilter);
-        }
-    }
-
-    /**
-     * Notify the change-receivers that something has changed.
-     * The intent that is sent contains the following data
-     * for the currently playing track:
-     * "id" - Integer: the database row ID
-     * "artist" - String: the name of the artist
-     * "playlist" - String: the name of the playlist
-     * "album" - String: the name of the album
-     * "track" - String: the name of the track
-     * The intent has an action that is one of
-     * "org.stephe_leake.android.music_player.metachanged"
-     * "org.stephe_leake.android.music_player.queuechanged",
-     * "org.stephe_leake.android.music_player.playbackcomplete"
-     * "org.stephe_leake.android.music_player.playstatechanged"
-     * respectively indicating that a new track has
-     * started playing, that the playback queue has
-     * changed, that playback has stopped because
-     * the last file in the list has been played,
-     * or that the play-state changed (paused/resumed).
-     */
-    private void notifyChange(String what) {
-
-        Intent i = new Intent(what);
-        i.putExtra("id", Long.valueOf(getAudioId()));
-        i.putExtra("playlist", getPlaylistName());
-        i.putExtra("artist", getArtistName());
-        i.putExtra("album",getAlbumName());
-        i.putExtra("track", getTrackName());
-        i.putExtra("playing", mIsSupposedToBePlaying);
-        sendStickyBroadcast(i);
-
-        if (what.equals(QUEUE_CHANGED)) {
-            saveQueue(true);
-        } else {
-            saveQueue(false);
-        }
-
-        // Share this notification directly with our widgets
-        mAppWidgetProvider.notifyChange(this, what);
-    }
-
-    private void ensurePlayListCapacity(int size) {
-        if (mPlayList == null || size > mPlayList.length) {
-            // reallocate at 2x requested size so we don't
-            // need to grow and copy the array for every
-            // insert
-            long [] newlist = new long[size * 2];
-            int len = mPlayList != null ? mPlayList.length : mPlayListLen;
-            for (int i = 0; i < len; i++) {
-                newlist[i] = mPlayList[i];
-            }
-            mPlayList = newlist;
-        }
-        // FIXME: use a list container
-    }
-
-    // insert the list of songs at the specified position in the playlist
-    private void addToPlayList(long [] list, int position) {
-        int addlen = list.length;
-        if (position < 0) { // overwrite
-            mPlayListLen = 0;
-            position = 0;
-        }
-        ensurePlayListCapacity(mPlayListLen + addlen);
-        if (position > mPlayListLen) {
-            position = mPlayListLen;
-        }
-
-        // move part of list after insertion point
-        int tailsize = mPlayListLen - position;
-        for (int i = tailsize ; i > 0 ; i--) {
-            mPlayList[position + i] = mPlayList[position + i - addlen];
-        }
-
-        // copy list into playlist
-        for (int i = 0; i < addlen; i++) {
-            mPlayList[position + i] = list[i];
-        }
-        mPlayListLen += addlen;
-        if (mPlayListLen == 0) {
-            mCursor.close();
-            mCursor = null;
-            notifyChange(META_CHANGED);
-        }
-    }
-
-    /**
-     * Appends a list of tracks to the current playlist.
-     * If nothing is playing currently, playback will be started at
-     * the first track.
-     * If the action is NOW, playback will switch to the first of
-     * the new tracks immediately.
-     * @param list The list of tracks to append.
-     * @param action NOW, NEXT or LAST
-     */
-    public void enqueue(long [] list, int action) {
-        synchronized(this) {
-           if (mPlaylist_ID != 0)
-           {
-              // No longer playing the current playlist
-              mPlayListLen   = 0;
-              mPlayPos       = 0;
-              if (mCursor != null)
-              {
-                 mCursor.close();
-                 mCursor = null;
-              }
-
-              mPlaylist_ID   = 0;
-              mPlaylist_Name = "";
-           }
-
-            if (action == NEXT && mPlayPos + 1 < mPlayListLen) {
-                addToPlayList(list, mPlayPos + 1);
-                notifyChange(QUEUE_CHANGED);
-            } else {
-                // action == LAST || action == NOW || mPlayPos + 1 == mPlayListLen
-                addToPlayList(list, Integer.MAX_VALUE);
-                notifyChange(QUEUE_CHANGED);
-                if (action == NOW) {
-                    mPlayPos = mPlayListLen - list.length;
-                    openCurrent();
-                    play();
-                    notifyChange(META_CHANGED);
-                    return;
-                }
-            }
-            if (mPlayPos < 0) {
-                mPlayPos = 0;
-                openCurrent();
-                play();
-                notifyChange(META_CHANGED);
-            }
-        }
-    }
-
-    /**
-     * Replaces the current playlist with a new list,
-     * and prepares for starting playback at the specified
-     * position in the list, or a random position if the
-     * specified position is negative.
-     * @param list The new list of tracks.
-     */
-    public void open(long [] list, int position) {
-        synchronized (this) {
-            if (mShuffleMode == SHUFFLE_AUTO) {
-                mShuffleMode = SHUFFLE_NORMAL;
-            }
-            long oldId = getAudioId();
-            int listlength = list.length;
-            boolean newlist = true;
-            if (mPlayListLen == listlength) {
-                // possible fast path: list might be the same
-                newlist = false;
-                for (int i = 0; i < listlength; i++) {
-                    if (list[i] != mPlayList[i]) {
-                        newlist = true;
-                        break;
-                    }
-                }
-            }
-            if (newlist) {
-                addToPlayList(list, -1);
-                notifyChange(QUEUE_CHANGED);
-            }
-            if (position >= 0) {
-                mPlayPos = position;
-            } else {
-                mPlayPos = mRand.nextInt(mPlayListLen);
-            }
-            mHistory.clear();
-
-            saveBookmarkIfNeeded();
-            openCurrent();
-            if (oldId != getAudioId()) {
-                notifyChange(META_CHANGED);
-            }
-        }
-    }
-
-   // copied from original MusicUtils
-   private final static long [] sEmptyList = new long[0];
-
-   public long [] getSongListForPlaylist(String Volume, long plid)
-   {
-      final String[] columns    = new String[] {MediaStore.Audio.Playlists.Members.AUDIO_ID};
-      final int Audio_ID_Column = 0;
-
-      Cursor cursor = getContentResolver().query
-         (MediaStore.Audio.Playlists.Members.getContentUri(Volume, plid),
-          columns, null, null, MediaStore.Audio.Playlists.Members.DEFAULT_SORT_ORDER);
-      // DEFAULT_SORT_ORDER has the value "name", but apparently
-      // that's not to be taken literally; the sort order is the order
-      // the items appear in the original file.
-
-      if (cursor == null) return sEmptyList;
-
-      int len      = cursor.getCount();
-      long [] list = new long[len];
-      cursor.moveToFirst();
-
-      for (int i = 0; i < len; i++)
-      {
-         list[i] = cursor.getLong(Audio_ID_Column);
-         cursor.moveToNext();
-      }
-
-      cursor.close();
-      return list;
-   }
-
-   private String getPlaylistFileName(String Volume, long List_ID)
-   {
-      String result = null;
-      try
-      {
-         final Uri    uri         = MediaStore.Audio.Playlists.getContentUri(Volume);
-         final String[] columns   = new String[] {MediaStore.Audio.Playlists.DATA};
-         final String where       = MediaStore.Audio.Playlists._ID + "=" + List_ID;
-         final int fileNameColumn = 0;
-
-         final Cursor cursor = getContentResolver().query(uri, columns, where, null, null);
-         if (cursor != null)
+         @Override public void onReceive(Context context, Intent intent)
          {
-            cursor.moveToFirst();
-            result = cursor.getString(fileNameColumn);
-            cursor.close();
-         }
-         else
-         {
-            MusicUtils.debugLog
-               ("getPlaylistFileName: List_ID " + List_ID + " not found in playlist db");
-         }
-         return result;
-      }
-      catch (RuntimeException e)
-      {
-         MusicUtils.debugLog("getPlaylistFileName: " + e.toString());
-         return result;
-      }
-   }
+            final String action = intent.getAction();
 
-   private String getPlaylistName(String Volume, long List_ID)
-   {
-      String result = null;
-      try
-      {
-         final Uri    uri        = MediaStore.Audio.Playlists.getContentUri(Volume);
-         final String[] columns  = new String[] {MediaStore.Audio.Playlists.NAME};
-         final String where      = MediaStore.Audio.Playlists._ID + "=" + List_ID;
-         final int    nameColumn = 0;
-
-         final Cursor cursor = getContentResolver().query(uri, columns, where, null, null);
-         if (cursor != null)
-         {
-            cursor.moveToFirst();
-            result = cursor.getString(nameColumn);
-            cursor.close();
-         }
-         else
-         {
-            MusicUtils.debugLog
-               ("getPlaylistName: List_ID " + List_ID + " not found in playlist db");
-         }
-         return result;
-      }
-      catch (RuntimeException e)
-      {
-         MusicUtils.debugLog("getPlaylistName: " + e.toString());
-         return result;
-      }
-   }
-   public void replacePlaylist(String volume, long listId)
-   {
-      // Do the db queries before acquiring server lock, so we don't
-      // interrupt the current music flow.
-      final String playlistName = getPlaylistName(volume, listId);
-      if (playlistName == null) return;
-
-      final long[] list = getSongListForPlaylist (volume, listId);
-
-      if (list.length > 0)
-         synchronized (this)
-         {
-            mPlaylist_ID     = listId;
-            mPlaylist_Name   = playlistName;
-            mPlaylistVolume = volume;
-
-            open(list, 0);
-            play();
-            notifyChange(META_CHANGED);
-         }
-   }
-
-    /**
-     * Moves the item at index1 to index2.
-     * @param index1
-     * @param index2
-     */
-    public void moveQueueItem(int index1, int index2) {
-        synchronized (this) {
-            if (index1 >= mPlayListLen) {
-                index1 = mPlayListLen - 1;
-            }
-            if (index2 >= mPlayListLen) {
-                index2 = mPlayListLen - 1;
-            }
-            if (index1 < index2) {
-                long tmp = mPlayList[index1];
-                for (int i = index1; i < index2; i++) {
-                    mPlayList[i] = mPlayList[i+1];
-                }
-                mPlayList[index2] = tmp;
-                if (mPlayPos == index1) {
-                    mPlayPos = index2;
-                } else if (mPlayPos >= index1 && mPlayPos <= index2) {
-                        mPlayPos--;
-                }
-            } else if (index2 < index1) {
-                long tmp = mPlayList[index1];
-                for (int i = index1; i > index2; i--) {
-                    mPlayList[i] = mPlayList[i-1];
-                }
-                mPlayList[index2] = tmp;
-                if (mPlayPos == index1) {
-                    mPlayPos = index2;
-                } else if (mPlayPos >= index2 && mPlayPos <= index1) {
-                        mPlayPos++;
-                }
-            }
-            notifyChange(QUEUE_CHANGED);
-        }
-    }
-
-    /**
-     * Returns the current play list
-     * @return An array of integers containing the IDs of the tracks in the play list
-     */
-    public long [] getQueue() {
-        synchronized (this) {
-            int len = mPlayListLen;
-            long [] list = new long[len];
-            for (int i = 0; i < len; i++) {
-                list[i] = mPlayList[i];
-            }
-            return list;
-        }
-    }
-
-   public int getQueueLength()
-   {
-      return mPlayListLen;
-   }
-
-   private void openCurrent()
-   {
-      synchronized (this)
-      {
-         if (mCursor != null)
-         {
-            mCursor.close();
-            mCursor = null;
-         }
-
-         if (mPlayListLen == 0) return;
-
-         stop(false);
-
-         String id = String.valueOf(mPlayList[mPlayPos]);
-
-         mCursor = getContentResolver().query
-            (MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, mCursorCols, "_id=" + id , null, null);
-
-         if (mCursor != null)
-         {
-            mCursor.moveToFirst();
-            open(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI + "/" + id);
-            long bookmark = getBookmark();
-            seek(bookmark);
-         }
-      }
-   }
-
-    /**
-     * Opens the specified file and readies it for playback.
-     *
-     * @param path The full path of the file to be opened.
-     */
-    public void open(String path) {
-        synchronized (this) {
-            if (path == null) {
-                return;
-            }
-
-            // if mCursor is not null, it was set to match path by the
-            // caller. FIXME: not true when called via
-            // IMediaPlaybackService while another song is playing!
-            //
-            // If null, try to associate path with a database cursor.
-            // We don't call MediaScannerConnection.scanFile, because
-            // we assume there is a scanner process running in
-            // parallel.
-            if (mCursor == null) {
-
-                ContentResolver resolver = getContentResolver();
-                Uri uri;
-                String where;
-                String selectionArgs[];
-                if (path.startsWith("content://media/")) {
-                    uri = Uri.parse(path);
-                    where = null;
-                    selectionArgs = null;
-                } else {
-                   uri = MediaStore.Audio.Media.getContentUriForPath(path);
-                   where = MediaStore.Audio.Media.DATA + "=?";
-                   selectionArgs = new String[] { path };
-                }
-
-                try {
-                    mCursor = resolver.query(uri, mCursorCols, where, selectionArgs, null);
-                    if  (mCursor != null) {
-                        if (mCursor.getCount() == 0) {
-                            mCursor.close();
-                            mCursor = null;
-                        } else {
-                            mCursor.moveToNext();
-                            ensurePlayListCapacity(1);
-                            mPlayListLen = 1;
-                            mPlayList[0] = mCursor.getLong(IDCOLIDX);
-                            mPlayPos = 0;
-                        }
-                    }
-                } catch (UnsupportedOperationException ex) {
-                }
-            }
-            mFileToPlay = path;
-            mPlayer.setDataSource(mFileToPlay);
-            if (! mPlayer.isInitialized())
+            if (action.equals (android.content.Intent.ACTION_MEDIA_EJECT))
             {
-                stop(true);
-                MusicUtils.Error_Log(this, "can't play: " + mFileToPlay);
+               // External storage is being unmounted, probably so smm can
+               // manage the playlists.
+               //
+               // FIXME: should check if we care; is Playlist_Directory on the volume being ejected?
+               pause(PlayState.Paused);
             }
-        }
-    }
-
-    public void play() {
-        mAudioManager.requestAudioFocus(mAudioFocusListener, AudioManager.STREAM_MUSIC,
-                AudioManager.AUDIOFOCUS_GAIN);
-        mAudioManager.registerMediaButtonEventReceiver(new ComponentName(this.getPackageName(),
-                MediaButtonIntentReceiver.class.getName()));
-
-        if (mPlayer.isInitialized()) {
-            mPlayer.start();
-            // make sure we fade in, in case a previous fadein was stopped because
-            // of another focus loss
-            mMediaplayerHandler.removeMessages(FADEDOWN);
-            mMediaplayerHandler.sendEmptyMessage(FADEUP);
-
-            RemoteViews views = new RemoteViews(getPackageName(), R.layout.statusbar);
-            views.setImageViewResource(R.id.icon, R.drawable.stat_notify_musicplayer);
-            if (getAudioId() < 0) {
-                // streaming
-                views.setTextViewText(R.id.trackname, getPath());
-                views.setTextViewText(R.id.artistalbum, null);
-            } else
+            else if (action.equals (android.content.Intent.ACTION_MEDIA_MOUNTED))
             {
-               // FIXME: add playlist to statusbar?
-                String artist = getArtistName();
-                views.setTextViewText(R.id.trackname, getTrackName());
-                if (artist == null || artist.equals(MediaStore.UNKNOWN_STRING)) {
-                    artist = getString(R.string.unknown_artist_name);
-                }
-                String album = getAlbumName();
-                if (album == null || album.equals(MediaStore.UNKNOWN_STRING)) {
-                    album = getString(R.string.unknown_album_name);
-                }
+               // External storage is being mounted, probably after smm
+               // managed the playlists.
 
-                views.setTextViewText(R.id.artistalbum, artist + "\n" + album);
+               // FIXME: implement
+               // resume;
             }
-
-            if (!mIsSupposedToBePlaying)
+            else if (action.equals (utils.ACTION_TOGGLEPAUSE))
             {
-                mIsSupposedToBePlaying = true;
-                notifyChange(PLAYSTATE_CHANGED);
-            }
-
-        } else if (mPlayListLen <= 0) {
-            // This is mostly so that if you press 'play' on a bluetooth headset
-            // without every having played anything before, it will still play
-            // something.
-            setShuffleMode(SHUFFLE_AUTO);
-        }
-    }
-
-    private void stop(boolean remove_status_icon) {
-        if (mPlayer.isInitialized()) {
-            mPlayer.stop();
-        }
-        mFileToPlay = null;
-        if (mCursor != null) {
-            mCursor.close();
-            mCursor = null;
-        }
-        if (remove_status_icon) {
-            gotoIdleState();
-        } else {
-            stopForeground(false);
-        }
-        if (remove_status_icon) {
-            mIsSupposedToBePlaying = false;
-        }
-    }
-
-    /**
-     * Stops playback.
-     */
-    public void stop() {
-        stop(true);
-    }
-
-    /**
-     * Pauses playback (call play() to resume)
-     */
-    public void pause() {
-        synchronized(this) {
-            mMediaplayerHandler.removeMessages(FADEUP);
-            if (mIsSupposedToBePlaying) {
-                mPlayer.pause();
-                gotoIdleState();
-                mIsSupposedToBePlaying = false;
-                notifyChange(PLAYSTATE_CHANGED);
-                saveBookmarkIfNeeded();
-            }
-        }
-    }
-
-    /** Returns whether something is currently playing
-     *
-     * @return true if something is playing (or will be playing shortly, in case
-     * we're currently transitioning between tracks), false if not.
-     */
-    public boolean isPlaying() {
-        return mIsSupposedToBePlaying;
-    }
-
-    /*
-      Desired behavior for prev/next/shuffle:
-
-      - NEXT will move to the next track in the list when not shuffling, and to
-        a track randomly picked from the not-yet-played tracks when shuffling.
-        If all tracks have already been played, pick from the full set, but
-        avoid picking the previously played track if possible.
-      - when shuffling, PREV will go to the previously played track. Hitting PREV
-        again will go to the track played before that, etc. When the start of the
-        history has been reached, PREV is a no-op.
-        When not shuffling, PREV will go to the sequentially previous track (the
-        difference with the shuffle-case is mainly that when not shuffling, the
-        user can back up to tracks that are not in the history).
-
-        Example:
-        When playing an album with 10 tracks from the start, and enabling shuffle
-        while playing track 5, the remaining tracks (6-10) will be shuffled, e.g.
-        the final play order might be 1-2-3-4-5-8-10-6-9-7.
-        When hitting 'prev' 8 times while playing track 7 in this example, the
-        user will go to tracks 9-6-10-8-5-4-3-2. If the user then hits 'next',
-        a random track will be picked again. If at any time user disables shuffling
-        the next/previous track will be picked in sequential order again.
-     */
-
-    public void prev() {
-        synchronized (this) {
-            if (mShuffleMode == SHUFFLE_NORMAL) {
-                // go to previously-played track and remove it from the history
-                int histsize = mHistory.size();
-                if (histsize == 0) {
-                    // prev is a no-op
-                    return;
-                }
-                Integer pos = mHistory.remove(histsize - 1);
-                mPlayPos = pos.intValue();
-            } else {
-                if (mPlayPos > 0) {
-                    mPlayPos--;
-                } else {
-                    mPlayPos = mPlayListLen - 1;
-                }
-            }
-            saveBookmarkIfNeeded();
-            stop(false);
-            openCurrent();
-            play();
-            notifyChange(META_CHANGED);
-        }
-    }
-
-    public void next(boolean force) {
-        synchronized (this) {
-            if (mPlayListLen <= 0) {
-                Log.d(LOGTAG, "No play queue");
-                return;
-            }
-
-            if (mShuffleMode == SHUFFLE_NORMAL) {
-                // Pick random next track from the not-yet-played ones
-                // TODO: make it work right after adding/removing items in the queue.
-
-                // Store the current file in the history, but keep the history at a
-                // reasonable size
-                if (mPlayPos >= 0) {
-                    mHistory.add(mPlayPos);
-                }
-                if (mHistory.size() > MAX_HISTORY_SIZE) {
-                    mHistory.removeElementAt(0);
-                }
-
-                int numTracks = mPlayListLen;
-                int[] tracks = new int[numTracks];
-                for (int i=0;i < numTracks; i++) {
-                    tracks[i] = i;
-                }
-
-                int numHistory = mHistory.size();
-                int numUnplayed = numTracks;
-                for (int i=0;i < numHistory; i++) {
-                    int idx = mHistory.get(i).intValue();
-                    if (idx < numTracks && tracks[idx] >= 0) {
-                        numUnplayed--;
-                        tracks[idx] = -1;
-                    }
-                }
-
-                // 'numUnplayed' now indicates how many tracks have not yet
-                // been played, and 'tracks' contains the indices of those
-                // tracks.
-                if (numUnplayed <=0) {
-                    // everything's already been played
-                    if (mRepeatMode == REPEAT_ALL || force) {
-                        //pick from full set
-                        numUnplayed = numTracks;
-                        for (int i=0;i < numTracks; i++) {
-                            tracks[i] = i;
-                        }
-                    } else {
-                        // all done
-                        gotoIdleState();
-                        if (mIsSupposedToBePlaying) {
-                            mIsSupposedToBePlaying = false;
-                            notifyChange(PLAYSTATE_CHANGED);
-                        }
-                        return;
-                    }
-                }
-                int skip = mRand.nextInt(numUnplayed);
-                int cnt = -1;
-                while (true) {
-                    while (tracks[++cnt] < 0)
-                        ;
-                    skip--;
-                    if (skip < 0) {
-                        break;
-                    }
-                }
-                mPlayPos = cnt;
-            } else if (mShuffleMode == SHUFFLE_AUTO) {
-                doAutoShuffleUpdate();
-                mPlayPos++;
-            } else {
-               // SHUFFLE_NONE
-                if (mPlayPos >= mPlayListLen - 1) {
-                    // we're at the end of the list
-                    if (mRepeatMode == REPEAT_NONE && !force) {
-                        // all done
-                        gotoIdleState();
-                        mIsSupposedToBePlaying = false;
-                        notifyChange(PLAYSTATE_CHANGED);
-                        return;
-                    } else if (mRepeatMode == REPEAT_ALL || force) {
-                        mPlayPos = 0;
-                    }
-                } else {
-                    mPlayPos++;
-                }
-            }
-            saveBookmarkIfNeeded();
-            stop(false);
-            openCurrent();
-            play();
-            notifyChange(META_CHANGED);
-        }
-    }
-
-    private void gotoIdleState() {
-        mDelayedStopHandler.removeCallbacksAndMessages(null);
-        Message msg = mDelayedStopHandler.obtainMessage();
-        mDelayedStopHandler.sendMessageDelayed(msg, IDLE_DELAY);
-        stopForeground(true);
-    }
-
-   private void saveBookmarkIfNeeded()
-   {
-      if (mCursor != null)
-         try
-         {
-            ContentValues values = new ContentValues();
-            values.put(MediaStore.Audio.Media.BOOKMARK, position());
-            Uri uri = ContentUris.withAppendedId
-               (mPlaylistVolume == null ?
-                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI :
-                MediaStore.Audio.Media.getContentUri(mPlaylistVolume),
-                mCursor.getLong(IDCOLIDX));
-            getContentResolver().update(uri, values, null, null);
-         } catch (Exception e)
-         {
-            MusicUtils.debugLog("saveBookmark: " + e.toString());
-         }
-    }
-
-    // Make sure there are at least 5 items after the currently playing item
-    // and no more than 10 items before.
-    private void doAutoShuffleUpdate() {
-        boolean notify = false;
-
-        // remove old entries
-        if (mPlayPos > 10) {
-            removeTracks(0, mPlayPos - 9);
-            notify = true;
-        }
-        // add new entries if needed
-        int to_add = 7 - (mPlayListLen - (mPlayPos < 0 ? -1 : mPlayPos));
-        for (int i = 0; i < to_add; i++) {
-            // pick something at random from the list
-
-            int lookback = mHistory.size();
-            int idx = -1;
-            while(true) {
-                idx = mRand.nextInt(mAutoShuffleList.length);
-                if (!wasRecentlyUsed(idx, lookback)) {
-                    break;
-                }
-                lookback /= 2;
-            }
-            mHistory.add(idx);
-            if (mHistory.size() > MAX_HISTORY_SIZE) {
-                mHistory.remove(0);
-            }
-            ensurePlayListCapacity(mPlayListLen + 1);
-            mPlayList[mPlayListLen++] = mAutoShuffleList[idx];
-            notify = true;
-        }
-        if (notify) {
-            notifyChange(QUEUE_CHANGED);
-        }
-    }
-
-    // check that the specified idx is not in the history (but only look at at
-    // most lookbacksize entries in the history)
-    private boolean wasRecentlyUsed(int idx, int lookbacksize) {
-
-        // early exit to prevent infinite loops in case idx == mPlayPos
-        if (lookbacksize == 0) {
-            return false;
-        }
-
-        int histsize = mHistory.size();
-        if (histsize < lookbacksize) {
-            Log.d(LOGTAG, "lookback too big");
-            lookbacksize = histsize;
-        }
-        int maxidx = histsize - 1;
-        for (int i = 0; i < lookbacksize; i++) {
-            long entry = mHistory.get(maxidx - i);
-            if (entry == idx) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    // A simple variation of Random that makes sure that the
-    // value it returns is not equal to the value it returned
-    // previously, unless the interval is 1.
-    private static class Shuffler {
-        private int mPrevious;
-        private Random mRandom = new Random();
-        public int nextInt(int interval) {
-            int ret;
-            do {
-                ret = mRandom.nextInt(interval);
-            } while (ret == mPrevious && interval > 1);
-            mPrevious = ret;
-            return ret;
-        }
-    };
-
-    private boolean makeAutoShuffleList() {
-        ContentResolver res = getContentResolver();
-        Cursor c = null;
-        try {
-            c = res.query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                    new String[] {MediaStore.Audio.Media._ID}, MediaStore.Audio.Media.IS_MUSIC + "=1",
-                    null, null);
-            if (c == null || c.getCount() == 0) {
-                return false;
-            }
-            int len = c.getCount();
-            long [] list = new long[len];
-            for (int i = 0; i < len; i++) {
-                c.moveToNext();
-                list[i] = c.getLong(0);
-            }
-            mAutoShuffleList = list;
-            return true;
-        } catch (RuntimeException ex) {
-        } finally {
-            if (c != null) {
-                c.close();
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Removes the range of tracks specified from the play list. If a file within the range is
-     * the file currently being played, playback will move to the next file after the
-     * range.
-     * @param first The first file to be removed
-     * @param last The last file to be removed
-     * @return the number of tracks deleted
-     */
-    public int removeTracks(int first, int last) {
-        int numremoved = removeTracksInternal(first, last);
-        if (numremoved > 0) {
-            notifyChange(QUEUE_CHANGED);
-        }
-        return numremoved;
-    }
-
-    private int removeTracksInternal(int first, int last) {
-        synchronized (this) {
-            if (last < first) return 0;
-            if (first < 0) first = 0;
-            if (last >= mPlayListLen) last = mPlayListLen - 1;
-
-            boolean gotonext = false;
-            if (first <= mPlayPos && mPlayPos <= last) {
-                mPlayPos = first;
-                gotonext = true;
-            } else if (mPlayPos > last) {
-                mPlayPos -= (last - first + 1);
-            }
-            int num = mPlayListLen - last - 1;
-            for (int i = 0; i < num; i++) {
-                mPlayList[first + i] = mPlayList[last + 1 + i];
-            }
-            mPlayListLen -= last - first + 1;
-
-            if (gotonext) {
-                if (mPlayListLen == 0) {
-                    stop(true);
-                    mPlayPos = -1;
-                    if (mCursor != null) {
-                        mCursor.close();
-                        mCursor = null;
-                    }
-                } else {
-                    if (mPlayPos >= mPlayListLen) {
-                        mPlayPos = 0;
-                    }
-                    boolean wasPlaying = mIsSupposedToBePlaying;
-                    stop(false);
-                    openCurrent();
-                    if (wasPlaying) {
-                        play();
-                    }
-                }
-                notifyChange(META_CHANGED);
-            }
-            return last - first + 1;
-        }
-    }
-
-    /**
-     * Removes all instances of the track with the given id
-     * from the playlist.
-     * @param id The id to be removed
-     * @return how many instances of the track were removed
-     */
-    public int removeTrack(long id) {
-        int numremoved = 0;
-        synchronized (this) {
-            for (int i = 0; i < mPlayListLen; i++) {
-                if (mPlayList[i] == id) {
-                    numremoved += removeTracksInternal(i, i);
-                    i--;
-                }
-            }
-        }
-        if (numremoved > 0) {
-            notifyChange(QUEUE_CHANGED);
-        }
-        return numremoved;
-    }
-
-
-   private String toRelative (String fileName, String directoryName)
-   {
-      if (fileName.startsWith(directoryName))
-         return fileName.substring(directoryName.length() + 1);
-      else
-         return fileName;
-   }
-
-   // If we are playing a playlist file marked auto-delete, delete the
-   // just completed item (with Media db id trackID) from:
-   //
-   // 1) the current server list
-   // 2) the playlist file.
-   // 3) the database playlist table.
-   //
-   // This keeps the service playlist in sync with the db playlist; if
-   // the user switches to another playlist and back to this one, it
-   // will resume at the correct place.
-   //
-   // The assumption is the playlist file is generated by
-   // a music manager that is working thru some larger
-   // list, and this is how it keeps track of what has
-   // been heard.
-   //
-   // We do not delete the actual media file; it might be
-   // in another playlist, or the larger list might come
-   // around again.
-   //
-   // FIXME: implement a way to designate particular
-   // playlist files auto-delete
-   private void maybeDeleteTrack(long trackID)
-   {
-      if (mPlaylist_ID == 0) return;
-
-      // To delete the item from the playlist file, we write a new
-      // file from the playlist db data, leaving out the deleted item.
-      // So we need to open the playlist file for write.
-      final String playlistFileName = getPlaylistFileName(mPlaylistVolume, mPlaylist_ID);
-      if (playlistFileName == null) return;
-
-      final File playlistFile = new File(playlistFileName);
-
-      if (!playlistFile.canWrite())
-      {
-         MusicUtils.debugLog("maybeDeleteTrack: " + playlistFileName + "is not writeable");
-
-         // To avoid getting the same error again, pretend we are
-         // not playing a playlist.
-         mPlaylist_ID   = 0;
-         mPlaylist_Name = "";
-
-         // FIXME: notifyChange (ERROR) to inform user
-         return;
-      }
-
-      BufferedWriter out           = null;
-      Cursor         membersCursor = null;
-      try
-      {
-         final Uri membersUri     = MediaStore.Audio.Playlists.Members.getContentUri(mPlaylistVolume, mPlaylist_ID);
-         String[] columns         = new String[] {MediaStore.Audio.Playlists.Members.AUDIO_ID};
-         final int audioID_Column = 0;
-
-         membersCursor = getContentResolver().query (membersUri, columns, null, null, null);
-
-         if (membersCursor == null)
-         {
-            MusicUtils.debugLog("maybeDeleteTrack: members not found in playlist db for " + playlistFileName);
-
-            // Something is screwed up. To avoid getting the same
-            // error again, pretend we are not playing a playlist.
-            mPlaylist_ID   = 0;
-            mPlaylist_Name = "";
-
-            // FIXME: notifyChange (ERROR) to inform user
-            return;
-         }
-
-         // Now we can start changing things.
-
-         // 1) the current server list
-         removeTrack(trackID);
-
-         // 2) the playlist file.
-         final Uri mediaUri        = MediaStore.Audio.Media.getContentUri(mPlaylistVolume);
-         columns                   = new String[] {MediaStore.Audio.Playlists.Members.DATA};
-         String    where           = "_ID=?";
-         final int fileName_Column = 0;
-
-         final String playlistDirectoryName = playlistFile.getParent();
-
-         out = new BufferedWriter(new FileWriter(playlistFile, false));
-
-         while (membersCursor.moveToNext())
-         {
-            final long mediaID = membersCursor.getLong(audioID_Column);
-            if (trackID != mediaID)
-            {
-               final Cursor fileCursor = getContentResolver().query (mediaUri, columns, where, new String[]{String.valueOf(mediaID)}, null);
-               if (fileCursor != null && fileCursor.moveToNext())
+               switch (service.playing)
                {
-                  final String fileName = toRelative(fileCursor.getString(fileName_Column), playlistDirectoryName);
-                  out.write(fileName);
-                  out.newLine();
-               }
-               else
-               {
-                  MusicUtils.debugLog("maybeDeleteTrack deleteloop: file not found in Media db: " + mediaID);
-               }
+               case Idle:
+                  break;
+
+               case Playing:
+                  pause(PlayState.Paused);
+                  break;
+
+               case Paused:
+                  unpause();
+                  break;
+
+               case Paused_Transient:
+                  // wait until get audio focus back?
+                  break;
+
+               };
+            }
+            else if (action.equals (utils.ACTION_PAUSE))
+            {
+               pause(PlayState.Paused);
+            }
+            else if (action.equals (utils.ACTION_PREVIOUS))
+            {
+               previous();
+            }
+            else if (action.equals (utils.ACTION_NEXT))
+            {
+               next();
+            }
+            else
+            {
+               utils.debugLog("broadcastReceiver.onReceive: unkown action: " + action);
             }
          }
+      };
 
-         // 3) the playlist members db
-         Uri          contentUri = MediaStore.Audio.Playlists.Members.getContentUri(mPlaylistVolume, mPlaylist_ID);
-         columns                 = new String[] {MediaStore.Audio.Playlists.Members._ID};
-         where                   = MediaStore.Audio.Playlists.Members.AUDIO_ID + "=" + trackID;
-         final Cursor cursor     = getContentResolver().query (contentUri, columns, where, null, null);
-         if (cursor != null && cursor.moveToNext())
-         {
-            contentUri            = ContentUris.withAppendedId(contentUri, cursor.getLong(0));
-            final int rowsDeleted = this.getContentResolver().delete(contentUri, null, null);
-
-            if (rowsDeleted != 1)
-               MusicUtils.debugLog("maybeDeleteTrack db: deleted " + rowsDeleted + " rows");
-         }
-         else
-         {
-            MusicUtils.debugLog("maybeDeleteTrack delete db: track not found in Members db: " + trackID);
-         }
-
-      }
-      catch (Exception e)
-      {
-         MusicUtils.debugLog("maybeDeleteTrack: " + e.toString() + e.getMessage());
-      }
-      finally
-      {
-         try
-         {
-            if (out != null) out.close();
-         }
-         catch (IOException e)
-         {
-            MusicUtils.debugLog("maybeDeleteTrack close: " + e.toString() + e.getMessage());
-         }
-         if (membersCursor != null) membersCursor.close();
-      }
-
-   }
-
-    public void setShuffleMode(int shufflemode) {
-        synchronized(this) {
-            if (mShuffleMode == shufflemode && mPlayListLen > 0) {
-                return;
-            }
-            mShuffleMode = shufflemode;
-            if (mShuffleMode == SHUFFLE_AUTO) {
-                if (makeAutoShuffleList()) {
-                    mPlayListLen = 0;
-                    doAutoShuffleUpdate();
-                    mPlayPos = 0;
-                    openCurrent();
-                    play();
-                    notifyChange(META_CHANGED);
-                    return;
-                } else {
-                    // failed to build a list of files to shuffle
-                    mShuffleMode = SHUFFLE_NONE;
-                }
-            }
-            saveQueue(false);
-        }
-    }
-    public int getShuffleMode() {
-        return mShuffleMode;
-    }
-
-    public void setRepeatMode(int repeatmode) {
-        synchronized(this) {
-            mRepeatMode = repeatmode;
-            saveQueue(false);
-        }
-    }
-    public int getRepeatMode() {
-        return mRepeatMode;
-    }
-
-    public int getMediaMountedCount() {
-        return mMediaMountedCount;
-    }
-
-    /**
-     * Returns the path of the currently playing file, or null if
-     * no file is currently playing.
-     */
-    public String getPath() {
-        return mFileToPlay;
-    }
-
-    /**
-     * Returns the rowid of the currently playing file, or -1 if
-     * no file is currently playing.
-     */
-    public long getAudioId() {
-        synchronized (this) {
-            if (mPlayPos >= 0 && mPlayer.isInitialized()) {
-                return mPlayList[mPlayPos];
-            }
-        }
-        return -1;
-    }
-
-    /**
-     * Returns the position in the queue
-     * @return the position in the queue
-     */
-    public int getQueuePosition() {
-        synchronized(this) {
-            return mPlayPos;
-        }
-    }
-
-    /**
-     * Starts playing the track at the given position in the queue.
-     * @param pos The position in the queue of the track that will be played.
-     */
-    public void setQueuePosition(int pos) {
-        synchronized(this) {
-            stop(false);
-            mPlayPos = pos;
-            openCurrent();
-            play();
-            notifyChange(META_CHANGED);
-            if (mShuffleMode == SHUFFLE_AUTO) {
-                doAutoShuffleUpdate();
-            }
-        }
-    }
-
-    public String getArtistName() {
-        synchronized(this) {
-            if (mCursor == null) {
-                return null;
-            }
-            return mCursor.getString(mCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST));
-        }
-    }
-
-    public long getArtistId() {
-        synchronized (this) {
-            if (mCursor == null) {
-                return -1;
-            }
-            return mCursor.getLong(mCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST_ID));
-        }
-    }
-
-    public String getPlaylistName() {
-        synchronized(this) {
-           return mPlaylist_Name;
-        }
-    }
-
-    public String getAlbumName() {
-        synchronized (this) {
-            if (mCursor == null) {
-                return null;
-            }
-            return mCursor.getString(mCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM));
-        }
-    }
-
-    public long getAlbumId() {
-        synchronized (this) {
-            if (mCursor == null) {
-                return -1;
-            }
-            return mCursor.getLong(mCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID));
-        }
-    }
-
-    public String getTrackName() {
-        synchronized (this) {
-            if (mCursor == null) {
-                return null;
-            }
-            return mCursor.getString(mCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE));
-        }
-    }
-
-    private long getBookmark() {
-        synchronized (this) {
-            if (mCursor == null) {
-                return 0;
-            }
-            return mCursor.getLong(BOOKMARKCOLIDX);
-        }
-    }
-
-    /**
-     * Returns the duration of the file in milliseconds.
-     * Currently this method returns -1 for the duration of MIDI files.
-     */
-    public long duration() {
-        if (mPlayer.isInitialized()) {
-            return mPlayer.duration();
-        }
-        return -1;
-    }
-
-    /**
-     * Returns the current playback position in milliseconds
-     */
-    public long position() {
-        if (mPlayer.isInitialized()) {
-            return mPlayer.position();
-        }
-        return -1;
-    }
-
-    /**
-     * Seeks to the position specified.
-     *
-     * @param pos The position to seek to, in milliseconds
-     */
-    public long seek(long pos) {
-        if (mPlayer.isInitialized()) {
-            if (pos < 0) pos = 0;
-            if (pos > mPlayer.duration()) pos = mPlayer.duration();
-            return mPlayer.seek(pos);
-        }
-        return -1;
-    }
-
-    /**
-     * Sets the audio session ID.
-     *
-     * @param sessionId: the audio session ID.
-     */
-    public void setAudioSessionId(int sessionId) {
-        synchronized (this) {
-            mPlayer.setAudioSessionId(sessionId);
-        }
-    }
-
-    /**
-     * Returns the audio session ID.
-     */
-    public int getAudioSessionId() {
-        synchronized (this) {
-            return mPlayer.getAudioSessionId();
-        }
-    }
-
-    // Wrapper around MediaPlayer, providing completion and error listeners
-    private class MultiPlayer
-    {
-       private MediaPlayer mMediaPlayer = new MediaPlayer();
-       private Handler mHandler;
-       private boolean mIsInitialized = false;
-
-       public MultiPlayer() {
-          mMediaPlayer.setWakeMode(Stephes_Music_Service.this, PowerManager.PARTIAL_WAKE_LOCK);
-       }
-
-       public void setDataSource(String path) {
-          MusicUtils.debugLog("MultiPlayer.setDataSource: " + path);
-          try {
-             mMediaPlayer.reset();
-             mMediaPlayer.setOnPreparedListener(null);
-             if (path.startsWith("content://")) {
-                mMediaPlayer.setDataSource(Stephes_Music_Service.this, Uri.parse(path));
-             } else {
-                mMediaPlayer.setDataSource(path);
-             }
-             mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-             mMediaPlayer.prepare();
-          } catch (IOException ex)
+    private OnAudioFocusChangeListener audioFocusListener = new OnAudioFocusChangeListener()
+       {
+          public void onAudioFocusChange(int focusChange)
           {
-             mIsInitialized = false;
-             return;
-          } catch (IllegalArgumentException ex) {
-             mIsInitialized = false;
-             return;
-          }
-          mMediaPlayer.setOnCompletionListener(listener);
-          mMediaPlayer.setOnErrorListener(errorListener);
-          Intent i = new Intent(AudioEffect.ACTION_OPEN_AUDIO_EFFECT_CONTROL_SESSION);
-          i.putExtra(AudioEffect.EXTRA_AUDIO_SESSION, getAudioSessionId());
-          i.putExtra(AudioEffect.EXTRA_PACKAGE_NAME, getPackageName());
-          sendBroadcast(i);
-          mIsInitialized = true;
-       }
-
-       public boolean isInitialized() {
-          return mIsInitialized;
-       }
-
-       public void start() {
-          mMediaPlayer.start();
-       }
-
-       public void stop() {
-          mMediaPlayer.reset();
-          mIsInitialized = false;
-       }
-
-       public void release() {
-          stop();
-          mMediaPlayer.release();
-       }
-
-       public void pause() {
-          mMediaPlayer.pause();
-       }
-
-       public void setHandler(Handler handler) {
-          mHandler = handler;
-       }
-
-       MediaPlayer.OnCompletionListener listener = new MediaPlayer.OnCompletionListener() {
-             public void onCompletion(MediaPlayer mp) {
-                // Acquire a temporary wakelock, since when we return from
-                // this callback the MediaPlayer will release its wakelock
-                // and allow the device to go to sleep.
-                // This temporary wakelock is released when the RELEASE_WAKELOCK
-                // message is processed, but just in case, put a timeout on it.
-                mWakeLock.acquire(30000);
-                mHandler.sendEmptyMessage(TRACK_ENDED);
-                mHandler.sendEmptyMessage(RELEASE_WAKELOCK);
-             }
-          };
-
-       MediaPlayer.OnErrorListener errorListener = new MediaPlayer.OnErrorListener()
-          {
-             public boolean onError(MediaPlayer mp, int what, int extra)
+             if (focusChange == AudioManager.AUDIOFOCUS_LOSS)
              {
-                Log.d("MediaPlayer server died", "Error: " + what + "," + extra);
-                switch (what)
-                {
-                case MediaPlayer.MEDIA_ERROR_SERVER_DIED:
-                   mIsInitialized = false;
-                   mMediaPlayer.release();
-                   // Creating a new MediaPlayer and settings its wakemode does not
-                   // require the media service, so it's OK to do this now, while the
-                   // service is still being restarted
-                   mMediaPlayer = new MediaPlayer();
-                   mMediaPlayer.setWakeMode(Stephes_Music_Service.this, PowerManager.PARTIAL_WAKE_LOCK);
-                   mHandler.sendMessageDelayed(mHandler.obtainMessage(SERVER_DIED), 2000);
-                   return true;
-                default:
-                   break;
-                }
-                return false;
+                pause(PlayState.Paused);
              }
-          };
+             else if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK)
+             {
+                // "DUCK" means can just lower volume; not clear when this might happen
+                handler.removeMessages(FADEUP);
+                handler.sendEmptyMessage(FADEDOWN);
+             }
+             else if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT)
+             {
+                if (service.playing == PlayState.Playing)
+                {
+                   pause(PlayState.Paused_Transient);
+                }
+             }
+             else if (focusChange == AudioManager.AUDIOFOCUS_GAIN)
+                handler.removeMessages(FADEUP); // in case loss was 'transient can duck'
 
-       public long duration() {
-          return mMediaPlayer.getDuration();
-       }
+             if (service.playing == PlayState.Paused_Transient)
+             {
+                mediaPlayer.start();
+             }
+             else
+             {
+                utils.debugLog ("Unknown onAudioFocusChange code " + focusChange);
+             }
+          }
+       };
 
-       public long position() {
-          return mMediaPlayer.getCurrentPosition();
-       }
+   MediaPlayer.OnCompletionListener completionListener = new MediaPlayer.OnCompletionListener()
+      {
+         public void onCompletion(MediaPlayer mp)
+         {
+            next();
+         }
+      };
 
-       public long seek(long whereto) {
-          mMediaPlayer.seekTo((int) whereto);
-          return whereto;
-       }
+   MediaPlayer.OnErrorListener errorListener = new MediaPlayer.OnErrorListener()
+      {
+         public boolean onError(MediaPlayer mp, int what, int extra)
+         {
+            utils.Error_Log(service.this, "MediaPlayer server died: " + what + "," + extra);
+            switch (what)
+            {
+            case MediaPlayer.MEDIA_ERROR_SERVER_DIED:
+               mediaPlayer.release();
+               createMediaPlayer();
+               // Since we don't know why it died, just trying again seems
+               // problematic, but it is the most user friendly if it
+               // works. This will _not_ be easy to debug!
+               if (service.playing == PlayState.Playing)
+               {
+                  play (currentFile);
+               };
 
-       public void setVolume(float vol) {
-          mMediaPlayer.setVolume(vol, vol);
-       }
+               return true;
+            default:
+               // OnCompletion will be called
+               return false;
+            }
+         }
+      };
 
-       public void setAudioSessionId(int sessionId) {
-          mMediaPlayer.setAudioSessionId(sessionId);
-       }
+   private AudioManager audioManager;
 
-       public int getAudioSessionId() {
-          return mMediaPlayer.getAudioSessionId();
-       }
+   // state
+   static private PlayState playing;
+   private String    currentFile;
+   private String    playlistDirectory;
+   // Absolute path to directory where playlist files reside. The
+   // list of available playlists consists of all .m3u files in
+   // this directory.
+
+   private String playlistFilename;
+   // Relative to Playlist_Directory, without extension (suitable
+   // for user display). null if no playlist is current.
+
+   java.util.LinkedList<String>   playlist;
+   java.util.ListIterator<String> playlistPos;
+   int                            playlistPosInt;
+   // Current position in PlayList
+
+   ////////// service lifetime methods
+   @Override public IBinder onBind(Intent intent)
+   {
+      return null;
+   }
+
+   @Override public void onCreate()
+   {
+      super.onCreate();
+
+      IntentFilter filter = new IntentFilter();
+      filter.addAction(Intent.ACTION_MEDIA_EJECT);
+      filter.addAction(Intent.ACTION_MEDIA_MOUNTED);
+      filter.addAction(utils.ACTION_NEXT);
+      filter.addAction(utils.ACTION_PAUSE);
+      filter.addAction(utils.ACTION_PLAYLIST);
+      filter.addAction(utils.ACTION_PREVIOUS);
+      filter.addAction(utils.ACTION_SEEK);
+      filter.addAction(utils.ACTION_TOGGLEPAUSE);
+      filter.addAction(utils.ACTION_UPDATE_DISPLAY);
+      registerReceiver(broadcastReceiver, filter);
+
+      createMediaPlayer();
+
+      audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+
+      playlist       = new LinkedList<String>();
+      playlistPos    = playlist.listIterator (0);
+      playlistPosInt = 0;
+      playing        = PlayState.Paused;
+
+      // FIXME: implement
+      // This.Resume;
+   }
+
+   @Override public void onDestroy()
+   {
+      mediaPlayer.reset();
+      mediaPlayer.release();
+      mediaPlayer = null;
+
+      audioManager.abandonAudioFocus(audioFocusListener);
+
+      handler.removeCallbacksAndMessages(null);
+
+      unregisterReceiver(broadcastReceiver);
+
+      super.onDestroy();
+   }
+
+   @Override public int onStartCommand(Intent intent, int flags, int startId)
+   {
+      if (intent != null)
+      {
+         utils.Error_Log(this, "onStartCommand got unexpected intent: " + intent);
+      }
+      return START_STICKY;
     }
 
-    /*
-     * By making this a static class with a WeakReference to the Service, we
-     * ensure that the Service can be GCd even when the system process still
-     * has a remote reference to the stub.
-     */
-    static class ServiceStub extends IStephes_Music_Service.Stub {
-        WeakReference<Stephes_Music_Service> mService;
-
-        ServiceStub(Stephes_Music_Service service) {
-            mService = new WeakReference<Stephes_Music_Service>(service);
-        }
-
-        public void openFile(String path)
-        {
-           // FIXME: stop current song, set mCursor to null
-            mService.get().open(path);
-        }
-        public void open(long [] list, int position) {
-            mService.get().open(list, position);
-        }
-        public int getQueuePosition() {
-            return mService.get().getQueuePosition();
-        }
-        public void setQueuePosition(int index) {
-            mService.get().setQueuePosition(index);
-        }
-        public boolean isPlaying() {
-            return mService.get().isPlaying();
-        }
-        public void stop() {
-            mService.get().stop();
-        }
-        public void pause() {
-            mService.get().pause();
-        }
-        public void play() {
-            mService.get().play();
-        }
-        public void prev() {
-            mService.get().prev();
-        }
-        public void next() {
-            mService.get().next(true);
-        }
-        public String getTrackName() {
-            return mService.get().getTrackName();
-        }
-        public String getAlbumName() {
-            return mService.get().getAlbumName();
-        }
-        public long getAlbumId() {
-            return mService.get().getAlbumId();
-        }
-        public String getArtistName() {
-            return mService.get().getArtistName();
-        }
-        public long getArtistId() {
-            return mService.get().getArtistId();
-        }
-        public String getPlaylistName() {
-            return mService.get().getPlaylistName();
-        }
-        public void enqueue(long [] list , int action) {
-            mService.get().enqueue(list, action);
-        }
-        public long [] getQueue() {
-            return mService.get().getQueue();
-        }
-        public void moveQueueItem(int from, int to) {
-            mService.get().moveQueueItem(from, to);
-        }
-        public String getPath() {
-            return mService.get().getPath();
-        }
-        public long getAudioId() {
-            return mService.get().getAudioId();
-        }
-        public long position() {
-            return mService.get().position();
-        }
-        public long duration() {
-            return mService.get().duration();
-        }
-        public long seek(long pos) {
-            return mService.get().seek(pos);
-        }
-        public void setShuffleMode(int shufflemode) {
-            mService.get().setShuffleMode(shufflemode);
-        }
-        public int getShuffleMode() {
-            return mService.get().getShuffleMode();
-        }
-        public int removeTracks(int first, int last) {
-            return mService.get().removeTracks(first, last);
-        }
-        public int removeTrack(long id) {
-            return mService.get().removeTrack(id);
-        }
-        public void setRepeatMode(int repeatmode) {
-            mService.get().setRepeatMode(repeatmode);
-        }
-        public int getRepeatMode() {
-            return mService.get().getRepeatMode();
-        }
-        public int getMediaMountedCount() {
-            return mService.get().getMediaMountedCount();
-        }
-        public int getAudioSessionId() {
-            return mService.get().getAudioSessionId();
-        }
-
-        public void replacePlaylist(String Volume, long List_ID) {
-            mService.get().replacePlaylist(Volume, List_ID);
-        }
-        public int getQueueLength() {
-            return mService.get().getQueueLength();
-        }
-    }
-
-    @Override
-    protected void dump(FileDescriptor fd, PrintWriter writer, String[] args) {
-        writer.println("" + mPlayListLen + " items in queue, currently at index " + mPlayPos);
-        writer.println("Currently loaded:");
-        writer.println(getPlaylistName());
-        writer.println(getArtistName());
-        writer.println(getAlbumName());
-        writer.println(getTrackName());
-        writer.println(getPath());
-        writer.println("playing: " + mIsSupposedToBePlaying);
-        writer.println("actual: " + mPlayer.mMediaPlayer.isPlaying());
-        writer.println("shuffle mode: " + mShuffleMode);
-        MusicUtils.debugDump(writer);
-    }
-
-    private final IBinder mBinder = new ServiceStub(this);
 }

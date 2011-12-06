@@ -51,14 +51,14 @@ public class utils {
    public static final String PLAYSTATE_CHANGED = "org.stephe_leake.android.stephes_music.playstatechanged";
    //  playing  boolean
 
-   //  Commands to server via Intents sent via broadcast. Alphabetical order
-   public static final String INTENT_NEXT = "org.stephe_leake.Android.music_player.intent.next";
-   public static final String INTENT_PAUSE = "org.stephe_leake.Android.music_player.intent.pause";
-   public static final String INTENT_PLAYLIST = "org.stephe_leake.Android.music_player.intent.playlist";
-   public static final String INTENT_PREVIOUS = "org.stephe_leake.Android.music_player.intent.previous";
-   public static final String INTENT_SEEK = "org.stephe_leake.Android.music_player.intent.seek";
-   public static final String INTENT_TOGGLEPAUSE =     "org.stephe_leake.Android.music_player.intent.togglepause";
-   public static final String INTENT_UPDATE_DISPLAY = "org.stephe_leake.Android.music_player.intent.update_display";
+   //  Commands to server via Intent actions sent via broadcast. Alphabetical order
+   public static final String ACTION_NEXT = "org.stephe_leake.android.stephes_music.action.next";
+   public static final String ACTION_PAUSE = "org.stephe_leake.android.stephes_music.action.pause";
+   public static final String ACTION_PLAYLIST = "org.stephe_leake.android.stephes_music.action.playlist";
+   public static final String ACTION_PREVIOUS = "org.stephe_leake.android.stephes_music.action.previous";
+   public static final String ACTION_SEEK = "org.stephe_leake.android.stephes_music.action.seek";
+   public static final String ACTION_TOGGLEPAUSE =     "org.stephe_leake.android.stephes_music.action.togglepause";
+   public static final String ACTION_UPDATE_DISPLAY = "org.stephe_leake.android.stephes_music.action.update_display";
 
 
    private static StringBuilder sFormatBuilder = new StringBuilder();
@@ -156,8 +156,6 @@ public class utils {
          }
       }
    }
-
-   final public static String Log_App_Name = "stephes_music_player"; // for use in log messages
 
    public static void Error_Log(Context context, String msg)
    {

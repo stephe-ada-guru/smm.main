@@ -1,35 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (C) 2009 The Android Open Source Project
+<!-- 
+  Abstract :
 
-     Licensed under the Apache License, Version 2.0 (the "License");
-     you may not use this file except in compliance with the License.
-     You may obtain a copy of the License at
-  
-          http://www.apache.org/licenses/LICENSE-2.0
-  
-     Unless required by applicable law or agreed to in writing, software
-     distributed under the License is distributed on an "AS IS" BASIS,
-     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-     See the License for the specific language governing permissions and
-     limitations under the License.
-     
-     Copied from com.android.music in Android 2.3.3; modified to contain only strings needed by my app.
+  Provides User Interface to Stephe's Music Player.
+
+  Copyright (C) 2011 Stephen Leake.  All Rights Reserved.
+
+  This program is free software; you can redistribute it and/or
+  modify it under terms of the GNU General Public License as
+  published by the Free Software Foundation; either version 3, or
+  (at your option) any later version. This program is distributed in
+  the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+  even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+  PARTICULAR PURPOSE. See the GNU General Public License for more
+  details. You should have received a copy of the GNU General Public
+  License distributed with this program; see file COPYING. If not,
+  write to the Free Software Foundation, 51 Franklin Street, Suite
+  500, Boston, MA 02110-1335, USA.
 -->
 <resources>
   <!--  translate -->
   <string name="app_name">&quot;Stephe's Music Player&quot;</string>
-  <string name="emptyplaylist">Selected playlist is empty.</string>
   <string name="dialog_playlist">Select a playlist</string>
-  <string name="playback_failed">Sorry, the player does not support this type of audio file.</string>
-  <string name="sdcard_busy_title">SD card unavailable</string>
-  <string name="sdcard_busy_title_nosdcard" msgid="1162763571147174655">USB storage unavailable</string>	
-  <string name="sdcard_missing_title">No SD card</string>
-  <string name="sdcard_missing_title_nosdcard" msgid="9008284946643270850">No USB storage</string>
-  <string name="unknown_artist_name">Unknown artist</string>
-  <string name="unknown_album_name">Unknown album</string>
-  <string name="widget_initial_text">Touch to select music.</string>
-  
-  <!-- Do not translate. -->
+  <string name="menu_quit">Quit</string>
+
+  <!-- Do not translate, but may be locale-dependent. -->
   
   <!-- Duration format for duration < 1 hour -->
   <string translatable="false" name="durationformatshort">%2$d:%5$02d</string>

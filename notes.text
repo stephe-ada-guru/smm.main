@@ -1,39 +1,31 @@
- convert to Makefile build
+ current tasks
 
-src/org/stephe_leake/android/music_player/Stephes_Music_PlayerActivity.java
-/Projects/android/google/packages/apps/Music/src/com/android/music/MusicUtils.java
+match ada implementation
+    src/org/stephe_leake/android/stephes_music/activity.java
+
+    /Projects/stephes_music_player.ada/src/stephes_music-activity.ads
+    /Projects/stephes_music_player.ada/src/stephes_music-activity.adb
+
+
+build/Makefile
 (dvc-status)
 
-E/IMemory ( 7474): binder=0x5331e8 transaction failed fd=-2147483647, size=0, err=-2147483646 (Unknown error: 2147483646)
-
-I/ActivityManager( 1312): Process android.process.media (pid 7474) has died.
-I/ActivityManager( 1312): Kill org.stephe_leake.android.music_player (pid 7465): provider com.android.providers.media.MediaProvider in dying process android.process.media
-
-E/InputDispatcher( 1312): channel '40a41a98 org.stephe_leake.android.music_player/org.stephe_leake.android.music_player.Stephes_Music_PlayerActivity (server)' ~ Consumer closed input channel or an error occurred.  events=0x8
-E/InputDispatcher( 1312): channel '40a41a98 org.stephe_leake.android.music_player/org.stephe_leake.android.music_player.Stephes_Music_PlayerActivity (server)' ~ Channel is unrecoverably broken and will be disposed!
-
-
-    something screwed up access to the .mp3 while player still playing it?
-
-when sdcard goes away, widget puts up garbage for text
+ff/rew
 
 add to menu:
     playlist
     dump log
     clear server state
+    About
 
-don't keep list in service; just use db
+get text scale from preference
+    new activity that extends PreferenceActivity
 
-speak metadata!
-    textToSpeech
+review FIXME
 
-lockscreen widget
+smm download_playlist song filenames are not guarranteed unique
+    use artist/album/song
 
-test scan new files
-    doesn't work
-    emulator scans files on startup (when sd is mounted to android)
-    HTC scans files when sd card is restored to android
-    ask online
 
  later
 monitor broadcasts from astro player
@@ -137,15 +129,6 @@ http://en.wikipedia.org/wiki/M3U
     can contain urls; used for web streams for example
     may affect front end handler (detecting playlist)
 
-cache URIs received from browser ???
-    add intent filter for that?
-
-    current browser does not play feeds in background
-        it must be using a different player!
-        and it doesn't resume on switching back to the browser
-
-    at least accept pasted feed urls
-
 server stores bookmarks in MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
     offer to restore from there
     offer to clean up list
@@ -163,6 +146,11 @@ button color/background
 preference to run service in foreground
 
  even later
+speak metadata!
+    textToSpeech
+
+lockscreen widget
+
 replace dar.fm
 
  open source projects
