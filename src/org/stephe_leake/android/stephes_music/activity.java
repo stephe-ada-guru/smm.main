@@ -63,10 +63,7 @@ public class activity extends android.app.Activity
    private String      playlistDir;
 
 
-   private static AlertDialog playlistDialog;
-   // 'static' is weird, but required by onCreateDialog below. And the
-   // manifest says there is only one instance of this activity, so
-   // it's probably ok.
+   private AlertDialog playlistDialog;
 
    ////////// UI listeners
 
@@ -160,12 +157,12 @@ public class activity extends android.app.Activity
                }
                else
                {
-               utils.Error_Log (activity.this, "broadcastReceiver got unexpected intent: " + intent.toString());
+               utils.errorLog (activity.this, "broadcastReceiver got unexpected intent: " + intent.toString());
                }
             }
             catch (RuntimeException e)
             {
-               utils.Error_Log(activity.this, "broadcastReceiver: " + e.toString());
+               utils.errorLog(activity.this, "broadcastReceiver: " + e.toString());
             }
          }
       };
@@ -221,19 +218,19 @@ public class activity extends android.app.Activity
          playlistDir = "/sdcard/Audio";
 
          if (intent.getAction() == null || // destroyed/restored (ie for screen rotate)
-             intent.getAction() == Intent.ACTION_MAIN) // launched directly by user
+             intent.getAction().equals(Intent.ACTION_MAIN)) // launched directly by user
          {
             // Server may be playing or paused
             sendBroadcast (new Intent(utils.ACTION_UPDATE_DISPLAY));
          }
          else
          {
-            utils.Error_Log(this, "onCreate got unexpected intent: " + intent.toString());
+            utils.errorLog(this, "onCreate got unexpected intent: " + intent.toString());
          }
       }
       catch (RuntimeException e)
       {
-         utils.Error_Log(this, "onCreate: That does not compute " + e.toString());
+         utils.errorLog(this, "onCreate: That does not compute " + e.toString());
          finish();
       }
    }
@@ -251,7 +248,7 @@ public class activity extends android.app.Activity
       }
       catch (RuntimeException e)
       {
-         utils.Error_Log(this, "onResume: " + e.toString());
+         utils.errorLog(this, "onResume: " + e.toString());
       }
    }
 
@@ -297,11 +294,11 @@ public class activity extends android.app.Activity
                         {
                            try
                            {
-                              final android.widget.ListView listView = activity.playlistDialog.getListView();
+                              final android.widget.ListView listView = playlistDialog.getListView();
                               final String filename = (String)listView.getAdapter().getItem(which);
                               sendBroadcast
                                  (new Intent (utils.ACTION_PLAYLIST).
-                                  putExtra("playlist", filename));
+                                  putExtra("playlist", playlistDir.getAbsolutePath() + "/" + filename));
                            }
                            catch (Exception e)
                            {
@@ -346,7 +343,7 @@ public class activity extends android.app.Activity
          break;
 
       default:
-         utils.Error_Log
+         utils.errorLog
             (this, "PlayerActivity.onOptionsItemSelected: unknown MenuItemId " + item.getItemId());
       }
       return false; // continue menu processing

@@ -33,10 +33,10 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.PowerManager.WakeLock;
 import android.os.PowerManager;
-import java.io.BufferedWriter;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileDescriptor;
-import java.io.FileWriter;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.LinkedList;
@@ -93,6 +93,7 @@ public class service extends Service
 
       if (playlistPos.hasNext())
       {
+         playlistPosInt = playlistPos.nextIndex();
          play(playlistPos.next());
       }
       else
@@ -127,7 +128,7 @@ public class service extends Service
          }
          catch (RuntimeException e)
          {
-            utils.Error_Log (this, "Notify_Change SetDataSource: " + e.toString());
+            utils.errorLog (this, "Notify_Change SetDataSource: " + e.toString());
          };
       }
       else if (what.equals(utils.PLAYSTATE_CHANGED))
@@ -138,7 +139,7 @@ public class service extends Service
       }
       else
       {
-         utils.Error_Log (this, "Notify_Change: unexpected 'what'");
+         utils.errorLog (this, "Notify_Change: unexpected 'what'");
       };
    }
 
@@ -180,15 +181,62 @@ public class service extends Service
       catch (IOException e)
       {
          // From SetDataSource
-         utils.Error_Log (this, "can't play: " + path + ": " + e.toString());
+         utils.errorLog (this, "can't play: " + path + ": " + e.toString());
       };
+   }
+
+   private void playList(String filename)
+   {
+      final File playlistFile = new File(filename);
+
+      if (!playlistFile.canRead())
+      {
+         utils.errorLog(this, "can't read " + filename);
+         return;
+      }
+
+      try
+      {
+         BufferedReader               in          = new BufferedReader (new FileReader (filename));
+         String                       line        = in.readLine();
+         java.util.LinkedList<String> tmpPlaylist = new LinkedList<String>();
+
+         while (line != null)
+         {
+            // We don't check for readable now, because that might
+            // change by the time we get to actually playing a song.
+            tmpPlaylist.add(line);
+            line = in.readLine();
+         }
+
+         in.close();
+
+         playlist          = tmpPlaylist;
+         playlistPos       = playlist.listIterator (0);
+         playlistPosInt    = 0;
+         playlistDirectory = playlistFile.getParent();
+
+         // Activity only sends filenames that end in .m3u; strip that
+         playlistFilename  = playlistFile.getName();
+         playlistFilename  = playlistFilename.substring(0, playlistFilename.length());
+      }
+      catch (java.io.FileNotFoundException e)
+      {
+         utils.errorLog (this, "playlist file not found: " + filename);
+      }
+      catch (java.io.IOException e)
+      {
+         utils.errorLog (this, "error reading playlist file: " + e.toString());
+      }
    }
 
    private void previous()
    {
+      // FIXME: goto beginning of current track if not near start of track
       stop();
       if (playlistPos.hasPrevious())
       {
+         playlistPosInt = playlistPos.previousIndex();
          play(playlistPos.previous());
       }
       else
@@ -224,7 +272,7 @@ public class service extends Service
 
       if (result != android.media.AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
       {
-         utils.Error_Log (this, "can't get audio focus");
+         utils.errorLog (this, "can't get audio focus");
       }
       else
       {
@@ -344,6 +392,10 @@ public class service extends Service
             {
                pause(PlayState.Paused);
             }
+            else if (action.equals (utils.ACTION_PLAYLIST))
+            {
+               playList(intent.getStringExtra("playlist"));
+            }
             else if (action.equals (utils.ACTION_PREVIOUS))
             {
                previous();
@@ -406,7 +458,7 @@ public class service extends Service
       {
          public boolean onError(MediaPlayer mp, int what, int extra)
          {
-            utils.Error_Log(service.this, "MediaPlayer server died: " + what + "," + extra);
+            utils.errorLog(service.this, "MediaPlayer server died: " + what + "," + extra);
             switch (what)
             {
             case MediaPlayer.MEDIA_ERROR_SERVER_DIED:
@@ -432,8 +484,8 @@ public class service extends Service
 
    // state
    static private PlayState playing;
-   private String    currentFile;
-   private String    playlistDirectory;
+   private String           currentFile;
+   private String           playlistDirectory;
    // Absolute path to directory where playlist files reside. The
    // list of available playlists consists of all .m3u files in
    // this directory.
@@ -499,11 +551,17 @@ public class service extends Service
 
    @Override public int onStartCommand(Intent intent, int flags, int startId)
    {
-      if (intent != null)
+      if (intent.getAction() != null)
       {
-         utils.Error_Log(this, "onStartCommand got unexpected intent: " + intent);
+         utils.errorLog(this, "onStartCommand got unexpected intent: " + intent);
       }
       return START_STICKY;
+    }
+
+    @Override protected void dump(FileDescriptor fd, PrintWriter writer, String[] args) {
+        writer.println("playlist:");
+        writer.println(currentFullPath());
+        utils.debugDump(writer);
     }
 
 }

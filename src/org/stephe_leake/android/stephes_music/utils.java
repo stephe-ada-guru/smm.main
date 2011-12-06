@@ -55,6 +55,7 @@ public class utils {
    public static final String ACTION_NEXT = "org.stephe_leake.android.stephes_music.action.next";
    public static final String ACTION_PAUSE = "org.stephe_leake.android.stephes_music.action.pause";
    public static final String ACTION_PLAYLIST = "org.stephe_leake.android.stephes_music.action.playlist";
+   // playlist  string (abs file name)
    public static final String ACTION_PREVIOUS = "org.stephe_leake.android.stephes_music.action.previous";
    public static final String ACTION_SEEK = "org.stephe_leake.android.stephes_music.action.seek";
    public static final String ACTION_TOGGLEPAUSE =     "org.stephe_leake.android.stephes_music.action.togglepause";
@@ -131,9 +132,10 @@ public class utils {
       //
       // This is better than just Log, because Log messages are dumped
       // by 'adb logcat', while these are dumped by 'adb shell dumpsys
-      // activity service Stephes_Music_Service'. The former shows
-      // messages from all activities and services; the later just
-      // from this log.
+      // activity service service'. The former shows messages from all
+      // activities and services; the later just from this log.
+      //
+      // However, this log disappears if the service dies.
       //
       // If 'o' is an Exception, it will include a stack trace.
 
@@ -157,13 +159,13 @@ public class utils {
       }
    }
 
-   public static void Error_Log(Context context, String msg)
+   public static void errorLog(Context context, String msg)
    {
       debugLog(msg);
       Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
    }
 
-   static void Info_Log(Context context, String msg)
+   static void infoLog(Context context, String msg)
    {
       debugLog(msg);
       Toast.makeText(context, msg, Toast.LENGTH_SHORT).show();
