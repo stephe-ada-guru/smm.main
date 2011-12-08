@@ -336,8 +336,8 @@ public class activity extends android.app.Activity
       switch (item.getItemId())
       {
       case MENU_QUIT:
-         // FIXME: does this cause the service to terminate?
-         sendBroadcast(new Intent(utils.ACTION_PAUSE));
+         stopService
+            (new Intent().setComponent(new ComponentName (this, "org.stephe_leake.android.stephes_music.service")));
 
          finish();
          break;

@@ -3,18 +3,21 @@ build/Makefile
 (dvc-status)
 
 finish/debug
-    quit does not kill activity or service
-
-    FIXME: goto beginning of current track if not near start of track
 
     add save/restore per-playlist state
         need second playlist in emulator
+        'clear server state' menu command
+            _not_ on quit
 
     add write smm file
         handle wrap, prev:
             keep track of last index written; only write new if larger.
 
     fix smm to match
+
+    update progress bar, time display
+        timer in service
+        check for player died in same timer
 
 install on PDA
 

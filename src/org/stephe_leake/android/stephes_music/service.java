@@ -51,6 +51,11 @@ public class service extends Service
    private static final int FADEDOWN = 5;
    private static final int FADEUP   = 6;
 
+   // misc constants
+   private static final long PREV_THRESHOLD = 5000;
+   // milliseconds; see previous()
+   // FIXME: get from preferences
+
    enum PlayState
    {
       Idle,
@@ -77,7 +82,9 @@ public class service extends Service
       mediaPlayer.setOnCompletionListener(completionListener);
       mediaPlayer.setOnErrorListener(errorListener);
 
-      // FIXME: wake up and recover if mediaPlayer dies
+      // FIXME: update position display periodically
+
+      // FIXME: wake up and recover if mediaPlayer dies (do this when update display?)
       // handler.sendMessageDelayed(mHandler.obtainMessage(PLAYER_DIED), 2000);
    }
 
@@ -261,9 +268,16 @@ public class service extends Service
 
    private void previous()
    {
-      // FIXME: goto beginning of current track if not near start of track
+      final long currentPos = mediaPlayer.getCurrentPosition();
+
       stop();
-      if (playlistPos > 0)
+
+      if (currentPos > PREV_THRESHOLD)
+      {
+         // not near beginning of current track; move to beginning
+         mediaPlayer.seekTo(0);
+      }
+      else if (playlistPos > 0)
       {
          playlistPos--;
       }
@@ -398,6 +412,26 @@ public class service extends Service
                // FIXME: implement
                // resume;
             }
+            else if (action.equals (utils.ACTION_NEXT))
+            {
+               next();
+            }
+            else if (action.equals (utils.ACTION_PAUSE))
+            {
+               pause(PlayState.Paused);
+            }
+            else if (action.equals (utils.ACTION_PLAYLIST))
+            {
+               playList(intent.getStringExtra("playlist"));
+            }
+            else if (action.equals (utils.ACTION_PREVIOUS))
+            {
+               previous();
+            }
+            else if (action.equals (utils.ACTION_SEEK))
+            {
+               // FIXME: implement
+            }
             else if (action.equals (utils.ACTION_TOGGLEPAUSE))
             {
                switch (service.playing)
@@ -418,22 +452,6 @@ public class service extends Service
                   break;
 
                };
-            }
-            else if (action.equals (utils.ACTION_PAUSE))
-            {
-               pause(PlayState.Paused);
-            }
-            else if (action.equals (utils.ACTION_PLAYLIST))
-            {
-               playList(intent.getStringExtra("playlist"));
-            }
-            else if (action.equals (utils.ACTION_PREVIOUS))
-            {
-               previous();
-            }
-            else if (action.equals (utils.ACTION_NEXT))
-            {
-               next();
             }
             else if (action.equals (utils.ACTION_UPDATE_DISPLAY))
             {
