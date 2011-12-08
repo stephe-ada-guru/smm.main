@@ -1,14 +1,22 @@
  current tasks
-
-match ada implementation
-    src/org/stephe_leake/android/stephes_music/activity.java
-
-    /Projects/stephes_music_player.ada/src/stephes_music-activity.ads
-    /Projects/stephes_music_player.ada/src/stephes_music-activity.adb
-
-
 build/Makefile
 (dvc-status)
+
+finish/debug
+    quit does not kill activity or service
+
+    FIXME: goto beginning of current track if not near start of track
+
+    add save/restore per-playlist state
+        need second playlist in emulator
+
+    add write smm file
+        handle wrap, prev:
+            keep track of last index written; only write new if larger.
+
+    fix smm to match
+
+install on PDA
 
 ff/rew
 
@@ -152,6 +160,8 @@ speak metadata!
 lockscreen widget
 
 replace dar.fm
+
+handle non-relative files in playlist (non-SMM playlists)
 
  open source projects
 c:/Projects/eclipse_scratch/Ghost Commander/src/com/ghostsq/commander/FileCommander.java

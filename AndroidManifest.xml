@@ -24,9 +24,10 @@ along with GCC; see the file COPYING3.  If not see
           android:versionName="2.0">
   <uses-sdk android:minSdkVersion="10" />
 
-  <uses-permission android:name="android.permission.WRITE_SETTINGS" /> <!-- preferences -->
-  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /> <!-- store last played song -->
   <uses-permission android:name="android.permission.BROADCAST_STICKY" /> <!-- send data from service to activity -->
+  <uses-permission android:name="android.permission.WAKE_LOCK" /> <!-- media player prevents screen from turning off -->
+  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /> <!-- store last played song -->
+  <uses-permission android:name="android.permission.WRITE_SETTINGS" /> <!-- preferences -->
 
   <application 
       android:icon="@drawable/icon" 

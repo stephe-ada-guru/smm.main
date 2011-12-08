@@ -3,7 +3,7 @@
 # paths relative to package/build
 vpath %.java  ../src/$(ANDROID_PROJECT_PATH)
 vpath %.apk   ../bin
-vpath %.class ../bin/classes
+vpath %.class ../bin/classes/$(ANDROID_PROJECT_PATH)
 
 APK_NAME := $(subst /,.,$(ANDROID_PROJECT_PATH)).$(ANDROID_PROJECT_NAME)-release.apk
 

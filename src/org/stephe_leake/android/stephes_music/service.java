@@ -40,7 +40,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.LinkedList;
-import java.util.ListIterator;
 
 public class service extends Service
 {
@@ -82,24 +81,27 @@ public class service extends Service
       // handler.sendMessageDelayed(mHandler.obtainMessage(PLAYER_DIED), 2000);
    }
 
-   private String currentFullPath()
+   private String playlistFullPath()
+   // return current playlist file abs path
    {
-      return playlistDirectory + playlistFilename + ".m3u";
+      return playlistDirectory + "/" + playlistFilename + ".m3u";
    }
 
    private void next()
    {
       stop();
 
-      if (playlistPos.hasNext())
+      if (playlistPos < playlist.size() - 1)
       {
-         playlistPosInt = playlistPos.nextIndex();
-         play(playlistPos.next());
+         playlistPos++;
       }
       else
       {
-         // at end of playlist
+         // at end of playlist; wrap
+         playlistPos = 0;
       };
+
+      play(playlist.get(playlistPos));
    }
 
    private void notifyChange(String what)
@@ -112,9 +114,12 @@ public class service extends Service
       {
          final MediaMetadataRetriever retriever = new MediaMetadataRetriever();
 
+         final String absFile = playlistDirectory + "/" + currentFile;
+
          try
          {
-            retriever.setDataSource(currentFullPath());
+
+            retriever.setDataSource(absFile);
 
             sendStickyBroadcast
                (new Intent (utils.META_CHANGED).
@@ -124,11 +129,11 @@ public class service extends Service
                 putExtra ("duration", retriever.extractMetadata (MediaMetadataRetriever.METADATA_KEY_DURATION)).
                 putExtra
                 ("playlist",
-                 playlistFilename + playlistPosInt + " /" + playlist.size()));
+                 playlistFilename + " " + playlistPos + " / " + playlist.size()));
          }
          catch (RuntimeException e)
          {
-            utils.errorLog (this, "Notify_Change SetDataSource: " + e.toString());
+            utils.errorLog (this, "notifyChange SetDataSource (" + absFile + "): " + e.toString());
          };
       }
       else if (what.equals(utils.PLAYSTATE_CHANGED))
@@ -139,7 +144,7 @@ public class service extends Service
       }
       else
       {
-         utils.errorLog (this, "Notify_Change: unexpected 'what'");
+         utils.errorLog (this, "notifyChange: unexpected 'what'");
       };
    }
 
@@ -162,14 +167,18 @@ public class service extends Service
 
    private void play (String path)
    {
+      // path must be relative to playlistDirectory
+
       // service.playing must be Idle (call Stop first)
       //
       // FIXME: merge stop here to avoid double notification on next, prev?
 
       try
       {
+         final String absFile = playlistDirectory + "/" + path;
+
          mediaPlayer.reset();
-         mediaPlayer.setDataSource (path);
+         mediaPlayer.setDataSource (absFile);
          mediaPlayer.prepare();
 
          currentFile = path;
@@ -182,7 +191,11 @@ public class service extends Service
       {
          // From SetDataSource
          utils.errorLog (this, "can't play: " + path + ": " + e.toString());
-      };
+      }
+      catch (RuntimeException e)
+      {
+         utils.errorLog (this, "play: " + e.toString());
+      }
    }
 
    private void playList(String filename)
@@ -200,25 +213,37 @@ public class service extends Service
          BufferedReader               in          = new BufferedReader (new FileReader (filename));
          String                       line        = in.readLine();
          java.util.LinkedList<String> tmpPlaylist = new LinkedList<String>();
+         int                          lineCount   = 0;
 
          while (line != null)
          {
             // We don't check for readable now, because that might
             // change by the time we get to actually playing a song.
+            //
+            // In SMM playlists all lines are song filepaths, relative
+            // to the directory filename is in.
             tmpPlaylist.add(line);
             line = in.readLine();
+            lineCount++;
          }
 
          in.close();
 
+         if (0 == tmpPlaylist.size())
+         {
+            utils.errorLog (this, "no songs found in playlist file " + filename);
+            return;
+         }
+
          playlist          = tmpPlaylist;
-         playlistPos       = playlist.listIterator (0);
-         playlistPosInt    = 0;
+         playlistPos       = 0;
          playlistDirectory = playlistFile.getParent();
 
          // Activity only sends filenames that end in .m3u; strip that
          playlistFilename  = playlistFile.getName();
-         playlistFilename  = playlistFilename.substring(0, playlistFilename.length());
+         playlistFilename  = playlistFilename.substring(0, playlistFilename.length() - 4);
+
+         play(playlist.get(playlistPos));
       }
       catch (java.io.FileNotFoundException e)
       {
@@ -226,7 +251,11 @@ public class service extends Service
       }
       catch (java.io.IOException e)
       {
-         utils.errorLog (this, "error reading playlist file: " + e.toString());
+         utils.errorLog (this, "error reading playlist file: "  + filename + ": " + e.toString());
+      }
+      catch (RuntimeException e)
+      {
+         utils.errorLog (this, "playList: " + e.toString());
       }
    }
 
@@ -234,15 +263,17 @@ public class service extends Service
    {
       // FIXME: goto beginning of current track if not near start of track
       stop();
-      if (playlistPos.hasPrevious())
+      if (playlistPos > 0)
       {
-         playlistPosInt = playlistPos.previousIndex();
-         play(playlistPos.previous());
+         playlistPos--;
       }
       else
       {
-         // at start of playlist
+         // at start of playlist; wrap
+         playlistPos = playlist.size() - 1;
       }
+
+      play(playlist.get(playlistPos));
    }
 
    private void saveBookmark()
@@ -404,9 +435,14 @@ public class service extends Service
             {
                next();
             }
+            else if (action.equals (utils.ACTION_UPDATE_DISPLAY))
+            {
+               notifyChange(utils.META_CHANGED);
+               notifyChange (utils.PLAYSTATE_CHANGED);
+            }
             else
             {
-               utils.debugLog("broadcastReceiver.onReceive: unkown action: " + action);
+               utils.errorLog(service.this, "broadcastReceiver.onReceive: unkown action: " + action);
             }
          }
       };
@@ -441,7 +477,7 @@ public class service extends Service
              }
              else
              {
-                utils.debugLog ("Unknown onAudioFocusChange code " + focusChange);
+                utils.errorLog (service.this, "Unknown onAudioFocusChange code " + focusChange);
              }
           }
        };
@@ -484,20 +520,20 @@ public class service extends Service
 
    // state
    static private PlayState playing;
-   private String           currentFile;
    private String           playlistDirectory;
    // Absolute path to directory where playlist files reside. The
    // list of available playlists consists of all .m3u files in
    // this directory.
+   private String           currentFile;
+   // relative to playlistDirectory. null if no file is current.
 
    private String playlistFilename;
    // Relative to Playlist_Directory, without extension (suitable
    // for user display). null if no playlist is current.
 
-   java.util.LinkedList<String>   playlist;
-   java.util.ListIterator<String> playlistPos;
-   int                            playlistPosInt;
-   // Current position in PlayList
+   java.util.LinkedList<String> playlist;
+   int                          playlistPos;
+   // Current position in PlayList (0 indexed; -1 if none)
 
    ////////// service lifetime methods
    @Override public IBinder onBind(Intent intent)
@@ -525,10 +561,9 @@ public class service extends Service
 
       audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 
-      playlist       = new LinkedList<String>();
-      playlistPos    = playlist.listIterator (0);
-      playlistPosInt = 0;
-      playing        = PlayState.Paused;
+      playlist    = new LinkedList<String>();
+      playlistPos = -1;
+      playing     = PlayState.Paused;
 
       // FIXME: implement
       // This.Resume;
@@ -558,10 +593,19 @@ public class service extends Service
       return START_STICKY;
     }
 
-    @Override protected void dump(FileDescriptor fd, PrintWriter writer, String[] args) {
-        writer.println("playlist:");
-        writer.println(currentFullPath());
-        utils.debugDump(writer);
+   @Override protected void dump(FileDescriptor fd, PrintWriter writer, String[] args)
+   {
+      writer.println("playlist   :" + playlistFullPath());
+      writer.println("currentFile:" + currentFile);
+
+      if (playlist.size() > 0)
+      {
+         for (int i = 0; i < playlist.size(); i++)
+         {
+            writer.println(i + ": " + playlist.get(i));
+         }
+      }
+      utils.debugDump(writer);
     }
 
 }
