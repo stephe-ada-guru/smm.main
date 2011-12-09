@@ -264,9 +264,8 @@ public class service extends Service
             // In SMM playlists all lines are song filepaths, relative
             // to the directory filename is in.
 
-            if (currentFile != null && line == currentFile)
+            if (currentFile != null && line.equals(currentFile))
             {
-               utils.debugLog("playList found currentFile");
                startAt = lineCount;
             }
 
@@ -389,6 +388,9 @@ public class service extends Service
          playlistDirectory = null;
          playlistFilename  = null;
          currentFile       = null;
+
+         notifyChange(utils.META_CHANGED);
+         notifyChange(utils.PLAYSTATE_CHANGED);
       }
 
       switch (playing)
@@ -415,8 +417,10 @@ public class service extends Service
       editor.putString(keyPlaying, playing.toString());
       editor.putString(keyPlaylistDirectory, playlistDirectory);
       editor.putString(keyPlaylistFilename, playlistFilename);
-      editor.putString(keyCurrentFile, currentFile);
-      editor.putLong(keyCurrentPos, (playing == PlayState.Idle) ? 0 : mediaPlayer.getCurrentPosition());
+      editor.putString(playlistFilename + keyCurrentFile, currentFile);
+      editor.putLong
+         (playlistFilename + keyCurrentPos,
+          (playing == PlayState.Idle) ? 0 : mediaPlayer.getCurrentPosition());
 
       editor.commit();
    }
@@ -752,6 +756,14 @@ public class service extends Service
       writer.println("playlist size     : " + playlist.size());
       writer.println("currentFile       : " + currentFile);
       writer.println("playlistPos       : " + playlistPos);
+
+      SharedPreferences storage = getSharedPreferences(utils.serviceClassName, MODE_PRIVATE);
+
+      writer.println("storage." + keyPlaying + ": " + storage.getString(keyPlaying, ""));
+      writer.println("storage." + keyPlaylistDirectory + ": " + storage.getString(keyPlaylistDirectory, ""));
+      writer.println("storage." + keyPlaylistFilename + ": " + storage.getString(keyPlaylistFilename, ""));
+      writer.println("storage.vocal" + keyCurrentFile + ": " +
+                     storage.getString("vocal" + keyCurrentFile, ""));
 
       utils.debugDump(writer);
 
