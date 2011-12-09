@@ -5,9 +5,15 @@ build/Makefile
 finish/debug
 
     add save/restore per-playlist state
+        written, compiled
+
+        restored to wrong track in playlist
+
+
         need second playlist in emulator
-        'clear server state' menu command
-            _not_ on quit
+
+    'clear server state' menu command
+        _not_ on quit
 
     add write smm file
         handle wrap, prev:
@@ -37,6 +43,12 @@ review FIXME
 smm download_playlist song filenames are not guarranteed unique
     use artist/album/song
 
+user notes while playing
+    output to <playlist>-notes.m3u
+
+    don't play
+    keep before
+    check for new by this artist
 
  later
 monitor broadcasts from astro player
@@ -94,26 +106,12 @@ server deals with database ids
 server sets text in RemoteViews!?
 
 podcasts:
-    download to sdcard via google reader
+    download to sdcard
         all in one directory
         at home with wifi, big screen
     present list of that directory
         with bookmark info (not started, percent done)
     delete when done
-
-    google reader should do that, present web api for it
-
-    server does bookmarks only if isPodcast() is true
-        what does scanner use for that criteria?
-        /Projects/android/google/frameworks/base/media/java/android/media/MediaScanner.java
-                        String lowpath = path.toLowerCase();
-                        boolean ringtones = (lowpath.indexOf(RINGTONES_DIR) > 0);
-                        boolean notifications = (lowpath.indexOf(NOTIFICATIONS_DIR) > 0);
-                        boolean alarms = (lowpath.indexOf(ALARMS_DIR) > 0);
-                        boolean podcasts = (lowpath.indexOf(PODCAST_DIR) > 0);
-                        boolean music = (lowpath.indexOf(MUSIC_DIR) > 0) ||
-                            (!ringtones && !notifications && !alarms && !podcasts);
-
 
 need way to choose files without relying on file manager
     offer to use MediaStore.Audio (like everyone else does :)
@@ -125,13 +123,7 @@ need way to choose files without relying on file manager
         http://developer.android.com/resources/tutorials/views/hello-autocomplete.html
         start "dialog" with startActivityForResult?
 
-
-bookmark playlist song index
-
 need About
-
-use image for play/pause
-    get from MediaWidgetProvider
 
 smm download_playlist song filenames are not guarranteed unique
     use artist/album/song

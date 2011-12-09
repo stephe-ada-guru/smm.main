@@ -40,6 +40,9 @@ import java.util.Locale;
 
 public class utils {
 
+   public static final String serviceClassName =
+      "org.stephe_leake.android.stephes_music.service";
+
    //  Notification messages to user views, sent via Intent. Alphabetical order
    public static final String META_CHANGED = "org.stephe_leake.android.stephes_music.metachanged";
    //  artist   string
@@ -50,6 +53,7 @@ public class utils {
 
    public static final String PLAYSTATE_CHANGED = "org.stephe_leake.android.stephes_music.playstatechanged";
    //  playing  boolean
+   //  FIXME: add current pos
 
    //  Commands to server via Intent actions sent via broadcast. Alphabetical order
    public static final String ACTION_NEXT = "org.stephe_leake.android.stephes_music.action.next";
@@ -113,7 +117,7 @@ public class utils {
 
       void dump(PrintWriter out) {
          sTime.set(time);
-         out.print(sTime.toString() + " : ");
+         out.print(sTime.format2445() + " : ");
          if (item instanceof Exception) {
             ((Exception)item).printStackTrace(out);
          } else {
@@ -125,6 +129,15 @@ public class utils {
    private static LogEntry[] sMusicLog = new LogEntry[100];
    private static int sLogPtr = 0;
    private static Time sTime = new Time();
+
+   public static void debugClear()
+   {
+      for (int i = 0; i < sMusicLog.length; i++)
+      {
+         sMusicLog[i] = null;
+      }
+      sLogPtr = 0;
+   }
 
    public static void debugLog(Object o)
    {

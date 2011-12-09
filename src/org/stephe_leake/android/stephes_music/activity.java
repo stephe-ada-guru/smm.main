@@ -132,8 +132,9 @@ public class activity extends android.app.Activity
 
          @Override public void onReceive(Context context, Intent intent)
          {
-            String action = intent.getAction();
+            final String action = intent.getAction();
 
+            utils.debugLog("activity broadcastReceiver action: " + action);
             try
             {
                if (action.equals(utils.META_CHANGED))
@@ -141,7 +142,7 @@ public class activity extends android.app.Activity
                   artistTitle.setText(intent.getStringExtra("artist"));
                   albumTitle.setText(intent.getStringExtra("album"));
                   songTitle.setText(intent.getStringExtra("track"));
-                  totalTime.setText(utils.makeTimeString(activity.this, intent.getLongExtra("duration", 0)));
+                  totalTime.setText(intent.getStringExtra("duration"));  // FIXME: format
                   playlistTitle.setText(intent.getStringExtra("playlist"));
                }
                else if (action.equals(utils.PLAYSTATE_CHANGED))
@@ -183,7 +184,7 @@ public class activity extends android.app.Activity
          setContentView(R.layout.main);
 
          startService
-            (new Intent().setComponent(new ComponentName (this, "org.stephe_leake.android.stephes_music.service")));
+            (new Intent().setComponent(new ComponentName (this, utils.serviceClassName)));
 
          // Set up displays, top to bottom left to right
 
@@ -220,7 +221,7 @@ public class activity extends android.app.Activity
          if (intent.getAction() == null || // destroyed/restored (ie for screen rotate)
              intent.getAction().equals(Intent.ACTION_MAIN)) // launched directly by user
          {
-            // Server may be playing or paused
+            // get current server state
             sendBroadcast (new Intent(utils.ACTION_UPDATE_DISPLAY));
          }
          else
@@ -302,7 +303,7 @@ public class activity extends android.app.Activity
                            }
                            catch (Exception e)
                            {
-                              utils.debugLog("playlist dialog onClick: " + e.toString());
+                              utils.errorLog(activity.this, "playlist dialog onClick: " + e.toString());
                            }
                         };
                      }
@@ -312,12 +313,12 @@ public class activity extends android.app.Activity
               }
               catch (Exception e)
               {
-                 utils.debugLog("create playlist dialog " + e.toString());
+                 utils.errorLog(this, "create playlist dialog " + e.toString());
                  return null;
               }
            }
         default:
-           utils.debugLog("unknown dialog id " + id);
+           utils.errorLog(this, "unknown dialog id " + id);
            return null;
         }
     }
@@ -337,7 +338,7 @@ public class activity extends android.app.Activity
       {
       case MENU_QUIT:
          stopService
-            (new Intent().setComponent(new ComponentName (this, "org.stephe_leake.android.stephes_music.service")));
+            (new Intent().setComponent(new ComponentName (this, utils.serviceClassName)));
 
          finish();
          break;
