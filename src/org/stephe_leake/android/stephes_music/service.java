@@ -36,9 +36,11 @@ import android.os.Message;
 import android.os.PowerManager.WakeLock;
 import android.os.PowerManager;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.LinkedList;
@@ -100,17 +102,32 @@ public class service extends Service
    {
       stop();
 
-      if (playlistPos < playlist.size() - 1)
+      // Not clear how we get here with playlist empty, but it seems
+      // to have happened once; onCompletionListener was called before
+      // anything started playing.
+      if (playlist.size() == 0)
       {
-         playlistPos++;
+         playlistPos        = -1;
+         highestPlaylistPos = playlistPos;
       }
       else
       {
-         // at end of playlist; wrap
-         playlistPos = 0;
-      };
+         if (playlistPos < playlist.size() - 1)
+         {
+            playlistPos++;
+            if (playlistPos > highestPlaylistPos)
+            {
+               highestPlaylistPos = playlistPos;
+            }
+         }
+         else
+         {
+            // at end of playlist; wrap
+            playlistPos = 0;
+         };
 
-      play(playlist.get(playlistPos));
+         play(playlist.get(playlistPos));
+      }
    }
 
    private void notifyChange(String what)
@@ -153,7 +170,7 @@ public class service extends Service
             }
             catch (RuntimeException e)
             {
-               utils.errorLog (this, "notifyChange SetDataSource (" + absFile + "): " + e.toString());
+               utils.errorLog (this, "notifyChange SetDataSource (" + absFile + "): " + e);
             };
          }
       }
@@ -180,8 +197,6 @@ public class service extends Service
          playing = pausedState;
 
          notifyChange(utils.PLAYSTATE_CHANGED);
-
-         writeSMMFile();
       }
    }
 
@@ -210,11 +225,11 @@ public class service extends Service
       catch (IOException e)
       {
          // From SetDataSource
-         utils.errorLog (this, "can't play: " + path + ": " + e.toString());
+         utils.errorLog (this, "can't play: " + path + ": " + e);
       }
       catch (RuntimeException e)
       {
-         utils.errorLog (this, "play: " + e.toString());
+         utils.errorLog (this, "play: " + e);
       }
    }
 
@@ -279,7 +294,7 @@ public class service extends Service
          if (0 == tmpPlaylist.size())
          {
             utils.errorLog (this, "no songs found in playlist file " + filename);
-            return;
+            throw new Fail();
          }
 
          // User will want to resume the current playlist at some point.
@@ -290,6 +305,10 @@ public class service extends Service
          playlistDirectory = playlistFile.getParent();
          playlistFilename  = tmpPlaylistFilename;
 
+         highestPlaylistPos = playlistPos;
+         // There could be a higher song in the smm file, but we'll
+         // ignore that until it becomes a problem.
+
          play(playlist.get(playlistPos));
 
          if (pos != 0)
@@ -298,6 +317,10 @@ public class service extends Service
             notifyChange(utils.PLAYSTATE_CHANGED);
          }
       }
+      catch (Fail e)
+      {
+         throw e;
+      }
       catch (java.io.FileNotFoundException e)
       {
          utils.errorLog (this, "playlist file not found: " + filename);
@@ -305,12 +328,12 @@ public class service extends Service
       }
       catch (java.io.IOException e)
       {
-         utils.errorLog (this, "error reading playlist file: "  + filename + ": " + e.toString());
+         utils.errorLog (this, "error reading playlist file: "  + filename + ": " + e);
          throw new Fail();
       }
       catch (RuntimeException e)
       {
-         utils.errorLog (this, "playList: " + e.toString());
+         utils.errorLog (this, "playList: " + e);
          throw new Fail();
       }
    }
@@ -334,6 +357,9 @@ public class service extends Service
       else
       {
          // at start of playlist; wrap
+         //
+         // We _don't_ set highestPlaylistPos here; the user is
+         // abusing the system, so they get what they get :)
          playlistPos = playlist.size() - 1;
       }
 
@@ -423,6 +449,8 @@ public class service extends Service
           (playing == PlayState.Idle) ? 0 : mediaPlayer.getCurrentPosition());
 
       editor.commit();
+
+      writeSMMFile();
    }
 
    private void stop()
@@ -460,7 +488,40 @@ public class service extends Service
 
    private void writeSMMFile()
    {
-      // FIXME: implement
+      // Tell smm what tracks from the current playlist have been
+      // played and can therefore be deleted.
+      //
+      // Which we can do by writing the filename of the previous
+      // track, which has been completed.
+
+      if (playlistFilename == null)
+         return;
+
+      final String smmFileName = playlistDirectory + "/" + playlistFilename + ".last";
+
+      try
+      {
+         BufferedWriter writer = new BufferedWriter(new FileWriter(smmFileName));
+
+         if (highestPlaylistPos < 1)
+         {
+            // 0 or -1; none played yet; write empty file
+         }
+         else
+         {
+            writer.write(playlist.get(highestPlaylistPos - 1));
+         }
+         writer.newLine();
+         writer.close();
+      }
+      catch (IOException e)
+      {
+         utils.errorLog(this, "can't write smm file: " + e);
+      }
+      catch (RuntimeException e)
+      {
+         utils.errorLog(this, "writeSMMFile: " + e);
+      }
    }
 
    public service() {}
@@ -530,9 +591,6 @@ public class service extends Service
                // can manage the playlists. Save state now, since
                // restoreState has the logic for processing smm
                // changes.
-               //
-               // FIXME: should check if we care; is playlistDirectory
-               // on the volume being ejected?
                saveState();
                pause(PlayState.Paused);
             }
@@ -690,6 +748,10 @@ public class service extends Service
    int                          playlistPos;
    // Current position in PlayList (0 indexed; -1 if none)
 
+   int highestPlaylistPos;
+   // highest position played on this playlist; for writeSMMFile, to
+   // handle wrap and prev.
+
    ////////// service lifetime methods
    @Override public IBinder onBind(Intent intent)
    {
@@ -716,9 +778,10 @@ public class service extends Service
 
       audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 
-      playlist    = new LinkedList<String>();
-      playlistPos = -1;
-      playing     = PlayState.Paused;
+      playlist           = new LinkedList<String>();
+      playlistPos        = -1;
+      highestPlaylistPos = playlistPos;
+      playing            = PlayState.Paused;
 
       restoreState();
    }
@@ -726,6 +789,7 @@ public class service extends Service
    @Override public void onDestroy()
    {
       saveState();
+
       mediaPlayer.reset();
       mediaPlayer.release();
       mediaPlayer = null;
@@ -750,20 +814,25 @@ public class service extends Service
 
    @Override protected void dump(FileDescriptor fd, PrintWriter writer, String[] args)
    {
-      writer.println("playing           : " + playing);
-      writer.println("playlistDirectory : " + playlistDirectory);
-      writer.println("playlistFilename  : " + playlistFilename);
-      writer.println("playlist size     : " + playlist.size());
-      writer.println("currentFile       : " + currentFile);
-      writer.println("playlistPos       : " + playlistPos);
+      writer.println("playing            : " + playing);
+      writer.println("playlistDirectory  : " + playlistDirectory);
+      writer.println("playlistFilename   : " + playlistFilename);
+      writer.println("playlist size      : " + playlist.size());
+      writer.println("currentFile        : " + currentFile);
+      writer.println("playlistPos        : " + playlistPos);
+      writer.println("highestPlaylistPos : " + highestPlaylistPos);
 
       SharedPreferences storage = getSharedPreferences(utils.serviceClassName, MODE_PRIVATE);
 
       writer.println("storage." + keyPlaying + ": " + storage.getString(keyPlaying, ""));
       writer.println("storage." + keyPlaylistDirectory + ": " + storage.getString(keyPlaylistDirectory, ""));
       writer.println("storage." + keyPlaylistFilename + ": " + storage.getString(keyPlaylistFilename, ""));
+
+      // FIXME: figure out how to dump all of storage
       writer.println("storage.vocal" + keyCurrentFile + ": " +
                      storage.getString("vocal" + keyCurrentFile, ""));
+      writer.println("storage.instrumental" + keyCurrentFile + ": " +
+                     storage.getString("instrumental" + keyCurrentFile, ""));
 
       utils.debugDump(writer);
 

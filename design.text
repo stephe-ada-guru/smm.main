@@ -41,34 +41,25 @@ Design:
     On user choose playlist:
         activity: tell server which playlist
         service: if not same as current,
-            call pause
+            save current playlist state, for later resume
+            write smm file (see next)
             read playlist into internal list, note playlist file date/time.
             fetch current position from playlist bookmarks
             play
 
-    On user select pause,
+    On service destroy (user quit or android action)
     and on ACTION_MEDIA_EJECT if playlist root directory is being unmounted:
         (user and/or smm may edit playlist)
 
         service:
-            write current bookmark to app data
-            write playlist name, playlist file date/time and last
-            played song filename to <playlist>.last_played (for smm)
+            save state
+            write smm file: last played song filename to <playlist>.last
 
-    On user select play
-    and on ACTION_MEDIA_MOUNTED:
-        check playlist file date/time;
-            if same, and user selected play, resume play
-            if different:
-                read new
-                search for bookmarked song, resume there
-
-    On service destroy:
-        call pause
+    on ACTION_MEDIA_MOUNTED:
+        assume playlist file changed; reread, resume from bookmark
 
     On service create:
-        read app data
-        restore playlist state
+        restore state
 
     We use Intents for all messages between the Activity and the
     Service, partly because they are all simple, and partly because

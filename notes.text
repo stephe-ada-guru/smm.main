@@ -4,26 +4,16 @@ build/Makefile
 
 finish/debug
 
-    add save/restore per-playlist state
-        written, compiled
-
-        restored to wrong track in playlist
-
-
-        need second playlist in emulator
-
-    'clear server state' menu command
-        _not_ on quit
-
-    add write smm file
-        handle wrap, prev:
-            keep track of last index written; only write new if larger.
-
     fix smm to match
 
     update progress bar, time display
         timer in service
+        support touch without drag
+
         check for player died in same timer
+
+        test save/restore per-playlist seek pos
+
 
 install on PDA
 

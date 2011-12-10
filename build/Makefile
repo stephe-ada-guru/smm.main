@@ -31,6 +31,10 @@ sdcard :
 	adb shell echo "Vocal/02 - These Four Walls.mp3" >> /sdcard/Audio/vocal.m3u
 	adb push "/Projects/Music/Shawn Colvin/These Four Walls/01 - Fill Me Up.mp3" /sdcard/Audio/Vocal/
 	adb push "/Projects/Music/Shawn Colvin/These Four Walls/02 - These Four Walls.mp3" /sdcard/Audio/Vocal/
+	adb shell echo "Instrumental/Slow Circle 2.mp3" > /sdcard/Audio/instrumental.m3u
+	adb shell echo "Instrumental/Coilsfield House.mp3" >> /sdcard/Audio/instrumental.m3u
+	adb push "/Projects/Music/Alex de Grassi/Slow Circle/Slow Circle 2.mp3" /sdcard/Audio/Instrumental/
+	adb push "/Projects/Music/Joemy Wilson/Celtic Dreams/Coilsfield House.mp3" /sdcard/Audio/Instrumental/
 
 app-intent-main :
 	adb shell am start -n org.stephe_leake.android.stephes_music.activity -a android.intent.action.MAIN -c android.intent.category.LAUNCHER
