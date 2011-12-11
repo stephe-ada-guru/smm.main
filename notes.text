@@ -4,24 +4,24 @@ build/Makefile
 
 finish/debug
 
-    fix smm to match
-
     update progress bar, time display
-        timer in service
-        support touch without drag
+        bar works, time display seems blank; maybe foreground color?
+        need smaller time display font
 
-        check for player died in same timer
+    support touch without drag
 
-        test save/restore per-playlist seek pos
+    test save/restore per-playlist seek pos
 
 
 install on PDA
 
+fix smm to match
+
 ff/rew
 
 add to menu:
-    playlist
     dump log
+        keep 'server state' and debugLog in activity log; move errorLog to logcat
     clear server state
     About
 

@@ -43,6 +43,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.Integer;
 import java.util.LinkedList;
 
 public class service extends Service
@@ -52,8 +53,9 @@ public class service extends Service
    // queued files have been played
 
    //  Internal Messages used for delays
-   private static final int FADEDOWN = 5;
-   private static final int FADEUP   = 6;
+   private static final int UPDATE_DISPLAY = 4;
+   private static final int FADEDOWN       = 5;
+   private static final int FADEUP         = 6;
 
    // misc constants
    private static final long PREV_THRESHOLD = 5000;
@@ -85,11 +87,6 @@ public class service extends Service
       mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
       mediaPlayer.setOnCompletionListener(completionListener);
       mediaPlayer.setOnErrorListener(errorListener);
-
-      // FIXME: update position display periodically
-
-      // FIXME: wake up and recover if mediaPlayer dies (do this when update display?)
-      // handler.sendMessageDelayed(mHandler.obtainMessage(PLAYER_DIED), 2000);
    }
 
    private String playlistFullPath()
@@ -163,7 +160,8 @@ public class service extends Service
                    putExtra ("artist", retriever.extractMetadata (MediaMetadataRetriever.METADATA_KEY_ARTIST)).
                    putExtra ("album", retriever.extractMetadata (MediaMetadataRetriever.METADATA_KEY_ALBUM)).
                    putExtra ("track", retriever.extractMetadata (MediaMetadataRetriever.METADATA_KEY_TITLE)).
-                   putExtra ("duration", retriever.extractMetadata (MediaMetadataRetriever.METADATA_KEY_DURATION)).
+                   putExtra
+                   ("duration", new Integer(retriever.extractMetadata (MediaMetadataRetriever.METADATA_KEY_DURATION))).
                    putExtra
                    ("playlist",
                     playlistFilename + " " + playlistPos + " / " + playlist.size()));
@@ -178,7 +176,8 @@ public class service extends Service
       {
          sendStickyBroadcast
             (new Intent (utils.PLAYSTATE_CHANGED).
-             putExtra ("playing", playing == PlayState.Playing));
+             putExtra ("playing", playing == PlayState.Playing).
+             putExtra ("position", mediaPlayer.getCurrentPosition()));
       }
       else
       {
@@ -197,6 +196,7 @@ public class service extends Service
          playing = pausedState;
 
          notifyChange(utils.PLAYSTATE_CHANGED);
+         handler.removeMessages(UPDATE_DISPLAY);
       }
    }
 
@@ -463,6 +463,7 @@ public class service extends Service
          playing     = PlayState.Idle;
 
          notifyChange(utils.PLAYSTATE_CHANGED);
+         handler.removeMessages(UPDATE_DISPLAY);
       };
    }
 
@@ -483,6 +484,8 @@ public class service extends Service
 
          playing = PlayState.Playing;
          notifyChange (utils.PLAYSTATE_CHANGED);
+
+         handler.sendMessageDelayed(handler.obtainMessage(UPDATE_DISPLAY), 1000);
       }
    }
 
@@ -537,6 +540,10 @@ public class service extends Service
             utils.debugLog("handleMessage " + msg.what);
             switch (msg.what)
             {
+            case UPDATE_DISPLAY:
+               notifyChange(utils.PLAYSTATE_CHANGED);
+               handler.sendMessageDelayed(handler.obtainMessage(UPDATE_DISPLAY), 1000);
+
             case FADEDOWN:
                // gradually reduce volume to 0.2
                //
@@ -619,7 +626,8 @@ public class service extends Service
             }
             else if (action.equals (utils.ACTION_SEEK))
             {
-               mediaPlayer.seekTo(0);
+               final int pos = intent.getIntExtra("position", 0);
+               mediaPlayer.seekTo(pos);
                notifyChange(utils.PLAYSTATE_CHANGED);
             }
             else if (action.equals (utils.ACTION_TOGGLEPAUSE))

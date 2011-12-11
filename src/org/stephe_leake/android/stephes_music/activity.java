@@ -39,11 +39,12 @@ import android.widget.TextView;
 import java.io.FilenameFilter;
 import java.io.File;
 import java.lang.Class;
+import java.lang.Integer;
 
 public class activity extends android.app.Activity
 {
    // constants
-   private static final int Progress_Max    = 1000;
+   private static final int maxProgress     = 1000;
    private static final int DIALOG_PLAYLIST = 1;
    private static final int MENU_QUIT       = 0;
 
@@ -59,9 +60,8 @@ public class activity extends android.app.Activity
    private SeekBar     progressBar;
 
    // Cached values
-   private long        duration = 0; // track duration in milliseconds
-   private String      playlistDir;
-
+   private int    trackDuration = 0; // track duration in milliseconds
+   private String playlistDir;
 
    private AlertDialog playlistDialog;
 
@@ -110,7 +110,7 @@ public class activity extends android.app.Activity
                 lastUserEventTime = now;
                 sendBroadcast
                    (new Intent(utils.ACTION_SEEK).
-                    putExtra("position", duration * progress / Progress_Max));
+                    putExtra("position", (trackDuration * progress / maxProgress)));
              }
           }
           public void onStopTrackingTouch(SeekBar bar) {}
@@ -142,18 +142,32 @@ public class activity extends android.app.Activity
                   artistTitle.setText(intent.getStringExtra("artist"));
                   albumTitle.setText(intent.getStringExtra("album"));
                   songTitle.setText(intent.getStringExtra("track"));
-                  totalTime.setText(intent.getStringExtra("duration"));  // FIXME: format
+                  trackDuration = intent.getIntExtra("duration", 0);
+
+                  //totalTime.setText(new Integer(1234).toString());
+                  //totalTime.setText(new Integer(trackDuration).toString());  // FIXME: format
                   playlistTitle.setText(intent.getStringExtra("playlist"));
                }
                else if (action.equals(utils.PLAYSTATE_CHANGED))
                {
-                  if (intent.getBooleanExtra("playing", false))
+                  final boolean playing = intent.getBooleanExtra("playing", false);
+                  final int currentPos = intent.getIntExtra("position", 0);
+
+                  if (playing)
                   {
                      playPauseButton.setImageResource(android.R.drawable.ic_media_pause);
                   }
                   else
                   {
                      playPauseButton.setImageResource(android.R.drawable.ic_media_play);
+                  }
+
+                  //currentTime.setText(new Integer(1234).toString());
+                  //currentTime.setText(new Long(currentPos).toString());  // FIXME: format
+
+                  if (trackDuration != 0)
+                  {
+                     progressBar.setProgress((int)(maxProgress * (long)currentPos/trackDuration));
                   }
                }
                else
@@ -209,7 +223,7 @@ public class activity extends android.app.Activity
 
          progressBar = (SeekBar) findViewById(android.R.id.progress);
          progressBar.setOnSeekBarChangeListener(Progress_Listener);
-         progressBar.setMax(Progress_Max);
+         progressBar.setMax(maxProgress);
 
          playlistTitle = (TextView) findViewById(R.id.playlistTitle);
          playlistTitle.setTextSize(playlistTitle.getTextSize()); // not scaled to save screen space

@@ -48,12 +48,12 @@ public class utils {
    //  artist   string
    //  album    string
    //  track    string
-   //  duration string (?)
+   //  duration int (milliseconds)
    //  playlist string (name pos/count)
 
    public static final String PLAYSTATE_CHANGED = "org.stephe_leake.android.stephes_music.playstatechanged";
    //  playing  boolean
-   //  FIXME: add current pos
+   //  position int (milliseconds)
 
    //  Commands to server via Intent actions sent via broadcast. Alphabetical order
    public static final String ACTION_NEXT = "org.stephe_leake.android.stephes_music.action.next";
@@ -62,6 +62,7 @@ public class utils {
    // playlist  string (abs file name)
    public static final String ACTION_PREVIOUS = "org.stephe_leake.android.stephes_music.action.previous";
    public static final String ACTION_SEEK = "org.stephe_leake.android.stephes_music.action.seek";
+   // position  int (milliseconds)
    public static final String ACTION_TOGGLEPAUSE =     "org.stephe_leake.android.stephes_music.action.togglepause";
    public static final String ACTION_UPDATE_DISPLAY = "org.stephe_leake.android.stephes_music.action.update_display";
 
