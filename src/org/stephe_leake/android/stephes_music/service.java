@@ -123,7 +123,7 @@ public class service extends Service
             playlistPos = 0;
          };
 
-         play(playlist.get(playlistPos));
+         play(playlist.get(playlistPos), 0);
       }
    }
 
@@ -143,7 +143,7 @@ public class service extends Service
                 putExtra ("album", "").
                 putExtra ("track", "").
                 putExtra ("duration", "").
-                putExtra ("playlist", R.string.null_playlist));
+                putExtra ("playlist", getResources().getString(R.string.null_playlist)));
          }
          else
          {
@@ -200,7 +200,7 @@ public class service extends Service
       }
    }
 
-   private void play (String path)
+   private void play (final String path, final int pos)
    {
       // path must be relative to playlistDirectory
 
@@ -213,19 +213,35 @@ public class service extends Service
          final String absFile = playlistDirectory + "/" + path;
 
          mediaPlayer.reset();
-         mediaPlayer.setDataSource (absFile);
-         mediaPlayer.prepare();
+         playing = PlayState.Idle;
+
+         try
+         {
+            mediaPlayer.setDataSource (absFile);
+            mediaPlayer.prepare();
+         }
+         catch (IOException e)
+         {
+            // From SetDataSource
+            currentFile = null;
+
+            utils.errorLog(service.this, "can't play " + path);
+
+            notifyChange(utils.META_CHANGED);
+            return;
+         }
 
          currentFile = path;
 
          unpause();
 
          notifyChange(utils.META_CHANGED);
-      }
-      catch (IOException e)
-      {
-         // From SetDataSource
-         utils.errorLog (this, "can't play: " + path + ": " + e);
+
+         if (pos != 0)
+         {
+            mediaPlayer.seekTo(pos);
+            notifyChange(utils.PLAYSTATE_CHANGED);
+         }
       }
       catch (RuntimeException e)
       {
@@ -235,7 +251,7 @@ public class service extends Service
 
    class Fail extends RuntimeException {}
 
-   private void playList(final String filename, String currentFile, final long pos)
+   private void playList(final String filename, String currentFile, final int pos)
       throws Fail
    {
       // Start playing playlist 'filename' (absolute path).
@@ -309,13 +325,8 @@ public class service extends Service
          // There could be a higher song in the smm file, but we'll
          // ignore that until it becomes a problem.
 
-         play(playlist.get(playlistPos));
+         play(playlist.get(playlistPos), pos);
 
-         if (pos != 0)
-         {
-            mediaPlayer.seekTo(0);
-            notifyChange(utils.PLAYSTATE_CHANGED);
-         }
       }
       catch (Fail e)
       {
@@ -364,7 +375,7 @@ public class service extends Service
       }
 
       utils.debugLog("previous playlistPos: " + playlistPos);
-      play(playlist.get(playlistPos));
+      play(playlist.get(playlistPos), 0);
    }
 
    // save/restore keys; global
@@ -398,7 +409,7 @@ public class service extends Service
             playList
                (playlistDirectory + "/" + playlistFilename + ".m3u",
                 currentFile,
-                storage.getLong(playlistFilename + keyCurrentPos, 0));
+                storage.getInt(playlistFilename + keyCurrentPos, 0));
          }
          catch (Fail e)
          {
@@ -444,7 +455,7 @@ public class service extends Service
       editor.putString(keyPlaylistDirectory, playlistDirectory);
       editor.putString(keyPlaylistFilename, playlistFilename);
       editor.putString(playlistFilename + keyCurrentFile, currentFile);
-      editor.putLong
+      editor.putInt
          (playlistFilename + keyCurrentPos,
           (playing == PlayState.Idle) ? 0 : mediaPlayer.getCurrentPosition());
 
@@ -618,7 +629,14 @@ public class service extends Service
             }
             else if (action.equals (utils.ACTION_PLAYLIST))
             {
-               playList(intent.getStringExtra("playlist"), null, 0);
+               try
+               {
+                  playList(intent.getStringExtra("playlist"), null, 0);
+               }
+               catch (Fail e)
+               {
+                  // nothing to do here.
+               }
             }
             else if (action.equals (utils.ACTION_PREVIOUS))
             {
@@ -722,7 +740,7 @@ public class service extends Service
                // works. This will _not_ be easy to debug!
                if (service.playing == PlayState.Playing)
                {
-                  play (currentFile);
+                  play (currentFile, 0);
                };
 
                return true;
@@ -813,7 +831,9 @@ public class service extends Service
 
    @Override public int onStartCommand(Intent intent, int flags, int startId)
    {
-      if (intent.getAction() != null)
+      // intent is null if the service is restarted by Android after a
+      // crash.
+      if (intent != null && intent.getAction() != null)
       {
          utils.errorLog(this, "onStartCommand got unexpected intent: " + intent);
       }

@@ -4,16 +4,14 @@ build/Makefile
 
 finish/debug
 
-    update progress bar, time display
+    update time display
         bar works, time display seems blank; maybe foreground color?
         need smaller time display font
+            in resource file?
 
     support touch without drag
 
     test save/restore per-playlist seek pos
-
-
-install on PDA
 
 fix smm to match
 
