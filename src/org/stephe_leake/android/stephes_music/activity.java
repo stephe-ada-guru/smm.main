@@ -144,8 +144,7 @@ public class activity extends android.app.Activity
                   songTitle.setText(intent.getStringExtra("track"));
                   trackDuration = intent.getIntExtra("duration", 0);
 
-                  //totalTime.setText(new Integer(1234).toString());
-                  //totalTime.setText(new Integer(trackDuration).toString());  // FIXME: format
+                  totalTime.setText(utils.makeTimeString(activity.this, trackDuration));
                   playlistTitle.setText(intent.getStringExtra("playlist"));
                }
                else if (action.equals(utils.PLAYSTATE_CHANGED))
@@ -162,8 +161,7 @@ public class activity extends android.app.Activity
                      playPauseButton.setImageResource(android.R.drawable.ic_media_play);
                   }
 
-                  //currentTime.setText(new Integer(1234).toString());
-                  //currentTime.setText(new Long(currentPos).toString());  // FIXME: format
+                  currentTime.setText(utils.makeTimeString(activity.this, currentPos));
 
                   if (trackDuration != 0)
                   {

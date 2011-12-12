@@ -73,9 +73,9 @@ public class utils {
 
    private static final Object[] sTimeArgs = new Object[5];
 
-   public static String makeTimeString(Context context, long millisecs)
+   public static String makeTimeString(Context context, int millisecs)
    {
-      final long secs = millisecs / 1000;
+      final int secs = millisecs / 1000;
       String durationformat = context.getString
          (secs < 3600 ? R.string.durationformatshort : R.string.durationformatlong);
 
