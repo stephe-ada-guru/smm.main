@@ -53,9 +53,8 @@ public class service extends Service
    // queued files have been played
 
    //  Internal Messages used for delays
+   private static final int UNPAUSE        = 3;
    private static final int UPDATE_DISPLAY = 4;
-   private static final int FADEDOWN       = 5;
-   private static final int FADEUP         = 6;
 
    // misc constants
    private static final long PREV_THRESHOLD = 5000;
@@ -251,7 +250,7 @@ public class service extends Service
 
    class Fail extends RuntimeException {}
 
-   private void playList(final String filename, String currentFile, final int pos)
+   private void playList(final String filename, String currentFile, int pos)
       throws Fail
    {
       // Start playing playlist 'filename' (absolute path).
@@ -271,6 +270,8 @@ public class service extends Service
          SharedPreferences storage = getSharedPreferences(utils.serviceClassName, MODE_PRIVATE);
 
          currentFile = storage.getString(tmpPlaylistFilename + keyCurrentFile, null);
+
+         pos = storage.getInt(tmpPlaylistFilename + keyCurrentPos, 0);
       }
 
       if (!playlistFile.canRead())
@@ -295,8 +296,12 @@ public class service extends Service
             // In SMM playlists all lines are song filepaths, relative
             // to the directory filename is in.
 
-            if (currentFile != null && line.equals(currentFile))
+            if (currentFile != null && startAt == 0 && line.equals(currentFile))
             {
+               // If 'currentFile' is in the playlist multiple times,
+               // this finds the first one. That's a bug in SMM, so it
+               // doesn't much matter what we do; this ensures that
+               // all of the playlist is played at least once.
                startAt = lineCount;
             }
 
@@ -374,7 +379,6 @@ public class service extends Service
          playlistPos = playlist.size() - 1;
       }
 
-      utils.debugLog("previous playlistPos: " + playlistPos);
       play(playlist.get(playlistPos), 0);
    }
 
@@ -480,24 +484,26 @@ public class service extends Service
 
    private void unpause()
    {
-      final int result = audioManager.requestAudioFocus
-         (audioFocusListener,
-          android.media.AudioManager.STREAM_MUSIC,
-          android.media.AudioManager.AUDIOFOCUS_GAIN);
-
-      if (result != android.media.AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
+      if (!haveAudioFocus)
       {
-         utils.errorLog (this, "can't get audio focus");
-      }
-      else
-      {
-         mediaPlayer.start();
+         final int result = audioManager.requestAudioFocus
+            (audioFocusListener,
+             android.media.AudioManager.STREAM_MUSIC,
+             android.media.AudioManager.AUDIOFOCUS_GAIN);
 
-         playing = PlayState.Playing;
-         notifyChange (utils.PLAYSTATE_CHANGED);
-
-         handler.sendMessageDelayed(handler.obtainMessage(UPDATE_DISPLAY), 1000);
+         if (result != android.media.AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
+         {
+            utils.errorLog (this, "can't get audio focus");
+            return;
+         }
       }
+
+      mediaPlayer.start();
+
+      playing = PlayState.Playing;
+      notifyChange (utils.PLAYSTATE_CHANGED);
+
+      handler.sendEmptyMessageDelayed(UPDATE_DISPLAY, 1000);
    }
 
    private void writeSMMFile()
@@ -544,50 +550,16 @@ public class service extends Service
 
    private Handler handler = new Handler()
       {
-         float volume = 1.0f;
-
          @Override public void handleMessage(Message msg)
          {
-            utils.debugLog("handleMessage " + msg.what);
             switch (msg.what)
             {
+            case UNPAUSE:
+               unpause();
+
             case UPDATE_DISPLAY:
                notifyChange(utils.PLAYSTATE_CHANGED);
-               handler.sendMessageDelayed(handler.obtainMessage(UPDATE_DISPLAY), 1000);
-
-            case FADEDOWN:
-               // gradually reduce volume to 0.2
-               //
-               // changes volume in steps of 0.05 every 10 milliseconds
-
-               volume -= .05f;
-               if (volume > 0.2f)
-               {
-                  sendEmptyMessageDelayed(FADEDOWN, 10);
-               }
-               else
-               {
-                  volume = .2f;
-               }
-               mediaPlayer.setVolume(volume, volume);
-               break;
-
-            case FADEUP:
-               // gradually increase volume to 1.0
-               //
-               // changes volume in steps of 0.01 every 10 milliseconds
-
-               volume += .01f;
-               if (volume < 1.0f)
-               {
-                  sendEmptyMessageDelayed(FADEUP, 10);
-               }
-               else
-               {
-                  volume = 1.0f;
-               }
-               mediaPlayer.setVolume(volume, volume);
-               break;
+               handler.sendEmptyMessageDelayed(UPDATE_DISPLAY, 1000);
 
             default:
                break;
@@ -609,6 +581,7 @@ public class service extends Service
                // can manage the playlists. Save state now, since
                // restoreState has the logic for processing smm
                // changes.
+               utils.debugLog(service.this, "media eject");
                saveState();
                pause(PlayState.Paused);
             }
@@ -617,6 +590,7 @@ public class service extends Service
                // External storage is being mounted, probably after smm
                // managed the playlists.
 
+               utils.debugLog(service.this, "media mount");
                restoreState();
             }
             else if (action.equals (utils.ACTION_NEXT))
@@ -688,27 +662,39 @@ public class service extends Service
           {
              if (focusChange == AudioManager.AUDIOFOCUS_LOSS)
              {
+                haveAudioFocus = false;
                 pause(PlayState.Paused);
              }
-             else if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK)
+             else if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK ||
+                      focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT)
              {
-                // "DUCK" means can just lower volume; not clear when this might happen
-                handler.removeMessages(FADEUP);
-                handler.sendEmptyMessage(FADEDOWN);
-             }
-             else if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT)
-             {
+                haveAudioFocus = false;
+
                 if (service.playing == PlayState.Playing)
                 {
                    pause(PlayState.Paused_Transient);
                 }
              }
              else if (focusChange == AudioManager.AUDIOFOCUS_GAIN)
-                handler.removeMessages(FADEUP); // in case loss was 'transient can duck'
-
-             if (service.playing == PlayState.Paused_Transient)
              {
-                mediaPlayer.start();
+                haveAudioFocus = true;
+
+                switch (playing)
+                {
+                case Idle:
+                   break;
+
+                case Playing:
+                   break;
+
+                case Paused:
+                   unpause();
+
+                case Paused_Transient:
+                   // Most likely after a Navigator message; give
+                   // listener time to process it.
+                   handler.sendEmptyMessageDelayed(UNPAUSE, 1000);
+                }
              }
              else
              {
@@ -729,7 +715,7 @@ public class service extends Service
       {
          public boolean onError(MediaPlayer mp, int what, int extra)
          {
-            utils.errorLog(service.this, "MediaPlayer server died: " + what + "," + extra);
+            utils.debugLog("MediaPlayer server died: " + what + "," + extra);
             switch (what)
             {
             case MediaPlayer.MEDIA_ERROR_SERVER_DIED:
@@ -778,6 +764,8 @@ public class service extends Service
    // highest position played on this playlist; for writeSMMFile, to
    // handle wrap and prev.
 
+   boolean haveAudioFocus;
+
    ////////// service lifetime methods
    @Override public IBinder onBind(Intent intent)
    {
@@ -808,6 +796,7 @@ public class service extends Service
       playlistPos        = -1;
       highestPlaylistPos = playlistPos;
       playing            = PlayState.Paused;
+      haveAudioFocus     = false;
 
       restoreState();
    }
@@ -859,8 +848,12 @@ public class service extends Service
       // FIXME: figure out how to dump all of storage
       writer.println("storage.vocal" + keyCurrentFile + ": " +
                      storage.getString("vocal" + keyCurrentFile, ""));
+      writer.println("storage.vocal" + keyCurrentPos + ": " +
+                     storage.getInt("vocal" + keyCurrentPos, 0));
       writer.println("storage.instrumental" + keyCurrentFile + ": " +
                      storage.getString("instrumental" + keyCurrentFile, ""));
+      writer.println("storage.instrumental" + keyCurrentPos + ": " +
+                     storage.getInt("instrumental" + keyCurrentPos, 0));
 
       utils.debugDump(writer);
 

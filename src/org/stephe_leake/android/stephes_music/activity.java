@@ -134,7 +134,6 @@ public class activity extends android.app.Activity
          {
             final String action = intent.getAction();
 
-            utils.debugLog("activity broadcastReceiver action: " + action);
             try
             {
                if (action.equals(utils.META_CHANGED))

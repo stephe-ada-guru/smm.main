@@ -2,18 +2,18 @@
 build/Makefile
 (dvc-status)
 
-finish/debug
-    support touch without drag
+UNMOUNT doesn't work - doesn't get called!
 
-    test save/restore per-playlist seek pos
+support touch without drag
 
 fix smm to match
+
+on start after clear data, get 'media player server died: -30, 0'
 
 ff/rew
 
 add to menu:
-    dump log
-        keep 'server state' and debugLog in activity log; move errorLog to logcat
+    dump activity log
     clear server state
     About
 
