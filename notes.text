@@ -2,7 +2,7 @@
 build/Makefile
 (dvc-status)
 
-UNMOUNT doesn't work - doesn't get called!
+doesn't restart after navigation interrupt
 
 support touch without drag
 

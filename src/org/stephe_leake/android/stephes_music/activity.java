@@ -47,6 +47,7 @@ public class activity extends android.app.Activity
    private static final int maxProgress     = 1000;
    private static final int DIALOG_PLAYLIST = 1;
    private static final int MENU_QUIT       = 0;
+   private static final int MENU_DUMP_LOG   = 1;
 
    // Main UI members
 
@@ -71,7 +72,7 @@ public class activity extends android.app.Activity
       {
          @Override public void onClick(View v)
          {
-            sendBroadcast(new Intent(utils.ACTION_PREVIOUS));
+            sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PREVIOUS));
          }
       };
 
@@ -79,7 +80,7 @@ public class activity extends android.app.Activity
       {
          @Override public void onClick(View v)
          {
-            sendBroadcast(new Intent(utils.ACTION_TOGGLEPAUSE));
+            sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_TOGGLEPAUSE));
          }
       };
 
@@ -87,7 +88,7 @@ public class activity extends android.app.Activity
       {
          @Override public void onClick(View v)
          {
-            sendBroadcast(new Intent(utils.ACTION_NEXT));
+            sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_NEXT));
          }
       };
 
@@ -109,7 +110,7 @@ public class activity extends android.app.Activity
              {
                 lastUserEventTime = now;
                 sendBroadcast
-                   (new Intent(utils.ACTION_SEEK).
+                   (new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_SEEK).
                     putExtra("position", (trackDuration * progress / maxProgress)));
              }
           }
@@ -233,7 +234,7 @@ public class activity extends android.app.Activity
              intent.getAction().equals(Intent.ACTION_MAIN)) // launched directly by user
          {
             // get current server state
-            sendBroadcast (new Intent(utils.ACTION_UPDATE_DISPLAY));
+            sendBroadcast (new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_UPDATE_DISPLAY));
          }
          else
          {
@@ -256,7 +257,7 @@ public class activity extends android.app.Activity
          f.addAction(utils.META_CHANGED);
          f.addAction(utils.PLAYSTATE_CHANGED);
          registerReceiver(broadcastReceiver, f);
-         sendBroadcast(new Intent(utils.ACTION_UPDATE_DISPLAY));
+         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_UPDATE_DISPLAY));
       }
       catch (RuntimeException e)
       {
@@ -309,7 +310,7 @@ public class activity extends android.app.Activity
                               final android.widget.ListView listView = playlistDialog.getListView();
                               final String filename = (String)listView.getAdapter().getItem(which);
                               sendBroadcast
-                                 (new Intent (utils.ACTION_PLAYLIST).
+                                 (new Intent (utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PLAYLIST).
                                   putExtra("playlist", playlistDir.getAbsolutePath() + "/" + filename));
                            }
                            catch (Exception e)
@@ -340,6 +341,7 @@ public class activity extends android.app.Activity
    {
       super.onCreateOptionsMenu(menu);
       menu.add(0, MENU_QUIT, 0, R.string.menu_quit);
+      menu.add(0, MENU_DUMP_LOG, 0, R.string.menu_dump_log);
       return true; // display menu
    }
 
@@ -352,6 +354,10 @@ public class activity extends android.app.Activity
             (new Intent().setComponent(new ComponentName (this, utils.serviceClassName)));
 
          finish();
+         break;
+
+      case MENU_DUMP_LOG:
+         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_DUMP_LOG));
          break;
 
       default:

@@ -56,15 +56,18 @@ public class utils {
    //  position int (milliseconds)
 
    //  Commands to server via Intent actions sent via broadcast. Alphabetical order
-   public static final String ACTION_NEXT = "org.stephe_leake.android.stephes_music.action.next";
-   public static final String ACTION_PAUSE = "org.stephe_leake.android.stephes_music.action.pause";
-   public static final String ACTION_PLAYLIST = "org.stephe_leake.android.stephes_music.action.playlist";
+   //  Only one intent, so we can add commands without adding to the reciever filter.
+   public static final String ACTION_COMMAND         = "org.stephe_leake.android.stephes_music.action.command";
+   public static final String COMMAND_DUMP_LOG       = "org.stephe_leake.android.stephes_music.command.dump_log";
+   public static final String COMMAND_NEXT           = "org.stephe_leake.android.stephes_music.command.next";
+   public static final String COMMAND_PAUSE          = "org.stephe_leake.android.stephes_music.command.pause";
+   public static final String COMMAND_PLAYLIST       = "org.stephe_leake.android.stephes_music.command.playlist";
    // playlist  string (abs file name)
-   public static final String ACTION_PREVIOUS = "org.stephe_leake.android.stephes_music.action.previous";
-   public static final String ACTION_SEEK = "org.stephe_leake.android.stephes_music.action.seek";
+   public static final String COMMAND_PREVIOUS       = "org.stephe_leake.android.stephes_music.command.previous";
+   public static final String COMMAND_SEEK           = "org.stephe_leake.android.stephes_music.command.seek";
    // position  int (milliseconds)
-   public static final String ACTION_TOGGLEPAUSE =     "org.stephe_leake.android.stephes_music.action.togglepause";
-   public static final String ACTION_UPDATE_DISPLAY = "org.stephe_leake.android.stephes_music.action.update_display";
+   public static final String COMMAND_TOGGLEPAUSE    = "org.stephe_leake.android.stephes_music.command.togglepause";
+   public static final String COMMAND_UPDATE_DISPLAY = "org.stephe_leake.android.stephes_music.command.update_display";
 
 
    private static StringBuilder sFormatBuilder = new StringBuilder();

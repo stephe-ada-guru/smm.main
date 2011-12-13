@@ -30,6 +30,7 @@ import android.media.AudioManager.OnAudioFocusChangeListener;
 import android.media.AudioManager;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -394,6 +395,22 @@ public class service extends Service
 
    private void restoreState()
    {
+      if (!Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState()))
+      {
+         utils.infoLog(this, "external storage not mounted; can't restore");
+
+         playing           = PlayState.Idle;
+         playlistDirectory = null;
+         playlistFilename  = null;
+         currentFile       = null;
+
+         return;
+      }
+      else
+      {
+         utils.debugLog("restoreState: external storage mounted: " + Environment.getExternalStorageState());
+      }
+
       // External storage may have changed since saveState() was
       // called. In particular, we assume SMM has edited the playlist
       // files and the SMM file. So we don't store playlistPos; we
@@ -452,6 +469,12 @@ public class service extends Service
 
    private void saveState()
    {
+      if (!Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState()))
+      {
+         utils.infoLog(this, "external storage not mounted; can't save");
+         return;
+      }
+
       SharedPreferences storage = getSharedPreferences(utils.serviceClassName, MODE_PRIVATE);
       Editor            editor  = storage.edit();
 
@@ -555,6 +578,7 @@ public class service extends Service
             switch (msg.what)
             {
             case UNPAUSE:
+               utils.debugLog("handler: UNPAUSE");
                unpause();
 
             case UPDATE_DISPLAY:
@@ -567,13 +591,11 @@ public class service extends Service
          }
       };
 
-   private BroadcastReceiver broadcastReceiver = new BroadcastReceiver()
+   private BroadcastReceiver broadcastReceiverFile = new BroadcastReceiver()
       {
          @Override public void onReceive(Context context, Intent intent)
          {
             final String action = intent.getAction();
-
-            utils.debugLog("service broadcastReciever action: " + action);
 
             if (action.equals (android.content.Intent.ACTION_MEDIA_EJECT))
             {
@@ -581,7 +603,6 @@ public class service extends Service
                // can manage the playlists. Save state now, since
                // restoreState has the logic for processing smm
                // changes.
-               utils.debugLog(service.this, "media eject");
                saveState();
                pause(PlayState.Paused);
             }
@@ -590,68 +611,93 @@ public class service extends Service
                // External storage is being mounted, probably after smm
                // managed the playlists.
 
-               utils.debugLog(service.this, "media mount");
                restoreState();
-            }
-            else if (action.equals (utils.ACTION_NEXT))
-            {
-               next();
-            }
-            else if (action.equals (utils.ACTION_PAUSE))
-            {
-               pause(PlayState.Paused);
-            }
-            else if (action.equals (utils.ACTION_PLAYLIST))
-            {
-               try
-               {
-                  playList(intent.getStringExtra("playlist"), null, 0);
-               }
-               catch (Fail e)
-               {
-                  // nothing to do here.
-               }
-            }
-            else if (action.equals (utils.ACTION_PREVIOUS))
-            {
-               previous();
-            }
-            else if (action.equals (utils.ACTION_SEEK))
-            {
-               final int pos = intent.getIntExtra("position", 0);
-               mediaPlayer.seekTo(pos);
-               notifyChange(utils.PLAYSTATE_CHANGED);
-            }
-            else if (action.equals (utils.ACTION_TOGGLEPAUSE))
-            {
-               switch (service.playing)
-               {
-               case Idle:
-                  break;
-
-               case Playing:
-                  pause(PlayState.Paused);
-                  break;
-
-               case Paused:
-                  unpause();
-                  break;
-
-               case Paused_Transient:
-                  // user wants to override
-                  unpause();
-                  break;
-
-               };
-            }
-            else if (action.equals (utils.ACTION_UPDATE_DISPLAY))
-            {
-               notifyChange(utils.META_CHANGED);
-               notifyChange (utils.PLAYSTATE_CHANGED);
             }
             else
             {
-               utils.errorLog(service.this, "broadcastReceiver.onReceive: unkown action: " + action);
+               utils.errorLog(service.this, "broadcastReceiverFile.onReceive: unknown action: " + action);
+            }
+         }
+      };
+
+   private BroadcastReceiver broadcastReceiverCommand = new BroadcastReceiver()
+      {
+         @Override public void onReceive(Context context, Intent intent)
+         {
+            final String action = intent.getAction();
+
+            if (action.equals (utils.ACTION_COMMAND))
+            {
+               final String command = intent.getStringExtra("command");
+
+               if (command.equals(utils.COMMAND_DUMP_LOG))
+               {
+                  dumpLog();
+               }
+               else if (command.equals (utils.COMMAND_NEXT))
+               {
+                  next();
+               }
+               else if (command.equals (utils.COMMAND_PAUSE))
+               {
+                  pause(PlayState.Paused);
+               }
+               else if (command.equals (utils.COMMAND_PLAYLIST))
+               {
+                  try
+                  {
+                     playList(intent.getStringExtra("playlist"), null, 0);
+                  }
+                  catch (Fail e)
+                  {
+                     // nothing to do here.
+                  }
+               }
+               else if (command.equals (utils.COMMAND_PREVIOUS))
+               {
+                  previous();
+               }
+               else if (command.equals (utils.COMMAND_SEEK))
+               {
+                  final int pos = intent.getIntExtra("position", 0);
+                  mediaPlayer.seekTo(pos);
+                  notifyChange(utils.PLAYSTATE_CHANGED);
+               }
+               else if (command.equals (utils.COMMAND_TOGGLEPAUSE))
+               {
+                  switch (service.playing)
+                  {
+                  case Idle:
+                     break;
+
+                  case Playing:
+                     pause(PlayState.Paused);
+                     break;
+
+                  case Paused:
+                     unpause();
+                     break;
+
+                  case Paused_Transient:
+                     // user wants to override
+                     unpause();
+                     break;
+
+                  };
+               }
+               else if (command.equals (utils.COMMAND_UPDATE_DISPLAY))
+               {
+                  notifyChange(utils.META_CHANGED);
+                  notifyChange (utils.PLAYSTATE_CHANGED);
+               }
+               else
+               {
+                  utils.errorLog(service.this, "broadcastReceiverCommand.onReceive: unknown command: " + command);
+               }
+            }
+            else
+            {
+               utils.errorLog(service.this, "broadcastReceiverCommand.onReceive: unknown action: " + action);
             }
          }
       };
@@ -693,6 +739,7 @@ public class service extends Service
                 case Paused_Transient:
                    // Most likely after a Navigator message; give
                    // listener time to process it.
+                   utils.debugLog("onAudioFocusChange: Paused_Transient AUDIOFOCUS_GAIN");
                    handler.sendEmptyMessageDelayed(UNPAUSE, 1000);
                 }
              }
@@ -776,17 +823,17 @@ public class service extends Service
    {
       super.onCreate();
 
+      // We need two broadcast recievers because we can't wild card
+      // all of the filter criteria.
       IntentFilter filter = new IntentFilter();
       filter.addAction(Intent.ACTION_MEDIA_EJECT);
       filter.addAction(Intent.ACTION_MEDIA_MOUNTED);
-      filter.addAction(utils.ACTION_NEXT);
-      filter.addAction(utils.ACTION_PAUSE);
-      filter.addAction(utils.ACTION_PLAYLIST);
-      filter.addAction(utils.ACTION_PREVIOUS);
-      filter.addAction(utils.ACTION_SEEK);
-      filter.addAction(utils.ACTION_TOGGLEPAUSE);
-      filter.addAction(utils.ACTION_UPDATE_DISPLAY);
-      registerReceiver(broadcastReceiver, filter);
+      filter.addDataScheme("file");
+      registerReceiver(broadcastReceiverFile, filter);
+
+      filter = new IntentFilter();
+      filter.addAction(utils.ACTION_COMMAND);
+      registerReceiver(broadcastReceiverCommand, filter);
 
       createMediaPlayer();
 
@@ -813,7 +860,8 @@ public class service extends Service
 
       handler.removeCallbacksAndMessages(null);
 
-      unregisterReceiver(broadcastReceiver);
+      unregisterReceiver(broadcastReceiverFile);
+      unregisterReceiver(broadcastReceiverCommand);
 
       super.onDestroy();
    }
@@ -828,6 +876,25 @@ public class service extends Service
       }
       return START_STICKY;
     }
+
+   private void dumpLog()
+   {
+      final String logFilename = playlistDirectory + "/" + playlistFilename + ".log";
+
+      try
+      {
+         PrintWriter writer = new PrintWriter(new FileWriter(logFilename));
+
+         utils.debugDump(writer);
+         utils.debugClear();
+         writer.close();
+         utils.infoLog(this, "log written to " + logFilename);
+      }
+      catch (java.io.IOException e)
+      {
+         utils.errorLog(this, "can't write log to " + logFilename);
+      }
+   }
 
    @Override protected void dump(FileDescriptor fd, PrintWriter writer, String[] args)
    {
