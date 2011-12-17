@@ -6,6 +6,7 @@
 
     <property name="target" value="android-10" />
 
+    <!-- FIXME: move this to a shared file for projects to import -->
     <import file="${sdk.dir}/tools/ant/pre_setup.xml" />
     <setup/>
 

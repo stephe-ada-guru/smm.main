@@ -18,27 +18,17 @@
 
 package org.stephe_leake.android.stephes_music;
 
-import android.app.Activity;
-import android.content.ComponentName;
-import android.content.ContentResolver;
 import android.content.Context;
-import android.content.ContextWrapper;
-import android.content.Intent;
-import android.content.ServiceConnection;
-import android.database.Cursor;
-import android.net.Uri;
-import android.os.RemoteException;
 import android.text.format.Time;
 import android.util.Log;
 import android.widget.Toast;
 
 import java.io.PrintWriter;
-import java.lang.Thread;
 import java.util.Formatter;
-import java.util.HashMap;
 import java.util.Locale;
 
-public class utils {
+public class utils
+{
 
    public static final String serviceClassName =
       "org.stephe_leake.android.stephes_music.service";
@@ -98,94 +88,99 @@ public class utils {
       return sFormatter.format(durationformat, timeArgs).toString();
    }
 
-   static int getCardId(Context context) {
-      ContentResolver res = context.getContentResolver();
-      Cursor c = res.query(Uri.parse("content://media/external/fs_id"), null, null, null, null);
-      int id = -1;
-      if (c != null) {
-         c.moveToFirst();
-         id = c.getInt(0);
-         c.close();
-      }
-      return id;
-   }
-
-   static class LogEntry {
+   static class LogEntry
+   {
       Object item;
-      long time;
 
-      LogEntry(Object o) {
-         item = o;
-         time = System.currentTimeMillis();
-      }
+      LogEntry(Object o) {item = o;}
 
-      void dump(PrintWriter out) {
-         sTime.set(time);
-         out.print(sTime.format2445() + " : ");
-         if (item instanceof Exception) {
+      void dump(PrintWriter out)
+      {
+         if (item instanceof Exception)
+         {
+            out.println(item);
             ((Exception)item).printStackTrace(out);
-         } else {
+         }
+         else
+         {
             out.println(item);
          }
       }
    }
 
-   private static LogEntry[] sMusicLog = new LogEntry[100];
-   private static int sLogPtr = 0;
-   private static Time sTime = new Time();
+   private static LogEntry[] log = new LogEntry[100];
+
+   private static int logNext = 0;
 
    public static void debugClear()
    {
-      for (int i = 0; i < sMusicLog.length; i++)
+      for (int i = 0; i < log.length; i++)
       {
-         sMusicLog[i] = null;
+         log[i] = null;
       }
-      sLogPtr = 0;
+      logNext = 0;
    }
 
    public static void debugLog(Object o)
    {
-      // Cache error messages to be dumped by debugDump.
-      //
-      // This is better than just Log, because Log messages are dumped
-      // by 'adb logcat', while these are dumped by 'adb shell dumpsys
-      // activity service service'. The former shows messages from all
-      // activities and services; the later just from this log.
+      // Cache error messages to be dumped by debugDump, which is
+      // called by 'adb shell dumpsys activity service ...service'.
+      // The former shows messages from all activities and services;
+      // the later just from this log.
       //
       // However, this log disappears if the service dies.
       //
-      // If 'o' is an Exception, it will include a stack trace.
+      // If 'o' is an Exception, the dump will include a stack trace.
 
-      sMusicLog[sLogPtr] = new LogEntry(o);
-      sLogPtr++;
-      if (sLogPtr >= sMusicLog.length) {
-         sLogPtr = 0;
+      log[logNext++] = new LogEntry(o);
+      if (logNext >= log.length)
+      {
+         logNext = 0;
       }
    }
 
-   static void debugDump(PrintWriter out) {
-      for (int i = 0; i < sMusicLog.length; i++) {
-         int idx = (sLogPtr + i);
-         if (idx >= sMusicLog.length) {
-            idx -= sMusicLog.length;
+   public static void debugDump(PrintWriter out)
+   {
+      for (int i = 0; i < log.length; i++)
+      {
+         int idx = (logNext + i);
+         if (idx >= log.length)
+         {
+            idx -= log.length;
          }
-         LogEntry entry = sMusicLog[idx];
-         if (entry != null) {
+         LogEntry entry = log[idx];
+         if (entry != null)
+         {
             entry.dump(out);
          }
       }
    }
 
+   public static void errorLog(Context context, String msg, Throwable e)
+   {
+      // programmer errors (possibly due to Android bugs :)
+      Log.e(serviceClassName, msg, e);
+      Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
+   }
+
    public static void errorLog(Context context, String msg)
    {
-      debugLog(msg);
+      // programmer errors (possibly due to Android bugs :)
+      Log.e(serviceClassName, msg);
       Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
    }
 
    static void infoLog(Context context, String msg)
    {
-      debugLog(msg);
+      // helpful user messages, ie "could not play"
+      Log.i(serviceClassName, msg);
       Toast.makeText(context, msg, Toast.LENGTH_SHORT).show();
+   }
+
+   static void verboseLog(String msg)
+   {
+      // for post-mortem debugging
+      Log.v(serviceClassName, msg);
    }
 
 }

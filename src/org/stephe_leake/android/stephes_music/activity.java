@@ -175,7 +175,7 @@ public class activity extends android.app.Activity
             }
             catch (RuntimeException e)
             {
-               utils.errorLog(activity.this, "broadcastReceiver: " + e.toString());
+               utils.errorLog(activity.this, "broadcastReceiver: ", e);
             }
          }
       };
@@ -243,7 +243,7 @@ public class activity extends android.app.Activity
       }
       catch (RuntimeException e)
       {
-         utils.errorLog(this, "onCreate: That does not compute " + e.toString());
+         utils.errorLog(this, "onCreate: That does not compute", e);
          finish();
       }
    }
@@ -261,7 +261,7 @@ public class activity extends android.app.Activity
       }
       catch (RuntimeException e)
       {
-         utils.errorLog(this, "onResume: " + e.toString());
+         utils.errorLog(this, "onResume: ", e);
       }
    }
 
@@ -315,7 +315,7 @@ public class activity extends android.app.Activity
                            }
                            catch (Exception e)
                            {
-                              utils.errorLog(activity.this, "playlist dialog onClick: " + e.toString());
+                              utils.errorLog(activity.this, "playlist dialog onClick: ", e);
                            }
                         };
                      }
@@ -325,7 +325,7 @@ public class activity extends android.app.Activity
               }
               catch (Exception e)
               {
-                 utils.errorLog(this, "create playlist dialog " + e.toString());
+                 utils.errorLog(this, "create playlist dialog ", e);
                  return null;
               }
            }

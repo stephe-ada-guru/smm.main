@@ -1,5 +1,4 @@
 ^bin$
-^default\.properties$
 ^gen$
 ^libs$
 ^proguard\.cfg$

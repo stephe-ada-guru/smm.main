@@ -189,14 +189,23 @@ public class service extends Service
    {
       if (playing == PlayState.Playing)
       {
+         utils.verboseLog("pause while playing");
          mediaPlayer.pause();
 
-         audioManager.abandonAudioFocus(audioFocusListener);
+         if (pausedState == PlayState.Paused)
+         {
+            // don't abandon for Paused_Transient
+            audioManager.abandonAudioFocus(audioFocusListener);
+         }
 
          playing = pausedState;
 
          notifyChange(utils.PLAYSTATE_CHANGED);
          handler.removeMessages(UPDATE_DISPLAY);
+      }
+      else
+      {
+         utils.verboseLog("pause while not playing");
       }
    }
 
@@ -225,7 +234,10 @@ public class service extends Service
             // From SetDataSource
             currentFile = null;
 
-            utils.errorLog(service.this, "can't play " + path);
+            // We consider this a programmer error, because it
+            // probably indicates an SMM sync bug. It could also be a
+            // failing sdcard.
+            utils.errorLog(service.this, "can't play " + path, e);
 
             notifyChange(utils.META_CHANGED);
             return;
@@ -245,13 +257,13 @@ public class service extends Service
       }
       catch (RuntimeException e)
       {
-         utils.errorLog (this, "play: " + e);
+         utils.errorLog (this, "play failed", e);
       }
    }
 
    class Fail extends RuntimeException {}
 
-   private void playList(final String filename, String currentFile, int pos)
+   private void playList(final String filename, String currentFile, int pos, PlayState newState)
       throws Fail
    {
       // Start playing playlist 'filename' (absolute path).
@@ -277,6 +289,7 @@ public class service extends Service
 
       if (!playlistFile.canRead())
       {
+         // This is an SMM error, or failing sdcard
          utils.errorLog(this, "can't read " + filename);
          return;
       }
@@ -331,7 +344,24 @@ public class service extends Service
          // There could be a higher song in the smm file, but we'll
          // ignore that until it becomes a problem.
 
-         play(playlist.get(playlistPos), pos);
+         switch (newState)
+         {
+         case Idle:
+            playing = PlayState.Idle;
+            break;
+
+         case Playing:
+            play(playlist.get(playlistPos), pos);
+            break;
+
+         case Paused:
+            pause (PlayState.Paused);
+            break;
+
+         case Paused_Transient:
+            pause (PlayState.Paused_Transient);
+            break;
+         }
 
       }
       catch (Fail e)
@@ -340,17 +370,17 @@ public class service extends Service
       }
       catch (java.io.FileNotFoundException e)
       {
-         utils.errorLog (this, "playlist file not found: " + filename);
+         utils.errorLog (this, "playlist file not found: " + filename, e);
          throw new Fail();
       }
       catch (java.io.IOException e)
       {
-         utils.errorLog (this, "error reading playlist file: "  + filename + ": " + e);
+         utils.errorLog (this, "error reading playlist file: "  + filename, e);
          throw new Fail();
       }
       catch (RuntimeException e)
       {
-         utils.errorLog (this, "playList: " + e);
+         utils.errorLog (this, "playList failed", e);
          throw new Fail();
       }
    }
@@ -370,17 +400,12 @@ public class service extends Service
       else if (playlistPos > 0)
       {
          playlistPos--;
+         play(playlist.get(playlistPos), 0);
       }
       else
       {
-         // at start of playlist; wrap
-         //
-         // We _don't_ set highestPlaylistPos here; the user is
-         // abusing the system, so they get what they get :)
-         playlistPos = playlist.size() - 1;
+         // at start of playlist; indicate that to the user by not playing
       }
-
-      play(playlist.get(playlistPos), 0);
    }
 
    // save/restore keys; global
@@ -406,10 +431,6 @@ public class service extends Service
 
          return;
       }
-      else
-      {
-         utils.debugLog("restoreState: external storage mounted: " + Environment.getExternalStorageState());
-      }
 
       // External storage may have changed since saveState() was
       // called. In particular, we assume SMM has edited the playlist
@@ -423,6 +444,10 @@ public class service extends Service
       playlistFilename  = storage.getString(keyPlaylistFilename, null);
       currentFile       = storage.getString(playlistFilename + keyCurrentFile, null);
 
+      utils.verboseLog
+         ("restoreState: " + playing + ", " +
+          playlistDirectory + ", " + playlistFilename + ", " + currentFile);
+
       if (playlistDirectory != null && playlistFilename != null)
       {
          try
@@ -430,7 +455,8 @@ public class service extends Service
             playList
                (playlistDirectory + "/" + playlistFilename + ".m3u",
                 currentFile,
-                storage.getInt(playlistFilename + keyCurrentPos, 0));
+                storage.getInt(playlistFilename + keyCurrentPos, 0),
+                playing);
          }
          catch (Fail e)
          {
@@ -449,21 +475,6 @@ public class service extends Service
 
          notifyChange(utils.META_CHANGED);
          notifyChange(utils.PLAYSTATE_CHANGED);
-      }
-
-      switch (playing)
-      {
-      case Idle:
-      case Playing:
-         break;
-
-      case Paused:
-         pause (PlayState.Paused);
-         break;
-
-      case Paused_Transient:
-         pause (PlayState.Paused_Transient);
-         break;
       }
    }
 
@@ -630,6 +641,8 @@ public class service extends Service
             {
                final String command = intent.getStringExtra("command");
 
+               utils.verboseLog(command);
+
                if (command.equals(utils.COMMAND_DUMP_LOG))
                {
                   dumpLog();
@@ -646,7 +659,7 @@ public class service extends Service
                {
                   try
                   {
-                     playList(intent.getStringExtra("playlist"), null, 0);
+                     playList(intent.getStringExtra("playlist"), null, 0, PlayState.Playing);
                   }
                   catch (Fail e)
                   {
@@ -706,6 +719,11 @@ public class service extends Service
        {
           public void onAudioFocusChange(int focusChange)
           {
+             utils.verboseLog
+                ("onAudioFocusChange focusChange => " + focusChange +
+                 ", haveAudioFocus => " + haveAudioFocus +
+                 ", playing => " + playing);
+
              if (focusChange == AudioManager.AUDIOFOCUS_LOSS)
              {
                 haveAudioFocus = false;
@@ -716,10 +734,7 @@ public class service extends Service
              {
                 haveAudioFocus = false;
 
-                if (service.playing == PlayState.Playing)
-                {
-                   pause(PlayState.Paused_Transient);
-                }
+                pause(PlayState.Paused_Transient);
              }
              else if (focusChange == AudioManager.AUDIOFOCUS_GAIN)
              {
@@ -762,10 +777,13 @@ public class service extends Service
       {
          public boolean onError(MediaPlayer mp, int what, int extra)
          {
-            utils.debugLog("MediaPlayer server died: " + what + "," + extra);
+            utils.verboseLog("MediaPlayer onError: " + what + "," + extra);
+
             switch (what)
             {
-            case MediaPlayer.MEDIA_ERROR_SERVER_DIED:
+            case MediaPlayer.MEDIA_ERROR_SERVER_DIED: // = 100
+               utils.verboseLog("recreating MediaPlayer");
+
                mediaPlayer.release();
                createMediaPlayer();
                // Since we don't know why it died, just trying again seems
@@ -777,9 +795,11 @@ public class service extends Service
                };
 
                return true;
+
             default:
-               // OnCompletion will be called
-               return false;
+               utils.verboseLog("unknown MediaPlayer error code");
+               // onCompletion will _not_ be called
+               return true;
             }
          }
       };
@@ -850,6 +870,8 @@ public class service extends Service
 
    @Override public void onDestroy()
    {
+      utils.verboseLog("onDestroy");
+
       saveState();
 
       mediaPlayer.reset();
@@ -868,9 +890,13 @@ public class service extends Service
 
    @Override public int onStartCommand(Intent intent, int flags, int startId)
    {
-      // intent is null if the service is restarted by Android after a
-      // crash.
-      if (intent != null && intent.getAction() != null)
+      if (intent == null)
+      {
+         // intent is null if the service is restarted by Android
+         // after a crash.
+         utils.verboseLog("onStartCommand null intent");
+      }
+      else if (intent.getAction() != null)
       {
          utils.errorLog(this, "onStartCommand got unexpected intent: " + intent);
       }
@@ -885,7 +911,7 @@ public class service extends Service
       {
          PrintWriter writer = new PrintWriter(new FileWriter(logFilename));
 
-         utils.debugDump(writer);
+         dump(null, writer, null);
          utils.debugClear();
          writer.close();
          utils.infoLog(this, "log written to " + logFilename);

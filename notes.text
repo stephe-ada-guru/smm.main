@@ -2,7 +2,16 @@
 build/Makefile
 (dvc-status)
 
-doesn't restart after navigation interrupt
+stephe's music vs beyondpod
+    start stephe's music playing
+    start beyondpod playing (without pausing stephe's music)
+        beyondpod takes audiofocus
+    when beyondpod ends a track, stephe's music starts up, beyondpod doesn't continue
+
+random restart from beginning of playlist
+
+
+save/restore data not on external
 
 support touch without drag
 
@@ -31,6 +40,7 @@ user notes while playing
     don't play
     keep before
     check for new by this artist
+    add to best list
 
  later
 monitor broadcasts from astro player

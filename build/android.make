@@ -1,4 +1,10 @@
 # Make rules for building Android apps in Java, using javac and Android SDK tools
+#
+# Environment/make variables:
+#
+# ANDROID_SDK          : contains platforms/android-*/android.jar, set in ~/.emacs
+# ANDROID_PROJECT_PATH : source directory of all files, under ../src, set in main Makefile
+# ANDROID_PROJECT_NAME : main activity name, set in main Makefile
 
 # paths relative to package/build
 vpath %.java  ../src/$(ANDROID_PROJECT_PATH)
