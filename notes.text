@@ -2,37 +2,16 @@
 build/Makefile
 (dvc-status)
 
-stephe's music vs beyondpod
-    start stephe's music playing
-    start beyondpod playing (without pausing stephe's music)
-        beyondpod takes audiofocus
-    when beyondpod ends a track, stephe's music starts up, beyondpod doesn't continue
-
-random restart from beginning of playlist
-
-
-save/restore data not on external
-
-support touch without drag
-
 fix smm to match
-
-on start after clear data, get 'media player server died: -30, 0'
-
-ff/rew
-
-add to menu:
-    dump activity log
-    clear server state
-    About
-
-get text scale from preference
-    new activity that extends PreferenceActivity
-
-review FIXME
 
 smm download_playlist song filenames are not guarranteed unique
     use artist/album/song
+
+
+add to menu:
+    About
+
+review FIXME
 
 user notes while playing
     output to <playlist>-notes.m3u
@@ -41,6 +20,13 @@ user notes while playing
     keep before
     check for new by this artist
     add to best list
+
+progressbar support touch without drag
+
+ff/rew
+
+get text scale from preference
+    new activity that extends PreferenceActivity
 
  later
 monitor broadcasts from astro player

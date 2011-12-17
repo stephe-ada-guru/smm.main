@@ -64,7 +64,7 @@ public class service extends Service
 
    enum PlayState
    {
-      Idle,
+     Idle,
      //  Media_Player has no song Loaded
 
      Playing,
@@ -439,7 +439,7 @@ public class service extends Service
 
       SharedPreferences storage = getSharedPreferences(utils.serviceClassName, MODE_PRIVATE);
 
-      playing           = PlayState.valueOf(storage.getString(keyPlaying, PlayState.Paused.toString()));
+      playing           = PlayState.valueOf(storage.getString(keyPlaying, PlayState.Idle.toString()));
       playlistDirectory = storage.getString(keyPlaylistDirectory, null);
       playlistFilename  = storage.getString(keyPlaylistFilename, null);
       currentFile       = storage.getString(playlistFilename + keyCurrentFile, null);
@@ -492,7 +492,12 @@ public class service extends Service
       editor.putString(keyPlaying, playing.toString());
       editor.putString(keyPlaylistDirectory, playlistDirectory);
       editor.putString(keyPlaylistFilename, playlistFilename);
-      editor.putString(playlistFilename + keyCurrentFile, currentFile);
+
+      // currentFile is null if playing is Idle; this gives proper restore.
+      editor.putString
+         (playlistFilename + keyCurrentFile,
+          (playlistPos == -1) ? null : playlist.get(playlistPos));
+
       editor.putInt
          (playlistFilename + keyCurrentPos,
           (playing == PlayState.Idle) ? 0 : mediaPlayer.getCurrentPosition());
