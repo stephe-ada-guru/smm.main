@@ -48,6 +48,7 @@ public class activity extends android.app.Activity
    private static final int DIALOG_PLAYLIST = 1;
    private static final int MENU_QUIT       = 0;
    private static final int MENU_DUMP_LOG   = 1;
+   private static final int MENU_SAVE_STATE = 2;
 
    // Main UI members
 
@@ -342,6 +343,7 @@ public class activity extends android.app.Activity
       super.onCreateOptionsMenu(menu);
       menu.add(0, MENU_QUIT, 0, R.string.menu_quit);
       menu.add(0, MENU_DUMP_LOG, 0, R.string.menu_dump_log);
+      menu.add(0, MENU_SAVE_STATE, 0, R.string.menu_save_state);
       return true; // display menu
    }
 
@@ -358,6 +360,10 @@ public class activity extends android.app.Activity
 
       case MENU_DUMP_LOG:
          sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_DUMP_LOG));
+         break;
+
+      case MENU_SAVE_STATE:
+         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_SAVE_STATE));
          break;
 
       default:

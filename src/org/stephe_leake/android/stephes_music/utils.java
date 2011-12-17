@@ -54,6 +54,7 @@ public class utils
    public static final String COMMAND_PLAYLIST       = "org.stephe_leake.android.stephes_music.command.playlist";
    // playlist  string (abs file name)
    public static final String COMMAND_PREVIOUS       = "org.stephe_leake.android.stephes_music.command.previous";
+   public static final String COMMAND_SAVE_STATE     = "org.stephe_leake.android.stephes_music.command.save_state";
    public static final String COMMAND_SEEK           = "org.stephe_leake.android.stephes_music.command.seek";
    // position  int (milliseconds)
    public static final String COMMAND_TOGGLEPAUSE    = "org.stephe_leake.android.stephes_music.command.togglepause";

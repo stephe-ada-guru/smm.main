@@ -25,6 +25,7 @@
   <string name="null_playlist">(click to select a playlist)</string>
   <string name="menu_quit">Quit</string>
   <string name="menu_dump_log">Dump Log</string>
+  <string name="menu_save_state">Save State</string>
 
   <!-- Do not translate, but may be locale-dependent. -->
   

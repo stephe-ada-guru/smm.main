@@ -149,7 +149,7 @@ public class service extends Service
          {
             final MediaMetadataRetriever retriever = new MediaMetadataRetriever();
 
-            final String absFile = playlistDirectory + "/" + currentFile;
+            final String absFile = playlistDirectory + "/" + playlist.get(playlistPos);
 
             try
             {
@@ -232,7 +232,6 @@ public class service extends Service
          catch (IOException e)
          {
             // From SetDataSource
-            currentFile = null;
 
             // We consider this a programmer error, because it
             // probably indicates an SMM sync bug. It could also be a
@@ -242,8 +241,6 @@ public class service extends Service
             notifyChange(utils.META_CHANGED);
             return;
          }
-
-         currentFile = path;
 
          unpause();
 
@@ -263,13 +260,12 @@ public class service extends Service
 
    class Fail extends RuntimeException {}
 
-   private void playList(final String filename, String currentFile, int pos, PlayState newState)
+   private void playList(final String filename, PlayState newState)
       throws Fail
    {
       // Start playing playlist 'filename' (absolute path).
       //
-      // If 'currentFile' (relative to 'filename' directory) is null,
-      // lookup the current file for the playlist from
+      // Lookup the current file for the playlist from
       // SharedPreferences. If non-null, start at that file.
 
       final File playlistFile        = new File(filename);
@@ -278,24 +274,21 @@ public class service extends Service
       // Activity only sends filenames that end in .m3u; strip that
       tmpPlaylistFilename  = tmpPlaylistFilename.substring(0, tmpPlaylistFilename.length() - 4);
 
-      if (currentFile == null)
-      {
-         SharedPreferences storage = getSharedPreferences(utils.serviceClassName, MODE_PRIVATE);
+      SharedPreferences storage = getSharedPreferences(utils.serviceClassName, MODE_PRIVATE);
 
-         currentFile = storage.getString(tmpPlaylistFilename + keyCurrentFile, null);
-
-         pos = storage.getInt(tmpPlaylistFilename + keyCurrentPos, 0);
-      }
+      final String currentFile = storage.getString(tmpPlaylistFilename + keyCurrentFile, null);
+      final int    pos         = storage.getInt(tmpPlaylistFilename + keyCurrentPos, 0);
 
       if (!playlistFile.canRead())
       {
          // This is an SMM error, or failing sdcard
          utils.errorLog(this, "can't read " + filename);
-         return;
+         throw new Fail();
       }
 
       try
       {
+         // FIXME: reuse playlistFile?
          BufferedReader               in          = new BufferedReader (new FileReader (filename));
          String                       line        = in.readLine();
          java.util.LinkedList<String> tmpPlaylist = new LinkedList<String>();
@@ -332,13 +325,10 @@ public class service extends Service
             throw new Fail();
          }
 
-         // User will want to resume the current playlist at some point.
-         saveState();
-
-         playlist          = tmpPlaylist;
-         playlistPos       = startAt;
          playlistDirectory = playlistFile.getParent();
          playlistFilename  = tmpPlaylistFilename;
+         playlist          = tmpPlaylist;
+         playlistPos       = startAt;
 
          highestPlaylistPos = playlistPos;
          // There could be a higher song in the smm file, but we'll
@@ -355,11 +345,14 @@ public class service extends Service
             break;
 
          case Paused:
-            pause (PlayState.Paused);
-            break;
-
          case Paused_Transient:
-            pause (PlayState.Paused_Transient);
+            if (playing == PlayState.Idle)
+            {
+               // can't go directly from Idle to Paused
+               // FIXME: this gives a brief burst of music
+               play(playlist.get(playlistPos), pos);
+            }
+            pause (newState);
             break;
          }
 
@@ -424,11 +417,7 @@ public class service extends Service
       {
          utils.infoLog(this, "external storage not mounted; can't restore");
 
-         playing           = PlayState.Idle;
-         playlistDirectory = null;
-         playlistFilename  = null;
-         currentFile       = null;
-
+         setIdleNull();
          return;
       }
 
@@ -439,14 +428,11 @@ public class service extends Service
 
       SharedPreferences storage = getSharedPreferences(utils.serviceClassName, MODE_PRIVATE);
 
-      playing           = PlayState.valueOf(storage.getString(keyPlaying, PlayState.Idle.toString()));
-      playlistDirectory = storage.getString(keyPlaylistDirectory, null);
-      playlistFilename  = storage.getString(keyPlaylistFilename, null);
-      currentFile       = storage.getString(playlistFilename + keyCurrentFile, null);
+      final PlayState newPlaying     = PlayState.valueOf(storage.getString(keyPlaying, PlayState.Idle.toString()));
+      playlistDirectory              = storage.getString(keyPlaylistDirectory, null);
+      playlistFilename               = storage.getString(keyPlaylistFilename, null);
 
-      utils.verboseLog
-         ("restoreState: " + playing + ", " +
-          playlistDirectory + ", " + playlistFilename + ", " + currentFile);
+      utils.verboseLog ("restoreState: " + newPlaying + ", " + playlistDirectory + ", " + playlistFilename);
 
       if (playlistDirectory != null && playlistFilename != null)
       {
@@ -454,24 +440,19 @@ public class service extends Service
          {
             playList
                (playlistDirectory + "/" + playlistFilename + ".m3u",
-                currentFile,
-                storage.getInt(playlistFilename + keyCurrentPos, 0),
-                playing);
+                newPlaying);
          }
          catch (Fail e)
          {
-            playing           = PlayState.Idle;
-            playlistDirectory = null;
-            playlistFilename  = null;
-            currentFile       = null;
+            setIdleNull();
+
+            notifyChange(utils.META_CHANGED);
+            notifyChange(utils.PLAYSTATE_CHANGED);
          }
       }
       else
       {
-         playing           = PlayState.Idle;
-         playlistDirectory = null;
-         playlistFilename  = null;
-         currentFile       = null;
+         setIdleNull();
 
          notifyChange(utils.META_CHANGED);
          notifyChange(utils.PLAYSTATE_CHANGED);
@@ -493,7 +474,6 @@ public class service extends Service
       editor.putString(keyPlaylistDirectory, playlistDirectory);
       editor.putString(keyPlaylistFilename, playlistFilename);
 
-      // currentFile is null if playing is Idle; this gives proper restore.
       editor.putString
          (playlistFilename + keyCurrentFile,
           (playlistPos == -1) ? null : playlist.get(playlistPos));
@@ -507,18 +487,22 @@ public class service extends Service
       writeSMMFile();
    }
 
+   private void setIdleNull()
+   {
+      playing           = PlayState.Idle;
+      playlistDirectory = null;
+      playlistFilename  = null;
+      playlistPos       = -1;
+   }
+
    private void stop()
    {
-      if (currentFile != null)
-      {
-         mediaPlayer.reset();
+      mediaPlayer.reset();
 
-         currentFile = null;
-         playing     = PlayState.Idle;
+      playing = PlayState.Idle;
 
-         notifyChange(utils.PLAYSTATE_CHANGED);
-         handler.removeMessages(UPDATE_DISPLAY);
-      };
+      notifyChange(utils.PLAYSTATE_CHANGED);
+      handler.removeMessages(UPDATE_DISPLAY);
    }
 
    private void unpause()
@@ -664,7 +648,10 @@ public class service extends Service
                {
                   try
                   {
-                     playList(intent.getStringExtra("playlist"), null, 0, PlayState.Playing);
+                     // User will want to resume the current playlist at some point.
+                     saveState();
+
+                     playList(intent.getStringExtra("playlist"), PlayState.Playing);
                   }
                   catch (Fail e)
                   {
@@ -674,6 +661,10 @@ public class service extends Service
                else if (command.equals (utils.COMMAND_PREVIOUS))
                {
                   previous();
+               }
+               else if (command.equals(utils.COMMAND_SAVE_STATE))
+               {
+                  saveState();
                }
                else if (command.equals (utils.COMMAND_SEEK))
                {
@@ -759,7 +750,6 @@ public class service extends Service
                 case Paused_Transient:
                    // Most likely after a Navigator message; give
                    // listener time to process it.
-                   utils.debugLog("onAudioFocusChange: Paused_Transient AUDIOFOCUS_GAIN");
                    handler.sendEmptyMessageDelayed(UNPAUSE, 1000);
                 }
              }
@@ -794,9 +784,9 @@ public class service extends Service
                // Since we don't know why it died, just trying again seems
                // problematic, but it is the most user friendly if it
                // works. This will _not_ be easy to debug!
-               if (service.playing == PlayState.Playing)
+               if (playing == PlayState.Playing)
                {
-                  play (currentFile, 0);
+                  play (playlist.get(playlistPos), 0);
                };
 
                return true;
@@ -823,10 +813,6 @@ public class service extends Service
    private String playlistFilename;
    // Relative to Playlist_Directory, without extension (suitable
    // for user display). null if no playlist is current.
-
-   private String currentFile;
-   // File name of currently playing track, relative to
-   // playlistDirectory. null if no file is current.
 
    java.util.LinkedList<String> playlist;
    int                          playlistPos;
@@ -867,7 +853,7 @@ public class service extends Service
       playlist           = new LinkedList<String>();
       playlistPos        = -1;
       highestPlaylistPos = playlistPos;
-      playing            = PlayState.Paused;
+      playing            = PlayState.Idle;
       haveAudioFocus     = false;
 
       restoreState();
@@ -876,6 +862,14 @@ public class service extends Service
    @Override public void onDestroy()
    {
       utils.verboseLog("onDestroy");
+
+      // Android sometimes restarts this service even though we have
+      // quit and the user did not request it. So if we save
+      // PlayState.playing, we will start playing when the user did
+      // not request it, and without an activity to control us! So
+      // force pause.
+
+      pause(PlayState.Paused);
 
       saveState();
 
@@ -933,7 +927,7 @@ public class service extends Service
       writer.println("playlistDirectory  : " + playlistDirectory);
       writer.println("playlistFilename   : " + playlistFilename);
       writer.println("playlist size      : " + playlist.size());
-      writer.println("currentFile        : " + currentFile);
+      writer.println("currentFile        : " + playlist.get(playlistPos));
       writer.println("playlistPos        : " + playlistPos);
       writer.println("highestPlaylistPos : " + highestPlaylistPos);
 
