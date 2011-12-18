@@ -15,8 +15,9 @@ APK_NAME := $(subst /,.,$(ANDROID_PROJECT_PATH)).$(ANDROID_PROJECT_NAME)-release
 
 ANDROID_PROJECT_CLASS := $(addsuffix .class,$(ANDROID_PROJECT_NAME) $(ANDROID_PROJECT_SRC))
 
-$(APK_NAME) : $(ANDROID_PROJECT_CLASS)
 $(APK_NAME) : ../bin/classes/$(ANDROID_PROJECT_PATH)/R.class
+$(APK_NAME) : $(ANDROID_PROJECT_CLASS)
+$(APK_NAME) : ../AndroidManifest.xml
 	cd ..; ant release
 
 ../bin/classes/$(ANDROID_PROJECT_PATH)/R.class : ../gen/$(ANDROID_PROJECT_PATH)/R.java

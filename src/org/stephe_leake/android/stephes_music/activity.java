@@ -27,6 +27,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.view.Menu;
@@ -44,11 +46,12 @@ import java.lang.Integer;
 public class activity extends android.app.Activity
 {
    // constants
-   private static final int maxProgress     = 1000;
-   private static final int DIALOG_PLAYLIST = 1;
-   private static final int MENU_QUIT       = 0;
-   private static final int MENU_DUMP_LOG   = 1;
-   private static final int MENU_SAVE_STATE = 2;
+   private static final int maxProgress      = 1000;
+   private static final int DIALOG_PLAYLIST  = 1;
+   private static final int MENU_QUIT        = 0;
+   private static final int MENU_DUMP_LOG    = 1;
+   private static final int MENU_SAVE_STATE  = 2;
+   private static final int MENU_PREFERENCES = 3;
 
    // Main UI members
 
@@ -62,8 +65,7 @@ public class activity extends android.app.Activity
    private SeekBar     progressBar;
 
    // Cached values
-   private int    trackDuration = 0; // track duration in milliseconds
-   private String playlistDir;
+   private int trackDuration = 0; // track duration in milliseconds
 
    private AlertDialog playlistDialog;
 
@@ -196,8 +198,7 @@ public class activity extends android.app.Activity
 
          setContentView(R.layout.main);
 
-         startService
-            (new Intent().setComponent(new ComponentName (this, utils.serviceClassName)));
+         startService (new Intent(this, service.class));
 
          // Set up displays, top to bottom left to right
 
@@ -227,9 +228,6 @@ public class activity extends android.app.Activity
          playlistTitle = (TextView) findViewById(R.id.playlistTitle);
          playlistTitle.setTextSize(playlistTitle.getTextSize()); // not scaled to save screen space
          playlistTitle.setOnClickListener(playlistListener);
-
-         // FIXME: get playlist dir from preferences
-         playlistDir = "/sdcard/Audio";
 
          if (intent.getAction() == null || // destroyed/restored (ie for screen rotate)
              intent.getAction().equals(Intent.ACTION_MAIN)) // launched directly by user
@@ -286,7 +284,7 @@ public class activity extends android.app.Activity
       }
    }
 
-   @Override protected Dialog onCreateDialog(int id)
+   @Override protected Dialog onCreateDialog(int id, Bundle args)
    {
       switch (id)
       {
@@ -294,9 +292,18 @@ public class activity extends android.app.Activity
            {
               try
               {
-                 final File          playlistDir    = new File (this.playlistDir);
+                 SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+
+                 final File playlistDir = new File (prefs.getString("playlist_directory", "/sdcard/Music"));
+
                  final FileExtFilter playlistFilter = new FileExtFilter (".m3u");
                  final String[] playlists           = playlistDir.list (playlistFilter);
+
+                 if (playlists == null || playlists.length == 0)
+                 {
+                    utils.infoLog(this, "no playlists found in " + playlistDir);
+                    return null;
+                 }
 
                  playlistDialog = new AlertDialog.Builder(this)
                     .setTitle(R.string.dialog_playlist)
@@ -326,7 +333,7 @@ public class activity extends android.app.Activity
               }
               catch (Exception e)
               {
-                 utils.errorLog(this, "create playlist dialog ", e);
+                 utils.errorLog(this, "create playlist dialog failed ", e);
                  return null;
               }
            }
@@ -344,6 +351,7 @@ public class activity extends android.app.Activity
       menu.add(0, MENU_QUIT, 0, R.string.menu_quit);
       menu.add(0, MENU_DUMP_LOG, 0, R.string.menu_dump_log);
       menu.add(0, MENU_SAVE_STATE, 0, R.string.menu_save_state);
+      menu.add(0, MENU_PREFERENCES, 0, R.string.menu_preferences);
       return true; // display menu
    }
 
@@ -364,6 +372,10 @@ public class activity extends android.app.Activity
 
       case MENU_SAVE_STATE:
          sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_SAVE_STATE));
+         break;
+
+      case MENU_PREFERENCES:
+         startActivity (new Intent(this, preferences.class));
          break;
 
       default:

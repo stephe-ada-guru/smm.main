@@ -1,12 +1,9 @@
  current tasks
 build/Makefile
 (dvc-status)
+~/Misc/android.text
 
-fix smm to match
-
-smm download_playlist song filenames are not guarranteed unique
-    use artist/album/song
-
+TV needs dpad navigation
 
 add to menu:
     About
@@ -14,23 +11,66 @@ add to menu:
 review FIXME
 
 user notes while playing
-    output to <playlist>-notes.m3u
+    output to <playlist>.notes
 
     don't play
     keep before
-    check for new by this artist
+    want more (check for new by this artist)
     add to best list
-
-smm process notes
 
 progressbar support touch without drag
 
 ff/rew
 
 get text scale from preference
-    new activity that extends PreferenceActivity
+
+ smm
+    use .last
+
+    download_playlist song filenames are not guarranteed unique
+        use artist/album/song
+
+    small drive!
+        handle drive is full nicely
+        need new drive to get rid of stupid blinking light anyway
+
+    process notes
+
 
  later
+transfer files to TV
+    usb drive sneakernet for now
+        path is /mnt/media/usb.2A9A-67AE
+            need a way to enumerate or search for that
+                find media player source
+
+    mtp (Media Transfer Protocol)
+        windows development kit: /Archive/Android/mtppk12.exe
+            /Apps/microsoft_mtpdk
+        may need windows 7 for MTP over TCP/IP
+        in android level 12
+            not HTC
+            TV is at 'firmware version 3.1' = API level 12
+
+        TV doesn't show up on (need new computer name)
+
+    can use adb?
+        has push, need read/edit
+
+    ftp
+        there is a Microsoft ftp API
+
+    scp/sftp
+        /sdcard/Music (good default for playlist_directory)
+
+        there is an Android sftp client
+
+        no microsoft sftp driver; use exec to run cygwin?
+
+
+    in-app socket protocol for metadata, sftp/ftp for music files
+
+
 monitor broadcasts from astro player
     write smm file
 

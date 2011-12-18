@@ -19,14 +19,25 @@
   500, Boston, MA 02110-1335, USA.
 -->
 <resources>
-  <!--  translate -->
+  <!-- translate -->
+
+  <!-- misc -->
   <string name="app_name">&quot;Stephe's Music Player&quot;</string>
   <string name="dialog_playlist">Select a playlist</string>
   <string name="null_playlist">(click to select a playlist)</string>
+
+  <!-- menu -->
   <string name="menu_quit">Quit</string>
   <string name="menu_dump_log">Dump Log</string>
   <string name="menu_save_state">Save State</string>
+  <string name="menu_preferences">Preferences</string>
 
+  <!-- preference -->
+  <string name="preferences_activity_name">&quot;Stephe's Music Player Preferences&quot;</string>
+  <string name="playlist_directory_preference_title">playlist directory</string>
+  <string name="playlist_directory_summary">absolute path where playlists are stored</string>
+  <string name="playlist_directory_dialog_title">set playlist directory</string>
+  
   <!-- Do not translate, but may be locale-dependent. -->
   
   <!-- Duration format for duration < 1 hour -->
