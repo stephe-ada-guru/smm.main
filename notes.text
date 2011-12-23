@@ -3,12 +3,27 @@ build/Makefile
 (dvc-status)
 ~/Misc/android.text
 
-TV needs dpad navigation
+restore button background on htc
+
+instrumental has proper first song, but says it's 60/104 instead of 0/104
+
+save on next in case of crash
+
+onerror check play state; triggered by beyondpod causing player crash
+
+on tv:
+    is usb unmount handled same as sdcard umount?
 
 add to menu:
     About
 
 review FIXME
+    get text scale from preference
+    // FIXME: get PREV_THRESHOLD from preferences
+service.java:292:         // FIXME: reuse playlistFile?
+
+in progressbar:
+    if storage.pos > max, change max (bad .mp3 metadata)
 
 user notes while playing
     output to <playlist>.notes
@@ -21,8 +36,6 @@ user notes while playing
 progressbar support touch without drag
 
 ff/rew
-
-get text scale from preference
 
  smm
     use .last
@@ -70,68 +83,42 @@ transfer files to TV
 
     in-app socket protocol for metadata, sftp/ftp for music files
 
+dpad navigation
+    now active, but disappears in emulator when has focus!
+        try on tv
+            slider ok
+            prev, next ok, but different highlight color
+            play/pause no change on select
+            playlist no change on select
+        try on htc
+            no dpad
+            labels on buttons almost disappear! (which is why I had changed the background)
+                tv buttons have black background, which is what I wanted.
 
-monitor broadcasts from astro player
-    write smm file
 
-android scanner sometimes duplicates playlist
-    because stephes_music.service is holding a cursor open into it, so it can't be deleted?
+    need to make my own button images, or fix these somehow
+        add preference to set backgrounds as before
+            "override default button background" boolean
+            default based on platform?
 
-audio getting noisy
-    distinguish bluetooth from headphone disconnect?
+        override view.onfocuschanged
+            emulator appears to change background
+            TV changes foreground
+            phone don't know (could try on robin's :)
 
-need ff/rew
+    HTC has different .png than android-10!
+        workaround; set button background to transparent
+            that loses the orange flash on press - good/bad?
+        better: see /Apps/Android/android-sdk/platforms/android-10/data/res/drawable/media_button_background.xml;
+            replace state_pressed=false case with transparent image
 
-race condition/error on next song; activity closed, sent pause
-
-playlist over smb
-    can't use scanner?
-    only Ghost Commander can see files!
-
-Google TV version!
-    blog says market is coming to Google TV (no dates)
-
-get text scale from preference
-    new activity that extends PreferenceActivity
+    better to implement play button?
+        override view.onkeylistener
+        for top level activity view
+            did that, doesn't work; give up
 
 add song count in playlist name list
     can't modify bound list display, need to reimplement!
-
-write played file instead of edit file?
-
-bluetooth button doesn't work
-    no music playing:
-        gets error beep in headset
-        no messages in service log
-    music playing:
-        no error beep
-        double click; starts call to Kathy
-    need system event sniffer!
-    /Projects/eclipse_scratch/IntentSniffer - doesn't do wild cards!
-    long press gives voice dialer :)
-    check plantronics website
-        nothing; sent email
-
-    log keycodes in 'default:' case
-
-set up JUnit/AUnit tests that send various messages, observe results
-
-edit calendar event db to add song notes, link to audio recording
-
-server deals with database ids
-    that doesn't handle web streams?
-    maybe a different content provider?
-    can put a web url in a playlist?
-
-server sets text in RemoteViews!?
-
-podcasts:
-    download to sdcard
-        all in one directory
-        at home with wifi, big screen
-    present list of that directory
-        with bookmark info (not started, percent done)
-    delete when done
 
 need way to choose files without relying on file manager
     offer to use MediaStore.Audio (like everyone else does :)
@@ -142,29 +129,6 @@ need way to choose files without relying on file manager
             file browser should be a dialog?
         http://developer.android.com/resources/tutorials/views/hello-autocomplete.html
         start "dialog" with startActivityForResult?
-
-need About
-
-smm download_playlist song filenames are not guarranteed unique
-    use artist/album/song
-
-http://en.wikipedia.org/wiki/M3U
-    can contain urls; used for web streams for example
-    may affect front end handler (detecting playlist)
-
-server stores bookmarks in MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
-    offer to restore from there
-    offer to clean up list
-
-find out what "select player" is all about
-    wireless connection to tv/stereo system?
-
-button color/background
-    HTC has different .png than android-10!
-    workaround; set button background to transparent
-        that loses the orange flash on press - good/bad?
-    better: see /Apps/Android/android-sdk/platforms/android-10/data/res/drawable/media_button_background.xml;
-        replace state_pressed=false case with transparent image
 
 preference to run service in foreground
 

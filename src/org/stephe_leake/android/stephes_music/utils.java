@@ -51,6 +51,7 @@ public class utils
    public static final String COMMAND_DUMP_LOG       = "org.stephe_leake.android.stephes_music.command.dump_log";
    public static final String COMMAND_NEXT           = "org.stephe_leake.android.stephes_music.command.next";
    public static final String COMMAND_PAUSE          = "org.stephe_leake.android.stephes_music.command.pause";
+   public static final String COMMAND_PLAY           = "org.stephe_leake.android.stephes_music.command.play";
    public static final String COMMAND_PLAYLIST       = "org.stephe_leake.android.stephes_music.command.playlist";
    // playlist  string (abs file name)
    public static final String COMMAND_PREVIOUS       = "org.stephe_leake.android.stephes_music.command.previous";

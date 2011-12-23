@@ -11,6 +11,11 @@ ANDROID_PROJECT_NAME := activity
 ANDROID_PROJECT_RESOURCES += ../res/layout/main.xml
 ANDROID_PROJECT_RESOURCES += ../res/values/strings.xml
 
+# all other source files for make dependencies
+ANDROID_PROJECT_SRC += preferences
+ANDROID_PROJECT_SRC += service
+ANDROID_PROJECT_SRC += utils
+
 SDK := /Apps/Android/android-sdk/platforms/android-10
 
 include android.make

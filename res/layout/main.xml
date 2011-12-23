@@ -22,7 +22,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:id="@+id/scrollView1" >
+    android:id="@+id/topScroll" >
   <LinearLayout
       android:orientation="vertical"
       android:gravity="top"
@@ -39,7 +39,7 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1px"
-        android:background="#ff7f7f7f" />
+        android:background="#ff7f7f7f" />  <!-- separator -->
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -50,7 +50,7 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1px"
-        android:background="#ff7f7f7f" />
+        android:background="#ff7f7f7f" /> <!-- separator -->
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -61,7 +61,7 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1px"
-        android:background="#ff7f7f7f" />
+        android:background="#ff7f7f7f" /> <!-- separator -->
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -72,11 +72,10 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1px"
-        android:background="#ffffffff"/>
+        android:background="#ffffffff"/> <!-- separator -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#ff5a5a5a"
         android:paddingTop="1dip"
         android:paddingBottom="4dip"
         android:orientation="horizontal">
@@ -86,34 +85,35 @@
           android:layout_height="match_parent"
           android:orientation="horizontal"
           android:layout_gravity="bottom"
+          android:background="#ff5a5a5a"
           android:layout_marginTop="1dip"
           android:layout_marginBottom="2dip"
-          android:gravity="center">
+          android:gravity="center"> <!-- background for transparent part of buttons -->
         <!-- buttons -->
         <ImageButton
             android:id="@+id/prev"
             style="@android:style/MediaButton.Previous"
-            android:background="#00000000"/>
+            android:background="#00000000"/> <!-- transparent -->
         <ImageButton
             android:id="@+id/play_pause"
             style="@android:style/MediaButton.Play"
-            android:background="#00000000"/>
+            android:background="#00000000"/> <!-- transparent -->
         <ImageButton
             android:id="@+id/next"
             style="@android:style/MediaButton.Next"
-            android:background="#00000000"/>
+            android:background="#00000000"/> <!-- transparent -->
       </LinearLayout>
       <LinearLayout
           android:orientation="vertical"
           android:gravity="top"
-          android:layout_width="wrap_content"
+          android:layout_width="match_parent"
           android:layout_height="match_parent"
           android:weightSum="1">
         <!-- times -->
         <TextView
             android:id="@+id/currenttime"
             android:textAppearance="?android:attr/textAppearanceMedium"
-            android:textSize="14sp"
+            android:textSize="12sp"
             android:textStyle="bold"
             android:gravity="center_horizontal"
             android:layout_width="match_parent"
@@ -121,7 +121,7 @@
         <TextView
             android:id="@+id/totaltime"
             android:textAppearance="?android:attr/textAppearanceMedium"
-            android:textSize="14sp"
+            android:textSize="12sp"
             android:textStyle="bold"
             android:gravity="center_horizontal"
             android:layout_width="match_parent"
@@ -130,7 +130,6 @@
     </LinearLayout>
     <SeekBar
         android:id="@android:id/progress"
-        android:background="#ff5a5a5a"
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"
         android:layout_height="36dip"
@@ -142,6 +141,7 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:id="@+id/playlistTitle"
+        android:focusable="true"
         android:text="(click to select playlist)"
         android:textAppearance="?android:attr/textAppearanceLarge"/>
   </LinearLayout>

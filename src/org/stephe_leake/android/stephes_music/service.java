@@ -120,7 +120,8 @@ public class service extends Service
          else
          {
             // at end of playlist; wrap
-            playlistPos = 0;
+            highestPlaylistPos = playlistPos;
+            playlistPos        = 0;
          };
 
          play(playlist.get(playlistPos), 0);
@@ -214,8 +215,6 @@ public class service extends Service
       // path must be relative to playlistDirectory
 
       // service.playing must be Idle (call Stop first)
-      //
-      // FIXME: merge stop here to avoid double notification on next, prev?
 
       try
       {
@@ -277,7 +276,7 @@ public class service extends Service
       SharedPreferences storage = getSharedPreferences(utils.serviceClassName, MODE_PRIVATE);
 
       final String currentFile = storage.getString(tmpPlaylistFilename + keyCurrentFile, null);
-      final int    pos         = storage.getInt(tmpPlaylistFilename + keyCurrentPos, 0);
+      int          pos         = 0;
 
       if (!playlistFile.canRead())
       {
@@ -310,6 +309,7 @@ public class service extends Service
                // doesn't much matter what we do; this ensures that
                // all of the playlist is played at least once.
                startAt = lineCount;
+               pos     = storage.getInt(tmpPlaylistFilename + keyCurrentPos, 0);
             }
 
             tmpPlaylist.add(line);
@@ -349,7 +349,6 @@ public class service extends Service
             if (playing == PlayState.Idle)
             {
                // can't go directly from Idle to Paused
-               // FIXME: this gives a brief burst of music
                play(playlist.get(playlistPos), pos);
             }
             pause (newState);
@@ -492,6 +491,7 @@ public class service extends Service
       playing           = PlayState.Idle;
       playlistDirectory = null;
       playlistFilename  = null;
+      playlist.clear();
       playlistPos       = -1;
    }
 
@@ -632,6 +632,7 @@ public class service extends Service
 
                utils.verboseLog(command);
 
+               // command alphabetical order
                if (command.equals(utils.COMMAND_DUMP_LOG))
                {
                   dumpLog();
@@ -643,6 +644,28 @@ public class service extends Service
                else if (command.equals (utils.COMMAND_PAUSE))
                {
                   pause(PlayState.Paused);
+               }
+               else if (command.equals (utils.COMMAND_PLAY))
+               {
+                  switch (service.playing)
+                  {
+                  case Idle:
+                     next();
+                     break;
+
+                  case Playing:
+                     break;
+
+                  case Paused:
+                     unpause();
+                     break;
+
+                  case Paused_Transient:
+                     // user wants to override
+                     unpause();
+                     break;
+
+                  };
                }
                else if (command.equals (utils.COMMAND_PLAYLIST))
                {

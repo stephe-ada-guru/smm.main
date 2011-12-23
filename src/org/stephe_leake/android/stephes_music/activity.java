@@ -31,12 +31,15 @@ import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.View.OnKeyListener;
 import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import java.io.FilenameFilter;
 import java.io.File;
@@ -53,9 +56,13 @@ public class activity extends android.app.Activity
    private static final int MENU_SAVE_STATE  = 2;
    private static final int MENU_PREFERENCES = 3;
 
+   // compatibility constants; these are not defined in API level 10,
+   // but we need them for higher level devices.
+   private static final int KEYCODE_MEDIA_PAUSE = 127;
+   private static final int KEYCODE_MEDIA_PLAY  = 126;
+
    // Main UI members
 
-   private TextView    playlistTitle;
    private TextView    artistTitle;
    private TextView    albumTitle;
    private TextView    songTitle;
@@ -63,6 +70,7 @@ public class activity extends android.app.Activity
    private TextView    totalTime;
    private ImageButton playPauseButton;
    private SeekBar     progressBar;
+   private TextView    playlistTitle;
 
    // Cached values
    private int trackDuration = 0; // track duration in milliseconds
@@ -71,7 +79,52 @@ public class activity extends android.app.Activity
 
    ////////// UI listeners
 
-   private ImageButton.OnClickListener Prev_Listener = new ImageButton.OnClickListener()
+   private ScrollView.OnKeyListener mediaControlListener = new ScrollView.OnKeyListener()
+      {
+         @Override public boolean onKey(View v, int keyCode, KeyEvent event)
+         {
+            switch (event.getAction())
+            {
+               // Alphabetical keycode order
+            case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
+               // FIXME: implement
+               break;
+
+            case KeyEvent.KEYCODE_MEDIA_NEXT:
+               sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_NEXT));
+               break;
+
+            case KEYCODE_MEDIA_PAUSE:
+               sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PAUSE));
+               break;
+
+            case KEYCODE_MEDIA_PLAY:
+               sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PLAY));
+               break;
+
+            case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
+               sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_TOGGLEPAUSE));
+               break;
+
+            case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
+               sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PREVIOUS));
+               break;
+
+            case KeyEvent.KEYCODE_MEDIA_REWIND:
+               // FIXME: implement
+               break;
+
+            case KeyEvent.KEYCODE_MEDIA_STOP:
+               sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PAUSE));
+               break;
+
+            default:
+            }
+            return false; // don't terminate event processing
+         }
+      };
+
+   private ImageButton.OnClickListener prevListener = new ImageButton.OnClickListener()
       {
          @Override public void onClick(View v)
          {
@@ -87,7 +140,7 @@ public class activity extends android.app.Activity
          }
       };
 
-   private ImageButton.OnClickListener Next_Listener = new ImageButton.OnClickListener()
+   private ImageButton.OnClickListener nextListener = new ImageButton.OnClickListener()
       {
          @Override public void onClick(View v)
          {
@@ -95,7 +148,7 @@ public class activity extends android.app.Activity
          }
       };
 
-    private OnSeekBarChangeListener Progress_Listener = new OnSeekBarChangeListener()
+    private OnSeekBarChangeListener progressListener = new OnSeekBarChangeListener()
        {
           long lastUserEventTime = 0;
 
@@ -202,6 +255,8 @@ public class activity extends android.app.Activity
 
          // Set up displays, top to bottom left to right
 
+         ((ScrollView) findViewById(R.id.topScroll)).setOnKeyListener(mediaControlListener);
+
          artistTitle = (TextView) findViewById(R.id.artistTitle);
          albumTitle  = (TextView) findViewById(R.id.albumTitle);
          songTitle   = (TextView) findViewById(R.id.songTitle);
@@ -210,19 +265,19 @@ public class activity extends android.app.Activity
          albumTitle.setTextSize(scale * albumTitle.getTextSize());
          songTitle.setTextSize(scale * songTitle.getTextSize());
 
-         ((ImageButton)findViewById(R.id.prev)).setOnClickListener(Prev_Listener);
+         ((ImageButton)findViewById(R.id.prev)).setOnClickListener(prevListener);
 
          playPauseButton = (ImageButton)findViewById(R.id.play_pause);
          playPauseButton.setOnClickListener(Play_Pause_Listener);
          playPauseButton.requestFocus();
 
-         ((ImageButton)findViewById(R.id.next)).setOnClickListener(Next_Listener);
+         ((ImageButton)findViewById(R.id.next)).setOnClickListener(nextListener);
 
          currentTime = (TextView)findViewById(R.id.currenttime);
          totalTime   = (TextView)findViewById(R.id.totaltime);
 
          progressBar = (SeekBar) findViewById(android.R.id.progress);
-         progressBar.setOnSeekBarChangeListener(Progress_Listener);
+         progressBar.setOnSeekBarChangeListener(progressListener);
          progressBar.setMax(maxProgress);
 
          playlistTitle = (TextView) findViewById(R.id.playlistTitle);
