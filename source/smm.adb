@@ -16,6 +16,7 @@
 --  the Free Software Foundation, 59 Temple Place - Suite 330, Boston,
 --  MA 02111-1307, USA.
 
+with Ada.IO_Exceptions;
 with Ada.Characters.Handling;
 with Ada.Directories;
 with Ada.Text_IO;
@@ -259,6 +260,82 @@ package body SMM is
 
    end Least_Recent_Songs;
 
+   procedure Edit_Playlist
+     (Playlist_File_Name : in String;
+      Last_File_Name     : in String)
+   is
+      use Ada.Directories;
+      use Ada.Text_IO;
+
+      Output_File_Name : constant String := Playlist_File_Name & ".tmp";
+
+      Input_File  : File_Type;
+      Output_File : File_Type;
+   begin
+      if Verbosity > 1 then
+         Put_Line ("editing playlist " & Playlist_File_Name);
+      end if;
+
+      begin
+         Open (Input_File, In_File, Last_File_Name);
+      exception
+      when Ada.IO_Exceptions.Name_Error =>
+         Put_Line ("last file " & Last_File_Name & " cannot be opened");
+         raise;
+      end;
+
+      --  special case; empty last file; nothing to do
+      if End_Of_Line (Input_File) then
+         Close (Input_File);
+         Delete_File (Last_File_Name);
+         return;
+      end if;
+
+      begin
+         Create (Output_File, Out_File, Output_File_Name);
+      exception
+      when Ada.IO_Exceptions.Name_Error =>
+         Put_Line ("tmp file " & Output_File_Name & " cannot be opened");
+         raise;
+      end;
+
+      declare
+         Last_Played : constant String := Get_Line (Input_File);
+         Found       : Boolean         := False;
+      begin
+         Close (Input_File);
+
+         begin
+            Open (Input_File, In_File, Playlist_File_Name);
+         exception
+         when Ada.IO_Exceptions.Name_Error =>
+            Put_Line ("playlist file " & Playlist_File_Name & " cannot be opened");
+            raise;
+         end;
+
+         loop
+            exit when End_Of_File (Input_File);
+
+            declare
+               Line : constant String := Get_Line (Input_File);
+            begin
+               if Found then
+                  Put_Line (Output_File, Line);
+               else
+                  Found := Line = Last_Played;
+               end if;
+            end;
+         end loop;
+         Close (Input_File);
+         Close (Output_File);
+      end;
+
+      Delete_File (Playlist_File_Name);
+      Rename (Output_File_Name, Playlist_File_Name);
+      Delete_File (Last_File_Name);
+
+   end Edit_Playlist;
+
    procedure Read_Playlist
      (File_Name  : in     String;
       Target_Dir : in     String;
@@ -268,7 +345,7 @@ package body SMM is
       File : File_Type;
    begin
       if Verbosity > 1 then
-         Put_Line ("processing playlist " & File_Name);
+         Put_Line ("reading playlist " & File_Name);
       end if;
 
       begin
@@ -280,14 +357,12 @@ package body SMM is
       end;
 
       --  special case; empty file
-      if End_Of_Line (File) then
-         if End_Of_File (File) then
-            Close (File);
+      if End_Of_File (File) then
+         Close (File);
 
-            Files := String_Lists.Empty_List;
+         Files := String_Lists.Empty_List;
 
-            return;
-         end if;
+         return;
       end if;
 
       loop -- exit on End_Error

@@ -2,7 +2,7 @@
 --
 --  Run all AUnit tests.
 --
---  Copyright (C) 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2009, 2011 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -20,7 +20,8 @@ pragma License (GPL);
 
 with AUnit.Test_Results.Text_Reporter;
 with AUnit.Test_Suites;
-with Test_First_Pass;
+with Test_First_Pass_Version_1;
+with Test_First_Pass_Version_2;
 with Test_Least_Recent;
 with Test_Play_Before;
 with Test_Second_Pass;
@@ -33,7 +34,8 @@ is
    Result : AUnit.Test_Results.Result;
 
 begin
-   Add_Test (Suite, new Test_First_Pass.Test_Case (Verbosity => 0, Debug => 0));
+   Add_Test (Suite, new Test_First_Pass_Version_1.Test_Case (Verbosity => 0, Debug => 0));
+   Add_Test (Suite, new Test_First_Pass_Version_2.Test_Case (Verbosity => 0, Debug => False));
    Add_Test (Suite, new Test_Least_Recent.Test_Case);
    Add_Test (Suite, new Test_Play_Before.Test_Case);
    Add_Test (Suite, new Test_Second_Pass.Test_Case (Verbosity => 0, Debug => 0));

@@ -1,8 +1,8 @@
 --  Abstract :
 --
---  Test playlists.first_pass
+--  Test playlists.first_pass, with .last file
 --
---  Copyright (C) 2007 - 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007 - 2009, 2011 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -20,11 +20,11 @@ pragma License (GPL);
 
 with Ada.Strings.Unbounded;
 with AUnit.Test_Cases; use AUnit.Test_Cases;
-package Test_First_Pass is
+package Test_First_Pass_Version_2 is
 
    type Test_Case
      (Verbosity : Integer;
-      Debug     : Integer)
+      Debug     : Boolean)
       is new Standard.AUnit.Test_Cases.Test_Case with null record;
 
    overriding procedure Register_Tests (T : in out Test_Case);
@@ -33,4 +33,4 @@ package Test_First_Pass is
 
    overriding procedure Set_Up_Case (T : in out Test_Case);
 
-end Test_First_Pass;
+end Test_First_Pass_Version_2;

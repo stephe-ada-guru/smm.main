@@ -24,7 +24,7 @@ with Ada.Text_IO;
 with SMM.First_Pass;
 with SAL.AUnit;
 with Test_Utils; use Test_Utils;
-package body Test_First_Pass is
+package body Test_First_Pass_Version_1 is
 
    procedure Nominal (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
    is
@@ -116,7 +116,7 @@ package body Test_First_Pass is
    is
       pragma Unreferenced (T);
    begin
-      return new String'("Test_First_Pass");
+      return new String'("Test_First_Pass_Version_1");
    end Name;
 
    overriding procedure Register_Tests (T : in out Test_Case)
@@ -145,4 +145,4 @@ package body Test_First_Pass is
       SMM.Verbosity := T.Verbosity;
    end Set_Up_Case;
 
-end Test_First_Pass;
+end Test_First_Pass_Version_1;

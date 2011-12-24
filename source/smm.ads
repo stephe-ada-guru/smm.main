@@ -92,6 +92,12 @@ package SMM is
       Equivalent_Keys => Standard."=",
       "="             => SAL.Config_Files."=");
 
+   procedure Edit_Playlist
+     (Playlist_File_Name : in String;
+      Last_File_Name     : in String);
+   --  Delete lines from start of playlist file up to and including
+   --  line in last file. Delete last file.
+
    procedure Read_Playlist
      (File_Name  : in     String;
       Target_Dir : in     String;

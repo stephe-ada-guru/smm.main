@@ -27,6 +27,7 @@ procedure SMM.First_Pass
    File_Count :    out Integer)
 is
    Playlist_File_Name : constant String := Category & ".m3u";
+   Last_File_Name     : constant String := Category & ".last";
    Target_Dir         : constant String := Category;
 
    Mentioned_Files : String_Lists.List;
@@ -52,11 +53,15 @@ is
 begin
    Ada.Directories.Set_Directory (Root_Dir);
 
-   Read_Playlist (Playlist_File_Name, Target_Dir, Mentioned_Files);
-
    if Verbosity > 1 then
       Put_Line ("processing directory (phase 1) " & Target_Dir);
    end if;
+
+   if Ada.Directories.Exists (Last_File_Name) then
+      Edit_Playlist (Playlist_File_Name, Last_File_Name);
+   end if;
+
+   Read_Playlist (Playlist_File_Name, Target_Dir, Mentioned_Files);
 
    --  Search Target_Dir, delete files not in playlist
 

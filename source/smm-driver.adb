@@ -46,9 +46,10 @@ is
       New_Line;
       Put_Line ("  download_playlist <category> <target_dir>");
       Put_Line ("    manage downloaded files and playlist:");
-      Put_Line ("    1) delete files in target_dir not in playlist target_dir/../category.m3u");
+      Put_Line ("    1) delete files in target_dir either not in playlist target_dir/../<category>.m3u,");
+      Put_Line ("       or already played (indicated in target_dir/../<category>.last)");
       Put_Line ("    2) download default amount of music to target_dir");
-      Put_Line ("    3) add new files to playlist");
+      Put_Line ("    3) delete played files, add new files to playlist, delete target_dir/../<category>.last");
       New_Line;
       Put_Line ("  playlist <category> [<file>] [--replace]");
       Put_Line ("    create a playlist in <file> (same songs as 'download' would do)");
