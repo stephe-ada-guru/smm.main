@@ -1,6 +1,6 @@
 ;;; dvc-revlist.el --- Revision list in DVC
 
-;; Copyright (C) 2005-2009 by all contributors
+;; Copyright (C) 2005-2009, 2011 by all contributors
 
 ;; Author: Matthieu Moy <Matthieu.Moy@imag.fr>
 
@@ -340,6 +340,7 @@ Function used to get the revision info at point")
     (define-key map [return] 'dvc-revlist-show-item)
     (define-key map [(meta return)] 'dvc-revlist-show-item-scroll-down)
     (define-key map [?=]              'dvc-revlist-diff)
+    (define-key map [(meta ?D)]       'dvc-revlist-diff)
     (define-key map [(control ?=)]    'dvc-revlist-diff-to-current-tree)
     (define-key map [(meta ?=)]       'dvc-revlist-diff-scroll-down)
     (define-key map (dvc-prefix-toggle ?d) 'dvc-revlist-toggle-date)
