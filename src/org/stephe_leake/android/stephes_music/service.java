@@ -49,16 +49,12 @@ import java.util.LinkedList;
 
 public class service extends Service
 {
-   // used to specify whether enqueue() should start playing
-   // the new list of files right away, next or once all the currently
-   // queued files have been played
-
    //  Internal Messages used for delays
    private static final int UNPAUSE        = 3;
    private static final int UPDATE_DISPLAY = 4;
 
    // misc constants
-   private static final long PREV_THRESHOLD = 5000;
+   private static final int PREV_THRESHOLD = 5000;
    // milliseconds; see previous()
    // FIXME: get from preferences
 
@@ -97,8 +93,6 @@ public class service extends Service
 
    private void next()
    {
-      stop();
-
       // Not clear how we get here with playlist empty, but it seems
       // to have happened once; onCompletionListener was called before
       // anything started playing.
@@ -106,6 +100,7 @@ public class service extends Service
       {
          playlistPos        = -1;
          highestPlaylistPos = playlistPos;
+         stop();
       }
       else
       {
@@ -126,6 +121,10 @@ public class service extends Service
 
          play(playlist.get(playlistPos), 0);
       }
+
+      // for some crashes, onDestroy is not called, so we don't
+      // saveState properly. So do it here.
+      saveState();
    }
 
    private void notifyChange(String what)
@@ -175,6 +174,8 @@ public class service extends Service
       }
       else if (what.equals(utils.PLAYSTATE_CHANGED))
       {
+         utils.verboseLog("notifyChange: PLAYSTATE_CHANGED");
+
          sendStickyBroadcast
             (new Intent (utils.PLAYSTATE_CHANGED).
              putExtra ("playing", playing == PlayState.Playing).
@@ -214,7 +215,7 @@ public class service extends Service
    {
       // path must be relative to playlistDirectory
 
-      // service.playing must be Idle (call Stop first)
+      utils.verboseLog("play " + path + "; at " + pos);
 
       try
       {
@@ -308,6 +309,7 @@ public class service extends Service
                // this finds the first one. That's a bug in SMM, so it
                // doesn't much matter what we do; this ensures that
                // all of the playlist is played at least once.
+               utils.debugLog("playList found current, startAt " + startAt);
                startAt = lineCount;
                pos     = storage.getInt(tmpPlaylistFilename + keyCurrentPos, 0);
             }
@@ -379,9 +381,7 @@ public class service extends Service
 
    private void previous()
    {
-      final long currentPos = mediaPlayer.getCurrentPosition();
-
-      stop();
+      final int currentPos = mediaPlayer.getCurrentPosition();
 
       if (currentPos > PREV_THRESHOLD)
       {
@@ -397,6 +397,7 @@ public class service extends Service
       else
       {
          // at start of playlist; indicate that to the user by not playing
+         stop();
       }
    }
 
@@ -578,7 +579,7 @@ public class service extends Service
             switch (msg.what)
             {
             case UNPAUSE:
-               utils.debugLog("handler: UNPAUSE");
+               utils.debugLog("service handler: UNPAUSE");
                unpause();
 
             case UPDATE_DISPLAY:

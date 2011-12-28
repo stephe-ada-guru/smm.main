@@ -3,13 +3,9 @@ build/Makefile
 (dvc-status)
 ~/Misc/android.text
 
-restore button background on htc
-
-instrumental has proper first song, but says it's 60/104 instead of 0/104
-
-save on next in case of crash
-
-onerror check play state; triggered by beyondpod causing player crash
+triggered by beyondpod causing player crash!?
+    onerror checks play state!
+    again; nothing from onError verbosity!
 
 on tv:
     is usb unmount handled same as sdcard umount?
@@ -108,9 +104,13 @@ dpad navigation
 
     HTC has different .png than android-10!
         workaround; set button background to transparent
-            that loses the orange flash on press - good/bad?
-        better: see /Apps/Android/android-sdk/platforms/android-10/data/res/drawable/media_button_background.xml;
+            that loses appearance change on d-pad select
+        better: see
+            /Projects/android/google/frameworks/base/core/res/res/values/styles.xml
+                style MediaButton, MediaButton.Next
+            /Apps/Android/android-sdk/platforms/android-10/data/res/drawable/media_button_background.xml;
             replace state_pressed=false case with transparent image
+                don't see how to do that!
 
     better to implement play button?
         override view.onkeylistener
