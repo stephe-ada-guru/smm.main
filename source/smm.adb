@@ -2,7 +2,7 @@
 --
 --  see spec
 --
---  Copyright (C) 2008, 2009, 2011 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008, 2009, 2011, 2012 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -91,6 +91,8 @@ package body SMM is
       Is_Null        => Time_Lists.Is_Null,
       Next_Procedure => Time_Lists.Next,
       Next_Function  => Time_Lists.Next);
+
+   function Count is new Time_Lists_Algorithms.Count;
 
    function Is_Equal (Left : in Time_List_Node_Type; Right : in SAL.Time_Conversions.Time_Type) return Boolean
    is
@@ -189,9 +191,10 @@ package body SMM is
       --  database.
       --
       --  When a new album is added, we want it to be mixed in
-      --  gradually, not all in one playlist. We do this by ensuring
-      --  that more than an album's worth of songs is included in the
-      --  randomize list.
+      --  gradually, not all in one playlist. We do this by only
+      --  including New_Song_Count songs from the set with zero
+      --  Last_Downloaded (if there are enough non-zero
+      --  Last_Downloaded).
       --
       --  Algorithm:
       --
@@ -203,12 +206,39 @@ package body SMM is
       --
       --  Randomize list, return Song_Count songs from it.
 
+      use type SAL.Time_Conversions.Time_Type;
+
+      New_Song_Count      : constant Integer := 4;
       Min_Randomize_Count : constant Integer := Integer'Max (60, 2 * Song_Count);
       Time_List           : Time_Lists.List_Type;
+
+      procedure Finish
+      is begin
+         Randomize (Songs, Seed);
+         Song_Lists.Truncate (Songs, Song_Count);
+         Play_Before (Db, Songs);
+      end Finish;
+
+      procedure Add_All (Source : in out Song_Lists.List_Type)
+      is
+         use Song_Lists;
+      begin
+         Splice_After
+           (Source => Source,
+            First  => First (Source),
+            Last   => Last (Source),
+            Dest   => Songs,
+            After  => Last (Songs));
+      end Add_All;
+
+      Time_List_I : Time_Lists.Iterator_Type;
+
+      use Song_Lists;
+      use Time_Lists;
    begin
       declare
          use SAL.Config_Files;
-         All_Songs : Iterator_Type := First (Db, Songs_Key);
+         All_Songs : SAL.Config_Files.Iterator_Type := First (Db, Songs_Key);
       begin
          loop
             --  Note that we can't exit on finding Count songs; there
@@ -224,38 +254,51 @@ package body SMM is
          end loop;
       end;
 
-      if Count (Time_Lists.Head (Time_List).Songs) >= Min_Randomize_Count then
-         Songs := Time_Lists.Head (Time_List).Songs;
-         Randomize (Songs, Seed);
-         Song_Lists.Truncate (Songs, Song_Count);
+      Time_List_I := Time_Lists.First (Time_List);
+
+      if Current (Time_List_I).Last_Downloaded = 0.0 then
+         if Count (Time_List) = 1 then
+            --  New db; all songs have zero Last_Downloaded
+            Songs := Head (Time_List).Songs;
+            Finish;
+            return;
+
+         elsif Count (Current (Time_List_I).Songs) > New_Song_Count then
+            --  Only include a few new songs
+            declare
+               Source : Song_Lists.List_Type renames Current (Time_List_I).Songs;
+               Last   : Song_Lists.Iterator_Type := First (Source);
+            begin
+               for I in 2 .. New_Song_Count loop
+                  Next (Last);
+               end loop;
+
+               Splice_After (Source, First (Source), Last, Songs, First (Songs));
+            end;
+            Next (Time_List_I);
+         else
+            --  There are only a few new songs; include them all
+            Songs := Current (Time_List_I).Songs;
+            Next (Time_List_I);
+         end if;
+      end if;
+
+      if Count (Current (Time_List_I).Songs) >= Min_Randomize_Count then
+         Add_All (Current (Time_List_I).Songs);
+         Finish;
+         return;
       else
-         declare
-            use Song_Lists;
-            I : Time_Lists.Iterator_Type := Time_Lists.First (Time_List);
-         begin
-            loop
-               exit when Count (Songs) >= Min_Randomize_Count or
-                 Time_Lists.Is_Null (I);
+         loop
+            exit when Count (Songs) >= Min_Randomize_Count or
+              Time_Lists.Is_Null (Time_List_I);
 
-               declare
-                  Source_Songs : List_Type renames Time_Lists.Current (I).Songs;
-               begin
-                  Splice_After
-                    (Source => Source_Songs,
-                     First  => First (Source_Songs),
-                     Last   => Last (Source_Songs),
-                     Dest   => Songs,
-                     After  => Last (Songs));
-               end;
+            Add_All (Current (Time_List_I).Songs);
 
-               Time_Lists.Next (I);
-            end loop;
+            Time_Lists.Next (Time_List_I);
+         end loop;
 
-            Randomize (Songs, Seed);
-            Truncate (Songs, Integer'Min (Song_Count, Count (Songs)));
-            Play_Before (Db, Songs);
-
-         end;
+         Finish;
+         return;
       end if;
 
    end Least_Recent_Songs;
