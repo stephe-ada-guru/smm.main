@@ -2,7 +2,7 @@
 //
 //  Provides User Interface to Stephe's Music Player.
 //
-//  Copyright (C) 2011 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2011, 2012 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -35,7 +35,6 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnKeyListener;
 import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
@@ -79,50 +78,48 @@ public class activity extends android.app.Activity
 
    ////////// UI listeners
 
-   private ScrollView.OnKeyListener mediaControlListener = new ScrollView.OnKeyListener()
+   @Override public boolean onKeyDown(int keyCode, KeyEvent event)
+   {
+      utils.verboseLog("activity.onKeyDown " + keyCode);
+      switch (keyCode)
       {
-         @Override public boolean onKey(View v, int keyCode, KeyEvent event)
-         {
-            switch (event.getAction())
-            {
-               // Alphabetical keycode order
-            case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
-               // FIXME: implement
-               break;
+         // Alphabetical keycode order
+      case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
+         // FIXME: implement
+         break;
 
-            case KeyEvent.KEYCODE_MEDIA_NEXT:
-               sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_NEXT));
-               break;
+      case KeyEvent.KEYCODE_MEDIA_NEXT:
+         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_NEXT));
+         break;
 
-            case KEYCODE_MEDIA_PAUSE:
-               sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PAUSE));
-               break;
+      case KEYCODE_MEDIA_PAUSE:
+         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PAUSE));
+         break;
 
-            case KEYCODE_MEDIA_PLAY:
-               sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PLAY));
-               break;
+      case KEYCODE_MEDIA_PLAY:
+         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PLAY));
+         break;
 
-            case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
-               sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_TOGGLEPAUSE));
-               break;
+      case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
+         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_TOGGLEPAUSE));
+         break;
 
-            case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
-               sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PREVIOUS));
-               break;
+      case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
+         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PREVIOUS));
+         break;
 
-            case KeyEvent.KEYCODE_MEDIA_REWIND:
-               // FIXME: implement
-               break;
+      case KeyEvent.KEYCODE_MEDIA_REWIND:
+         // FIXME: implement
+         break;
 
-            case KeyEvent.KEYCODE_MEDIA_STOP:
-               sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PAUSE));
-               break;
+      case KeyEvent.KEYCODE_MEDIA_STOP:
+         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PAUSE));
+         break;
 
-            default:
-            }
-            return false; // don't terminate event processing
-         }
-      };
+      default:
+      }
+      return false; // don't terminate event processing
+   };
 
    private ImageButton.OnClickListener prevListener = new ImageButton.OnClickListener()
       {
@@ -255,8 +252,6 @@ public class activity extends android.app.Activity
 
          // Set up displays, top to bottom left to right
 
-         ((ScrollView) findViewById(R.id.topScroll)).setOnKeyListener(mediaControlListener);
-
          artistTitle = (TextView) findViewById(R.id.artistTitle);
          albumTitle  = (TextView) findViewById(R.id.albumTitle);
          songTitle   = (TextView) findViewById(R.id.songTitle);
@@ -323,6 +318,14 @@ public class activity extends android.app.Activity
    {
       super.onPause();
       unregisterReceiver(broadcastReceiver);
+   }
+
+   @Override protected void onDestroy()
+   {
+      super.onDestroy();
+      utils.verboseLog ("activity onDestroy");
+
+      // FIXME: need stopService here?
    }
 
    ////////// playlist dialog

@@ -3,7 +3,7 @@
 //  Provides background audio playback capabilities, allowing the
 //  user to switch between activities without stopping playback.
 //
-//  Copyright (C) 2011 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2011, 2012 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -174,8 +174,6 @@ public class service extends Service
       }
       else if (what.equals(utils.PLAYSTATE_CHANGED))
       {
-         utils.verboseLog("notifyChange: PLAYSTATE_CHANGED");
-
          sendStickyBroadcast
             (new Intent (utils.PLAYSTATE_CHANGED).
              putExtra ("playing", playing == PlayState.Playing).
@@ -402,7 +400,6 @@ public class service extends Service
    }
 
    // save/restore keys; global
-   private static final String keyPlaying           = "playing";
    private static final String keyPlaylistDirectory = "playlistDirectory";
    private static final String keyPlaylistFilename  = "playlistFilename";
 
@@ -428,19 +425,16 @@ public class service extends Service
 
       SharedPreferences storage = getSharedPreferences(utils.serviceClassName, MODE_PRIVATE);
 
-      final PlayState newPlaying     = PlayState.valueOf(storage.getString(keyPlaying, PlayState.Idle.toString()));
-      playlistDirectory              = storage.getString(keyPlaylistDirectory, null);
-      playlistFilename               = storage.getString(keyPlaylistFilename, null);
+      playlistDirectory = storage.getString(keyPlaylistDirectory, null);
+      playlistFilename  = storage.getString(keyPlaylistFilename, null);
 
-      utils.verboseLog ("restoreState: " + newPlaying + ", " + playlistDirectory + ", " + playlistFilename);
+      utils.verboseLog("restoreState: " + playlistDirectory + ", " + playlistFilename);
 
       if (playlistDirectory != null && playlistFilename != null)
       {
          try
          {
-            playList
-               (playlistDirectory + "/" + playlistFilename + ".m3u",
-                newPlaying);
+            playList (playlistDirectory + "/" + playlistFilename + ".m3u", PlayState.Paused);
          }
          catch (Fail e)
          {
@@ -470,7 +464,6 @@ public class service extends Service
       SharedPreferences storage = getSharedPreferences(utils.serviceClassName, MODE_PRIVATE);
       Editor            editor  = storage.edit();
 
-      editor.putString(keyPlaying, playing.toString());
       editor.putString(keyPlaylistDirectory, playlistDirectory);
       editor.putString(keyPlaylistFilename, playlistFilename);
 
@@ -510,6 +503,8 @@ public class service extends Service
    {
       if (!haveAudioFocus)
       {
+         utils.verboseLog("unpause requestAudioFocus");
+
          final int result = audioManager.requestAudioFocus
             (audioFocusListener,
              android.media.AudioManager.STREAM_MUSIC,
@@ -520,6 +515,10 @@ public class service extends Service
             utils.errorLog (this, "can't get audio focus");
             return;
          }
+      }
+      else
+      {
+         utils.verboseLog("unpause haveAudioFocus");
       }
 
       mediaPlayer.start();
@@ -579,11 +578,13 @@ public class service extends Service
             switch (msg.what)
             {
             case UNPAUSE:
-               utils.debugLog("service handler: UNPAUSE");
+               utils.verboseLog("service handler: UNPAUSE");
                unpause();
 
             case UPDATE_DISPLAY:
                notifyChange(utils.PLAYSTATE_CHANGED);
+               utils.verboseLog("service handler: UPDATE_DISPLAY");
+
                handler.sendEmptyMessageDelayed(UPDATE_DISPLAY, 1000);
 
             default:
@@ -600,10 +601,10 @@ public class service extends Service
 
             if (action.equals (android.content.Intent.ACTION_MEDIA_EJECT))
             {
-               // External storage is being unmounted, probably so smm
-               // can manage the playlists. Save state now, since
-               // restoreState has the logic for processing smm
-               // changes.
+               // External storage (USB on TV, sdcard on phone) is
+               // being unmounted, probably so smm can manage the
+               // playlists. Save state now, since restoreState has
+               // the logic for processing smm changes.
                saveState();
                pause(PlayState.Paused);
             }
@@ -957,7 +958,6 @@ public class service extends Service
 
       SharedPreferences storage = getSharedPreferences(utils.serviceClassName, MODE_PRIVATE);
 
-      writer.println("storage." + keyPlaying + ": " + storage.getString(keyPlaying, ""));
       writer.println("storage." + keyPlaylistDirectory + ": " + storage.getString(keyPlaylistDirectory, ""));
       writer.println("storage." + keyPlaylistFilename + ": " + storage.getString(keyPlaylistFilename, ""));
 

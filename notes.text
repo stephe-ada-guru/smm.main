@@ -1,14 +1,11 @@
  current tasks
 build/Makefile
+src/org/stephe_leake/android/stephes_music/service.java
 (dvc-status)
 ~/Misc/android.text
 
-triggered by beyondpod causing player crash!?
-    onerror checks play state!
-    again; nothing from onError verbosity!
-
 on tv:
-    is usb unmount handled same as sdcard umount?
+    need to browse usb mounts when new
 
 add to menu:
     About
@@ -111,11 +108,6 @@ dpad navigation
             /Apps/Android/android-sdk/platforms/android-10/data/res/drawable/media_button_background.xml;
             replace state_pressed=false case with transparent image
                 don't see how to do that!
-
-    better to implement play button?
-        override view.onkeylistener
-        for top level activity view
-            did that, doesn't work; give up
 
 add song count in playlist name list
     can't modify bound list display, need to reimplement!
