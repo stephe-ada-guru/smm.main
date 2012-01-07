@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2007 - 2009, 2011 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007 - 2009, 2011, 2012 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -57,11 +57,15 @@ begin
       Put_Line ("processing directory (phase 1) " & Target_Dir);
    end if;
 
-   if Ada.Directories.Exists (Last_File_Name) then
-      Edit_Playlist (Playlist_File_Name, Last_File_Name);
-   end if;
+   if Ada.Directories.Exists (Playlist_File_Name) then
+      if Ada.Directories.Exists (Last_File_Name) then
+         Edit_Playlist (Playlist_File_Name, Last_File_Name);
+      end if;
 
-   Read_Playlist (Playlist_File_Name, Target_Dir, Mentioned_Files);
+      Read_Playlist (Playlist_File_Name, Target_Dir, Mentioned_Files);
+   else
+      Put_Line (Playlist_File_Name & " does not exist; it will be created");
+   end if;
 
    --  Search Target_Dir, delete files not in playlist
 
@@ -80,7 +84,7 @@ begin
       --  A playlist with no corresponding directory, or a
       --  playlist that mentions a directory that has been
       --  deleted.
-      Ada.Text_IO.Put_Line (Target_Dir & " does not exist");
+      Put_Line (Target_Dir & " does not exist");
    end if;
 
    File_Count := Integer (String_Lists.Length (Mentioned_Files));

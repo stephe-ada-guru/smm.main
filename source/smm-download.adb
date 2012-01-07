@@ -2,7 +2,7 @@
 --
 --  download files to a music player
 --
---  Copyright (C) 2008 - 2009, 2011 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2009, 2011, 2012 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -21,7 +21,7 @@ pragma License (GPL);
 with Ada.IO_Exceptions;
 with Ada.Directories;
 with Ada.Real_Time;
-with Ada.Text_IO;
+with Ada.Text_IO; use Ada.Text_IO;
 with SAL.Config_Files;
 with SAL.Time_Conversions;
 procedure SMM.Download
@@ -40,6 +40,11 @@ is
      (SAL.Time_Conversions.To_Time (Ada.Real_Time.Clock));
 
 begin
+   if not Ada.Directories.Exists (Destination) then
+      Put_Line ("creating directory " & Destination);
+      Ada.Directories.Create_Directory (Destination);
+   end if;
+
    Least_Recent_Songs (Db, Category, Songs, Song_Count);
 
    I := First (Songs);
@@ -50,13 +55,13 @@ begin
          Target : constant String := Destination & Ada.Directories.Simple_Name (Source);
       begin
          if Verbosity > 0 then
-            Ada.Text_IO.Put_Line ("downloading " & Source);
-            Ada.Text_IO.Put_Line ("to          " & Target);
+            Put_Line ("downloading " & Source);
+            Put_Line ("to          " & Target);
          else
             if Count mod 10 = 0 then
-               Ada.Text_IO.New_Line;
+               New_Line;
             end if;
-            Ada.Text_IO.Put (".");
+            Put (".");
          end if;
 
          Ada.Directories.Copy_File
@@ -72,5 +77,5 @@ begin
 exception
 when Ada.IO_Exceptions.Use_Error =>
    --  Just stop downloading; nothing else we can do.
-   Ada.Text_IO.Put_Line (Destination & " Use_Error; probably disk full");
+   Put_Line (Destination & " Use_Error; probably disk full");
 end SMM.Download;

@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2007 - 2009, 2011 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007 - 2009, 2011, 2012 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -50,6 +50,16 @@ begin
    end if;
 
    Ada.Directories.Set_Directory (Root_Dir);
+
+   if not Ada.Directories.Exists (Playlist_File_Name) then
+      Put_Line ("creating playlist file " & Playlist_File_Name);
+      declare
+         File : File_Type;
+      begin
+         Create (File, Out_File, Playlist_File_Name);
+         Close (File);
+      end;
+   end if;
 
    Read_Playlist (Playlist_File_Name, Target_Dir, Mentioned_Files);
 
