@@ -142,7 +142,7 @@ public class service extends Service
                 putExtra ("artist", "").
                 putExtra ("album", "").
                 putExtra ("track", "").
-                putExtra ("duration", "").
+                putExtra ("duration", 0).
                 putExtra ("playlist", getResources().getString(R.string.null_playlist)));
          }
          else

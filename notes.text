@@ -4,16 +4,13 @@ src/org/stephe_leake/android/stephes_music/service.java
 (dvc-status)
 ~/Misc/android.text
 
-on tv:
-    need to browse usb mounts when new
-
-add to menu:
-    About
-
 review FIXME
     get text scale from preference
     // FIXME: get PREV_THRESHOLD from preferences
 service.java:292:         // FIXME: reuse playlistFile?
+
+times show last string buffer value!
+    override somehow?
 
 in progressbar:
     if storage.pos > max, change max (bad .mp3 metadata)
@@ -44,6 +41,9 @@ ff/rew
 
 
  later
+add to menu:
+    About
+
 transfer files to TV
     usb drive sneakernet for now
         path is /mnt/media/usb.2A9A-67AE
@@ -77,7 +77,7 @@ transfer files to TV
     in-app socket protocol for metadata, sftp/ftp for music files
 
 dpad navigation
-    now active, but disappears in emulator when has focus!
+    now active, but buttons disappear in emulator when has focus!
         try on tv
             slider ok
             prev, next ok, but different highlight color
@@ -122,6 +122,9 @@ need way to choose files without relying on file manager
         http://developer.android.com/resources/tutorials/views/hello-autocomplete.html
         start "dialog" with startActivityForResult?
 
+on tv:
+    need to browse usb mounts when new
+
 preference to run service in foreground
 
  even later
@@ -144,15 +147,6 @@ http://www.helloandroid.com/apps/musicdroid
     looks cleaner than andless
     assumes mp3file to get artist etc; change that
     doesn't start a thread
-
-http://www.alexc.me/android-music-app-service-currently-playing-song/231/
-    implies there's an Android/Google MediaPlaybackService, with source code
-    but can't find it.
-    no such class in android.jar, but MediaPlayer is there
-    decompile MediaPlayer in Eclipse
-        not there; not an exported interface
-    download Android source on Debian http://source.android.com/source/downloading.html
-    add git, python to cygwin
 
 http://code.google.com/p/andless/
     c:/Projects/eclipse_scratch/Andless/trunk/src/net/avs234/AndLessSrv.java

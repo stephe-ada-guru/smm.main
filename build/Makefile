@@ -10,6 +10,7 @@ ANDROID_PROJECT_NAME := activity
 
 ANDROID_PROJECT_RESOURCES += ../res/layout/main.xml
 ANDROID_PROJECT_RESOURCES += ../res/values/strings.xml
+ANDROID_PROJECT_RESOURCES += ../res/xml/preferences.xml
 
 # all other source files for make dependencies
 ANDROID_PROJECT_SRC += preferences

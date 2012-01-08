@@ -2,7 +2,7 @@
 //
 //  Provides User Interface to Stephe's Music Player.
 //
-//  Copyright (C) 2011 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2011, 2012 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -18,7 +18,11 @@
 
 package org.stephe_leake.android.stephes_music;
 
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
+
 public class preferences extends android.preference.PreferenceActivity
+   implements SharedPreferences.OnSharedPreferenceChangeListener
 {
    // We don't implement onBuildHeaders because that's not in API 10,
    // and we only have a few preferences anyway.
@@ -27,8 +31,33 @@ public class preferences extends android.preference.PreferenceActivity
    {
       super.onCreate(savedInstanceState);
 
-      // FIXME: set default; what is xml syntax for defaults?
-
-      addPreferencesFromResource(R.layout.preferences);
+      addPreferencesFromResource(R.xml.preferences);
    }
+
+   @Override protected void onResume()
+   {
+      super.onResume();
+      PreferenceManager.getDefaultSharedPreferences(this).registerOnSharedPreferenceChangeListener(this);
+
+      setResult(RESULT_OK);
+   }
+
+   @Override protected void onPause()
+   {
+      super.onPause();
+      PreferenceManager.getDefaultSharedPreferences(this).unregisterOnSharedPreferenceChangeListener(this);
+   }
+
+   @Override public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key)
+   {
+      if (key.equals(getResources().getString(R.string.text_scale_key)))
+      {
+         setResult(utils.RESULT_TEXT_SCALE);
+      }
+      else
+      {
+         setResult(RESULT_OK);
+      }
+   };
+
 }

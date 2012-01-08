@@ -2,7 +2,7 @@
 //
 //  Provides User Interface to Stephe's Music Player.
 //
-//  Copyright (C) 2011 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2011, 2012 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -18,6 +18,7 @@
 
 package org.stephe_leake.android.stephes_music;
 
+import android.app.Activity;
 import android.content.Context;
 import android.text.format.Time;
 import android.util.Log;
@@ -61,6 +62,10 @@ public class utils
    public static final String COMMAND_TOGGLEPAUSE    = "org.stephe_leake.android.stephes_music.command.togglepause";
    public static final String COMMAND_UPDATE_DISPLAY = "org.stephe_leake.android.stephes_music.command.update_display";
 
+   // sub-activity result codes
+   public static final int RESULT_TEXT_SCALE = Activity.RESULT_FIRST_USER + 1;
+
+   // methods
 
    private static StringBuilder sFormatBuilder = new StringBuilder();
    private static Formatter sFormatter = new Formatter(sFormatBuilder, Locale.getDefault());

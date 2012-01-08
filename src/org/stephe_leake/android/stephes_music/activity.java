@@ -28,6 +28,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.preference.PreferenceManager;
 import android.os.Bundle;
 import android.os.SystemClock;
@@ -43,6 +44,7 @@ import android.widget.TextView;
 import java.io.FilenameFilter;
 import java.io.File;
 import java.lang.Class;
+import java.lang.Float;
 import java.lang.Integer;
 
 public class activity extends android.app.Activity
@@ -54,6 +56,8 @@ public class activity extends android.app.Activity
    private static final int MENU_DUMP_LOG    = 1;
    private static final int MENU_SAVE_STATE  = 2;
    private static final int MENU_PREFERENCES = 3;
+
+   private static final int RESULT_PREFERENCES = 1;
 
    // compatibility constants; these are not defined in API level 10,
    // but we need them for higher level devices.
@@ -73,69 +77,24 @@ public class activity extends android.app.Activity
 
    // Cached values
    private int trackDuration = 0; // track duration in milliseconds
+   private float defaultTextSize; // set in onCreate, modified by text_scale preference
 
    private AlertDialog playlistDialog;
 
-   ////////// UI listeners
+   ////////// Resource/preference access
 
-   @Override public boolean onKeyDown(int keyCode, KeyEvent event)
+   private float getTextScale()
    {
-      utils.verboseLog("activity.onKeyDown " + keyCode);
-      switch (keyCode)
-      {
-         // Alphabetical keycode order
-      case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
-         // FIXME: implement
-         break;
-
-      case KeyEvent.KEYCODE_MEDIA_NEXT:
-         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_NEXT));
-         break;
-
-      case KEYCODE_MEDIA_PAUSE:
-         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PAUSE));
-         break;
-
-      case KEYCODE_MEDIA_PLAY:
-         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PLAY));
-         break;
-
-      case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
-         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_TOGGLEPAUSE));
-         break;
-
-      case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
-         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PREVIOUS));
-         break;
-
-      case KeyEvent.KEYCODE_MEDIA_REWIND:
-         // FIXME: implement
-         break;
-
-      case KeyEvent.KEYCODE_MEDIA_STOP:
-         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PAUSE));
-         break;
-
-      default:
-      }
-      return false; // don't terminate event processing
+      Resources res = getResources();
+      SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+      return new Float
+         (prefs.getString
+          (res.getString(R.string.text_scale_key),
+           res.getString(R.string.text_scale_default)))
+         .floatValue();
    };
 
-   private ImageButton.OnClickListener prevListener = new ImageButton.OnClickListener()
-      {
-         @Override public void onClick(View v)
-         {
-            sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PREVIOUS));
-         }
-      };
-
-   private ImageButton.OnClickListener Play_Pause_Listener = new ImageButton.OnClickListener()
-      {
-         @Override public void onClick(View v)
-         {
-            sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_TOGGLEPAUSE));
-         }
-      };
+   ////////// UI listeners (alphabetical by listener name)
 
    private ImageButton.OnClickListener nextListener = new ImageButton.OnClickListener()
       {
@@ -145,37 +104,53 @@ public class activity extends android.app.Activity
          }
       };
 
-    private OnSeekBarChangeListener progressListener = new OnSeekBarChangeListener()
-       {
-          long lastUserEventTime = 0;
-
-          public void onStartTrackingTouch(SeekBar bar)
-          {
-             lastUserEventTime = SystemClock.elapsedRealtime();
-          }
-
-          public void onProgressChanged(SeekBar bar, int progress, boolean fromuser)
-          {
-             if (!fromuser) return;
-
-             long now = SystemClock.elapsedRealtime();
-             if ((now - lastUserEventTime) > 250) // milliseconds
-             {
-                lastUserEventTime = now;
-                sendBroadcast
-                   (new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_SEEK).
-                    putExtra("position", (trackDuration * progress / maxProgress)));
-             }
-          }
-          public void onStopTrackingTouch(SeekBar bar) {}
-       };
-
    private TextView.OnClickListener playlistListener = new TextView.OnClickListener()
       {
          @Override public void onClick(View v)
          {
             showDialog(DIALOG_PLAYLIST);
          }
+      };
+
+   private ImageButton.OnClickListener playPauseListener = new ImageButton.OnClickListener()
+      {
+         @Override public void onClick(View v)
+         {
+            sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_TOGGLEPAUSE));
+         }
+      };
+
+   private ImageButton.OnClickListener prevListener = new ImageButton.OnClickListener()
+      {
+         @Override public void onClick(View v)
+         {
+            sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PREVIOUS));
+         }
+      };
+
+   private OnSeekBarChangeListener progressListener = new OnSeekBarChangeListener()
+      {
+         long lastUserEventTime = 0;
+
+         public void onStartTrackingTouch(SeekBar bar)
+         {
+            lastUserEventTime = SystemClock.elapsedRealtime();
+         }
+
+         public void onProgressChanged(SeekBar bar, int progress, boolean fromuser)
+         {
+            if (!fromuser) return;
+
+            long now = SystemClock.elapsedRealtime();
+            if ((now - lastUserEventTime) > 250) // milliseconds
+            {
+               lastUserEventTime = now;
+               sendBroadcast
+                  (new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_SEEK).
+                   putExtra("position", (trackDuration * progress / maxProgress)));
+            }
+         }
+         public void onStopTrackingTouch(SeekBar bar) {}
       };
 
    ////////// Broadcast reciever
@@ -223,7 +198,7 @@ public class activity extends android.app.Activity
                }
                else
                {
-               utils.errorLog (activity.this, "broadcastReceiver got unexpected intent: " + intent.toString());
+                  utils.errorLog (activity.this, "broadcastReceiver got unexpected intent: " + intent.toString());
                }
             }
             catch (RuntimeException e)
@@ -237,8 +212,9 @@ public class activity extends android.app.Activity
 
    @Override public void onCreate(Bundle savedInstanceState)
    {
-      // FIXME: get scale from preferences
-      final float scale = 1.3f;
+      PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
+
+      final float scale = getTextScale();
 
       final Intent intent = getIntent();
 
@@ -256,14 +232,15 @@ public class activity extends android.app.Activity
          albumTitle  = (TextView) findViewById(R.id.albumTitle);
          songTitle   = (TextView) findViewById(R.id.songTitle);
 
-         artistTitle.setTextSize(scale * artistTitle.getTextSize());
-         albumTitle.setTextSize(scale * albumTitle.getTextSize());
-         songTitle.setTextSize(scale * songTitle.getTextSize());
+         defaultTextSize = artistTitle.getTextSize();
+         artistTitle.setTextSize(scale * defaultTextSize);
+         albumTitle.setTextSize(scale * defaultTextSize);
+         songTitle.setTextSize(scale * defaultTextSize);
 
          ((ImageButton)findViewById(R.id.prev)).setOnClickListener(prevListener);
 
          playPauseButton = (ImageButton)findViewById(R.id.play_pause);
-         playPauseButton.setOnClickListener(Play_Pause_Listener);
+         playPauseButton.setOnClickListener(playPauseListener);
          playPauseButton.requestFocus();
 
          ((ImageButton)findViewById(R.id.next)).setOnClickListener(nextListener);
@@ -276,7 +253,7 @@ public class activity extends android.app.Activity
          progressBar.setMax(maxProgress);
 
          playlistTitle = (TextView) findViewById(R.id.playlistTitle);
-         playlistTitle.setTextSize(playlistTitle.getTextSize()); // not scaled to save screen space
+         // not scaled to save screen space
          playlistTitle.setOnClickListener(playlistListener);
 
          if (intent.getAction() == null || // destroyed/restored (ie for screen rotate)
@@ -328,6 +305,43 @@ public class activity extends android.app.Activity
       // FIXME: need stopService here?
    }
 
+   ////////// key handling
+
+   @Override public boolean onKeyDown(int keyCode, KeyEvent event)
+   {
+      switch (keyCode)
+      {
+         // Alphabetical keycode order
+      case KeyEvent.KEYCODE_MEDIA_NEXT:
+         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_NEXT));
+         break;
+
+      case KEYCODE_MEDIA_PAUSE:
+         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PAUSE));
+         break;
+
+      case KEYCODE_MEDIA_PLAY:
+         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PLAY));
+         break;
+
+      case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
+         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_TOGGLEPAUSE));
+         break;
+
+      case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
+         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PREVIOUS));
+         break;
+
+      case KeyEvent.KEYCODE_MEDIA_STOP:
+         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PAUSE));
+         break;
+
+      default:
+      }
+      return false; // don't terminate event processing
+   };
+
+
    ////////// playlist dialog
 
    private class FileExtFilter implements FilenameFilter
@@ -346,60 +360,64 @@ public class activity extends android.app.Activity
    {
       switch (id)
       {
-        case DIALOG_PLAYLIST:
-           {
-              try
-              {
-                 SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+      case DIALOG_PLAYLIST:
+         {
+            try
+            {
+               Resources res = getResources();
+               SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
-                 final File playlistDir = new File (prefs.getString("playlist_directory", "/sdcard/Music"));
+               final File playlistDir = new File
+                  (prefs.getString
+                   (res.getString(R.string.playlist_directory_key),
+                    res.getString(R.string.playlist_directory_default)));
 
-                 final FileExtFilter playlistFilter = new FileExtFilter (".m3u");
-                 final String[] playlists           = playlistDir.list (playlistFilter);
+               final FileExtFilter playlistFilter = new FileExtFilter (".m3u");
+               final String[] playlists           = playlistDir.list (playlistFilter);
 
-                 if (playlists == null || playlists.length == 0)
-                 {
-                    utils.infoLog(this, "no playlists found in " + playlistDir);
-                    return null;
-                 }
+               if (playlists == null || playlists.length == 0)
+               {
+                  utils.infoLog(this, "no playlists found in " + playlistDir);
+                  return null;
+               }
 
-                 playlistDialog = new AlertDialog.Builder(this)
-                    .setTitle(R.string.dialog_playlist)
-                    .setItems
-                    (playlists,
-                     new DialogInterface.OnClickListener()
-                     {
-                        public void onClick(DialogInterface dialog, int which)
-                        {
-                           try
-                           {
-                              final android.widget.ListView listView = playlistDialog.getListView();
-                              final String filename = (String)listView.getAdapter().getItem(which);
-                              sendBroadcast
-                                 (new Intent (utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PLAYLIST).
-                                  putExtra("playlist", playlistDir.getAbsolutePath() + "/" + filename));
-                           }
-                           catch (Exception e)
-                           {
-                              utils.errorLog(activity.this, "playlist dialog onClick: ", e);
-                           }
-                        };
-                     }
-                     ).create();
+               playlistDialog = new AlertDialog.Builder(this)
+                  .setTitle(R.string.dialog_playlist)
+                  .setItems
+                  (playlists,
+                   new DialogInterface.OnClickListener()
+                   {
+                      public void onClick(DialogInterface dialog, int which)
+                      {
+                         try
+                         {
+                            final android.widget.ListView listView = playlistDialog.getListView();
+                            final String filename = (String)listView.getAdapter().getItem(which);
+                            sendBroadcast
+                               (new Intent (utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PLAYLIST).
+                                putExtra("playlist", playlistDir.getAbsolutePath() + "/" + filename));
+                         }
+                         catch (Exception e)
+                         {
+                            utils.errorLog(activity.this, "playlist dialog onClick: ", e);
+                         }
+                      };
+                   }
+                   ).create();
 
-                 return playlistDialog;
-              }
-              catch (Exception e)
-              {
-                 utils.errorLog(this, "create playlist dialog failed ", e);
-                 return null;
-              }
-           }
-        default:
-           utils.errorLog(this, "unknown dialog id " + id);
-           return null;
-        }
-    }
+               return playlistDialog;
+            }
+            catch (Exception e)
+            {
+               utils.errorLog(this, "create playlist dialog failed ", e);
+               return null;
+            }
+         }
+      default:
+         utils.errorLog(this, "unknown dialog id " + id);
+         return null;
+      }
+   }
 
    ////////// Menu
 
@@ -433,13 +451,47 @@ public class activity extends android.app.Activity
          break;
 
       case MENU_PREFERENCES:
-         startActivity (new Intent(this, preferences.class));
+         startActivityForResult (new Intent(this, preferences.class), RESULT_PREFERENCES);
          break;
 
       default:
          utils.errorLog
-            (this, "PlayerActivity.onOptionsItemSelected: unknown MenuItemId " + item.getItemId());
+            (this, "activity.onOptionsItemSelected: unknown MenuItemId " + item.getItemId());
       }
       return false; // continue menu processing
+   }
+
+   @Override protected void onActivityResult (int requestCode, int resultCode, Intent data)
+   {
+      switch(requestCode)
+      {
+      case RESULT_PREFERENCES:
+         switch (resultCode)
+         {
+         case RESULT_CANCELED:
+         case RESULT_OK:
+            break;
+
+         case utils.RESULT_TEXT_SCALE:
+            {
+               final float scale = getTextScale();
+
+               artistTitle.setTextSize(scale * defaultTextSize);
+               albumTitle.setTextSize(scale * defaultTextSize);
+               songTitle.setTextSize(scale * defaultTextSize);
+            }
+            break;
+
+         default:
+            utils.errorLog
+               (this, "activity.onActivityResult: unknown preferences resultCode " + resultCode);
+            break;
+         }
+         break;
+
+      default:
+         utils.errorLog
+            (this, "activity.onActivityResult: unknown requestCode " + requestCode);
+      }
    }
 }
