@@ -5,8 +5,6 @@ src/org/stephe_leake/android/stephes_music/service.java
 ~/Misc/android.text
 
 review FIXME
-    get text scale from preference
-    // FIXME: get PREV_THRESHOLD from preferences
 service.java:292:         // FIXME: reuse playlistFile?
 
 times show last string buffer value!

@@ -130,27 +130,22 @@ public class activity extends android.app.Activity
 
    private OnSeekBarChangeListener progressListener = new OnSeekBarChangeListener()
       {
-         long lastUserEventTime = 0;
-
          public void onStartTrackingTouch(SeekBar bar)
          {
-            lastUserEventTime = SystemClock.elapsedRealtime();
          }
 
          public void onProgressChanged(SeekBar bar, int progress, boolean fromuser)
          {
             if (!fromuser) return;
 
-            long now = SystemClock.elapsedRealtime();
-            if ((now - lastUserEventTime) > 250) // milliseconds
-            {
-               lastUserEventTime = now;
-               sendBroadcast
-                  (new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_SEEK).
-                   putExtra("position", (trackDuration * progress / maxProgress)));
-            }
+            sendBroadcast
+               (new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_SEEK).
+                putExtra("position", (trackDuration * progress / maxProgress)));
          }
-         public void onStopTrackingTouch(SeekBar bar) {}
+
+         public void onStopTrackingTouch(SeekBar bar)
+         {
+         }
       };
 
    ////////// Broadcast reciever
