@@ -26,6 +26,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences.Editor;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
+import android.preference.PreferenceManager;
 import android.media.AudioManager.OnAudioFocusChangeListener;
 import android.media.AudioManager;
 import android.media.MediaMetadataRetriever;
@@ -52,11 +54,6 @@ public class service extends Service
    //  Internal Messages used for delays
    private static final int UNPAUSE        = 3;
    private static final int UPDATE_DISPLAY = 4;
-
-   // misc constants
-   private static final int PREV_THRESHOLD = 5000;
-   // milliseconds; see previous()
-   // FIXME: get from preferences
 
    enum PlayState
    {
@@ -286,8 +283,7 @@ public class service extends Service
 
       try
       {
-         // FIXME: reuse playlistFile?
-         BufferedReader               in          = new BufferedReader (new FileReader (filename));
+         BufferedReader               in          = new BufferedReader (new FileReader (playlistFile));
          String                       line        = in.readLine();
          java.util.LinkedList<String> tmpPlaylist = new LinkedList<String>();
          int                          lineCount   = 0;
@@ -379,9 +375,18 @@ public class service extends Service
 
    private void previous()
    {
+      // FIXME: get in onCreate, then again only when it changes
+      Resources         res   = getResources();
+      SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+      final int prevThreshold = new Integer
+         (prefs.getString
+          (res.getString(R.string.prev_threshold_key),
+           res.getString(R.string.prev_threshold_default)))
+         .intValue();
+
       final int currentPos = mediaPlayer.getCurrentPosition();
 
-      if (currentPos > PREV_THRESHOLD)
+      if (currentPos > prevThreshold)
       {
          // not near beginning of current track; move to beginning
          mediaPlayer.seekTo(0);
@@ -961,7 +966,6 @@ public class service extends Service
       writer.println("storage." + keyPlaylistDirectory + ": " + storage.getString(keyPlaylistDirectory, ""));
       writer.println("storage." + keyPlaylistFilename + ": " + storage.getString(keyPlaylistFilename, ""));
 
-      // FIXME: figure out how to dump all of storage
       writer.println("storage.vocal" + keyCurrentFile + ": " +
                      storage.getString("vocal" + keyCurrentFile, ""));
       writer.println("storage.vocal" + keyCurrentPos + ": " +

@@ -32,9 +32,17 @@ write to the Free Software Foundation, 51 Franklin Street, Suite
         android:dialogTitle="@string/playlist_directory_dialog_title" />
 
     <EditTextPreference
-        android:numeric="decimal"
+        android:key="@string/prev_threshold_key"
+        android:defaultValue="@string/prev_threshold_default"
+        android:numeric="integer"
+        android:title="@string/prev_threshold_title"
+        android:summary="@string/prev_threshold_summary"
+        android:dialogTitle="@string/prev_threshold_dialog_title" />
+        
+    <EditTextPreference
         android:key="@string/text_scale_key"
         android:defaultValue="@string/text_scale_default"
+        android:numeric="decimal"
         android:title="@string/text_scale_title"
         android:summary="@string/text_scale_summary"
         android:dialogTitle="@string/text_scale_dialog_title" />

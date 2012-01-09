@@ -35,13 +35,19 @@
   <!-- preference -->
   <string name="preferences_activity_name">&quot;Stephe's Music Player Preferences&quot;</string>
 
-  <string name="playlist_directory_key">playlist directory</string>
+  <string name="playlist_directory_key">playlist_directory</string>
   <string name="playlist_directory_default">/sdcard/Music</string>
   <string name="playlist_directory_title">playlist directory</string>
   <string name="playlist_directory_summary">absolute path where playlists are stored</string>
-  <string name="playlist_directory_dialog_title">set playlist directory</string>
+  <string name="playlist_directory_dialog_title">playlist directory</string>
   
-  <string name="text_scale_key">text scale</string>
+  <string name="prev_threshold_key">prev_threshold</string>
+  <string name="prev_threshold_default">5000</string>
+  <string name="prev_threshold_title">previous threshold</string>
+  <string name="prev_threshold_summary">threshold for previous song vs beginning of current song (milliseconds)</string>
+  <string name="prev_threshold_dialog_title">previous threshold (milliseconds)</string>
+
+  <string name="text_scale_key">text_scale</string>
   <string name="text_scale_default">1.3</string>
   <string name="text_scale_title">text scale</string>
   <string name="text_scale_summary">relative size of text</string>
@@ -50,9 +56,9 @@
   <!-- Do not translate, but may be locale-dependent. -->
   
   <!-- Duration format for duration < 1 hour -->
-  <string translatable="false" name="durationformatshort">%2$d:%5$02d</string>
+  <string translatable="false" name="durationformatshort">%M:%S</string>
 
   <!-- Duration format for duration >= 1 hour -->
-  <string translatable="false" name="durationformatlong">%1$d:%3$02d:%5$02d</string>
+  <string translatable="false" name="durationformatlong">%H:%M:%S</string>
   
 </resources>

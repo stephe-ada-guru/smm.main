@@ -25,8 +25,6 @@ import android.util.Log;
 import android.widget.Toast;
 
 import java.io.PrintWriter;
-import java.util.Formatter;
-import java.util.Locale;
 
 public class utils
 {
@@ -67,32 +65,15 @@ public class utils
 
    // methods
 
-   private static StringBuilder sFormatBuilder = new StringBuilder();
-   private static Formatter sFormatter = new Formatter(sFormatBuilder, Locale.getDefault());
-   // FIXME: compare to android.text.Formatter, android.text.format.time
-
-   private static final Object[] sTimeArgs = new Object[5];
-
    public static String makeTimeString(Context context, int millisecs)
    {
-      final int secs = millisecs / 1000;
-      String durationformat = context.getString
-         (secs < 3600 ? R.string.durationformatshort : R.string.durationformatlong);
+      final Time time     = new Time();
+      final int  oneHour  = 3600 * 1000; // milliseconds
+      final String format = context.getString
+         (millisecs < oneHour ? R.string.durationformatshort : R.string.durationformatlong);
 
-      /* Provide multiple arguments so the format can be changed easily
-       * by modifying the xml.
-       */
-      sFormatBuilder.setLength(0);
-
-      final Object[] timeArgs = sTimeArgs;
-
-      timeArgs[0] = secs / 3600; // hours
-      timeArgs[1] = secs / 60;  // minutes
-      timeArgs[2] = (secs / 60) % 60; // minutes_in_hour
-      timeArgs[3] = secs;       // seconds
-      timeArgs[4] = secs % 60;  // seconds_in_minute
-
-      return sFormatter.format(durationformat, timeArgs).toString();
+      time.set(millisecs);
+      return time.format(format);
    }
 
    static class LogEntry

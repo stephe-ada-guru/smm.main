@@ -4,8 +4,8 @@ src/org/stephe_leake/android/stephes_music/service.java
 (dvc-status)
 ~/Misc/android.text
 
-review FIXME
-service.java:292:         // FIXME: reuse playlistFile?
+    <!-- playlist_directory preference is not declared here because we
+         need to set the possible values by browsing the media storage -->
 
 times show last string buffer value!
     override somehow?
