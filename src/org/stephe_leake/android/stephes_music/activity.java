@@ -41,7 +41,6 @@ import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.ScrollView;
 import android.widget.TextView;
-import java.io.FilenameFilter;
 import java.io.File;
 import java.lang.Class;
 import java.lang.Float;
@@ -85,13 +84,20 @@ public class activity extends android.app.Activity
 
    private float getTextScale()
    {
-      Resources res = getResources();
+      Resources         res   = getResources();
       SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-      return new Float
-         (prefs.getString
-          (res.getString(R.string.text_scale_key),
-           res.getString(R.string.text_scale_default)))
-         .floatValue();
+      String scale            = prefs.getString
+             (res.getString(R.string.text_scale_key),
+              res.getString(R.string.text_scale_default));
+      try
+      {
+         return new Float (scale) .floatValue();
+      }
+      catch (NumberFormatException e)
+      {
+         utils.errorLog(this, "invalid text_scale preference: " + scale);
+         return 1.3f;
+      }
    };
 
    ////////// UI listeners (alphabetical by listener name)
@@ -339,18 +345,6 @@ public class activity extends android.app.Activity
 
    ////////// playlist dialog
 
-   private class FileExtFilter implements FilenameFilter
-   {
-      String extension;
-
-      FileExtFilter(String ext) {extension = ext;};
-
-      @Override public boolean accept(File dir, String Filename)
-      {
-         return Filename.endsWith(extension);
-      }
-   }
-
    @Override protected Dialog onCreateDialog(int id, Bundle args)
    {
       switch (id)
@@ -367,8 +361,8 @@ public class activity extends android.app.Activity
                    (res.getString(R.string.playlist_directory_key),
                     res.getString(R.string.playlist_directory_default)));
 
-               final FileExtFilter playlistFilter = new FileExtFilter (".m3u");
-               final String[] playlists           = playlistDir.list (playlistFilter);
+               final FileExtFilter playlistFilter = new FileExtFilter(".m3u");
+               final String[] playlists           = playlistDir.list(playlistFilter);
 
                if (playlists == null || playlists.length == 0)
                {

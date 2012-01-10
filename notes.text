@@ -4,15 +4,6 @@ src/org/stephe_leake/android/stephes_music/service.java
 (dvc-status)
 ~/Misc/android.text
 
-    <!-- playlist_directory preference is not declared here because we
-         need to set the possible values by browsing the media storage -->
-
-times show last string buffer value!
-    override somehow?
-
-in progressbar:
-    if storage.pos > max, change max (bad .mp3 metadata)
-
 user notes while playing
     output to <playlist>.notes
 
@@ -21,21 +12,20 @@ user notes while playing
     want more (check for new by this artist)
     add to best list
 
-progressbar support touch without drag
+times show last string buffer value!
+    override somehow?
 
-ff/rew
+in progressbar:
+    if storage.pos > max, change max (bad .mp3 metadata)
 
  smm
-    use .last
+    process notes
 
     download_playlist song filenames are not guarranteed unique
         use artist/album/song
 
     small drive!
         handle drive is full nicely
-        need new drive to get rid of stupid blinking light anyway
-
-    process notes
 
 
  later
@@ -120,8 +110,13 @@ need way to choose files without relying on file manager
         http://developer.android.com/resources/tutorials/views/hello-autocomplete.html
         start "dialog" with startActivityForResult?
 
-on tv:
-    need to browse usb mounts when new
+playlist_directory preference
+    handle "none found"
+        need textEdit with Browse button
+        which means a custom preference widget
+
+    onCreateDialog not called for second select playlist!
+        ok for now, not ok for managing multiple smm dirs
 
 preference to run service in foreground
 

@@ -23,13 +23,13 @@ write to the Free Software Foundation, 51 Franklin Street, Suite
   <PreferenceCategory
       android:title="all">
 
-    <!-- FIXME: should be file or device browser, not just a text box -->
-    <EditTextPreference
+    <ListPreference
         android:key="@string/playlist_directory_key"
         android:defaultValue="@string/playlist_directory_default"
         android:title="@string/playlist_directory_title"
         android:summary="@string/playlist_directory_summary"
         android:dialogTitle="@string/playlist_directory_dialog_title" />
+    <!-- list entries filled at runtime -->
 
     <EditTextPreference
         android:key="@string/prev_threshold_key"
