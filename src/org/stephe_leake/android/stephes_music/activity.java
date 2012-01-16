@@ -80,7 +80,7 @@ public class activity extends android.app.Activity
 
    private AlertDialog playlistDialog;
 
-   ////////// Resource/preference access
+   ////////// local utils
 
    private float getTextScale()
    {
@@ -100,7 +100,33 @@ public class activity extends android.app.Activity
       }
    };
 
-   ////////// UI listeners (alphabetical by listener name)
+   ////////// UI listeners (alphabetical by listener name; some defined in main.xml)
+
+   // FIXME: use one onClick, get note text from button (but not button text!)
+   public void onClickBestList(View v)
+   {
+      sendBroadcast
+         (new Intent
+          (utils.ACTION_COMMAND)
+          .putExtra("command", utils.COMMAND_NOTE)
+          .putExtra("note", "best_list"));
+   };
+
+   public void onClickDontPlay(View v)
+   {
+      sendBroadcast
+         (new Intent(utils.ACTION_COMMAND)
+          .putExtra("command", utils.COMMAND_NOTE)
+          .putExtra("note", "dont_play"));
+   };
+
+   public void onClickKeepBefore(View v)
+   {
+      sendBroadcast
+         (new Intent(utils.ACTION_COMMAND)
+          .putExtra("command", utils.COMMAND_NOTE)
+          .putExtra("note", "keep_before"));
+   };
 
    private ImageButton.OnClickListener nextListener = new ImageButton.OnClickListener()
       {
@@ -133,6 +159,14 @@ public class activity extends android.app.Activity
             sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PREVIOUS));
          }
       };
+
+   public void onClickWantMore(View v)
+   {
+      sendBroadcast
+         (new Intent(utils.ACTION_COMMAND)
+          .putExtra("command", utils.COMMAND_NOTE)
+          .putExtra("note", "want_more"));
+   };
 
    private OnSeekBarChangeListener progressListener = new OnSeekBarChangeListener()
       {

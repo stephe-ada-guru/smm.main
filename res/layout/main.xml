@@ -32,9 +32,10 @@
     <!-- artist
          album
          song titles
-         buttons | time
+         next/play/prev buttons | time
          seekbar
          playlist
+         notes buttons
     -->
     <View
         android:layout_width="match_parent"
@@ -79,7 +80,7 @@
         android:paddingTop="1dip"
         android:paddingBottom="4dip"
         android:orientation="horizontal">
-      <!-- buttons | time -->
+      <!-- next/play/prev buttons | time -->
       <LinearLayout
           android:layout_width="wrap_content"
           android:layout_height="match_parent"
@@ -89,7 +90,7 @@
           android:layout_marginTop="1dip"
           android:layout_marginBottom="2dip"
           android:gravity="center"> <!-- background for transparent part of buttons -->
-        <!-- buttons -->
+        <!-- next/play/prev buttons -->
         <ImageButton
             android:id="@+id/prev"
             style="@android:style/MediaButton.Previous"
@@ -144,5 +145,42 @@
         android:focusable="true"
         android:text="(click to select playlist)"
         android:textAppearance="?android:attr/textAppearanceLarge"/>
+    <LinearLayout
+        android:id="@+id/notes_buttons"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        android:layout_gravity="bottom"
+        android:layout_marginTop="1dip"
+        android:layout_marginBottom="2dip"
+        android:gravity="center"> 
+      <!-- notes buttons
+           don't play | keep before | want more  | best
+      -->
+      <Button
+          android:id="@+id/dont_play"
+          android:layout_height="match_parent"
+          android:layout_width="wrap_content"
+          android:text="@string/dont_play"
+          android:onClick="onClickDontPlay"/>
+      <Button
+          android:id="@+id/keep_before"
+          android:layout_height="match_parent"
+          android:layout_width="wrap_content"
+          android:text="@string/keep_before"
+          android:onClick="onClickKeepBefore"/>
+      <Button
+          android:id="@+id/want_more"
+          android:layout_height="match_parent"
+          android:layout_width="wrap_content"
+          android:text="@string/want_more"
+          android:onClick="onClickWantMore"/>
+      <Button
+          android:id="@+id/best_list"
+          android:layout_height="match_parent"
+          android:layout_width="wrap_content"
+          android:text="@string/best_list"
+          android:onClick="onClickBestList"/>
+      </LinearLayout>
   </LinearLayout>
 </ScrollView>

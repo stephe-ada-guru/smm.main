@@ -22,10 +22,16 @@
   <!-- translate -->
 
   <!-- misc -->
-  <string name="app_name">&quot;Stephe's Music Player&quot;</string>
+  <string name="app_name">Stephe\'s Music Player</string>
   <string name="dialog_playlist">Select a playlist</string>
   <string name="null_playlist">(click to select a playlist)</string>
 
+  <!-- buttons -->
+  <string name="dont_play">Don\'t\nPlay</string>
+  <string name="keep_before">Keep\nBefore</string>
+  <string name="want_more">Want\nMore</string>
+  <string name="best_list">Best\nList</string>
+  
   <!-- menu -->
   <string name="menu_quit">Quit</string>
   <string name="menu_dump_log">Dump Log</string>

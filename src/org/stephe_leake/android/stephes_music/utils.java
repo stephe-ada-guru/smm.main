@@ -47,11 +47,12 @@ public class utils
    //  Commands to server via Intent actions sent via broadcast. Alphabetical order
    //  Only one intent, so we can add commands without adding to the reciever filter.
    public static final String ACTION_COMMAND         = "org.stephe_leake.android.stephes_music.action.command";
-   public static final String COMMAND_DUMP_LOG       = "org.stephe_leake.android.stephes_music.command.dump_log";
-   public static final String COMMAND_NEXT           = "org.stephe_leake.android.stephes_music.command.next";
-   public static final String COMMAND_PAUSE          = "org.stephe_leake.android.stephes_music.command.pause";
-   public static final String COMMAND_PLAY           = "org.stephe_leake.android.stephes_music.command.play";
-   public static final String COMMAND_PLAYLIST       = "org.stephe_leake.android.stephes_music.command.playlist";
+   public static final String COMMAND_DUMP_LOG       = "dump_log";
+   public static final String COMMAND_NEXT           = "next";
+   public static final String COMMAND_NOTE           = "note";
+   public static final String COMMAND_PAUSE          = "pause";
+   public static final String COMMAND_PLAY           = "play";
+   public static final String COMMAND_PLAYLIST       = "playlist";
    // playlist  string (abs file name)
    public static final String COMMAND_PREVIOUS       = "org.stephe_leake.android.stephes_music.command.previous";
    public static final String COMMAND_SAVE_STATE     = "org.stephe_leake.android.stephes_music.command.save_state";

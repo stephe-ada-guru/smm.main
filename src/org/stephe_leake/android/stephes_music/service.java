@@ -534,6 +534,31 @@ public class service extends Service
       handler.sendEmptyMessageDelayed(UPDATE_DISPLAY, 1000);
    }
 
+   private void writeNote(String note)
+   {
+      if (playlistPos > -1)
+      {
+         final String noteFileName = playlistDirectory + "/" + playlistFilename + ".note";
+
+         try
+         {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(noteFileName, true)); // append
+
+            writer.write('"' + playlist.get(playlistPos) + '"' + ' ' + note);
+            writer.newLine();
+            writer.close();
+         }
+         catch (IOException e)
+         {
+            utils.errorLog(this, "can't write note file: " + e);
+         }
+         catch (RuntimeException e)
+         {
+            utils.errorLog(this, "writeNote: " + e);
+         }
+      }
+   }
+
    private void writeSMMFile()
    {
       // Tell smm what tracks from the current playlist have been
@@ -647,6 +672,10 @@ public class service extends Service
                else if (command.equals (utils.COMMAND_NEXT))
                {
                   next();
+               }
+               else if (command.equals (utils.COMMAND_NOTE))
+               {
+                  writeNote(intent.getStringExtra("note"));
                }
                else if (command.equals (utils.COMMAND_PAUSE))
                {

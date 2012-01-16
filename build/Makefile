@@ -1,4 +1,4 @@
-# top level Makefile to build Stephe's Music Player Ada app
+# top level Makefile to build Stephe's Music Player app
 
 # These must match ../AndroidManifest.xml
 #
