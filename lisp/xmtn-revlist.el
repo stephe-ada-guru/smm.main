@@ -1,6 +1,6 @@
 ;;; xmtn-revlist.el --- Interactive display of revision histories for monotone
 
-;; Copyright (C) 2008 - 2011 Stephen Leake
+;; Copyright (C) 2008 - 2012 Stephen Leake
 ;; Copyright (C) 2006, 2007 Christian M. Ohler
 
 ;; Author: Christian M. Ohler
@@ -236,8 +236,9 @@ arg; root. Result is of the form:
       (setq xmtn--revlist-*info-generator-fn* info-generator-fn)
       (setq xmtn--revlist-*path* (when path (file-relative-name path root)))
       (xmtn--revlist-refresh))
-    (xmtn--display-buffer-maybe buffer nil))
-  nil)
+    (xmtn--display-buffer-maybe buffer nil)
+    ;; return buffer so it can be popped to and/or cleaned up
+    buffer))
 
 ;;;###autoload
 (defun xmtn-dvc-log (path last-n)
@@ -401,7 +402,8 @@ from the merge."
 
 ;;;###autoload
 (defun xmtn-update-review (root)
-  "Review revisions in last update of ROOT workspace."
+  "Review revisions in last update of ROOT workspace.
+Returns buffer displaying revision list."
   (interactive "D")
   (xmtn--setup-revlist
    root
@@ -419,8 +421,7 @@ from the merge."
 	revs)))
    nil ;; path
    nil ;; first-line-only-p
-   dvc-log-last-n)
-  nil)
+   dvc-log-last-n))
 
 ;;;###autoload
 (defun xmtn-view-heads-revlist ()

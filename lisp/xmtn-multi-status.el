@@ -52,6 +52,7 @@ The elements must all be of class xmtn-status-data.")
   heads            ; 'need-scan | 'at-head | 'need-update | 'need-merge
   (update-review
    'pending)       ; 'pending | 'need-review | 'done
+  update-buffer    ; *xmtn-revlist* buffer showing update review
   (local-changes
    'need-scan)     ; 'need-scan | 'need-commit | 'ok
   (conflicts
@@ -118,6 +119,10 @@ The elements must all be of class xmtn-status-data.")
   (if (buffer-live-p (xmtn-status-data-status-buffer data))
       (kill-buffer (xmtn-status-data-status-buffer data))))
 
+(defun xmtn-status-kill-update-buffer (data)
+  (if (buffer-live-p (xmtn-status-data-update-buffer data))
+      (kill-buffer (xmtn-status-data-update-buffer data))))
+
 (defun xmtn-status-save-conflicts-buffer (data)
   (if (buffer-live-p (xmtn-status-data-conflicts-buffer data))
       (with-current-buffer (xmtn-status-data-conflicts-buffer data) (save-buffer))))
@@ -128,6 +133,7 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
   (xmtn-automate-kill-session (xmtn-status-work data))
   (xmtn-status-kill-conflicts-buffer data)
   (xmtn-status-kill-status-buffer data)
+  (xmtn-status-kill-update-buffer data)
   (unless save-conflicts
     (xmtn-conflicts-clean (xmtn-status-work data))))
 
@@ -246,7 +252,7 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
     ;; assume they are adding fixmes
     (xmtn-status-need-refresh elem data 'need-scan)
     (setf (xmtn-status-data-update-review data) 'done)
-    (xmtn-update-review (xmtn-status-work data))))
+    (setf (xmtn-status-data-update-buffer data)(xmtn-update-review (xmtn-status-work data)))))
 
 (defun xmtn-status-update-reviewp ()
   "Non-nil if xmtn-status-update-review is appropriate for current workspace."
