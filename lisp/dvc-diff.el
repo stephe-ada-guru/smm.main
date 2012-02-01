@@ -1,6 +1,6 @@
 ;;; dvc-diff.el --- A generic diff mode for DVC
 
-;; Copyright (C) 2005-2011 by all contributors
+;; Copyright (C) 2005-2012 by all contributors
 
 ;; Author: Matthieu Moy <Matthieu.Moy@imag.fr>
 ;; Contributions from:
@@ -757,7 +757,7 @@ Useful to clear diff buffers after a commit."
                               (dvc-fileinfo-remove-files "remove")
                               (dvc-fileinfo-rename "rename"))))))
 
-      (modified
+      ((modified copy-target rename-target)
        ;; Don't offer undo here; not a common action
        (if (dvc-diff-in-ewoc-p)
            (if (< 1 length-marked-elems)
@@ -767,10 +767,9 @@ Useful to clear diff buffers after a commit."
              (error "cannot add a log entry for more than one file")
            (dvc-diff-add-log-entry))))
 
-      ((copy-source copy-target rename-source rename-target)
+      ((copy-source rename-source)
        ;; typically nothing to do; just need commit
-       (ding)
-       (dvc-fileinfo-next))
+       (message "try again on target"))
 
       (unknown
        (cond
