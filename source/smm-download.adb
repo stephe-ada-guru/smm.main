@@ -51,8 +51,9 @@ begin
    loop
       exit when Is_Null (I);
       declare
-         Source : constant String := Source_Root & SAL.Config_Files.Read (Db, Current (I), File_Key);
-         Target : constant String := Destination & Ada.Directories.Simple_Name (Source);
+         Relative : constant String := SAL.Config_Files.Read (Db, Current (I), File_Key);
+         Source   : constant String := Source_Root & Relative;
+         Target   : constant String := Destination & Relative;
       begin
          if Verbosity > 0 then
             Put_Line ("downloading " & Source);

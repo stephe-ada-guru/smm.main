@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2007 - 2009, 2011 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007 - 2009, 2011, 2012 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -49,33 +49,38 @@ package body Test_First_Pass_Version_2 is
 
       Create_Directory ("tmp");
       Create_Directory ("tmp/Vocal");
-      Create_Test_File ("tmp/Vocal/file_4.mp3");
-      Create_Test_File ("tmp/Vocal/file_5.mp3");
-      Create_Test_File ("tmp/Vocal/file_6.mp3");
+      Create_Directory ("tmp/Vocal/artist_1");
+      Create_Test_File ("tmp/Vocal/artist_1/file_4.mp3");
+      Create_Test_File ("tmp/Vocal/artist_1/file_5.mp3");
+      Create_Directory ("tmp/Vocal/artist_2");
+      Create_Test_File ("tmp/Vocal/artist_2/file_6.mp3");
 
       Create (File, Out_File, "tmp/Vocal.m3u");
-      Put_Line (File, "Vocal/file_4.mp3");
-      Put_Line (File, "Vocal/file_5.mp3");
-      Put_Line (File, "Vocal/file_6.mp3");
+      Put_Line (File, "Vocal/artist_1/file_4.mp3");
+      Put_Line (File, "Vocal/artist_1/file_5.mp3");
+      Put_Line (File, "Vocal/artist_2/file_6.mp3");
       Close (File);
 
       Create (File, Out_File, "tmp/Vocal.last");
-      Put_Line (File, "Vocal/file_5.mp3");
+      Put_Line (File, "Vocal/artist_1/file_5.mp3");
       Close (File);
 
-      SMM.First_Pass (Category => "Vocal", Root_Dir => "tmp/", File_Count => File_Count);
+      SMM.First_Pass
+        (Category   => "Vocal",
+         Root_Dir   => SMM.As_Directory (Current_Directory & "/tmp"),
+         File_Count => File_Count);
 
       Check ("File_Count", File_Count, 1);
 
       --  Check that the played files are deleted, but the others are not.
       Set_Directory (Start_Dir);
-      Check_Exists ("tmp/Vocal/file_4.mp3", False);
-      Check_Exists ("tmp/Vocal/file_5.mp3", False);
-      Check_Exists ("tmp/Vocal/file_6.mp3", True);
+      Check_Exists ("tmp/Vocal/artist_1/file_4.mp3", False);
+      Check_Exists ("tmp/Vocal/artist_1/file_5.mp3", False);
+      Check_Exists ("tmp/Vocal/artist_2/file_6.mp3", True);
 
       --  Check that the playlist is updated
       Open (File, In_File, "tmp/Vocal.m3u");
-      Check (File, "Vocal/file_6.mp3");
+      Check (File, "Vocal/artist_2/file_6.mp3");
       Check_End (File);
       Close (File);
 
@@ -115,7 +120,10 @@ package body Test_First_Pass_Version_2 is
       Put_Line (File, "Vocal/file_6.mp3");
       Close (File);
 
-      SMM.First_Pass (Category => "Vocal", Root_Dir => "tmp", File_Count => File_Count);
+      SMM.First_Pass
+        (Category   => "Vocal",
+         Root_Dir   => SMM.As_Directory (Current_Directory & "/tmp"),
+         File_Count => File_Count);
 
       Check ("File_Count", File_Count, 3);
 
@@ -138,7 +146,10 @@ package body Test_First_Pass_Version_2 is
       New_Line (File);
       Close (File);
 
-      SMM.First_Pass (Category => "Vocal", Root_Dir => "tmp", File_Count => File_Count);
+      SMM.First_Pass
+        (Category   => "Vocal",
+         Root_Dir   => SMM.As_Directory (Current_Directory & "/tmp"),
+         File_Count => File_Count);
 
       Check ("File_Count", File_Count, 3);
 
@@ -182,7 +193,10 @@ package body Test_First_Pass_Version_2 is
       Put_Line (File, "Vocal/file_6.mp3");
       Close (File);
 
-      SMM.First_Pass (Category => "Vocal", Root_Dir => "tmp", File_Count => File_Count);
+      SMM.First_Pass
+        (Category   => "Vocal",
+         Root_Dir   => SMM.As_Directory (Current_Directory & "/tmp"),
+         File_Count => File_Count);
 
       Check ("File_Count", File_Count, 0);
 

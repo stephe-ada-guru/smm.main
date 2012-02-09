@@ -381,7 +381,6 @@ package body SMM is
 
    procedure Read_Playlist
      (File_Name  : in     String;
-      Target_Dir : in     String;
       Files      :    out String_Lists.List)
    is
       use Ada.Text_IO;
@@ -413,11 +412,7 @@ package body SMM is
             use Ada.Directories;
             Name : constant String := Get_Line (File);
          begin
-            if Containing_Directory (Name) /= Target_Dir then
-               raise Playlist_Error with "found " & Name & "; expecting " & Target_Dir;
-            end if;
-
-            String_Lists.Append (Files, Ada.Characters.Handling.To_Lower (Simple_Name (Name)));
+            String_Lists.Append (Files, Ada.Characters.Handling.To_Lower (Name));
          end;
       end loop;
    exception

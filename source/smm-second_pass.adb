@@ -23,25 +23,47 @@ with Ada.Text_IO;     use Ada.Text_IO;
 procedure SMM.Second_Pass (Category, Root_Dir : in String)
 is
    Playlist_File_Name : constant String := Category & ".m3u";
-   Target_Dir : constant String := Category;
+   Target_Dir         : constant String := Category;
 
    Mentioned_Files : String_Lists.List;
 
    File : File_Type;
 
    procedure Process_Dir_Entry (Dir_Entry : in Directory_Entry_Type)
-   is
-      --  Palm wants lowercase names, but Android doesn't
-      Name : constant String := Simple_Name (Dir_Entry);
-   begin
-      if not String_Lists.Contains (Mentioned_Files, Name) then
-         if Verbosity > 0 then
-            Put_Line ("adding " & Name);
-         end if;
-         if not Debug then
-            Put_Line (File, Target_Dir & "/" & Name);
-         end if;
-      end if;
+   is begin
+      case Kind (Dir_Entry) is
+      when Directory =>
+         declare
+            Name : constant String := Simple_Name (Dir_Entry);
+         begin
+            if Name = "." or Name = ".." then
+               null;
+            else
+               Search
+                 (Full_Name (Dir_Entry),
+                  Pattern => "*",
+                  Filter  => (Directory => True, Ordinary_File => True, others => False),
+                  Process => Process_Dir_Entry'Access);
+            end if;
+         end;
+
+      when Ordinary_File =>
+         declare
+            Name : constant String := Relative_Name (Root_Dir, Normalize (Full_Name (Dir_Entry)));
+         begin
+            if not String_Lists.Contains (Mentioned_Files, Name) then
+               if Verbosity > 0 then
+                  Put_Line ("adding " & Name);
+               end if;
+               if not Debug then
+                  Put_Line (File, Name);
+               end if;
+            end if;
+         end;
+
+      when Special_File =>
+         raise SAL.Programmer_Error;
+      end case;
    end Process_Dir_Entry;
 
 begin
@@ -61,7 +83,7 @@ begin
       end;
    end if;
 
-   Read_Playlist (Playlist_File_Name, Target_Dir, Mentioned_Files);
+   Read_Playlist (Playlist_File_Name, Mentioned_Files);
 
    if not Debug then
       begin
@@ -76,7 +98,7 @@ begin
    Search
      (Target_Dir,
       Pattern => "*",
-      Filter  => (Ordinary_File => True, others => False),
+      Filter  => (Directory => True, Ordinary_File => True, others => False),
       Process => Process_Dir_Entry'Access);
 
    if not Debug then

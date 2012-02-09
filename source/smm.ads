@@ -2,7 +2,7 @@
 --
 --  Root of Stephe's Music Manager packages
 --
---  Copyright (C) 2008 - 2011 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2012 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -100,12 +100,8 @@ package SMM is
 
    procedure Read_Playlist
      (File_Name  : in     String;
-      Target_Dir : in     String;
       Files      :    out String_Lists.List);
-   --  Read playlist File_name, build list of files (sans directories,
-   --  lowercase) in it.
-   --
-   --  Raise Playlist_Error if any entry is not in Target_Dir
+   --  Read playlist File_name, build list of files (lowercase) in it.
 
    procedure Play_Before
      (Db    : in     SAL.Config_Files.Configuration_Type;

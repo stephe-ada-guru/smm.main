@@ -2,6 +2,8 @@
 
 all : smm.exe test_all_harness.diff smm.html
 
+tests : test_all_harness.diff
+
 include $(GDS_ROOT)/main/makerules/common_rules.make
 include $(GDS_ROOT)/main/makerules/gnat_project_rules.make
 include $(GDS_ROOT)/main/makerules/texinfo_rules.make

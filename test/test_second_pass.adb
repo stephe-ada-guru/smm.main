@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2007 - 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007 - 2009, 2012 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -45,21 +45,25 @@ package body Test_Second_Pass is
 
       Create_Directory ("tmp");
       Create_Directory ("tmp/vocal");
-      Create_Test_File ("tmp/vocal/file_6.mp3");
-      Create_Test_File ("tmp/vocal/file_7.mp3");
-      Create_Test_File ("tmp/vocal/file_8.mp3");
+      Create_Directory ("tmp/vocal/artist_1");
+      Create_Test_File ("tmp/vocal/artist_1/file_6.mp3");
+      Create_Test_File ("tmp/vocal/artist_1/file_7.mp3");
+      Create_Directory ("tmp/vocal/artist_2");
+      Create_Test_File ("tmp/vocal/artist_2/file_8.mp3");
 
       Create (Playlist, Out_File, "tmp/vocal.m3u");
-      Put_Line (Playlist, "vocal/file_6.mp3");
+      Put_Line (Playlist, "vocal/artist_1/file_6.mp3");
       Close (Playlist);
 
-      SMM.Second_Pass (Category => "vocal", Root_Dir => "tmp/");
+      SMM.Second_Pass
+        (Category => "vocal",
+         Root_Dir => SMM.As_Directory (Current_Directory & "/tmp"));
 
       Set_Directory (Start_Dir);
       Open (Playlist, In_File, "tmp/vocal.m3u");
-      Check (Playlist, "vocal/file_6.mp3");
-      Check (Playlist, "vocal/file_7.mp3");
-      Check (Playlist, "vocal/file_8.mp3");
+      Check (Playlist, "vocal/artist_1/file_6.mp3");
+      Check (Playlist, "vocal/artist_1/file_7.mp3");
+      Check (Playlist, "vocal/artist_2/file_8.mp3");
       Check_End (Playlist);
       Close (Playlist);
 
@@ -90,7 +94,9 @@ package body Test_Second_Pass is
       Create (Playlist, Out_File, "tmp/vocal.m3u");
       Close (Playlist);
 
-      SMM.Second_Pass (Category => "vocal", Root_Dir => "tmp");
+      SMM.Second_Pass
+        (Category => "vocal",
+         Root_Dir => SMM.As_Directory (Current_Directory & "/tmp"));
 
       Set_Directory (Start_Dir);
 

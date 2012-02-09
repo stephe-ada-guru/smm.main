@@ -33,21 +33,47 @@ is
    Mentioned_Files : String_Lists.List;
 
    procedure Process_Dir_Entry (Dir_Entry : in Directory_Entry_Type)
-   is
-      Name : constant String := Ada.Characters.Handling.To_Lower (Simple_Name (Dir_Entry));
-   begin
-      if String_Lists.Contains (Mentioned_Files, Name) then
-         if Verbosity > 1 then
-            Put_Line ("keeping " & Name);
-         end if;
-      else
-         if Verbosity > 0 then
-            Put_Line ("deleting " & Name);
-         end if;
-         if not Debug then
-            Delete_File (Full_Name (Dir_Entry));
-         end if;
-      end if;
+   is begin
+      case Kind (Dir_Entry) is
+      when Directory =>
+         declare
+            Name : constant String := Simple_Name (Dir_Entry);
+         begin
+            if Name = "." or Name = ".." then
+               null;
+            else
+               Search
+                 (Full_Name (Dir_Entry),
+                  Pattern => "*",
+                  Filter  => (Directory => True, Ordinary_File => True, others => False),
+                  Process => Process_Dir_Entry'Access);
+
+               --  FIXME: delete dir if empty
+            end if;
+         end;
+
+      when Ordinary_File =>
+         declare
+            Name : constant String := Ada.Characters.Handling.To_Lower
+              (Relative_Name (Root_Dir, Normalize (Full_Name (Dir_Entry))));
+         begin
+            if String_Lists.Contains (Mentioned_Files, Name) then
+               if Verbosity > 1 then
+                  Put_Line ("keeping " & Name);
+               end if;
+            else
+               if Verbosity > 0 then
+                  Put_Line ("deleting " & Name);
+               end if;
+               if not Debug then
+                  Delete_File (Full_Name (Dir_Entry));
+               end if;
+            end if;
+         end;
+
+      when Special_File =>
+         raise SAL.Programmer_Error;
+      end case;
    end Process_Dir_Entry;
 
 begin
@@ -62,7 +88,7 @@ begin
          Edit_Playlist (Playlist_File_Name, Last_File_Name);
       end if;
 
-      Read_Playlist (Playlist_File_Name, Target_Dir, Mentioned_Files);
+      Read_Playlist (Playlist_File_Name, Mentioned_Files);
    else
       Put_Line (Playlist_File_Name & " does not exist; it will be created");
    end if;
@@ -74,7 +100,7 @@ begin
          Search
            (Target_Dir,
             Pattern => "*",
-            Filter  => (Ordinary_File => True, others => False),
+            Filter  => (Directory => True, Ordinary_File => True, others => False),
             Process => Process_Dir_Entry'Access);
       exception
       when Ada.Text_IO.Name_Error =>
