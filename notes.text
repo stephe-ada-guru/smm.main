@@ -4,16 +4,9 @@ src/org/stephe_leake/android/stephes_music/service.java
 (dvc-status)
 ~/Misc/android.text
 
-user notes while playing
-    output to <playlist>.notes
+set dpad nav for notes buttons
 
-    don't play
-    keep before
-    want more (check for new by this artist)
-    add to best list
-
-times show last string buffer value!
-    override somehow?
+select playlist in menu
 
 in progressbar:
     if storage.pos > max, change max (bad .mp3 metadata)
@@ -21,16 +14,23 @@ in progressbar:
  smm
     process notes
 
-    download_playlist song filenames are not guarranteed unique
-        use artist/album/song
+ for Kate
+../stephes_music_player.kate/build/Makefile
+../stephes_music_player.kate/src/org/stephe_leake/android/stephes_music/activity.java
 
-    small drive!
-        handle drive is full nicely
+play directory
+    alphabetical order/randomize?
+        if random, save state is problematic; need to detect when user has changed disk
 
+play single songs from file manager
+    next/prev?
+
+server 'playlist' extension could be .m3u, .mp3, null (directory)
 
  later
 add to menu:
     About
+    Help
 
 transfer files to TV
     usb drive sneakernet for now

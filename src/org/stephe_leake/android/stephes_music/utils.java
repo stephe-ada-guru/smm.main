@@ -22,9 +22,12 @@ import android.app.Activity;
 import android.content.Context;
 import android.text.format.Time;
 import android.util.Log;
+import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.PrintWriter;
+import java.lang.RuntimeException;
 
 public class utils
 {
@@ -65,6 +68,22 @@ public class utils
    public static final int RESULT_TEXT_SCALE = Activity.RESULT_FIRST_USER + 1;
 
    // methods
+
+   public static TextView findTextViewById (Activity a, int id)
+   {
+      final View v = a.findViewById(id);
+
+      if (v == null) throw new RuntimeException("no such id " + id);
+
+      if (v instanceof TextView)
+      {
+         return (TextView)v;
+      }
+      else
+      {
+         throw new RuntimeException(id + " is not a TextView; it is a " + v.toString());
+      }
+   }
 
    public static String makeTimeString(Context context, int millisecs)
    {

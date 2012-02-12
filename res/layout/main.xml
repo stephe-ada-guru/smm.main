@@ -34,8 +34,8 @@
          song titles
          next/play/prev buttons | time
          seekbar
-         playlist
          notes buttons
+         playlist
     -->
     <View
         android:layout_width="match_parent"
@@ -137,50 +137,75 @@
         android:paddingLeft="8dip"
         android:paddingRight="8dip"
         android:paddingBottom="4dip" />
-    <TextView
+    <LinearLayout
+        android:id="@+id/notes_buttons_1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center"
-        android:id="@+id/playlistTitle"
-        android:focusable="true"
-        android:text="(click to select playlist)"
-        android:textAppearance="?android:attr/textAppearanceLarge"/>
-    <LinearLayout
-        android:id="@+id/notes_buttons"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
         android:orientation="horizontal"
         android:layout_gravity="bottom"
         android:layout_marginTop="1dip"
         android:layout_marginBottom="2dip"
         android:gravity="center"> 
-      <!-- notes buttons
-           don't play | keep before | want more  | best
+      <!-- notes buttons, row 1
+           4 buttons per row
       -->
       <Button
-          android:id="@+id/dont_play"
+          android:id="@+id/note_category"
           android:layout_height="match_parent"
           android:layout_width="wrap_content"
-          android:text="@string/dont_play"
-          android:onClick="onClickDontPlay"/>
+          android:text="@string/note_category"
+          android:onClick="onClickNote"/>
       <Button
-          android:id="@+id/keep_before"
+          android:id="@+id/note_dont_play"
           android:layout_height="match_parent"
           android:layout_width="wrap_content"
-          android:text="@string/keep_before"
-          android:onClick="onClickKeepBefore"/>
+          android:text="@string/note_dont_play"
+          android:onClick="onClickNote"/>
       <Button
-          android:id="@+id/want_more"
+          android:id="@+id/note_keep_before"
           android:layout_height="match_parent"
           android:layout_width="wrap_content"
-          android:text="@string/want_more"
-          android:onClick="onClickWantMore"/>
+          android:text="@string/note_keep_before"
+          android:onClick="onClickNote"/>
       <Button
-          android:id="@+id/best_list"
+          android:id="@+id/note_want_more"
           android:layout_height="match_parent"
           android:layout_width="wrap_content"
-          android:text="@string/best_list"
-          android:onClick="onClickBestList"/>
-      </LinearLayout>
+          android:text="@string/note_want_more"
+          android:onClick="onClickNote"/>
+    </LinearLayout>
+    <LinearLayout
+        android:id="@+id/notes_buttons_2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_gravity="center"
+        android:layout_marginTop="1dip"
+        android:layout_marginBottom="2dip"
+        android:gravity="center"> 
+      <!-- notes buttons, row 2
+           4 buttons per row
+      -->
+      <Button
+          android:id="@+id/note_best_list"
+          android:layout_height="match_parent"
+          android:layout_width="wrap_content"
+          android:text="@string/note_best_list"
+          android:onClick="onClickNote"/>
+      <Button
+          android:id="@+id/note_other"
+          android:layout_height="match_parent"
+          android:layout_width="wrap_content"
+          android:text="@string/note_other"
+          android:onClick="onClickNote"/>
+    </LinearLayout>
+    <TextView
+        android:id="@+id/playlistTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:focusable="true"
+        android:text="(click to select playlist)"
+        android:textAppearance="?android:attr/textAppearanceLarge"/>
   </LinearLayout>
 </ScrollView>

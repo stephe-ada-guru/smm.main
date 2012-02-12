@@ -36,6 +36,7 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
@@ -102,30 +103,15 @@ public class activity extends android.app.Activity
 
    ////////// UI listeners (alphabetical by listener name; some defined in main.xml)
 
-   // FIXME: use one onClick, get note text from button (but not button text!)
-   public void onClickBestList(View v)
+   public void onClickNote(View v)
    {
+      // FIXME: this is language dependent; need to derive new Button
+      // view, store a standard note key string.
       sendBroadcast
          (new Intent
           (utils.ACTION_COMMAND)
           .putExtra("command", utils.COMMAND_NOTE)
-          .putExtra("note", "best_list"));
-   };
-
-   public void onClickDontPlay(View v)
-   {
-      sendBroadcast
-         (new Intent(utils.ACTION_COMMAND)
-          .putExtra("command", utils.COMMAND_NOTE)
-          .putExtra("note", "dont_play"));
-   };
-
-   public void onClickKeepBefore(View v)
-   {
-      sendBroadcast
-         (new Intent(utils.ACTION_COMMAND)
-          .putExtra("command", utils.COMMAND_NOTE)
-          .putExtra("note", "keep_before"));
+          .putExtra("note", ((String)((Button)v).getText()).replace('\n', ' ')));
    };
 
    private ImageButton.OnClickListener nextListener = new ImageButton.OnClickListener()
@@ -160,16 +146,13 @@ public class activity extends android.app.Activity
          }
       };
 
-   public void onClickWantMore(View v)
-   {
-      sendBroadcast
-         (new Intent(utils.ACTION_COMMAND)
-          .putExtra("command", utils.COMMAND_NOTE)
-          .putExtra("note", "want_more"));
-   };
-
    private OnSeekBarChangeListener progressListener = new OnSeekBarChangeListener()
       {
+         // The system generates events very fast; that leads to a
+         // stuttering sound. So add some time hysteresis.
+
+         private long lastTime = 0;
+
          public void onStartTrackingTouch(SeekBar bar)
          {
          }
@@ -178,9 +161,16 @@ public class activity extends android.app.Activity
          {
             if (!fromuser) return;
 
-            sendBroadcast
-               (new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_SEEK).
-                putExtra("position", (trackDuration * progress / maxProgress)));
+            final long currentTime = System.currentTimeMillis();
+
+            if (currentTime > lastTime + 100) // 0.1 seconds
+            {
+               lastTime = currentTime;
+
+               sendBroadcast
+                  (new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_SEEK).
+                   putExtra("position", (trackDuration * progress / maxProgress)));
+            }
          }
 
          public void onStopTrackingTouch(SeekBar bar)
@@ -263,9 +253,9 @@ public class activity extends android.app.Activity
 
          // Set up displays, top to bottom left to right
 
-         artistTitle = (TextView) findViewById(R.id.artistTitle);
-         albumTitle  = (TextView) findViewById(R.id.albumTitle);
-         songTitle   = (TextView) findViewById(R.id.songTitle);
+         artistTitle = utils.findTextViewById(this, R.id.artistTitle);
+         albumTitle  = utils.findTextViewById(this, R.id.albumTitle);
+         songTitle   = utils.findTextViewById(this, R.id.songTitle);
 
          defaultTextSize = artistTitle.getTextSize();
          artistTitle.setTextSize(scale * defaultTextSize);
@@ -287,8 +277,8 @@ public class activity extends android.app.Activity
          progressBar.setOnSeekBarChangeListener(progressListener);
          progressBar.setMax(maxProgress);
 
-         playlistTitle = (TextView) findViewById(R.id.playlistTitle);
-         // not scaled to save screen space
+         playlistTitle = utils.findTextViewById(this, R.id.playlistTitle);
+         playlistTitle.setTextSize(scale * defaultTextSize);
          playlistTitle.setOnClickListener(playlistListener);
 
          if (intent.getAction() == null || // destroyed/restored (ie for screen rotate)
@@ -304,7 +294,7 @@ public class activity extends android.app.Activity
       }
       catch (RuntimeException e)
       {
-         utils.errorLog(this, "onCreate: That does not compute", e);
+         utils.errorLog(this, "onCreate: That does not compute: " + e.getMessage(), e);
          finish();
       }
    }
@@ -344,36 +334,44 @@ public class activity extends android.app.Activity
 
    @Override public boolean onKeyDown(int keyCode, KeyEvent event)
    {
+      boolean handled = false; // don't terminate event processing; let MediaEventReceivers get it
+
       switch (keyCode)
       {
          // Alphabetical keycode order
       case KeyEvent.KEYCODE_MEDIA_NEXT:
          sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_NEXT));
+         handled = true; // terminate event processing; MediaEventReceivers won't get it
          break;
 
       case KEYCODE_MEDIA_PAUSE:
          sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PAUSE));
+         handled = true;
          break;
 
       case KEYCODE_MEDIA_PLAY:
          sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PLAY));
+         handled = true;
          break;
 
       case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
          sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_TOGGLEPAUSE));
+         handled = true;
          break;
 
       case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
          sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PREVIOUS));
+         handled = true;
          break;
 
       case KeyEvent.KEYCODE_MEDIA_STOP:
          sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PAUSE));
+         handled = true;
          break;
 
       default:
       }
-      return false; // don't terminate event processing
+      return handled;
    };
 
 

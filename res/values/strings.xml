@@ -27,10 +27,12 @@
   <string name="null_playlist">(click to select a playlist)</string>
 
   <!-- buttons -->
-  <string name="dont_play">Don\'t\nPlay</string>
-  <string name="keep_before">Keep\nBefore</string>
-  <string name="want_more">Want\nMore</string>
-  <string name="best_list">Best\nList</string>
+  <string name="note_best_list">Best\nList</string>
+  <string name="note_category">Category</string>
+  <string name="note_dont_play">Don\'t\nPlay</string>
+  <string name="note_keep_before">Keep\nBefore</string>
+  <string name="note_other">Other</string>
+  <string name="note_want_more">Want\nMore</string>
   
   <!-- menu -->
   <string name="menu_quit">Quit</string>

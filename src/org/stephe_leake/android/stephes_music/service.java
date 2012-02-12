@@ -108,15 +108,17 @@ public class service extends Service
             {
                highestPlaylistPos = playlistPos;
             }
+            play(playlist.get(playlistPos), 0);
          }
          else
          {
-            // at end of playlist; wrap
+            // at end of playlist; don't wrap, because then we just
+            // end up repeating the whole playlist. There isn't a good
+            // way to indicate we've wrapped; it looks like there is
+            // lots of music left, so we don't sync.
             highestPlaylistPos = playlistPos;
-            playlistPos        = 0;
+            stop();
          };
-
-         play(playlist.get(playlistPos), 0);
       }
 
       // for some crashes, onDestroy is not called, so we don't
@@ -287,7 +289,7 @@ public class service extends Service
          String                       line        = in.readLine();
          java.util.LinkedList<String> tmpPlaylist = new LinkedList<String>();
          int                          lineCount   = 0;
-         int                          startAt     = 0;
+         int                          startAt     = -1;
 
          while (line != null)
          {
@@ -297,15 +299,21 @@ public class service extends Service
             // In SMM playlists all lines are song filepaths, relative
             // to the directory filename is in.
 
-            if (currentFile != null && startAt == 0 && line.equals(currentFile))
+            if (currentFile != null && line.equals(currentFile))
             {
-               // If 'currentFile' is in the playlist multiple times,
-               // this finds the first one. That's a bug in SMM, so it
-               // doesn't much matter what we do; this ensures that
-               // all of the playlist is played at least once.
-               utils.debugLog("playList found current, startAt " + startAt);
-               startAt = lineCount;
-               pos     = storage.getInt(tmpPlaylistFilename + keyCurrentPos, 0);
+               if (startAt == -1)
+               {
+                  // If 'currentFile' is in the playlist multiple times,
+                  // this finds the first one. That's a bug in SMM, so it
+                  // doesn't much matter what we do; this ensures that
+                  // all of the playlist is played at least once.
+                  startAt = lineCount;
+                  pos     = storage.getInt(tmpPlaylistFilename + keyCurrentPos, 0);
+               }
+               else
+               {
+                  utils.errorLog(this, currentFile + " found more than once in playlist");
+               }
             }
 
             tmpPlaylist.add(line);
@@ -319,6 +327,11 @@ public class service extends Service
          {
             utils.errorLog (this, "no songs found in playlist file " + filename);
             throw new Fail();
+         }
+
+         if (-1 == startAt)
+         {
+            startAt = 0;
          }
 
          playlistDirectory = playlistFile.getParent();
