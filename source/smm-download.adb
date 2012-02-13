@@ -19,9 +19,9 @@
 pragma License (GPL);
 
 with Ada.IO_Exceptions;
-with Ada.Directories;
+with Ada.Directories; use Ada.Directories;
 with Ada.Real_Time;
-with Ada.Text_IO; use Ada.Text_IO;
+with Ada.Text_IO;     use Ada.Text_IO;
 with SAL.Config_Files;
 with SAL.Time_Conversions;
 procedure SMM.Download
@@ -36,13 +36,16 @@ is
    Count       : Integer         := 0;
    Source_Root : constant String := SAL.Config_Files.Read (Db, Root_Key);
 
+   --  The real_time clock on Windows does not give the current year,
+   --  but it does give monotonic time. Ada.Calendar does give current
+   --  year, but we don't have code to convert that to SAL.Time_Type.
    Download_Time : constant String := SAL.Time_Conversions.Time_Type'Image
      (SAL.Time_Conversions.To_Time (Ada.Real_Time.Clock));
 
 begin
-   if not Ada.Directories.Exists (Destination) then
+   if not Exists (Destination) then
       Put_Line ("creating directory " & Destination);
-      Ada.Directories.Create_Directory (Destination);
+      Create_Directory (Destination);
    end if;
 
    Least_Recent_Songs (Db, Category, Songs, Song_Count);
@@ -51,9 +54,10 @@ begin
    loop
       exit when Is_Null (I);
       declare
-         Relative : constant String := SAL.Config_Files.Read (Db, Current (I), File_Key);
-         Source   : constant String := Source_Root & Relative;
-         Target   : constant String := Destination & Relative;
+         Relative   : constant String := SAL.Config_Files.Read (Db, Current (I), File_Key);
+         Source     : constant String := Source_Root & Relative;
+         Target     : constant String := Destination & Relative;
+         Target_Dir : constant String := Containing_Directory (Target);
       begin
          if Verbosity > 0 then
             Put_Line ("downloading " & Source);
@@ -65,9 +69,25 @@ begin
             Put (".");
          end if;
 
-         Ada.Directories.Copy_File
-           (Source_Name => Source,
-            Target_Name => Target);
+         if not Exists (Target_Dir) then
+            begin
+               Create_Path (Target_Dir);
+            exception
+            when Ada.IO_Exceptions.Use_Error =>
+               Put_Line ("can't create directory " & Target_Dir);
+            end;
+         end if;
+
+         begin
+            Copy_File
+              (Source_Name => Source,
+               Target_Name => Target);
+         exception
+         when Ada.IO_Exceptions.Use_Error =>
+            --  Just stop downloading; nothing else we can do.
+            Put_Line (Destination & " Use_Error; probably disk full");
+            return;
+         end;
 
          SAL.Config_Files.Write (Db, Current (I), Last_Downloaded_Key, Download_Time);
 
@@ -75,8 +95,4 @@ begin
          Count := Count + 1;
       end;
    end loop;
-exception
-when Ada.IO_Exceptions.Use_Error =>
-   --  Just stop downloading; nothing else we can do.
-   Put_Line (Destination & " Use_Error; probably disk full");
 end SMM.Download;
