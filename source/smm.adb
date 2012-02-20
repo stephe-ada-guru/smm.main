@@ -244,7 +244,7 @@ package body SMM is
       use type SAL.Time_Conversions.Time_Type;
 
       New_Song_Count      : constant Integer := 4;
-      Min_Randomize_Count : constant Integer := Integer'Max (60, 2 * Song_Count);
+      Min_Randomize_Count : constant Integer := 2 * Song_Count;
       Time_List           : Time_Lists.List_Type;
 
       procedure Finish
@@ -318,7 +318,7 @@ package body SMM is
          end if;
       end if;
 
-      if Count (Current (Time_List_I).Songs) >= Min_Randomize_Count then
+      if Count (Current (Time_List_I).Songs) >= Min_Randomize_Count - Count (Songs) then
          Add_All (Current (Time_List_I).Songs);
          Finish;
          return;

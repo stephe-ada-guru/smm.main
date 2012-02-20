@@ -98,6 +98,10 @@ package SMM is
    --  Return randomized list of Song_Count least-recently downloaded
    --  songs in Category. If any Songs have .Play_Before attribute,
    --  enforce it.
+   --
+   --  If Seed is non-zero, it is used to initialize the randomizer
+   --  (for repeatable test results). Otherwise initialized per Ada
+   --  LRM.
 
    package String_Lists is new Ada.Containers.Indefinite_Doubly_Linked_Lists (String);
 

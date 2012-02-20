@@ -1,6 +1,7 @@
-   Total Tests Run:  9
 
-   Successful Tests: 9
+......   Total Tests Run:  8
+
+   Successful Tests: 8
 Test_First_Pass_Version_1: Nominal
 Test_First_Pass_Version_1: Empty_Playlist
 Test_First_Pass_Version_2: Nominal
@@ -8,8 +9,7 @@ Test_First_Pass_Version_2: New_Playlist
 Test_First_Pass_Version_2: Finished_Playlist
 Test_Least_Recent: Nominal
 Test_Play_Before: Nominal
-Test_Second_Pass: Nominal
-Test_Second_Pass: Empty_Playlist
+Test_Download: Nominal
 
    Failed Tests: 0
 

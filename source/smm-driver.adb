@@ -2,7 +2,7 @@
 --
 --  main procedure for SMM application
 --
---  Copyright (C) 2008 - 2011 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2012 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -29,7 +29,6 @@ with SMM.Download;
 with SMM.First_Pass;
 with SMM.Import;
 with SMM.Playlist;
-with SMM.Second_Pass;
 procedure SMM.Driver
 is
    procedure Put_Usage
@@ -40,10 +39,6 @@ is
       Put_Line ("  <db_file> : defaults to ~/.smm/smm.db or $APPDATA/smm or $SMM_HOME");
       Put_Line ("  categories: {instrumental | vocal | ...}");
       Put_Line ("  operations:");
-      Put_Line ("  download <category> <target_dir>");
-      Put_Line ("    downloads default amount of music to target_dir");
-      Put_Line ("    music is drawn from least-recently downloaded songs in category");
-      New_Line;
       Put_Line ("  download_playlist <category> <target_dir>");
       Put_Line ("    manage downloaded files and playlist:");
       Put_Line ("    1) delete files in target_dir either not in playlist target_dir/../<category>.m3u,");
@@ -85,7 +80,7 @@ is
 
    Home : constant String := Find_Home;
 
-   type Command_Type is (Download, Download_Playlist, Playlist, Import);
+   type Command_Type is (Download_Playlist, Playlist, Import);
 
    procedure Get_Command is new SAL.Command_Line_IO.Gen_Get_Discrete (Command_Type, "command", Next_Arg);
 
@@ -153,9 +148,6 @@ begin
    end;
 
    case Command is
-   when Download =>
-      SMM.Download (Db, Argument (Next_Arg), As_Directory (Argument (Next_Arg + 1)), Max_Song_Count);
-
    when Download_Playlist =>
       declare
          Category   : constant String := Argument (Next_Arg);
@@ -166,9 +158,8 @@ begin
          SMM.First_Pass (Category, Root_Dir, Song_Count);
          if Max_Song_Count - Song_Count >= Min_Download_Count then
             Verbosity := Verbosity - 1;
-            SMM.Download (Db, Category, Root_Dir & Category & '/', Max_Song_Count - Song_Count);
+            SMM.Download (Db, Category, Root_Dir, Max_Song_Count - Song_Count);
             Verbosity := Verbosity + 1;
-            SMM.Second_Pass (Category, Root_Dir);
          end if;
       end;
 

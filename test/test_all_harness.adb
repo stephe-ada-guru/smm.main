@@ -2,7 +2,7 @@
 --
 --  Run all AUnit tests.
 --
---  Copyright (C) 2009, 2011 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2009, 2011, 2012 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -24,7 +24,7 @@ with Test_First_Pass_Version_1;
 with Test_First_Pass_Version_2;
 with Test_Least_Recent;
 with Test_Play_Before;
-with Test_Second_Pass;
+with Test_Download;
 procedure Test_All_Harness
 is
    use AUnit.Test_Suites;
@@ -38,7 +38,7 @@ begin
    Add_Test (Suite, new Test_First_Pass_Version_2.Test_Case (Verbosity => 0, Debug => False));
    Add_Test (Suite, new Test_Least_Recent.Test_Case);
    Add_Test (Suite, new Test_Play_Before.Test_Case);
-   Add_Test (Suite, new Test_Second_Pass.Test_Case (Verbosity => 0, Debug => 0));
+   Add_Test (Suite, new Test_Download.Test_Case (Verbosity => 0, Debug => 0));
 
    Run (Suite.all, Result);
 

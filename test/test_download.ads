@@ -2,7 +2,7 @@
 --
 --  Test playlists --second
 --
---  Copyright (C) 2007, 2008, 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007, 2008, 2009, 2012 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -20,7 +20,7 @@ pragma License (GPL);
 
 with Ada.Strings.Unbounded;
 with AUnit.Test_Cases; use AUnit.Test_Cases;
-package Test_Second_Pass is
+package Test_Download is
 
    type Test_Case
      (Verbosity : Integer;
@@ -33,4 +33,4 @@ package Test_Second_Pass is
 
    overriding procedure Set_Up_Case (T : in out Test_Case);
 
-end Test_Second_Pass;
+end Test_Download;

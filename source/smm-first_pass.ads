@@ -2,7 +2,7 @@
 --
 --  First pass of playlists.
 --
---  Copyright (C) 2007, 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007, 2009, 2012 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -22,4 +22,6 @@ procedure SMM.First_Pass
   (Category   : in     String;
    Root_Dir   : in     String;
    File_Count :    out Integer);
---  Return count of files remaining in playlist.
+--  Delete files from Root_Dir that are not mentioned in playlist file
+--  "<category>.m3u". Return count of files remaining in playlist.
+

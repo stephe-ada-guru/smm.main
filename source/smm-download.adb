@@ -1,6 +1,6 @@
 --  Abstract :
 --
---  download files to a music player
+--  see spec
 --
 --  Copyright (C) 2008 - 2009, 2011, 2012 Stephen Leake.  All Rights Reserved.
 --
@@ -26,25 +26,49 @@ with SAL.Config_Files;
 with SAL.Time_Conversions;
 procedure SMM.Download
   (Db          : in out SAL.Config_Files.Configuration_Type;
-   Category    : in String;
-   Destination : in String;
-   Song_Count  : in Integer)
+   Category    : in     String;
+   Destination : in     String;
+   Song_Count  : in     Integer;
+   Seed        : in     Integer := 0)
 is
    use Song_Lists;
-   Songs       : List_Type;
-   I           : Iterator_Type;
-   Count       : Integer         := 0;
-   Source_Root : constant String := SAL.Config_Files.Read (Db, Root_Key);
+   Songs        : List_Type;
+   I            : Iterator_Type;
+   Count        : Integer         := 0;
+   Source_Root  : constant String := SAL.Config_Files.Read (Db, Root_Key);
+   Category_Dir : constant String := Destination & Category & '/';
 
    Download_Time : constant SAL.Time_Conversions.Time_Type := SAL.Time_Conversions.To_TAI_Time (Ada.Calendar.Clock);
 
+   Playlist_File_Name : constant String := Destination & Category & ".m3u";
+   Playlist_File      : File_Type;
 begin
    if not Exists (Destination) then
       Put_Line ("creating directory " & Destination);
       Create_Directory (Destination);
    end if;
 
-   Least_Recent_Songs (Db, Category, Songs, Song_Count);
+   if not Ada.Directories.Exists (Playlist_File_Name) then
+      Put_Line ("creating playlist file " & Playlist_File_Name);
+      begin
+         Create (Playlist_File, Out_File, Playlist_File_Name);
+      exception
+      when Ada.Text_IO.Name_Error =>
+         Put_Line ("playlist file " & Playlist_File_Name & " cannot be created");
+         raise;
+      end;
+
+   else
+      begin
+         Open (Playlist_File, Append_File, Playlist_File_Name);
+      exception
+      when Ada.Text_IO.Name_Error =>
+         Put_Line ("playlist file " & Playlist_File_Name & " cannot be opened");
+         raise;
+      end;
+   end if;
+
+   Least_Recent_Songs (Db, Category, Songs, Song_Count, Seed);
 
    I := First (Songs);
    loop
@@ -52,10 +76,10 @@ begin
       declare
          Relative   : constant String := SAL.Config_Files.Read (Db, Current (I), File_Key);
          Source     : constant String := Source_Root & Relative;
-         Target     : constant String := Destination & Relative;
+         Target     : constant String := Category_Dir & Relative;
          Target_Dir : constant String := Containing_Directory (Target);
       begin
-         if Verbosity > 0 then
+         if Verbosity > 1 then
             Put_Line ("downloading " & Source);
             Put_Line ("to          " & Target);
          else
@@ -81,8 +105,19 @@ begin
          exception
          when Ada.IO_Exceptions.Use_Error =>
             --  Just stop downloading; nothing else we can do.
+            Close (Playlist_File);
             Put_Line (Destination & " Use_Error; probably disk full");
             return;
+         end;
+
+         declare
+            Name : constant String := Relative_Name (Destination, Target);
+         begin
+            if Verbosity > 0 then
+               Put_Line ("adding " & Name);
+            end if;
+
+            Put_Line (Playlist_File, Name);
          end;
 
          Write_Last_Downloaded (Db, Current (I), Download_Time);
@@ -91,4 +126,7 @@ begin
          Count := Count + 1;
       end;
    end loop;
+
+   Close (Playlist_File);
+
 end SMM.Download;
