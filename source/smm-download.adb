@@ -36,7 +36,7 @@ is
    Count       : Integer         := 0;
    Source_Root : constant String := SAL.Config_Files.Read (Db, Root_Key);
 
-   Download_Time : constant SAL.Time_Conversions.Time_Type := SAL.Time_Conversions.To_TAI (Ada.Calendar.Clock);
+   Download_Time : constant SAL.Time_Conversions.Time_Type := SAL.Time_Conversions.To_TAI_Time (Ada.Calendar.Clock);
 
 begin
    if not Exists (Destination) then
