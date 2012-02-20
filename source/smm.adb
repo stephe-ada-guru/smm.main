@@ -24,7 +24,6 @@ with SAL.Aux.Indefinite_Private_Items;
 with SAL.Config_Files.Integer;
 with SAL.Gen.Alg.Find_Linear.Sorted;
 with SAL.Poly.Lists.Double.Gen_Randomize;
-with SAL.Time_Conversions.Config;
 package body SMM is
 
    function Normalize (Path : in String) return String
@@ -61,6 +60,43 @@ package body SMM is
          return Temp & '/';
       end if;
    end As_Directory;
+
+   Last_Downloaded_Key : constant String := "Last_Downloaded";
+
+   function Read_Last_Downloaded
+     (Db : in SAL.Config_Files.Configuration_Type;
+      I  : in SAL.Config_Files.Iterator_Type)
+     return SAL.Time_Conversions.Time_Type
+   is
+      use SAL.Config_Files;
+      use SAL.Time_Conversions;
+      Temp : constant String := Read (Db, I, Last_Downloaded_Key);
+   begin
+      if Temp'Length = Extended_ASIST_Time_String_Type'Last and then Temp (5) = '-' then
+         --  ASIST string
+         return To_TAI_Time (Temp, Absolute => True);
+      else
+         --  Time_type'image; old db, or unit test.
+         return Time_Type'Value (Temp);
+      end if;
+   end Read_Last_Downloaded;
+
+   procedure Write_Last_Downloaded
+     (Db   : in out SAL.Config_Files.Configuration_Type;
+      I    : in     SAL.Config_Files.Iterator_Type;
+      Time : in     SAL.Time_Conversions.Time_Type)
+   is begin
+      SAL.Config_Files.Write (Db, I, Last_Downloaded_Key, SAL.Time_Conversions.To_Extended_ASIST_String (Time));
+   end Write_Last_Downloaded;
+
+   procedure Write_Last_Downloaded
+     (Db       : in out SAL.Config_Files.Configuration_Type;
+      Root_Key : in     String;
+      Time     : in     SAL.Time_Conversions.Time_Type)
+   is begin
+      SAL.Config_Files.Write
+        (Db, Root_Key & "." & Last_Downloaded_Key, SAL.Time_Conversions.To_Extended_ASIST_String (Time));
+   end Write_Last_Downloaded;
 
    procedure Randomize is new Song_Lists.Gen_Randomize;
 
@@ -158,8 +194,7 @@ package body SMM is
       List : in out Time_Lists.List_Type;
       Item : in     SAL.Config_Files.Iterator_Type)
    is
-      Last_Downloaded : constant SAL.Time_Conversions.Time_Type :=
-        SAL.Time_Conversions.Config.Read (Db, Item, Last_Downloaded_Key);
+      Last_Downloaded : constant SAL.Time_Conversions.Time_Type := Read_Last_Downloaded (Db, Item);
 
       I : Time_Lists.Iterator_Type := Time_Lists_Find.Find_Equal
         (Start => Time_Lists.First (List),

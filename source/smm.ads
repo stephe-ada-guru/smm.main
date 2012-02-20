@@ -26,6 +26,7 @@ with SAL.Config_Files;
 with SAL.Gen.Alg.Count;
 with SAL.Poly.Lists.Double;
 with SAL.Storage_Pools;
+with SAL.Time_Conversions;
 package SMM is
 
    Verbosity : Integer;
@@ -44,10 +45,25 @@ package SMM is
    --  database keys
    Category_Key        : constant String := "Category";
    File_Key            : constant String := "File";
-   Last_Downloaded_Key : constant String := "Last_Downloaded";
+   --  Last_Downloaded_Key in body only
    Songs_Key           : constant String := "Songs";
    Root_Key            : constant String := "Root";
    Playlist_Key        : constant String := "Playlists";
+
+   function Read_Last_Downloaded
+     (Db : in SAL.Config_Files.Configuration_Type;
+      I  : in SAL.Config_Files.Iterator_Type)
+     return SAL.Time_Conversions.Time_Type;
+
+   procedure Write_Last_Downloaded
+     (Db   : in out SAL.Config_Files.Configuration_Type;
+      I    : in     SAL.Config_Files.Iterator_Type;
+      Time : in     SAL.Time_Conversions.Time_Type);
+
+   procedure Write_Last_Downloaded
+     (Db       : in out SAL.Config_Files.Configuration_Type;
+      Root_Key : in     String;
+      Time     : in     SAL.Time_Conversions.Time_Type);
 
    package Song_Lists_Aux is new SAL.Aux.Definite_Private_Items (SAL.Config_Files.Iterator_Type);
 

@@ -19,8 +19,8 @@
 pragma License (GPL);
 
 with Ada.IO_Exceptions;
+with Ada.Calendar;
 with Ada.Directories; use Ada.Directories;
-with Ada.Real_Time;
 with Ada.Text_IO;     use Ada.Text_IO;
 with SAL.Config_Files;
 with SAL.Time_Conversions;
@@ -36,11 +36,7 @@ is
    Count       : Integer         := 0;
    Source_Root : constant String := SAL.Config_Files.Read (Db, Root_Key);
 
-   --  The real_time clock on Windows does not give the current year,
-   --  but it does give monotonic time. Ada.Calendar does give current
-   --  year, but we don't have code to convert that to SAL.Time_Type.
-   Download_Time : constant String := SAL.Time_Conversions.Time_Type'Image
-     (SAL.Time_Conversions.To_Time (Ada.Real_Time.Clock));
+   Download_Time : constant SAL.Time_Conversions.Time_Type := SAL.Time_Conversions.To_TAI (Ada.Calendar.Clock);
 
 begin
    if not Exists (Destination) then
@@ -89,7 +85,7 @@ begin
             return;
          end;
 
-         SAL.Config_Files.Write (Db, Current (I), Last_Downloaded_Key, Download_Time);
+         Write_Last_Downloaded (Db, Current (I), Download_Time);
 
          Next (I);
          Count := Count + 1;

@@ -50,11 +50,10 @@ begin
 
                   Old_I : constant Iterator_Type := Element (Pos);
 
-                  Last_Downloaded : constant Time_Type := Config.Read (Db, I, Last_Downloaded_Key);
+                  Last_Downloaded : constant Time_Type := Read_Last_Downloaded (Db, I);
                begin
-                  Write
-                    (Db, Old_I, Last_Downloaded_Key,
-                     Time_Type'Image (Time_Type'Max (Last_Downloaded, Config.Read (Db, Old_I, Last_Downloaded_Key))));
+                  Write_Last_Downloaded
+                    (Db, Old_I, Time_Type'Max (Last_Downloaded, Read_Last_Downloaded (Db, Old_I)));
 
                   if not Is_Present (Db, Old_I, Category_Key) then
                      if Is_Present (Db, I, Category_Key) then

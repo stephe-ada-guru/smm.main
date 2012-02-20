@@ -2,7 +2,7 @@
 --
 --  Import new files into SMM db.
 --
---  Copyright (C) 2008 - 2010 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2010, 2012 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -22,7 +22,6 @@ with Ada.Directories;
 with Ada.Text_IO;
 with Interfaces;
 with SAL.Config_Files;
-with SAL.Time_Conversions;
 procedure SMM.Import
   (Db       : in out SAL.Config_Files.Configuration_Type;
    Category : in String;
@@ -105,7 +104,7 @@ is
                   end if;
                   Write_String (Db, Songs_Key & "." & Index_Image & "." & File_Key, Name);
                   Write_String (Db, Songs_Key & "." & Index_Image & "." & Category_Key, Category);
-                  Write_String (Db, Songs_Key & "." & Index_Image & "." & Last_Downloaded_Key, Time_Type'Image (0.0));
+                  Write_Last_Downloaded (Db, Songs_Key & "." & Index_Image, 0.0);
                   Index := Index + 1;
                end if;
             end if;

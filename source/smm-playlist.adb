@@ -2,7 +2,7 @@
 --
 --  create a playlist of least-recenty heard songs
 --
---  Copyright (C) 2009, 2010 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2009, 2010, 2012 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -43,8 +43,7 @@ is
    Relative        : Boolean;
    Relative_Prefix : Ada.Strings.Unbounded.Unbounded_String;
 
-   Output_Time : constant String := SAL.Time_Conversions.Time_Type'Image
-     (SAL.Time_Conversions.To_Time (Ada.Real_Time.Clock));
+   Output_Time : constant SAL.Time_Conversions.Time_Type := SAL.Time_Conversions.To_Time (Ada.Real_Time.Clock);
 begin
    declare
       use Ada.Directories;
@@ -111,7 +110,7 @@ begin
             Ada.Text_IO.Put_Line (Playlist_File, Source_Root & Source);
          end if;
 
-         SAL.Config_Files.Write (Db, Current (I), Last_Downloaded_Key, Output_Time);
+         Write_Last_Downloaded (Db, Current (I), Output_Time);
 
          Next (I);
       end;

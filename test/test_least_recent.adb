@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2009, 2011 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2009, 2011, 2012 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -24,6 +24,7 @@ with Ada.Directories;
 with Ada.Text_IO;
 with SAL.AUnit;
 with SAL.Config_Files;
+with SAL.Time_Conversions;
 with SMM;
 package body Test_Least_Recent is
 
@@ -104,7 +105,7 @@ package body Test_Least_Recent is
    procedure Mark_Downloaded
      (Db    : in out SAL.Config_Files.Configuration_Type;
       Songs : in     SMM.Song_Lists.List_Type;
-      Time  : in     String)
+      Time  : in     SAL.Time_Conversions.Time_Type)
    is
       use SMM.Song_Lists;
       I : Iterator_Type := First (Songs);
@@ -112,7 +113,7 @@ package body Test_Least_Recent is
    begin
       loop
          exit when Is_Null (I);
-         SAL.Config_Files.Write (Db, Current (I), SMM.Last_Downloaded_Key, Time);
+         SMM.Write_Last_Downloaded (Db, Current (I), Time);
          Next (I);
       end loop;
       SAL.Config_Files.Flush (Db); --  for debugging
@@ -144,7 +145,7 @@ package body Test_Least_Recent is
 
       Check ("1 2", Db, I, "I1.mp3");
 
-      Mark_Downloaded (Db, Songs, "2.0");
+      Mark_Downloaded (Db, Songs, 2.0);
 
       Finalize (Songs);
 
