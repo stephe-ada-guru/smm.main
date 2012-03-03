@@ -77,13 +77,13 @@ public class activity extends android.app.Activity
 
    // Cached values
    private int trackDuration = 0; // track duration in milliseconds
-   private float defaultTextSize; // set in onCreate, modified by text_scale preference
+   private float defaultTextViewTextSize; // set in onCreate
 
    private AlertDialog playlistDialog;
 
    ////////// local utils
 
-   private float getTextScale()
+   private float getTextViewTextScale()
    {
       Resources         res   = getResources();
       SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
@@ -92,7 +92,7 @@ public class activity extends android.app.Activity
               res.getString(R.string.text_scale_default));
       try
       {
-         return new Float (scale) .floatValue();
+         return new Float(scale).floatValue();
       }
       catch (NumberFormatException e)
       {
@@ -239,7 +239,7 @@ public class activity extends android.app.Activity
    {
       PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 
-      final float scale = getTextScale();
+      final float scale = getTextViewTextScale();
 
       final Intent intent = getIntent();
 
@@ -257,10 +257,13 @@ public class activity extends android.app.Activity
          albumTitle  = utils.findTextViewById(this, R.id.albumTitle);
          songTitle   = utils.findTextViewById(this, R.id.songTitle);
 
-         defaultTextSize = artistTitle.getTextSize();
-         artistTitle.setTextSize(scale * defaultTextSize);
-         albumTitle.setTextSize(scale * defaultTextSize);
-         songTitle.setTextSize(scale * defaultTextSize);
+         defaultTextViewTextSize = artistTitle.getTextSize();
+         artistTitle.setTextSize(scale * defaultTextViewTextSize);
+         albumTitle.setTextSize(scale * defaultTextViewTextSize);
+         songTitle.setTextSize(scale * defaultTextViewTextSize);
+
+         // FIXME: set button text size from preference. find
+         // notes_buttons_* linear layout(s), iterate over children
 
          ((ImageButton)findViewById(R.id.prev)).setOnClickListener(prevListener);
 
@@ -278,7 +281,7 @@ public class activity extends android.app.Activity
          progressBar.setMax(maxProgress);
 
          playlistTitle = utils.findTextViewById(this, R.id.playlistTitle);
-         playlistTitle.setTextSize(scale * defaultTextSize);
+         playlistTitle.setTextSize(scale * defaultTextViewTextSize);
          playlistTitle.setOnClickListener(playlistListener);
 
          if (intent.getAction() == null || // destroyed/restored (ie for screen rotate)
@@ -495,11 +498,11 @@ public class activity extends android.app.Activity
 
          case utils.RESULT_TEXT_SCALE:
             {
-               final float scale = getTextScale();
+               final float scale = getTextViewTextScale();
 
-               artistTitle.setTextSize(scale * defaultTextSize);
-               albumTitle.setTextSize(scale * defaultTextSize);
-               songTitle.setTextSize(scale * defaultTextSize);
+               artistTitle.setTextSize(scale * defaultTextViewTextSize);
+               albumTitle.setTextSize(scale * defaultTextViewTextSize);
+               songTitle.setTextSize(scale * defaultTextViewTextSize);
             }
             break;
 

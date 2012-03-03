@@ -4,7 +4,9 @@ src/org/stephe_leake/android/stephes_music/service.java
 (dvc-status)
 ~/Misc/android.text
 
-set dpad nav for notes buttons
+google tv app next/prev buttons?
+    not next/prev, but fwd/rev?
+    use media_event_receiver?
 
 select playlist in menu
 
@@ -12,7 +14,14 @@ in progressbar:
     if storage.pos > max, change max (bad .mp3 metadata)
 
  smm
-    process notes
+/Projects/smm/smm.main/build/x86_gnu_windows_release/Makefile
+
+process notes
+
+multiple categories:
+    vocal/protest/intro
+    instrumental/yoga
+        store in genre field(s)?
 
  for Kate
 ../stephes_music_player.kate/build/Makefile
@@ -27,6 +36,12 @@ play single songs from file manager
 
 server 'playlist' extension could be .m3u, .mp3, null (directory)
 
+windows Winamp requires import all into library
+    don't want that; library is disk
+        Kate doesn't need any metadata (stephe does, so has library)
+    just need drag'n'drop playlist creation
+        and then playlist/directory copy to android
+
  later
 add to menu:
     About
@@ -34,9 +49,6 @@ add to menu:
 
 transfer files to TV
     usb drive sneakernet for now
-        path is /mnt/media/usb.2A9A-67AE
-            need a way to enumerate or search for that
-                find media player source
 
     mtp (Media Transfer Protocol)
         windows development kit: /Archive/Android/mtppk12.exe
