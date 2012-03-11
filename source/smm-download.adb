@@ -79,15 +79,7 @@ begin
          Target     : constant String := Category_Dir & Relative;
          Target_Dir : constant String := Containing_Directory (Target);
       begin
-         if Verbosity > 1 then
-            Put_Line ("downloading " & Source);
-            Put_Line ("to          " & Target);
-         else
-            if Count mod 10 = 0 then
-               New_Line;
-            end if;
-            Put (".");
-         end if;
+         Put_Line (Relative);
 
          if not Exists (Target_Dir) then
             begin

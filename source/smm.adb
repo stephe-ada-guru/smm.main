@@ -254,10 +254,16 @@ package body SMM is
          Play_Before (Db, Songs);
       end Finish;
 
-      procedure Add_All (Source : in out Song_Lists.List_Type)
+      procedure Add_All (Time_List_I : in Time_Lists.Iterator_Type)
       is
          use Song_Lists;
+         Time_List_Element : Time_List_Element_Type renames Time_Lists.Current (Time_List_I).all;
+         Source : Song_Lists.List_Type renames Time_List_Element.Songs;
       begin
+         Ada.Text_IO.Put_Line
+           ("adding songs from " &
+              SAL.Time_Conversions.To_Extended_ASIST_String (Time_List_Element.Last_Downloaded));
+
          Splice_After
            (Source => Source,
             First  => First (Source),
@@ -319,7 +325,7 @@ package body SMM is
       end if;
 
       if Count (Current (Time_List_I).Songs) >= Min_Randomize_Count - Count (Songs) then
-         Add_All (Current (Time_List_I).Songs);
+         Add_All (Time_List_I);
          Finish;
          return;
       else
@@ -327,7 +333,7 @@ package body SMM is
             exit when Count (Songs) >= Min_Randomize_Count or
               Time_Lists.Is_Null (Time_List_I);
 
-            Add_All (Current (Time_List_I).Songs);
+            Add_All (Time_List_I);
 
             Time_Lists.Next (Time_List_I);
          end loop;
