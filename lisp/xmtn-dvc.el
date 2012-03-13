@@ -1,6 +1,6 @@
 ;;; xmtn-dvc.el --- DVC backend for monotone
 
-;; Copyright (C) 2008 - 2011 Stephen Leake
+;; Copyright (C) 2008 - 2012 Stephen Leake
 ;; Copyright (C) 2006, 2007, 2008 Christian M. Ohler
 
 ;; Author: Christian M. Ohler
@@ -274,23 +274,14 @@
   nil)
 
 (defun xmtn--status-header (root base-revision)
-  (let* ((branch (xmtn--tree-default-branch root))
-         (head-revisions (xmtn--heads root branch))
-         (head-count (length head-revisions)))
+  (let* ((branch (xmtn--tree-default-branch root)))
 
     (concat
       (format "Status for %s:\n" root)
       (if base-revision
           (format "  base revision %s\n" base-revision)
         "  tree has no base revision\n")
-      (format "  branch %s\n" branch)
-      (case head-count
-        (0 "  branch is empty\n")
-        (1 "  branch is merged\n")
-        (t (dvc-face-add (format "  branch has %s heads; need merge\n" head-count) 'dvc-conflict)))
-      (if (member base-revision head-revisions)
-          "  base revision is a head revision\n"
-        (dvc-face-add "  base revision is not a head revision; need update\n" 'dvc-conflict)))))
+      (format "  branch %s\n" branch))))
 
 (defun xmtn--refresh-status-header (status-buffer)
   (with-current-buffer status-buffer
@@ -649,15 +640,7 @@ otherwise newer."
          ;; branch
          (format "%s" branch)
          ;; header-more
-         (lambda ()
-           (concat
-            (case head-count
-              (0 "  branch is empty\n")
-              (1 "  branch is merged\n")
-              (t (dvc-face-add (format "  branch has %s heads; need merge\n" head-count) 'dvc-conflict)))
-            (if (member base-revision head-revisions)
-                "  base revision is a head revision\n"
-              (dvc-face-add "  base revision is not a head revision; need update\n" 'dvc-conflict))))
+	 nil
          ;; refresh
          'xmtn-dvc-status)))
     (dvc-save-some-buffers root)
@@ -723,15 +706,7 @@ where `status' is 'ok or 'need-commit."
          ;; branch
          (format "%s" branch)
          ;; header-more
-         (lambda ()
-           (concat
-            (case head-count
-              (0 "  branch is empty\n")
-              (1 "  branch is merged\n")
-              (t (dvc-face-add (format "  branch has %s heads; need merge\n" head-count) 'dvc-conflict)))
-            (if (member base-revision head-revisions)
-                "  base revision is a head revision\n"
-              (dvc-face-add "  base revision is not a head revision; need update\n" 'dvc-conflict))))
+	 nil
          ;; refresh
          'xmtn-dvc-status)))
     (dvc-save-some-buffers root)
