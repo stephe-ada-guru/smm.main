@@ -1,6 +1,6 @@
 ;;; xmtn-status.el --- manage actions for multiple projects
 
-;; Copyright (C) 2009 - 2011 Stephen Leake
+;; Copyright (C) 2009 - 2012 Stephen Leake
 
 ;; Author: Stephen Leake
 ;; Keywords: tools
@@ -82,7 +82,7 @@ The elements must all be of class xmtn-status-data.")
 
     (ecase (xmtn-status-data-local-changes data)
       (need-scan (insert "  local changes not checked\n"))
-      (need-commit (insert (dvc-face-add "  need commit\n" 'dvc-header)))
+      (need-commit (insert (dvc-face-add "  need commit\n" 'dvc-conflict)))
       (ok nil))
 
     (ecase (xmtn-status-data-conflicts data)
@@ -191,6 +191,7 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
   "Non-nil if update is appropriate for current workspace."
   (let ((data (ewoc-data (ewoc-locate xmtn-status-ewoc))))
     (and (not (xmtn-status-data-need-refresh data))
+	 (eq 'ok (xmtn-status-data-local-changes data))
          (eq 'need-update (xmtn-status-data-heads data)))))
 
 (defun xmtn-status-update-preview ()
