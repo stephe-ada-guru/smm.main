@@ -163,7 +163,7 @@ public class service extends Service
                    ("duration", new Integer(retriever.extractMetadata (MediaMetadataRetriever.METADATA_KEY_DURATION))).
                    putExtra
                    ("playlist",
-                    playlistFilename + " " + playlistPos + " / " + playlist.size()));
+                    playlistFilename + " " + (playlistPos + 1) + " / " + playlist.size()));
             }
             catch (RuntimeException e)
             {
@@ -188,7 +188,6 @@ public class service extends Service
    {
       if (playing == PlayState.Playing)
       {
-         utils.verboseLog("pause while playing");
          mediaPlayer.pause();
 
          if (pausedState == PlayState.Paused)
@@ -201,6 +200,10 @@ public class service extends Service
 
          notifyChange(utils.PLAYSTATE_CHANGED);
          handler.removeMessages(UPDATE_DISPLAY);
+
+         // for some crashes, onDestroy is not called, so we don't
+         // saveState properly. So do it here.
+         saveState();
       }
       else
       {
@@ -787,11 +790,6 @@ public class service extends Service
        {
           public void onAudioFocusChange(int focusChange)
           {
-             utils.verboseLog
-                ("onAudioFocusChange focusChange => " + focusChange +
-                 ", haveAudioFocus => " + haveAudioFocus +
-                 ", playing => " + playing);
-
              if (focusChange == AudioManager.AUDIOFOCUS_LOSS)
              {
                 haveAudioFocus = false;

@@ -343,6 +343,8 @@ public class activity extends android.app.Activity
       {
          // Alphabetical keycode order
       case KeyEvent.KEYCODE_MEDIA_NEXT:
+      case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
+         // Google TV Remote app has fast forward button but not next
          sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_NEXT));
          handled = true; // terminate event processing; MediaEventReceivers won't get it
          break;
@@ -363,6 +365,7 @@ public class activity extends android.app.Activity
          break;
 
       case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
+      case KeyEvent.KEYCODE_MEDIA_REWIND:
          sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PREVIOUS));
          handled = true;
          break;
