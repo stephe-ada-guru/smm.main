@@ -19,13 +19,16 @@
 pragma License (GPL);
 
 procedure SMM.Download
-  (Db          : in out SAL.Config_Files.Configuration_Type;
-   Category    : in     String;
-   Destination : in     String;
-   Song_Count  : in     Integer;
-   Seed        : in     Integer := 0);
---  Download Song_Count least-recently-played files to Destination
---  directory, add to playlist.
+  (Db             : in out SAL.Config_Files.Configuration_Type;
+   Category       : in     String;
+   Destination    : in     String;
+   Song_Count     : in     Integer;
+   New_Song_Count : in     Integer;
+   Seed           : in     Integer := 0);
+
+--  Download Song_Count least-recently-played files, including about
+--  New_Song_Count / 2 new songs (if any) to Destination directory,
+--  add to playlist.
 --
 --  Destination is an absolute path to the download directory (ends in
 --  '/'). Playlist is in Destination with name <Category>.m3u; songs

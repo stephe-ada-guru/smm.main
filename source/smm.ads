@@ -90,11 +90,12 @@ package SMM is
    function Count is new Song_Lists_Algorithms.Count;
 
    procedure Least_Recent_Songs
-     (Db         : in     SAL.Config_Files.Configuration_Type;
-      Category   : in     String;
-      Songs      :    out Song_Lists.List_Type;
-      Song_Count : in     Integer;
-      Seed       : in     Integer                             := 0);
+     (Db             : in     SAL.Config_Files.Configuration_Type;
+      Category       : in     String;
+      Songs          :    out Song_Lists.List_Type;
+      Song_Count     : in     Integer;
+      New_Song_Count : in     Integer;
+      Seed           : in     Integer                             := 0);
    --  Return randomized list of Song_Count least-recently downloaded
    --  songs in Category. If any Songs have .Play_Before attribute,
    --  enforce it.

@@ -27,10 +27,11 @@ with Ada.Text_IO;
 with SAL.Time_Conversions;
 procedure SMM.Playlist
   (Db             : in out SAL.Config_Files.Configuration_Type;
-   Category       : in String;
-   Destination    : in String;
-   Replace        : in Boolean;
-   Max_Song_Count : in Integer)
+   Category       : in     String;
+   Destination    : in     String;
+   Replace        : in     Boolean;
+   Max_Song_Count : in     Integer;
+   New_Song_Count : in     Integer)
 is
    use Song_Lists;
 
@@ -95,7 +96,7 @@ begin
       end if;
    end;
 
-   Least_Recent_Songs (Db, Category, Song_Count => Max_Song_Count, Songs => Songs);
+   Least_Recent_Songs (Db, Category, Song_Count => Max_Song_Count, New_Song_Count => New_Song_Count, Songs => Songs);
 
    I := First (Songs);
    loop

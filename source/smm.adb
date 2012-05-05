@@ -210,11 +210,12 @@ package body SMM is
    end Insert;
 
    procedure Least_Recent_Songs
-     (Db         : in     SAL.Config_Files.Configuration_Type;
-      Category   : in     String;
-      Songs      :    out Song_Lists.List_Type;
-      Song_Count : in     Integer;
-      Seed       : in     Integer                             := 0)
+     (Db             : in     SAL.Config_Files.Configuration_Type;
+      Category       : in     String;
+      Songs          :    out Song_Lists.List_Type;
+      Song_Count     : in     Integer;
+      New_Song_Count : in     Integer;
+      Seed           : in     Integer                             := 0)
    is
       --  Requirements:
       --
@@ -243,7 +244,6 @@ package body SMM is
 
       use type SAL.Time_Conversions.Time_Type;
 
-      New_Song_Count      : constant Integer := 4;
       Min_Randomize_Count : constant Integer := 2 * Song_Count;
       Time_List           : Time_Lists.List_Type;
 
@@ -300,12 +300,14 @@ package body SMM is
       if Current (Time_List_I).Last_Downloaded = 0.0 then
          if Count (Time_List) = 1 then
             --  New db; all songs have zero Last_Downloaded
+            Ada.Text_IO.Put_Line ("new db; all new songs");
             Songs := Head (Time_List).Songs;
             Finish;
             return;
 
          elsif Count (Current (Time_List_I).Songs) > New_Song_Count then
             --  Only include a few new songs
+            Ada.Text_IO.Put_Line ("adding " & Integer'Image (New_Song_Count) & " new songs");
             declare
                Source : Song_Lists.List_Type renames Current (Time_List_I).Songs;
                Last   : Song_Lists.Iterator_Type := First (Source);
@@ -319,6 +321,7 @@ package body SMM is
             Next (Time_List_I);
          else
             --  There are only a few new songs; include them all
+            Ada.Text_IO.Put_Line ("adding " & Integer'Image (Count (Current (Time_List_I).Songs)) & " new songs");
             Songs := Current (Time_List_I).Songs;
             Next (Time_List_I);
          end if;

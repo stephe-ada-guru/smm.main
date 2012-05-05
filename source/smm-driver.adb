@@ -35,8 +35,11 @@ is
    is begin
       Put_Line
         ("smm [--db=<db_file>] [--verbosity=<int>] [--max-song-count=<int>] [--min-download-count=<int>]" &
-           " [--debug] <operation> [arg]...");
+           " [--new-song-count=<int>] [--debug] <operation> [arg]...");
       Put_Line ("  <db_file> : defaults to ~/.smm/smm.db or $APPDATA/smm or $SMM_HOME");
+      Put_Line ("  max-song-count defaults to 60, min-download-count to 30, new-song-count to max-song/5");
+      Put_Line ("  2 * max-songs are selected and randomized, half are downloaded;");
+      Put_Line ("  about half of new-song-count will be downloaded.");
       Put_Line ("  categories: {instrumental | vocal | ...}");
       Put_Line ("  operations:");
       Put_Line ("  download_playlist <category> <target_dir>");
@@ -62,6 +65,7 @@ is
 
    Max_Song_Count     : Integer;
    Min_Download_Count : Integer;
+   New_Song_Count     : Integer;
 
    function Find_Home return String
    is
@@ -124,6 +128,16 @@ begin
       Min_Download_Count := 30;
    end if;
 
+   if Argument (Next_Arg)'Length > 17 and then
+     Argument (Next_Arg)(1 .. 17) = "--new-song-count="
+
+   then
+      New_Song_Count := Integer'Value (Argument (Next_Arg)(22 .. Argument (Next_Arg)'Last));
+      Next_Arg           := Next_Arg + 1;
+   else
+      New_Song_Count := Max_Song_Count / 5;
+   end if;
+
    if Argument (Next_Arg) = "--debug" then
 
       Debug    := True;
@@ -158,7 +172,7 @@ begin
          SMM.First_Pass (Category, Root_Dir, Song_Count);
          if Max_Song_Count - Song_Count >= Min_Download_Count then
             Verbosity := Verbosity - 1;
-            SMM.Download (Db, Category, Root_Dir, Max_Song_Count - Song_Count);
+            SMM.Download (Db, Category, Root_Dir, Max_Song_Count - Song_Count, New_Song_Count);
             Verbosity := Verbosity + 1;
          end if;
       end;
@@ -190,7 +204,7 @@ begin
               (As_Directory (SAL.Config_Files.Read (Db, Playlist_Key)) & Category & ".m3u");
          end if;
 
-         SMM.Playlist (Db, Category, File_Name.all, Replace, Max_Song_Count);
+         SMM.Playlist (Db, Category, File_Name.all, Replace, Max_Song_Count, New_Song_Count);
       end;
 
    when Import =>

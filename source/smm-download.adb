@@ -25,11 +25,12 @@ with Ada.Text_IO;     use Ada.Text_IO;
 with SAL.Config_Files;
 with SAL.Time_Conversions;
 procedure SMM.Download
-  (Db          : in out SAL.Config_Files.Configuration_Type;
-   Category    : in     String;
-   Destination : in     String;
-   Song_Count  : in     Integer;
-   Seed        : in     Integer := 0)
+  (Db             : in out SAL.Config_Files.Configuration_Type;
+   Category       : in     String;
+   Destination    : in     String;
+   Song_Count     : in     Integer;
+   New_Song_Count : in     Integer;
+   Seed           : in     Integer := 0)
 is
    use Song_Lists;
    Songs        : List_Type;
@@ -68,7 +69,7 @@ begin
       end;
    end if;
 
-   Least_Recent_Songs (Db, Category, Songs, Song_Count, Seed);
+   Least_Recent_Songs (Db, Category, Songs, Song_Count, New_Song_Count, Seed => Seed);
 
    I := First (Songs);
    loop
