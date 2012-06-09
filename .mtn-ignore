@@ -3,6 +3,7 @@
 ^\.bzr$
 ^\.bzrignore$
 ^\.tmp-bzr-log-edit\.txt$
+^autom4te\.cache$
 ^confdefs\.h$
 ^config\.log$
 ^config\.status$
