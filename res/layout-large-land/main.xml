@@ -2,10 +2,13 @@
 <!-- 
   Abstract :
 
-  UI layout for Stephe's Music Player, normal size
+  UI layout for Stephe's Music Player, large screen landscape
 
-  HTC Inspire is normal size
-  
+  Sony Google TV is large, not xlarge!
+     but it's always landscape, so this file works for that
+
+  Samsung Galaxy Note is large; this file works for that
+
   (ediff "../layout-normal/main.xml" "../layout-large/main.xml")
 
   Copyright (C) 2011 Stephen Leake.  All Rights Reserved.
@@ -93,7 +96,8 @@
           android:background="#ff5a5a5a"
           android:layout_marginTop="1dip"
           android:layout_marginBottom="2dip"
-          android:gravity="center"> <!-- background for transparent part of buttons -->
+          android:gravity="center">
+        <!-- layout background for transparent part of buttons -->
         <!-- next/play/prev buttons -->
         <ImageButton
             android:id="@+id/prev"
@@ -111,8 +115,9 @@
       <LinearLayout
           android:orientation="vertical"
           android:gravity="top"
-          android:layout_width="match_parent"
+          android:layout_width="wrap_content"
           android:layout_height="match_parent"
+          android:layout_marginLeft="8dp"
           android:weightSum="1">
         <!-- times -->
         <TextView
@@ -132,15 +137,16 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
       </LinearLayout>
+      <!-- only one match_parent allowed in one direction, and must be last in list -->
+      <SeekBar
+          android:id="@android:id/progress"
+          style="?android:attr/progressBarStyleHorizontal"
+          android:layout_width="match_parent"
+          android:layout_height="36dip"
+          android:paddingLeft="8dip"
+          android:paddingRight="8dip"
+          android:paddingBottom="4dip" />
     </LinearLayout>
-    <SeekBar
-        android:id="@android:id/progress"
-        style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="match_parent"
-        android:layout_height="36dip"
-        android:paddingLeft="8dip"
-        android:paddingRight="8dip"
-        android:paddingBottom="4dip" />
     <LinearLayout
         android:id="@+id/notes_buttons_1"
         android:layout_width="match_parent"
@@ -151,71 +157,50 @@
         android:layout_marginBottom="2dip"
         android:gravity="center"> 
       <!-- can't use @string in textSize attribute, despite the documentation
-           layout_height of wrap_content on buttons screws up
-           only last button will wrap text
-      -->
-      <!-- notes buttons, row 1
+           layout_height of wrap_content on buttons screws up -->
+      <!-- notes buttons, (one row in on xlarge screen)
       -->
       <Button
           android:id="@+id/note_category"
           android:layout_height="match_parent"
           android:layout_width="wrap_content"
           android:text="@string/note_category"
-          android:textSize="20sp"
-          android:textStyle="bold"
+          android:textSize="18sp"
           android:onClick="onClickNote"/>
       <Button
           android:id="@+id/note_dont_play"
           android:layout_height="match_parent"
           android:layout_width="wrap_content"
           android:text="@string/note_dont_play"
-          android:textSize="20sp"
-          android:textStyle="bold"
+          android:textSize="18sp"
           android:onClick="onClickNote"/>
       <Button
           android:id="@+id/note_keep_before"
           android:layout_height="match_parent"
           android:layout_width="wrap_content"
           android:text="@string/note_keep_before"
-          android:textSize="20sp"
-          android:textStyle="bold"
+          android:textSize="18sp"
           android:onClick="onClickNote"/>
-    </LinearLayout>
-    <LinearLayout
-        android:id="@+id/notes_buttons_2"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_gravity="center"
-        android:layout_marginTop="1dip"
-        android:layout_marginBottom="2dip"
-        android:gravity="center">
-
-      <!-- notes buttons, row 2
-      -->
       <Button
           android:id="@+id/note_want_more"
           android:layout_height="match_parent"
           android:layout_width="wrap_content"
           android:text="@string/note_want_more"
-          android:textSize="20sp"
-          android:textStyle="bold"
+          android:textSize="18sp"
           android:onClick="onClickNote"/>
       <Button
           android:id="@+id/note_best_list"
           android:layout_height="match_parent"
           android:layout_width="wrap_content"
           android:text="@string/note_best_list"
-          android:textSize="20sp"
-          android:textStyle="bold"
+          android:textSize="18sp"
           android:onClick="onClickNote"/>
       <Button
           android:id="@+id/note_other"
           android:layout_height="match_parent"
           android:layout_width="wrap_content"
           android:text="@string/note_other"
-          android:textSize="20sp"
-          android:textStyle="bold"
+          android:textSize="18sp"
           android:onClick="onClickNote"/>
     </LinearLayout>
     <TextView

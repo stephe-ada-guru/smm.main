@@ -9,7 +9,8 @@ ANDROID_PROJECT_PATH := org/stephe_leake/android/stephes_music
 ANDROID_PROJECT_NAME := activity
 
 ANDROID_PROJECT_RESOURCES += ../res/layout-normal/main.xml
-ANDROID_PROJECT_RESOURCES += ../res/layout-large/main.xml
+ANDROID_PROJECT_RESOURCES += ../res/layout-large-land/main.xml
+ANDROID_PROJECT_RESOURCES += ../res/layout-large-port/main.xml
 ANDROID_PROJECT_RESOURCES += ../res/values/strings.xml
 ANDROID_PROJECT_RESOURCES += ../res/xml/preferences.xml
 

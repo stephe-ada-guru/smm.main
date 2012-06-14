@@ -84,7 +84,8 @@ public class preferences extends android.preference.PreferenceActivity
 
       LinkedList<String> likelyRoots = new LinkedList<String>();
 
-      likelyRoots.add("/sdcard");            // standard Android phone
+      likelyRoots.add("/sdcard"); // standard Android phone
+      likelyRoots.add("/mnt/sdcard/external_sd"); // Samsung Galaxy note
 
       // On a Google TV, there is no sdcard, but there are USB ports; search for those
       final File tvRoot = new File("/mnt/media");
