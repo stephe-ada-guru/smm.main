@@ -1,6 +1,6 @@
 ;;; xmtn-sync.el --- database sync handling for DVC backend for monotone
 ;;
-;; Copyright (C) 2010, 2011 Stephen Leake
+;; Copyright (C) 2010 - 2012 Stephen Leake
 ;;
 ;; Author: Stephen Leake
 ;; Keywords: tools
@@ -226,14 +226,20 @@ The elements must all be of type xmtn-sync-sync.")
 (dvc-make-ewoc-next xmtn-sync-next xmtn-sync-ewoc)
 (dvc-make-ewoc-prev xmtn-sync-prev xmtn-sync-ewoc)
 
+(defun xmtn-sync-rx-p ()
+  "Non-nil if current element has non-zero rx rev count."
+  (let* ((elem (ewoc-locate xmtn-sync-ewoc))
+	 (data (ewoc-data elem)))
+    (< 0 (length (xmtn-sync-branch-rev-alist data)))))
+
 (defvar xmtn-sync-kbd-map
   (let ((map (make-sparse-keymap "action")))
     ;; last defined is first in displayed menu
     (define-key map [?c]  '(menu-item "c) clean" xmtn-sync-clean))
-    (define-key map [?f]  '(menu-item "f) full" xmtn-sync-full))
-    (define-key map [?b]  '(menu-item "b) brief" xmtn-sync-brief))
-    (define-key map [?s]  '(menu-item "s) status" xmtn-sync-status))
-    (define-key map [?u]  '(menu-item "u) update" xmtn-sync-update))
+    (define-key map [?f]  '(menu-item "f) full" xmtn-sync-full :visible (xmtn-sync-rx-p)))
+    (define-key map [?b]  '(menu-item "b) brief" xmtn-sync-brief :visible (xmtn-sync-rx-p)))
+    (define-key map [?s]  '(menu-item "s) status" xmtn-sync-status :visible (xmtn-sync-rx-p)))
+    (define-key map [?u]  '(menu-item "u) update" xmtn-sync-update :visible (xmtn-sync-rx-p)))
     map)
   "Keyboard menu keymap used in `xmtn-sync-mode'.")
 
