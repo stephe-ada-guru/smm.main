@@ -36,7 +36,7 @@ is
       Put_Line
         ("smm [--db=<db_file>] [--verbosity=<int>] [--max-song-count=<int>] [--min-download-count=<int>]" &
            " [--new-song-count=<int>] [--debug] <operation> [arg]...");
-      Put_Line ("  <db_file> : defaults to ~/.smm/smm.db or $APPDATA/smm or $SMM_HOME");
+      Put_Line ("  <db_file> : defaults to ~/smm/smm.db or $APPDATA/smm or $SMM_HOME");
       Put_Line ("  max-song-count defaults to 60, min-download-count to 30, new-song-count to max-song/5");
       Put_Line ("  2 * max-songs are selected and randomized, half are downloaded;");
       Put_Line ("  about half of new-song-count will be downloaded.");
@@ -74,7 +74,7 @@ is
       if Exists ("SMM_HOME") then
          return Value ("SMM_HOME");
       elsif Exists ("HOME") then
-         return Value ("HOME") & "/.smm";
+         return Value ("HOME") & "/smm";
       elsif Exists ("APPDATA") then
          return Value ("APPDATA") & "/smm";
       else
