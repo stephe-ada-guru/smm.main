@@ -1,6 +1,6 @@
 ;;; dvc-core.el --- Core functions for distributed version control
 
-;; Copyright (C) 2005-2010 by all contributors
+;; Copyright (C) 2005-2010, 2012 by all contributors
 
 ;; Author: Stefan Reichoer, <stefan@xsteve.at>
 ;; Contributions From:
@@ -1139,7 +1139,10 @@ REVISION-ID may have the values described in docs/DVC-API."
     (let ((buffer (generate-new-buffer name)))
       (with-current-buffer buffer
         (let ((buffer-file-name file))
-          (set-auto-mode t)))
+          (set-auto-mode t)
+	  ;; set-auto-mode may insert a template; erase it
+	  (delete-region (point-min) (point-max))
+	  ))
       (dvc-buffers-tree-add (dvc-revision-get-dvc revision-id) type file buffer)
       buffer)))
 
