@@ -1,29 +1,15 @@
 # top level Makefile to build Stephe's Music Player app
 
-# These must match ../AndroidManifest.xml
-#
-# package
-ANDROID_PROJECT_PATH := org/stephe_leake/android/stephes_music
-#
-# activity name
-ANDROID_PROJECT_NAME := activity
+.PHONY : force
 
-ANDROID_PROJECT_RESOURCES += ../res/layout-normal/main.xml
-ANDROID_PROJECT_RESOURCES += ../res/layout-large-land/main.xml
-ANDROID_PROJECT_RESOURCES += ../res/layout-large-port/main.xml
-ANDROID_PROJECT_RESOURCES += ../res/values/strings.xml
-ANDROID_PROJECT_RESOURCES += ../res/xml/preferences.xml
+all : force
+	cd ..; ant release
 
-# all other source files for make dependencies
-ANDROID_PROJECT_SRC += preferences
-ANDROID_PROJECT_SRC += service
-ANDROID_PROJECT_SRC += utils
+clean :
+	rm -rf ../bin/* ../gen/*
 
-SDK := /Apps/Android/android-sdk/platforms/android-10
-
-include android.make
-
-all : $(APK_NAME)
+source-clean :
+	find .. -name "*~" -print -delete
 
 ## test targets
 

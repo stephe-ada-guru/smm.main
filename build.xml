@@ -1,38 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- see helloada copy for full help comments -->
-<project name="org.stephe_leake.android.stephes_music.activity" default="help">
+<!-- requires Android SDK 20
 
-    <property file="local.properties" />
+    We used to try to optimize the build, only compiling when the
+source had changed. But the Android SDK tools are not set up for that,
+so it's difficult to get the dependencies correct, and even harder to
+update this file when a new SDK is released. So we just use the
+default setup.
+-->
 
-    <property name="target" value="android-10" />
+<!--
+This determines the apk name. The installed app name (in Android
+applications manager) is in res/values/strings.xml app_name. But
+changing these two does _not_ allow installing two copies of the app
+side by side; that requires changing all the class names. Changing the
+apk name does help in knowing which one you are installing.
+-->
+<project name="org.stephe_leake.android.stephes_music.sdk_20" default="help">
 
-    <!-- FIXME: move this to a shared file for projects to import -->
-    <import file="${sdk.dir}/tools/ant/pre_setup.xml" />
-    <setup/>
+<property file="local.properties" />
 
-    <!-- generate R.java, compile it -->
-    <target name="resource-src" depends="-resource-src"/>
+<!-- get sdk.dir from ANDROID_HOME -->
+<property environment="env" />
+<condition property="sdk.dir" value="${env.ANDROID_HOME}">
+    <isset property="env.ANDROID_HOME" />
+</condition>
 
-    <!-- we don't use the android standard -dex target, because that
-         compiles R.java again, which we don't want. -->
-    <target name="dex">
-      <dex-helper />
-    </target>
+<property name="target" value="android-10" />
 
-    <target name="release" depends="dex, -package-resources">
-      <package-helper output.filepath="${out.unsigned.file}"/>
-      <echo>Signing final apk...</echo>
-      <signjar
-          jar="${out.unsigned.file}"
-          signedjar="${out.unaligned.file}"
-          keystore="${key.store}"
-          storepass="${key.store.password}"
-          alias="${key.alias}"
-          keypass="${key.alias.password}"
-          verbose="${verbose}" />
-
-        <zipalign-helper in.package="${out.unaligned.file}" out.package="${out.release.file}" />
-        <echo>Release Package: ${out.release.file}</echo>
-    </target>
+<import file="${sdk.dir}/tools/ant/build.xml" />
 
 </project>

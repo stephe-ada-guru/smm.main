@@ -4,6 +4,13 @@ src/org/stephe_leake/android/stephes_music/service.java
 (dvc-status)
 ~/Misc/android.text
 
+sdk_20 apk crashes on HTC
+    install catlog, debug
+
+add log verbosity control?
+
+need on-screen volume control
+
 in progressbar:
     if storage.pos > max, change max (bad .mp3 metadata)
 
@@ -16,6 +23,9 @@ multiple categories:
     vocal/protest/intro
     instrumental/yoga
         store in genre field(s)?
+
+DLNA server output; send stream to TV, avoid bluetooth/TV amp input switch
+    include volume control
 
  Kate's Mythical Music Manager (KMMM Km3)
 ../stephes_music_player.kate/build/Makefile
@@ -57,6 +67,9 @@ transfer files to TV
     usb drive sneakernet for now
 
     mtp (Media Transfer Protocol)
+        not reliable on Windows 7
+            PDA used to connect, now it doesn't
+
         windows development kit: /Archive/Android/mtppk12.exe
             /Apps/microsoft_mtpdk
         may need windows 7 for MTP over TCP/IP
@@ -77,7 +90,7 @@ transfer files to TV
 
         there is an Android sftp client
 
-        no microsoft sftp driver; use exec to run cygwin?
+        look for open source sftp (runs on TCP sockets), Ada binding
 
 
     in-app socket protocol for metadata, sftp/ftp for music files
