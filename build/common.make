@@ -1,8 +1,3 @@
-dirs : objects
-
-objects :
-	mkdir objects
-
 books.exe : books-main.exe
 
 tests : test_books-all_harness.diff

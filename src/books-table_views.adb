@@ -299,7 +299,9 @@ package body Books.Table_Views is
          Append (Index_Widget_List, Gtk.Widget.Gtk_Widget (List_Item));
          Gtk.List_Item.Gtk_New (List_Item, "ID");
          Append (Index_Widget_List, Gtk.Widget.Gtk_Widget (List_Item));
-         Gtk.List.Append_Items (Gtk.Combo.Get_List (Table_View.Private_Stuff.Index_List), Index_Widget_List);
+         Gtk.List.Append_Items
+           (Gtk.List.Gtk_List (Gtk.Combo.Get_List (Table_View.Private_Stuff.Index_List)),
+            Index_Widget_List);
 
          Gtk.Combo.Set_Value_In_List (Table_View.Private_Stuff.Index_List);
       end;

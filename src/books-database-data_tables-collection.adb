@@ -72,7 +72,7 @@ package body Books.Database.Data_Tables.Collection is
       if T.Editor_Indicator = GNU.DB.SQLCLI.SQL_NULL_DATA then
          raise No_Data;
       else
-         return ID_Type (T.Editor);
+         return T.Editor;
       end if;
    end Editor;
 
@@ -255,7 +255,7 @@ package body Books.Database.Data_Tables.Collection is
       if T.ID_Indicator = GNU.DB.SQLCLI.SQL_NULL_DATA then
          raise No_Data;
       else
-         return Interfaces.Unsigned_16 (T.Year);
+         return T.Year;
       end if;
    end Year;
 

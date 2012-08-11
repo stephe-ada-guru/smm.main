@@ -1,9 +1,6 @@
-all : dirs books.exe
+all : books.exe
 
 one : books.run
-
-two : RUN_ARGS := stephe ../x86_gnu_windows_release/csv/jet
-two : import_books-main.run
 
 #../../test/test_books-one_harness.adb
 t_one : RUN_ARGS := 1
@@ -21,9 +18,13 @@ include ../common.make
 GNAT_PROJECT := books.gpr
 
 # ADA_PROJECT_PATH is also set by books.prj, but that's not guarranteed to be current
-export ADA_PROJECT_PATH := $(GDS_ROOT)/main/makerules/;$(GDS_ROOT)/main/sal/build/x86_gnu_windows_debug;../../../gnade/dbi/odbc/;$(GDS_ROOT)/main/sal/build/x86_gnu_windows_gtk_debug;/Apps/GNAT-6.2.1/GtkAda/lib/gnat
+export ADA_PROJECT_PATH := $(GDS_ROOT)/main/makerules/
+export ADA_PROJECT_PATH := $(ADA_PROJECT_PATH);$(GDS_ROOT)/main/sal/build/x86_gnu_windows_debug
+export ADA_PROJECT_PATH := $(ADA_PROJECT_PATH);$(GDS_ROOT)/main/sal/build/x86_gnu_windows_gtk_debug
+export ADA_PROJECT_PATH := $(ADA_PROJECT_PATH);/Projects/gnade-1.6.2.orig/dbi/odbc/
 
 # Local Variables:
+# eval: (gnat-2012)
 # eval: (ada-parse-prj-file "books.prj")
 # eval: (ada-select-prj-file "books.prj")
 # end:

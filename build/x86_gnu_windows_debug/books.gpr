@@ -39,7 +39,7 @@ project Books is
    end Linker;
 
    package Builder is
-      for Default_Switches ("Ada") use Standard_Common.Binder'Default_Switches ("Ada") & ("--RTS=sjlj");
+--      for Default_Switches ("Ada") use Standard_Common.Binder'Default_Switches ("Ada") & ("--RTS=sjlj");
 
       --  We use ".exe" extension even on non-Windows, to simplify the makefiles.
       for Switches ("books-main") use ("-o", "books.exe", "--RTS=sjlj");

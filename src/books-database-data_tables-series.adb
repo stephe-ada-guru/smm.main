@@ -62,7 +62,7 @@ package body Books.Database.Data_Tables.Series is
       if T.Author_Indicator = GNU.DB.SQLCLI.SQL_NULL_DATA then
          raise No_Data;
       else
-         return ID_Type (T.Author);
+         return T.Author;
       end if;
    end Author;
 

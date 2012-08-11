@@ -195,7 +195,7 @@ package body Books.Database.Data_Tables.Title is
       if T.Rating_Indicator = GNU.DB.SQLCLI.SQL_NULL_DATA then
          raise No_Data;
       else
-         return Interfaces.Unsigned_8 (T.Rating);
+         return T.Rating;
       end if;
    end Rating;
 
@@ -241,7 +241,7 @@ package body Books.Database.Data_Tables.Title is
       if T.ID_Indicator = GNU.DB.SQLCLI.SQL_NULL_DATA then
          raise No_Data;
       else
-         return Interfaces.Unsigned_16 (T.Year);
+         return T.Year;
       end if;
    end Year;
 
