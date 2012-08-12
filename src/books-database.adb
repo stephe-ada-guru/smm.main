@@ -2,7 +2,7 @@
 --
 --  see spec
 --
---  Copyright (C) 2002, 2003, 2004, 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002, 2003, 2004, 2009, 2012 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -15,35 +15,92 @@
 --  distributed with this program; see file COPYING. If not, write to
 --  the Free Software Foundation, 59 Temple Place - Suite 330, Boston,
 --  MA 02111-1307, USA.
---
+
+pragma License (GPL);
 
 with Ada.Exceptions;
 with Ada.Strings.Fixed;
 with Ada.Text_IO;
 with Ada.Unchecked_Deallocation;
-with GNAT.OS_Lib;
-with GNU.DB.SQLCLI.Environment_Attribute;
+with GNATCOLL.SQL.Sqlite;
 package body Books.Database is
 
    --  Subprogram bodies (alphabetical order)
 
+   procedure Checked_Execute
+     (T         : in out Table'Class;
+      Statement : in     String;
+      Params    : in     GNATCOLL.SQL.Exec.SQL_Parameters := GNATCOLL.SQL.Exec.No_Parameters)
+   is begin
+      --  FIXME: close cursor?
+      GNATCOLL.SQL.Exec.Fetch (T.Cursor, T.DB.Connection, Statement, Params);
+
+      --  FIXME: exceptions? Errors?
+   end Checked_Execute;
+
+   function Field
+     (T           : in Table;
+      Field_Index : in GNATCOLL.SQL.Exec.Field_Index)
+     return String
+   is begin
+      if T.Cursor.Has_Row then
+         raise No_Data;
+      elsif T.Cursor.Is_Null (Field_Index) then
+         raise Null_Field;
+      else
+         return T.Cursor.Value (Field_Index);
+      end if;
+   end Field;
+
    overriding procedure Finalize (T : in out Table)
-   is
-      use GNU.DB.SQLCLI;
-   begin
-      if T.Update_Statement /= SQL_NULL_HANDLE then
-         SQLFreeHandle (SQL_HANDLE_STMT, T.Update_Statement);
-      end if;
-      if T.Insert_Statement /= SQL_NULL_HANDLE then
-         SQLFreeHandle (SQL_HANDLE_STMT, T.Insert_Statement);
-      end if;
-      if T.Delete_Statement /= SQL_NULL_HANDLE then
-         SQLFreeHandle (SQL_HANDLE_STMT, T.Delete_Statement);
-      end if;
-      if T.All_By_ID_Statement /= SQL_NULL_HANDLE then
-         SQLFreeHandle (SQL_HANDLE_STMT, T.All_By_ID_Statement);
-      end if;
+   is begin
+      --  We only finalize a table when we are about to close the
+      --  application, when all memory will be recovered anyway. So we
+      --  don't bother freeing the strings (this avoids using a named
+      --  type).
+      --  if T.Update_Statement /= null then
+      --     Free (T.Update_Statement);
+      --  end if;
+      --  if T.Insert_Statement /= null then
+      --     Free (T.Insert_Statement);
+      --  end if;
+      --  if T.Delete_Statement /= null then
+      --     Free (T.Delete_Statement);
+      --  end if;
+      --  if T.All_By_ID_Statement /= null then
+      --     Free (T.All_By_ID_Statement);
+      --  end if;
+      null; --  FIXME: delete this procedure!
    end Finalize;
+
+   overriding procedure Finalize (DB : in out Database)
+   is begin
+      Ada.Text_IO.Put ("Disconnecting from database ... ");
+      --  We ignore all errors, since we wouldn't be able to do
+      --  anything about them at this point.
+      GNATCOLL.SQL.Exec.Free (DB.Connection);
+      Ada.Text_IO.Put_Line ("done.");
+   exception
+   when E : others =>
+      Ada.Text_IO.Put_Line ("Database disconnect: exception " & Ada.Exceptions.Exception_Message (E));
+   end Finalize;
+
+   procedure Find
+     (T         : in out Table'Class;
+      Statement : access constant String;
+      Params    : in     GNATCOLL.SQL.Exec.SQL_Parameters := GNATCOLL.SQL.Exec.No_Parameters)
+   is
+   begin
+      --  FIXME: close cursor?
+      T.Find_Statement := Statement;
+      Checked_Execute (T, T.Find_Statement.all, Params);
+      Next (T);
+   end Find;
+
+   procedure Find_All_By_ID (T : in out Table'Class)
+   is begin
+      Find (T, T.All_By_ID_Statement);
+   end Find_All_By_ID;
 
    procedure Free (Pointer : in out Database_Access)
    is
@@ -74,149 +131,38 @@ package body Books.Database is
 
    overriding procedure Initialize (DB : in out Database)
    is
-      use GNU.DB.SQLCLI;
+      use GNATCOLL.SQL.Exec;
+      use SAL.Config_Files;
+
+      Db_File : constant String := Read (DB.Config.all, "Database_File", "~/.books/books.db");
+      Descrip : constant Database_Description := GNATCOLL.SQL.Sqlite.Setup (Db_File);
    begin
 
-      SQLAllocHandle (SQL_HANDLE_ENV, SQL_NULL_HANDLE, DB.Environment);
+      if Descrip = null then
+         raise SAL.Config_File_Error with Db_File & " database file not found or not valid";
+      end if;
 
-      Environment_Attribute.SQLSetEnvAttr
-        (DB.Environment,  Environment_Attribute.Environment_Attribute_ODBC_Version'
-           (Attribute => Environment_Attribute.SQL_ATTR_ODBC_VERSION,
-            Value     => Environment_Attribute.SQL_OV_ODBC3));
+      DB.Connection := GNATCOLL.SQL.Exec.Build_Connection (Descrip);
 
-      SQLAllocHandle (SQL_HANDLE_DBC, DB.Environment, DB.Connection);
-
-      declare
-         use SAL.Config_Files;
-         Database_Name : constant String := Read (DB.Config.all, "Database_Name", "books");
-         User_Name     : constant String := Read (DB.Config.all, "Database_Username", "");
-      begin
-         Generate_Detailed_Exceptions := False;
-         SQLConnect
-           (ConnectionHandle => DB.Connection,
-            ServerName       => Database_Name, --  local server, so servername only includes database name.
-            UserName         => User_Name,
-            Authentication   => "");
-      exception
-      when E : Database_Error =>
-         declare
-            use Ada.Strings.Fixed, GNAT.OS_Lib;
-            Error_Message  : constant String := Ada.Exceptions.Exception_Message (E);
-
-            Server_Command : constant String :=
-              Read (DB.Config.all, "Server_Command", "cmd.exe /c net start mysql");
-
-            Args    : Argument_List_Access := Argument_String_To_List (Server_Command);
-            Success : Boolean;
-         begin
-            --  Check the error message to see what's wrong.
-
-            if Index (Error_Message, "Can't connect to MySQL server") /= 0 then
-               --  MySQL server has not been started. Assume
-               --  Server_Command _does_ return.
-               Ada.Text_IO.Put_Line ("Starting db server via '" & Server_Command);
-               Spawn (Args (Args'First).all, Args (Args'First + 1 .. Args'Last), Success);
-               Free (Args);
-               if not Success then
-                  Ada.Text_IO.Put_Line (" failed.");
-                  Ada.Exceptions.Raise_Exception
-                    (SAL.Config_File_Error'Identity,
-                     SAL.Config_Files.Writeable_File_Name (DB.Config.all) &
-                       ":0:0: Server_Command failed to start database server");
-               else
-                  --  DB server started, now connect
-                  SQLConnect
-                    (ConnectionHandle => DB.Connection,
-                     ServerName       => Database_Name,
-                     UserName         => User_Name,
-                     Authentication   => "");
-               end if;
-            elsif Index (Error_Message, "Data source name not found") /= 0 then
-               raise SAL.Config_File_Error with "ODBC data source '" & Database_Name & "' not found";
-            elsif Index (Error_Message, "Access denied for user") /= 0 then
-               raise SAL.Config_File_Error with "database user '" & User_Name & "' denied access: " &
-                 Ada.Exceptions.Exception_Message (E);
-            else
-               raise;
-            end if;
-
-         end;
-      end;
-      Ada.Text_IO.Put_Line ("Connected to database.");
+      Ada.Text_IO.Put_Line ("Connected to database " & Db_File);
    end Initialize;
-
-   overriding procedure Finalize (DB : in out Database)
-   is
-      use GNU.DB.SQLCLI;
-   begin
-      Ada.Text_IO.Put ("Disconnecting from database ... ");
-      --  We ignore all errors, since we wouldn't be able to do
-      --  anything about them at this point.
-      SQLDisconnect (DB.Connection);
-      SQLFreeHandle (SQL_HANDLE_DBC, DB.Connection);
-      SQLFreeHandle (SQL_HANDLE_ENV, DB.Environment);
-
-      Ada.Text_IO.Put_Line ("done.");
-
-   exception
-   when E : others =>
-      Ada.Text_IO.Put_Line ("Database disconnect: exception " & Ada.Exceptions.Exception_Message (E));
-   end Finalize;
-
-   procedure Find_All_By_ID (T : in out Table'Class)
-   is begin
-      Find (T, T.All_By_ID_Statement);
-   end Find_All_By_ID;
 
    procedure Next (T : in out Table'Class)
    is begin
-      GNU.DB.SQLCLI.SQLFetch (T.Find_Statement);
-      T.Valid := True;
-   exception
-   when GNU.DB.SQLCLI.No_Data =>
-      T.Valid := False;
+      T.Cursor.Next;
    end Next;
 
    function Valid (T : in Table'Class) return Boolean
    is begin
-      return T.Valid;
+      return T.Cursor.Has_Row;
    end Valid;
 
-   function Value (ID : in String) return ID_Type
+   function Valid_Field
+     (T     : in Table'Class;
+      Field : in GNATCOLL.SQL.Exec.Field_Index)
+     return Boolean
    is begin
-      return ID_Type'Value (ID);
-   end Value;
-
-   procedure Checked_Execute (Statement : in GNU.DB.SQLCLI.SQLHANDLE)
-   is begin
-      GNU.DB.SQLCLI.SQLExecute (Statement);
-   exception
-   when E : GNU.DB.SQLCLI.Database_Error =>
-      if 0 /= Ada.Strings.Fixed.Index
-        (Source  => Ada.Exceptions.Exception_Message (E),
-         Pattern => "Duplicate entry")
-      then
-         raise Entry_Error with "Entry already in database";
-      else
-         raise;
-      end if;
-   end Checked_Execute;
-
-   procedure Find (T : in out Table'Class; Statement : in GNU.DB.SQLCLI.SQLHANDLE)
-   is
-      use type GNU.DB.SQLCLI.SQLHANDLE;
-   begin
-      --  We may not have followed a search to its end, so this is the
-      --  logical place to close the cursor opened by a search. It
-      --  doesn't hurt to close a cursor that is not open, but it does
-      --  hurt to execute a statement that has an open cursor.
-      if T.Find_Statement /= Statement and T.Find_Statement /= GNU.DB.SQLCLI.SQL_NULL_HANDLE then
-         GNU.DB.SQLCLI.SQLCloseCursor (T.Find_Statement);
-      end if;
-      GNU.DB.SQLCLI.SQLCloseCursor (Statement);
-      T.Find_Statement := Statement;
-      Checked_Execute (T.Find_Statement);
-      Next (T);
-   end Find;
+      return T.Cursor.Has_Row and then not T.Cursor.Is_Null (Field);
+   end Valid_Field;
 
 end Books.Database;

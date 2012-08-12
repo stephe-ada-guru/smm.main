@@ -2,7 +2,7 @@
 --
 --  Operations on the Author table
 --
---  Copyright (C) 2002, 2004, 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002, 2004, 2009, 2012 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -15,9 +15,12 @@
 --  distributed with this program; see file COPYING. If not, write to
 --  the Free Software Foundation, 59 Temple Place - Suite 330, Boston,
 --  MA 02111-1307, USA.
---
+
+pragma License (GPL);
 
 package Books.Database.Data_Tables.Author is
+
+   use type GNATCOLL.SQL.Exec.Field_Index;
 
    type Table (DB : access Database'Class) is new Data_Tables.Table with private;
    type Table_Access is access all Table;
@@ -30,13 +33,10 @@ package Books.Database.Data_Tables.Author is
    ----------
    --  New operations
 
-   function First_Name (T : in Table) return String;
-   function First_Name (T : in Data_Tables.Table_Access) return String;
-   function Middle_Name (T : in Table) return String;
-   function Middle_Name (T : in Data_Tables.Table_Access) return String;
-   function Last_Name (T : in Table) return String;
-   function Last_Name (T : in Data_Tables.Table_Access) return String;
-   --  Retrieve data from current record
+   First_Name_Index  : constant GNATCOLL.SQL.Exec.Field_Index := ID_Index + 1;
+   Middle_Name_Index : constant GNATCOLL.SQL.Exec.Field_Index := ID_Index + 2;
+   Last_Name_Index   : constant GNATCOLL.SQL.Exec.Field_Index := ID_Index + 3;
+   --  Retrieve data from current record via Field
 
    procedure Insert
      (T           : in out Table;
@@ -57,14 +57,15 @@ private
    Name_Field_Length : constant := 20;
 
    type Table (DB : access Database'Class) is new Data_Tables.Table (DB => DB) with record
-
+      null;
+      --  FIXME: don't store the data, just fetch it from the cursor!
       --  Data
-      First         : String_Access;
-      First_Length  : aliased GNU.DB.SQLCLI.SQLINTEGER := 0;
-      Middle        : String_Access;
-      Middle_Length : aliased GNU.DB.SQLCLI.SQLINTEGER := 0;
-      Last          : String_Access;
-      Last_Length   : aliased GNU.DB.SQLCLI.SQLINTEGER := 0;
+      --  First         : String_Access;
+      --  First_Length  : aliased GNU.DB.SQLCLI.SQLINTEGER := 0;
+      --  Middle        : String_Access;
+      --  Middle_Length : aliased GNU.DB.SQLCLI.SQLINTEGER := 0;
+      --  Last          : String_Access;
+      --  Last_Length   : aliased GNU.DB.SQLCLI.SQLINTEGER := 0;
 
    end record;
 

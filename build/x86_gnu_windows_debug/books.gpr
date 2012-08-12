@@ -1,5 +1,5 @@
 with "gtkada";
-with "odbc";
+with "gnatcoll_sqlite";
 with "sal";
 with "sal_gtk";
 with "standard_common";
@@ -20,30 +20,16 @@ project Books is
         Standard_Common.Compiler'Default_Switches ("Ada") &
         ("-gnatwJ", "-gnatyO");
 
-      --  WORKAROUND: in GNAT 6.2.1, s-pooglo.ads is missing some 'overriding' keywords
-      for Switches ("test_books-string_lists.adb") use
-        Standard_Common.Compiler.Debug_Switches &
-        Standard_Common.Compiler.Style_Checks &
-        Standard_Common.Compiler'Default_Switches ("Ada") &
-        ("-gnatwJ");
-
    end Compiler;
 
    package Binder is
       for Default_Switches ("Ada") use Standard_Common.Binder'Default_Switches ("Ada");
    end Binder;
 
-   package Linker is
-      --  libodbc32.a is provided by GNAT
-      for Default_Switches ("Ada") use ("-g", "-lodbc32");
-   end Linker;
-
    package Builder is
 --      for Default_Switches ("Ada") use Standard_Common.Binder'Default_Switches ("Ada") & ("--RTS=sjlj");
 
       --  We use ".exe" extension even on non-Windows, to simplify the makefiles.
-      for Switches ("books-main") use ("-o", "books.exe", "--RTS=sjlj");
-
       for Executable_Suffix use ".exe";
    end Builder;
 

@@ -2,7 +2,7 @@
 --
 --  Operations on the Series table
 --
---  Copyright (C) 2002, 2004, 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002, 2004, 2009, 2012 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -19,59 +19,23 @@
 
 package Books.Database.Data_Tables.Series is
 
-   type Table (DB : access Database'Class) is new Data_Tables.Table with private;
+   use type GNATCOLL.SQL.Exec.Field_Index;
+
+   type Table (DB : access Database'Class) is new Data_Tables.Table (DB => DB) with null record;
    type Table_Access is access all Table;
 
-   ----------
-   --  Override parent operations.
-
    overriding procedure Initialize (T : in out Table);
-   overriding procedure Finalize (T : in out Table);
 
-   ----------
-   --  New operations
-
-   function Title (T : in Table) return String;
-   function Title (T : in Data_Tables.Table_Access) return String;
-   function Author (T : in Table) return ID_Type;
-   function Author (T : in Data_Tables.Table_Access) return ID_Type;
-   function Author_Valid (T : in Data_Tables.Table_Access) return Boolean;
-   --  Retrieve data from current record
-
-   procedure Find_Author (T : in out Table; Author : in ID_Type);
-   procedure Find_Author (T : in Data_Tables.Table_Access; Author : in ID_Type);
-   --  Find records with Author_ID = Author. Fetch
-   --  first.
-   --
-   --  If there is no match, data is marked invalid.
+   Title_Index : constant GNATCOLL.SQL.Exec.Field_Index := ID_Index + 1;
 
    procedure Insert
-     (T            : in out Table;
-      Title        : in     String;
-      Author       : in     ID_Type;
-      Author_Valid : in     Boolean);
+     (T     : in out Table;
+      Title : in     String);
    --  Insert a new record, fetch it using Find.
 
    procedure Update
-     (T            : in out Table;
-      Title        : in     String;
-      Author       : in     ID_Type;
-      Author_Valid : in     Boolean);
+     (T     : in out Table;
+      Title : in     String);
    --  Update the data in the current record.
-
-private
-
-   Field_Length : constant := 50;
-
-   type Table (DB : access Database'Class) is new Data_Tables.Table (DB => DB) with record
-
-      --  Data
-      Title            : String_Access;
-      Title_Length     : aliased GNU.DB.SQLCLI.SQLINTEGER := 0;
-      Author           : aliased ID_Type;
-      Author_Indicator : aliased GNU.DB.SQLCLI.SQLINTEGER := GNU.DB.SQLCLI.SQL_NULL_DATA;
-
-      By_Author_Statement : GNU.DB.SQLCLI.SQLHANDLE;
-   end record;
 
 end Books.Database.Data_Tables.Series;

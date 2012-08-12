@@ -18,10 +18,10 @@ include ../common.make
 GNAT_PROJECT := books.gpr
 
 # ADA_PROJECT_PATH is also set by books.prj, but that's not guarranteed to be current
-export ADA_PROJECT_PATH := $(GDS_ROOT)/main/makerules/
-export ADA_PROJECT_PATH := $(ADA_PROJECT_PATH);$(GDS_ROOT)/main/sal/build/x86_gnu_windows_debug
-export ADA_PROJECT_PATH := $(ADA_PROJECT_PATH);$(GDS_ROOT)/main/sal/build/x86_gnu_windows_gtk_debug
-export ADA_PROJECT_PATH := $(ADA_PROJECT_PATH);/Projects/gnade-1.6.2.orig/dbi/odbc/
+# We are using main_lynx_5 for Ada 2012
+export ADA_PROJECT_PATH := $(GDS_ROOT)/main_lynx_5/makerules/
+export ADA_PROJECT_PATH := $(ADA_PROJECT_PATH);$(GDS_ROOT)/main_lynx_5/sal/build/x86_gnu_windows_debug
+export ADA_PROJECT_PATH := $(ADA_PROJECT_PATH);$(GDS_ROOT)/main_lynx_5/sal/build/x86_gnu_windows_gtk_debug
 
 # Local Variables:
 # eval: (gnat-2012)

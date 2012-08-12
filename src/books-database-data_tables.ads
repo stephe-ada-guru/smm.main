@@ -2,7 +2,7 @@
 --
 --  Operations on a base table type.
 --
---  Copyright (C) 2002, 2004, 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002, 2004, 2009, 2012 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -30,19 +30,22 @@ package Books.Database.Data_Tables is
 
    procedure Set_Find_By_ID (T : in out Table'Class);
    procedure Set_Find_By_Name (T : in out Table'Class);
-   --  Set current find statement.
+   --  Set current find statement. 'name' can be author name,
+   --  collection title, item title.
 
    procedure Find (T : in out Table'Class; Item : in String);
    --  Search for records with data starting with String, using
    --  current find statement. Fetch first.
    --
-   --  If there is no match, current data is marked invalid.
+   --  If there is no match, Field will raise No_Data.
+
+   ID_Index : constant GNATCOLL.SQL.Exec.Field_Index := 1;
+   --  Return ID of current record via Field.
 
    function ID (T : in Table'Class) return ID_Type;
-   --  Return ID of current record.
 
    procedure Fetch (T : in out Table'Class; ID : in ID_Type);
-   --  Fetch record by ID.
+   --  Set Find to By_ID, find ID.
 
    ----------
    --  Dispatching operations
@@ -56,12 +59,8 @@ private
 
    type Table is abstract new Books.Database.Table with record
 
-      --  Data
-      ID            : aliased ID_Type    := Invalid_ID;
-      ID_Indicator  : aliased GNU.DB.SQLCLI.SQLINTEGER := GNU.DB.SQLCLI.SQL_NULL_DATA;
-
-      By_ID_Statement   : GNU.DB.SQLCLI.SQLHANDLE := GNU.DB.SQLCLI.SQL_NULL_HANDLE;
-      By_Name_Statement : GNU.DB.SQLCLI.SQLHANDLE := GNU.DB.SQLCLI.SQL_NULL_HANDLE;
+      Find_By_ID_Statement   : access constant String;
+      Find_By_Name_Statement : access constant String;
    end record;
 
 end Books.Database.Data_Tables;

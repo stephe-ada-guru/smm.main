@@ -2,7 +2,7 @@
 --
 --  Operations on the Title table
 --
---  Copyright (C) 2002, 2004, 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002, 2004, 2009, 2012 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -15,70 +15,41 @@
 --  distributed with this program; see file COPYING. If not, write to
 --  the Free Software Foundation, 59 Temple Place - Suite 330, Boston,
 --  MA 02111-1307, USA.
---
 
-with Interfaces;
+pragma License (Gpl);
+
 package Books.Database.Data_Tables.Title is
 
-   type Table (DB : access Database'Class) is new Data_Tables.Table with private;
-   type Table_Access is access all Table;
+   use type GNATCOLL.SQL.Exec.Field_Index;
 
-   ----------
-   --  Override parent operations.
+   type Table (DB : access Database'Class) is new Data_Tables.Table (DB => DB) with null record;
+   type Table_Access is access all Table;
 
    overriding procedure Initialize (T : in out Table);
 
-   ----------
-   --  New operations
-
-   function Title (T : in Table) return String;
-   function Title (T : in Data_Tables.Table_Access) return String;
-   function Year (T : in Table) return Interfaces.Unsigned_16;
-   function Year (T : in Data_Tables.Table_Access) return Interfaces.Unsigned_16;
-   function Comment (T : in Table) return String;
-   function Comment (T : in Data_Tables.Table_Access) return String;
-   function Rating (T : in Table) return Interfaces.Unsigned_8;
-   function Rating (T : in Data_Tables.Table_Access) return Interfaces.Unsigned_8;
-   --  Retrieve data from current record
-
-   function Rating_Valid (T : in Data_Tables.Table_Access) return Boolean;
+   Title_Index   : constant GNATCOLL.SQL.Exec.Field_Index := ID_Index + 1;
+   Year_Index    : constant GNATCOLL.SQL.Exec.Field_Index := ID_Index + 2;
+   Comment_Index : constant GNATCOLL.SQL.Exec.Field_Index := ID_Index + 3;
+   Rating_Index  : constant GNATCOLL.SQL.Exec.Field_Index := ID_Index + 4;
 
    procedure Insert
      (T            : in out Table;
       Title        : in     String;
-      Year         : in     Interfaces.Unsigned_16;
+      Year         : in     Integer;
       Year_Valid   : in     Boolean;
       Comment      : in     String;
-      Rating       : in     Interfaces.Unsigned_8;
+      Rating       : in     Integer;
       Rating_Valid : in     Boolean);
    --  Insert a new record, fetch it using Find.
 
    procedure Update
      (T            : in out Table;
       Title        : in     String;
-      Year         : in     Interfaces.Unsigned_16;
+      Year         : in     Integer;
       Year_Valid   : in     Boolean;
       Comment      : in     String;
-      Rating       : in     Interfaces.Unsigned_8;
+      Rating       : in     Integer;
       Rating_Valid : in     Boolean);
    --  Update the data in the current record.
-
-private
-
-   Field_Length : constant := 50;
-
-   type Table (DB : access Database'Class) is new Data_Tables.Table (DB => DB) with record
-
-      --  Data
-      Title            : String_Access;
-      Title_Length     : aliased GNU.DB.SQLCLI.SQLINTEGER := 0;
-      Year             : aliased Interfaces.Unsigned_16;
-      Year_Indicator   : aliased GNU.DB.SQLCLI.SQLINTEGER := GNU.DB.SQLCLI.SQL_NULL_DATA;
-      Comment          : String_Access;
-      Comment_Length   : aliased GNU.DB.SQLCLI.SQLINTEGER := 0;
-      Rating           : aliased Interfaces.Unsigned_8;
-      Rating_Indicator : aliased GNU.DB.SQLCLI.SQLINTEGER := GNU.DB.SQLCLI.SQL_NULL_DATA;
-
-   end record;
 
 end Books.Database.Data_Tables.Title;

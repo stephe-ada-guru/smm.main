@@ -2,7 +2,7 @@
 --
 --  See spec.
 --
---  Copyright (C) 2002, 2004, 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002, 2004, 2009, 2012 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -15,134 +15,79 @@
 --  distributed with this program; see file COPYING. If not, write to
 --  the Free Software Foundation, 59 Temple Place - Suite 330, Boston,
 --  MA 02111-1307, USA.
---
 
-with GNU.DB.SQLCLI.Statement_Attribute;
+pragma License (GPL);
+
 package body Books.Database.Gen_Link_Tables is
+
+   function To_Params (Data : in Source_Array_ID_Type) return GNATCOLL.SQL.Exec.SQL_Parameters
+   is
+      use GNATCOLL.SQL.Exec;
+   begin
+      return
+        (1 => +Data (Source_Array_ID_Type'First),
+         2 => +Data (Source_Array_ID_Type'Last));
+   end To_Params;
 
    procedure Delete (T : in out Table; Data : in Source_Array_ID_Type)
    is begin
-      T.Data      := Data;
-      T.Indicator := (others => Source_Labels_Type'Size / 8);
-      Checked_Execute (T.Delete_Statement);
+      Checked_Execute (T, T.Delete_By_ID_Statement.all, To_Params (Data));
    end Delete;
 
-   procedure Fetch_Links_Of (T : in out Table; Source : in Source_Labels_Type; Item : in ID_Type)
-   is begin
-      T.Data (Source)      := Item;
-      T.Indicator (Source) := Source_Labels_Type'Size / 8;
-
-      Find (T, T.By_Source_Statement (Source));
-   end Fetch_Links_Of;
+   procedure Find (T : in out Table; Source : in Source_Labels_Type; Item : in ID_Type)
+   is
+      use type GNATCOLL.SQL.Exec.SQL_Parameter;
+   begin
+      Find (T, T.Find_By_Source_Statement (Source), Params => (1 => +Item));
+   end Find;
 
    function ID (T : in Table; Source : in Source_Labels_Type) return ID_Type is
    begin
-      if T.Indicator (Source) = SQL_NULL_DATA then
-         return 0;
-      else
-         return T.Data (Source);
-      end if;
+      return ID_Type'Value (Field (T, Source_Labels_Type'Pos (Source)));
    end ID;
 
    overriding procedure Initialize (T : in out Table)
    is
-      use Statement_Attribute;
-      Table_Name : constant String :=
-        Source_Labels_Type'Image (Source_Labels_Type'First) &
-        Source_Labels_Type'Image (Source_Labels_Type'Last);
-
       First_Column_Name : constant String := Source_Labels_Type'Image (Source_Labels_Type'First);
       Last_Column_Name  : constant String := Source_Labels_Type'Image (Source_Labels_Type'Last);
+
+      Table_Name : constant String := First_Column_Name & Last_Column_Name;
    begin
 
-      --  Find statements
       for I in Source_Labels_Type loop
-         SQLAllocHandle (SQL_HANDLE_STMT, T.DB.Connection, T.By_Source_Statement (I));
-         SQLPrepare
-           (T.By_Source_Statement (I),
-            String'
-              ("SELECT " &
-                 First_Column_Name &
-                 ", " &
-                 Last_Column_Name &
-                 " FROM " &
-                 Table_Name &
-                 " WHERE " &
-                 Source_Labels_Type'Image (I) &
-                 " = ?"));
-
-         SQLSetStmtAttr (T.By_Source_Statement (I), Statement_Attribute_Unsigned'(SQL_ROWSET_SIZE, 1));
-
-         ID_Binding.SQLBindParameter (T.By_Source_Statement (I), 1, T.Data (I)'Access, T.Indicator (I)'Access);
-
-         ID_Binding.SQLBindCol
-           (T.By_Source_Statement (I),
-            1,
-            T.Data (Source_Labels_Type'First)'Access,
-            T.Indicator (Source_Labels_Type'First)'Access);
-
-         ID_Binding.SQLBindCol
-           (T.By_Source_Statement (I),
-            2,
-            T.Data (Source_Labels_Type'Last)'Access,
-            T.Indicator (Source_Labels_Type'Last)'Access);
-
-      end loop;
-
-      --  Insert statement
-      SQLAllocHandle (SQL_HANDLE_STMT, T.DB.Connection, T.Insert_Statement);
-      SQLPrepare
-        (T.Insert_Statement,
-         String'
-           ("INSERT INTO " &
-              Table_Name &
-              "(" &
+         T.Find_By_Source_Statement (I) := new String'
+           ("SELECT " &
               First_Column_Name &
               ", " &
               Last_Column_Name &
-              ") VALUES (?, ?)"));
+              " FROM " &
+              Table_Name &
+              " WHERE " &
+              Source_Labels_Type'Image (I) &
+              " = ?");
+      end loop;
 
-      ID_Binding.SQLBindParameter
-        (T.Insert_Statement,
-         1,
-         T.Data (Source_Labels_Type'First)'Access,
-         T.Indicator (Source_Labels_Type'First)'Access);
+      T.Insert_Statement := new String'
+        ("INSERT INTO " &
+           Table_Name &
+           "(" &
+           First_Column_Name &
+           ", " &
+           Last_Column_Name &
+           ") VALUES (?, ?)");
 
-      ID_Binding.SQLBindParameter
-        (T.Insert_Statement,
-         2,
-         T.Data (Source_Labels_Type'Last)'Access,
-         T.Indicator (Source_Labels_Type'Last)'Access);
-
-      --  Delete statement
-      SQLAllocHandle (SQL_HANDLE_STMT, T.DB.Connection, T.Delete_Statement);
-      SQLPrepare
-        (T.Delete_Statement,
-         String'("DELETE FROM " &
-                   Table_Name &
-                   " WHERE " &
-                   First_Column_Name & " = ? AND " &
-                   Last_Column_Name & " = ?"));
-
-      ID_Binding.SQLBindParameter
-        (T.Delete_Statement,
-         1,
-         T.Data (Source_Labels_Type'First)'Access,
-         T.Indicator (Source_Labels_Type'First)'Access);
-
-      ID_Binding.SQLBindParameter
-        (T.Delete_Statement,
-         2,
-         T.Data (Source_Labels_Type'Last)'Access,
-         T.Indicator (Source_Labels_Type'Last)'Access);
+      T.Delete_By_ID_Statement := new String'
+        ("DELETE FROM " &
+           Table_Name &
+           " WHERE " &
+           First_Column_Name & " = ? AND " &
+           Last_Column_Name & " = ?");
 
    end Initialize;
 
    procedure Insert (T : in out Table; Data : in Source_Array_ID_Type)
    is begin
-      T.Data      := Data;
-      T.Indicator := (others => Source_Labels_Type'Size / 8);
-      Checked_Execute (T.Insert_Statement);
+      Checked_Execute (T, T.Insert_Statement.all, To_Params (Data));
    end Insert;
 
 end Books.Database.Gen_Link_Tables;

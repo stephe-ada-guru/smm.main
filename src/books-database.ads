@@ -2,7 +2,7 @@
 --
 --  Top level interface to the database for Books.
 --
---  Copyright (C) 2002 - 2004, 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002 - 2004, 2009, 2012 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -18,12 +18,12 @@
 --
 
 with Ada.Finalization;
-with GNU.DB.SQLCLI;
-with Interfaces;
+with GNATCOLL.SQL.Exec;
 with SAL.Config_Files;
 package Books.Database is
 
    No_Data     : exception;
+   Null_Field  : exception;
    Entry_Error : exception; --  User violated some limit
 
    type Database (Config : SAL.Config_Files.Configuration_Access_Type) is
@@ -41,13 +41,10 @@ package Books.Database is
 
    overriding procedure Finalize (DB : in out Database);
 
-   type ID_Type is new Interfaces.Unsigned_32;
-   Invalid_ID : constant ID_Type := 0;
+   subtype ID_Type is Integer;
 
    function Image (ID : in ID_Type) return String;
    --  Image has leading zeros to width 5, to allow sorting.
-
-   function Value (ID : in String) return ID_Type;
 
    ----------
    --  Tables
@@ -66,18 +63,30 @@ package Books.Database is
 
    procedure Next (T : in out Table'Class);
    --  Move cursor to next record, according to current find
-   --  statement. Fetch data.
+   --  statement.
    --
    --  Marks data invalid if there is no next.
 
    function Valid (T : in Table'Class) return Boolean;
-   --  True if current data is valid (Next, Find or Fetch did not
-   --  raise No_Data)
+   --  True if current data is valid (Next, Find or Fetch returned a row)
+
+   function Valid_Field
+     (T     : in Table'Class;
+      Field : in GNATCOLL.SQL.Exec.Field_Index)
+     return Boolean;
+   --  True if Valid and Field is non-null
 
    ----------
    --  Dispatching Table operations
 
    --  Initialize should create database access statements, fetch first record.
+
+   function Field
+     (T           : in Table;
+      Field_Index : in GNATCOLL.SQL.Exec.Field_Index)
+     return String;
+   --  Raises No_Data if cursor has no row.
+   --  Raises Null_Field if field has no data.
 
    overriding procedure Finalize (T : in out Table);
    --  Free all statements. Root version frees common statements.
@@ -87,40 +96,34 @@ private
    type Database (Config : SAL.Config_Files.Configuration_Access_Type)
       is new Ada.Finalization.Limited_Controlled with
    record
-      Environment : GNU.DB.SQLCLI.SQLHANDLE;
-      Connection  : GNU.DB.SQLCLI.SQLHANDLE;
+      Connection : GNATCOLL.SQL.Exec.Database_Connection; -- Sqlite or whatever; allocated in Initialize
    end record;
-
-   type String_Access is access String;
-   --  We must use an access type for String fields, so that the type
-   --  of the field is "access String", which is the type of the
-   --  BindCol TargetValue parameter. Note that "access
-   --  String_Subtype" is _not_ the same.
-
-   package ID_Binding is new GNU.DB.SQLCLI.UnsignedBinding (ID_Type);
-   package Unsigned_16_Binding is new GNU.DB.SQLCLI.UnsignedBinding (Interfaces.Unsigned_16);
-   package Unsigned_8_Binding is new GNU.DB.SQLCLI.UnsignedBinding (Interfaces.Unsigned_8);
 
    type Table (DB : access Database'Class) is abstract new Ada.Finalization.Limited_Controlled with record
 
-      Update_Statement    : GNU.DB.SQLCLI.SQLHANDLE := GNU.DB.SQLCLI.SQL_NULL_HANDLE;
-      Insert_Statement    : GNU.DB.SQLCLI.SQLHANDLE := GNU.DB.SQLCLI.SQL_NULL_HANDLE;
-      Delete_Statement    : GNU.DB.SQLCLI.SQLHANDLE := GNU.DB.SQLCLI.SQL_NULL_HANDLE;
-      All_By_ID_Statement : GNU.DB.SQLCLI.SQLHANDLE := GNU.DB.SQLCLI.SQL_NULL_HANDLE;
-      Find_Statement      : GNU.DB.SQLCLI.SQLHANDLE := GNU.DB.SQLCLI.SQL_NULL_HANDLE;
-      --  Copy of actual handle; not freed.
+      --  FIXME: don't need these?
+      Update_Statement    : access constant String;
+      Insert_Statement    : access constant String;
 
-      Find_Pattern        : String_Access;
-      Find_Pattern_Length : aliased GNU.DB.SQLCLI.SQLINTEGER := 0;
+      Delete_By_ID_Statement : access constant String;
+      All_By_ID_Statement    : access constant String;
+      Find_Statement         : access constant String;
 
-      Valid : Boolean := False;
+      Cursor : GNATCOLL.SQL.Exec.Forward_Cursor;
+      --  Holds result of last Find
    end record;
 
-   procedure Checked_Execute (Statement : in GNU.DB.SQLCLI.SQLHANDLE);
+   procedure Checked_Execute
+     (T         : in out Table'Class;
+      Statement : in     String;
+      Params    : in     GNATCOLL.SQL.Exec.SQL_Parameters := GNATCOLL.SQL.Exec.No_Parameters);
    --  Execute Statement, catch GNU.DB.SQLCLI.Database_Error, check
    --  error message, convert to Entry_Error if recognized.
 
-   procedure Find (T : in out Table'Class; Statement : in GNU.DB.SQLCLI.SQLHANDLE);
+   procedure Find
+     (T         : in out Table'Class;
+      Statement : access constant String;
+      Params    : in     GNATCOLL.SQL.Exec.SQL_Parameters := GNATCOLL.SQL.Exec.No_Parameters);
    --  Close appropriate cursors, set T.Find_Statement, execute
    --  statement, call Next.
 

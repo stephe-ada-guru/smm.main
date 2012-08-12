@@ -2,7 +2,7 @@
 --
 --  Generic link database table
 --
---  Copyright (C) 2002, 2004, 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002, 2004, 2009, 2012 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -43,27 +43,18 @@ package Books.Database.Gen_Link_Tables is
    procedure Delete (T : in out Table; Data : in Source_Array_ID_Type);
    --  Delete record containing Data.
 
-   procedure Fetch_Links_Of (T : in out Table; Source : in Source_Labels_Type; Item : in ID_Type);
+   procedure Find (T : in out Table; Source : in Source_Labels_Type; Item : in ID_Type);
    --  Find records with ID (Source) = Item.
-   --
-   --  Marks data invalid if there is no such record.
 
    procedure Insert (T : in out Table; Data : in Source_Array_ID_Type);
    --  Insert a link record containing Data.
 
 private
 
-   use GNU.DB.SQLCLI;
-
-   type Source_Array_SQLINTEGER_Type is array (Source_Labels_Type) of aliased SQLINTEGER;
-   type Source_Array_SQLHANDLE_Type is array (Source_Labels_Type) of aliased SQLHANDLE;
+   type Source_Array_Statement_Type is array (Source_Labels_Type) of aliased access constant String;
 
    type Table is new Books.Database.Table with record
-
-      Data      : Source_Array_ID_Type         := (others => 0);
-      Indicator : Source_Array_SQLINTEGER_Type := (others => SQL_NULL_DATA);
-
-      By_Source_Statement : Source_Array_SQLHANDLE_Type := (others => SQL_NULL_HANDLE);
+      Find_By_Source_Statement : Source_Array_Statement_Type;
    end record;
 
 end Books.Database.Gen_Link_Tables;

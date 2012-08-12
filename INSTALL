@@ -7,32 +7,17 @@ On Windows
 Cygwin for make, bash, subversion
        http://cygwin.com/setup.exe
 
-GNAT GPL 2012 for Ada, GtkAda
+GNAT GPL 2012 for Ada, GtkAda, Gnatcoll for SQLite3 binding
      http://libre.adacore.com/download/configurations
      gnat-gpl-2012-i686-pc-mingw32-bin.exe
      gtkada-gpl-2.24.2-nt.exe
+     gnatcoll-gpl-2012-src.tgz
 
+     install gnat-gpl using GUI installer
      install gtkada to same directory as gnat
+     install gnatcoll via configure, make in cygwin
+             ./configure --prefix=/apps/GNAT-gpl_2012
      
-gnade for odbc binding
-      using gnade_1.6.2.orig.tar.gz from Debian gnade package
-
-      cd /Projects
-      tar zxf gnade_1.6.2.orig.tar.gz
-      cd gnade-1.6.2.orig
-      ./configure
-      mkdir -p lib-obj/Debug
-      cd dbi/odbc
-      make prep
-
-mysql
-    http://www.mysql.com/downloads/ Community Server
-    mysql-installer-5.5.25a.0.msi
-        don't install workbench; it requires MS stuff
-        install all of server, just ODBC connector (simplifies uninstall later)
-        configure as Developer machine
-        set db admin password
-
 Create database
     edit /books/src/create_user_mysql.sql to specify you
     
@@ -42,21 +27,13 @@ Create database
     source /books/src/create_schema_mysql.sql;
     quit;
     
-create ODBC data source
-    Control Panel | Administrative Tools | Data Source (ODBC) | User DSN tab | Add
-    Data Source Name : books
-    Host/Server Name : localhost
-    Database Name : books
-
-    click Test; fix any problems
-    
 compile
     cd books/build/x86_gnu_windows/release
     edit makefile to set ADA_PROJECT_PATH
     make all
 
 to restore database from SQL backup:
-   run mysql command line client
+   run sqlite3 command line client
    source <file.sql>;
    doesn't like network drives, spaces in file names
         

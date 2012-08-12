@@ -1,19 +1,56 @@
-~/Ada/Books/doc/C/books.texinfo
+build/x86_gnu_windows_debug/Makefile
+doc/C/books.texinfo
 file://c:/Gnu/GtkAda-2.2.0/share/gtk-doc/html/gtk/index.html
 file://c:/Gnu/GtkAda-2.2.0/share/gtk-doc/html/gdk/index.html
-file://c:/Apps/MySQL/Docs/manual.html
 
-(cvs-examine "." nil)
-(cvs-examine (getenv "SAL") nil)
-(cvs-examine (getenv "GNADE") nil)
 
-~/Ada/build-books/src/Makefile
-~/Ada/Books/src/Makefile.am
-    test
-    test-one
-    run
+consider generic for books-database-data_tables-*, -view-*
+    map db record directly to gtk view!
+    sql_parameters <=> display collection
 
-dbl click link -> pop up link
+added author_collection, author_series tables
+    requires schema change; need books_migrate.adb
+
+    fix mote in god's eye series
+
+replace obsolescent gtk packages with new ones
+
+(books.exe:4016): GLib-WARNING **: Passing a non-NULL package to g_win32_get_package_installation_directory() is deprecated and will not work in GLib after 2.18.
+
+need to move add/delete link back to table-specific
+    allow changing collection editor, series author via buttons
+
+update linked sibling views on insert_database
+
+need 'enter' key for double-click on list
+
+add keyboard shortcuts for links in Add windows
+
+handle bad ids in link displays
+    see books-table_views-title.adb Update_Display_CollectionTitle
+        need to abstract one level up
+
+rating shows as 0
+    should be blank
+
+add rating search, allow for 'unrated'
+
+text box
+    C-e = end
+    C-a = select all (toggle?)
+        need to find gtk source for widget, editable
+
+indicate when text field is full
+    use unconstrained db data!
+
+get one top level window!
+
+add main menu
+    add import, export
+
+port to Android!
+    try app inventor; generic db browser?
+    need to switch to sqlite; read-only db avail via crashplan
 
 refresh other window on delete/add link
 
