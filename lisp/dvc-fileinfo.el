@@ -1,7 +1,7 @@
 ;;; dvc-fileinfo.el --- An ewoc structure for displaying file information
 ;;; for DVC
 
-;; Copyright (C) 2007 - 2011 by all contributors
+;; Copyright (C) 2007 - 2012 by all contributors
 
 ;; Author: Stephen Leake, <stephen_leake@stephe-leake.org>
 
@@ -424,9 +424,9 @@ marked legacy fileinfos."
 	    dvc-fileinfo-ewoc
 	    (file-name-as-directory dir)))
 
-(defun dvc-fileinfo-mark-file-1 (mark)
-  "Set the mark for file under point to MARK. If a directory, mark all files
-in that directory."
+(defun dvc-fileinfo-mark-file-1 (mark &optional not-recursive)
+  "Set the mark for file under point to MARK. If a directory and
+NOT-RECURSIVE is nil, mark all files in that directory."
   (let* ((current (ewoc-locate dvc-fileinfo-ewoc))
          (fileinfo (ewoc-data current)))
     (etypecase fileinfo
@@ -443,7 +443,8 @@ in that directory."
            ;; not excluded
            (setf (dvc-fileinfo-file-mark fileinfo) mark)
            (ewoc-invalidate dvc-fileinfo-ewoc current)
-           (dvc-fileinfo-mark-dir file mark))))
+	   (if (not not-recursive)
+	       (dvc-fileinfo-mark-dir file mark)))))
 
       (dvc-fileinfo-file
        (let ((file (dvc-fileinfo-path fileinfo)))
@@ -465,11 +466,11 @@ in that directory."
       (dvc-fileinfo-message
        (error "not on a file or directory")))))
 
-(defun dvc-fileinfo-mark-file ()
+(defun dvc-fileinfo-mark-file (not-recursive)
   "Mark the file under point. If a directory, mark all files in
 that directory. Then move to next ewoc entry."
-  (interactive)
-  (dvc-fileinfo-mark-file-1 t)
+  (interactive "P")
+  (dvc-fileinfo-mark-file-1 t not-recursive)
   (dvc-fileinfo-next))
 
 (defun dvc-fileinfo-unmark-file (&optional prev)
