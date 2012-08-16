@@ -91,13 +91,16 @@ package body Books.Table_Views.Author is
    procedure Initialize
      (Author_View : access Gtk_Author_View_Record'Class;
       Parameters  : in     Create_Parameters_Type)
-   is begin
+   is
+      use Books.Database;
+   begin
       Author.Create_GUI (Author_View, Parameters.Config);
 
-      Author_View.Tables := Parameters.Tables;
+      Author_View.Siblings := Parameters.Siblings;
+      Author_View.Links    := Parameters.Links;
 
       Author_View.Primary_Kind  := Books.Author;
-      Author_View.Primary_Table := Author_View.Tables.Sibling (Books.Author);
+      Author_View.Primary_Table := Data_Tables.Table_Access (Author_View.Siblings (Books.Author));
 
       Gtk.Radio_Button.Set_Active (Author_View.List_Select (Title), True);
 
@@ -107,8 +110,7 @@ package body Books.Table_Views.Author is
    end Initialize;
 
    overriding procedure Insert_Database (Author_View : access Gtk_Author_View_Record)
-   is
-   begin
+   is begin
       Database.Data_Tables.Author.Insert
         (Database.Data_Tables.Author.Table (Author_View.Primary_Table.all),
          First_Name  => Gtk.GEntry.Get_Text (Author_View.First_Text),
@@ -138,7 +140,8 @@ package body Books.Table_Views.Author is
    is
       use Books.Database;
       use Interfaces.C.Strings; -- New_String
-      Sibling_Table : Data_Tables.Table_Access renames Table_View.Tables.Sibling (Table_View.Current_List);
+      Sibling_Table : constant Data_Tables.Table_Access := Data_Tables.Table_Access
+        (Table_View.Siblings (Table_View.Current_List));
    begin
       Sibling_Table.Fetch (Sibling_ID);
 

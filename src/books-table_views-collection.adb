@@ -81,13 +81,16 @@ package body Books.Table_Views.Collection is
    procedure Initialize
      (Collection_View : access Gtk_Collection_View_Record'Class;
       Parameters      : in     Create_Parameters_Type)
-   is begin
+   is
+      use Books.Database;
+   begin
       Collection.Create_GUI (Collection_View, Parameters.Config);
 
-      Collection_View.Tables := Parameters.Tables;
+      Collection_View.Siblings := Parameters.Siblings;
+      Collection_View.Links    := Parameters.Links;
 
       Collection_View.Primary_Kind  := Books.Collection;
-      Collection_View.Primary_Table := Collection_View.Tables.Sibling (Books.Collection);
+      Collection_View.Primary_Table := Data_Tables.Table_Access (Collection_View.Siblings (Books.Collection));
 
       Gtk.Radio_Button.Set_Active (Collection_View.List_Select (Title), True);
 
@@ -113,9 +116,7 @@ package body Books.Table_Views.Collection is
          Year_Valid => Year_Valid);
    end Insert_Database;
 
-   overriding function Main_Index_Name
-     (Collection_View : access Gtk_Collection_View_Record)
-     return String
+   overriding function Main_Index_Name (Collection_View : access Gtk_Collection_View_Record) return String
    is
       pragma Unreferenced (Collection_View);
    begin
@@ -147,8 +148,8 @@ package body Books.Table_Views.Collection is
    is
       use Books.Database;
       use Interfaces.C.Strings; -- New_String
-      Primary_ID    : constant ID_Type := Data_Tables.ID (Table_View.Primary_Table.all);
-      Sibling_Table : Data_Tables.Table_Access renames Table_View.Tables.Sibling (Table_View.Current_List);
+      Sibling_Table : constant Data_Tables.Table_Access := Data_Tables.Table_Access
+        (Table_View.Siblings (Table_View.Current_List));
    begin
       Sibling_Table.Fetch (Sibling_ID);
 
@@ -169,14 +170,13 @@ package body Books.Table_Views.Collection is
          raise SAL.Programmer_Error;
 
       when Books.Title =>
-            Gtk.Clist.Insert
-              (Table_View.List_Display (Title),
-               0,
-               (1 => New_String (Image (Sibling_ID)),
-                2 => New_String (Sibling_Table.Field (Data_Tables.Title.Title_Index)),
-                3 => New_String (Sibling_Table.Field (Data_Tables.Title.Year_Index))));
+         Gtk.Clist.Insert
+           (Table_View.List_Display (Title),
+            0,
+            (1 => New_String (Image (Sibling_ID)),
+             2 => New_String (Sibling_Table.Field (Data_Tables.Title.Title_Index)),
+             3 => New_String (Sibling_Table.Field (Data_Tables.Title.Year_Index))));
       end case;
-
    end Insert_List_Row;
 
    overriding procedure Update_Primary_Display (Collection_View : access Gtk_Collection_View_Record)
@@ -185,12 +185,11 @@ package body Books.Table_Views.Collection is
    begin
       Collection_View.Title_Text.Set_Text (Collection_View.Primary_Table.Field (Title_Index));
 
-      if Collection_View.Primary_Table.Valid_Field (Collection_View.Primary_Table.Field (Year_Index)) then
+      if Collection_View.Primary_Table.Valid_Field (Year_Index) then
          Collection_View.Year_Text.Set_Text (Collection_View.Primary_Table.Field (Year_Index));
       else
          Collection_View.Year_Text.Set_Text ("");
       end if;
-
    end Update_Primary_Display;
 
    overriding procedure Clear_Primary_Display (Collection_View : access Gtk_Collection_View_Record)

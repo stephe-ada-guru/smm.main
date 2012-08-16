@@ -3,6 +3,8 @@ doc/C/books.texinfo
 file://c:/Gnu/GtkAda-2.2.0/share/gtk-doc/html/gtk/index.html
 file://c:/Gnu/GtkAda-2.2.0/share/gtk-doc/html/gdk/index.html
 
+split out list views as derived objects, share
+
 compiling
 
 
@@ -16,11 +18,13 @@ data_tables.fetch is used for two things:
 
     2 should restore original display id; need Fetch_No_Display, end_fetch_no_display
         or restore view.display_id
+        or use two table objects, one for primary display, one for link
+            don't need two whole objects, just two cursors
         or something
 
-split out list views as derived objects, share
+add alternate indexes
 
-change list of link tables to square array with nulls
+finish series, title
 
 added author_collection, author_series tables
     requires schema change; need books_migrate.adb

@@ -22,16 +22,10 @@ package Books.Database.Data_Tables.Author is
 
    use type GNATCOLL.SQL.Exec.Field_Index;
 
-   type Table (DB : access Database'Class) is new Data_Tables.Table with private;
+   type Table (DB : access Books.Database.Database'Class) is new Data_Tables.Table (DB => DB) with null record;
    type Table_Access is access all Table;
 
-   ----------
-   --  Override parent operations.
-
    overriding procedure Initialize (T : in out Table);
-
-   ----------
-   --  New operations
 
    First_Name_Index  : constant GNATCOLL.SQL.Exec.Field_Index := ID_Index + 1;
    Middle_Name_Index : constant GNATCOLL.SQL.Exec.Field_Index := ID_Index + 2;
@@ -51,22 +45,5 @@ package Books.Database.Data_Tables.Author is
       Middle_Name : in     String;
       Last_Name   : in     String);
    --  Update the data in the current record.
-
-private
-
-   Name_Field_Length : constant := 20;
-
-   type Table (DB : access Database'Class) is new Data_Tables.Table (DB => DB) with record
-      null;
-      --  FIXME: don't store the data, just fetch it from the cursor!
-      --  Data
-      --  First         : String_Access;
-      --  First_Length  : aliased GNU.DB.SQLCLI.SQLINTEGER := 0;
-      --  Middle        : String_Access;
-      --  Middle_Length : aliased GNU.DB.SQLCLI.SQLINTEGER := 0;
-      --  Last          : String_Access;
-      --  Last_Length   : aliased GNU.DB.SQLCLI.SQLINTEGER := 0;
-
-   end record;
 
 end Books.Database.Data_Tables.Author;

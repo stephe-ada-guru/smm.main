@@ -36,47 +36,42 @@ with Gtk.Window.Signal;
 with SAL.Config_Files;
 package body Books.Main_Window is
 
-   procedure Initialize_DB (Tables : in out Table_Views.Tables_Type; DB : in Books.Database.Database_Access)
+   procedure Create_Tables
+     (DB       : in     Books.Database.Database_Access;
+      Siblings :    out Table_Arrays;
+      Links    :    out Link_Arrays)
    is
       use Books.Database.Link_Tables;
       use type Books.Database.Data_Tables.Table_Access;
    begin
-      Tables.Sibling (Author)     := new Books.Database.Data_Tables.Author.Table (DB);
-      Tables.Sibling (Title)      := new Books.Database.Data_Tables.Title.Table (DB);
-      Tables.Sibling (Collection) := new Books.Database.Data_Tables.Collection.Table (DB);
-      Tables.Sibling (Series)     := new Books.Database.Data_Tables.Series.Table (DB);
-      Tables.AuthorTitle          := new Books.Database.Link_Tables.Table (new Link_Names'(Author, Title), DB);
-      Tables.CollectionTitle      := new Books.Database.Link_Tables.Table (new Link_Names'(Collection, Title), DB);
-      Tables.SeriesTitle          := new Books.Database.Link_Tables.Table (new Link_Names'(Series, Title), DB);
+      Siblings (Author)          := new Books.Database.Data_Tables.Author.Table (DB);
+      Siblings (Title)           := new Books.Database.Data_Tables.Title.Table (DB);
+      Siblings (Collection)      := new Books.Database.Data_Tables.Collection.Table (DB);
+      Siblings (Series)          := new Books.Database.Data_Tables.Series.Table (DB);
+      Links (Author, Collection) := new Books.Database.Link_Tables.Table (new Link_Names'(Author, Collection), DB);
+      Links (Author, Series)     := new Books.Database.Link_Tables.Table (new Link_Names'(Author, Series), DB);
+      Links (Author, Title)      := new Books.Database.Link_Tables.Table (new Link_Names'(Author, Title), DB);
+      Links (Collection, Title)  := new Books.Database.Link_Tables.Table (new Link_Names'(Collection, Title), DB);
+      Links (Series, Title)      := new Books.Database.Link_Tables.Table (new Link_Names'(Series, Title), DB);
+   end Create_Tables;
 
-      Books.Database.Data_Tables.Author.Initialize
-        (Books.Database.Data_Tables.Author.Table (Tables.Sibling (Author).all));
-      Books.Database.Data_Tables.Title.Initialize
-        (Books.Database.Data_Tables.Title.Table (Tables.Sibling (Title).all));
-      Books.Database.Data_Tables.Collection.Initialize
-        (Books.Database.Data_Tables.Collection.Table (Tables.Sibling (Collection).all));
-      Books.Database.Data_Tables.Series.Initialize
-        (Books.Database.Data_Tables.Series.Table (Tables.Sibling (Series).all));
-      Books.Database.Link_Tables.Initialize (Tables.AuthorTitle.all);
-      Books.Database.Link_Tables.Initialize (Tables.CollectionTitle.all);
-      Books.Database.Link_Tables.Initialize (Tables.SeriesTitle.all);
-
-   end Initialize_DB;
-
-   procedure Finalize_DB (Tables : in out Books.Table_Views.Tables_Type)
+   procedure Free_Tables
+     (Siblings : in out Table_Arrays;
+      Links    : in out Link_Arrays)
    is
       use type Books.Database.Data_Tables.Table_Access;
    begin
-      if Tables.Sibling (Author) /= null then
-         Books.Database.Free (Books.Database.Table_Access (Tables.Sibling (Author)));
-         Books.Database.Free (Books.Database.Table_Access (Tables.Sibling (Title)));
-         Books.Database.Free (Books.Database.Table_Access (Tables.Sibling (Collection)));
-         Books.Database.Free (Books.Database.Table_Access (Tables.Sibling (Series)));
-         Books.Database.Free (Books.Database.Table_Access (Tables.AuthorTitle));
-         Books.Database.Free (Books.Database.Table_Access (Tables.CollectionTitle));
-         Books.Database.Free (Books.Database.Table_Access (Tables.SeriesTitle));
+      if Siblings (Author) /= null then
+         for I in Siblings'Range loop
+            Books.Database.Free (Books.Database.Table_Access (Siblings (I)));
+         end loop;
+         for I in Links'Range (1) loop
+            for J in Links'Range (2) loop
+               Books.Database.Free (Books.Database.Table_Access (Links (I, J)));
+            end loop;
+         end loop;
       end if;
-   end Finalize_DB;
+   end Free_Tables;
 
    function On_Window_Configure_Event
      (Widget : access Gtk.Widget.Gtk_Widget_Record'Class;
@@ -109,7 +104,7 @@ package body Books.Main_Window is
          Window.Author_View := null;
       end if;
 
-      Finalize_DB (Window.Parameters.Tables);
+      Free_Tables (Window.Parameters.Siblings, Window.Parameters.Links);
 
       if Window.Parameters.DB /= null then
          Books.Database.Free (Window.Parameters.DB);
@@ -185,7 +180,7 @@ package body Books.Main_Window is
       Gtk.Object.Signal.Connect_Destroy (Window, On_Window_Destroy'Access);
       Gtk.Widget.Signal.Connect_Window_State_Event (Window, On_Window_State_Event'Access);
 
-      Initialize_DB (Window.Parameters.Tables, Window.Parameters.DB);
+      Create_Tables (Window.Parameters.DB, Window.Parameters.Siblings, Window.Parameters.Links);
 
       Books.Table_Views.Author.Gtk_New (Window.Author_View, Window.Parameters);
       Books.Table_Views.Author.Set_Title (Window.Author_View, "Author");

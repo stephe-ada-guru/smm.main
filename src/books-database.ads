@@ -15,7 +15,8 @@
 --  distributed with this program; see file COPYING. If not, write to
 --  the Free Software Foundation, 59 Temple Place - Suite 330, Boston,
 --  MA 02111-1307, USA.
---
+
+pragma License (GPL);
 
 with Ada.Finalization;
 with GNATCOLL.SQL.Exec;
@@ -67,15 +68,6 @@ package Books.Database is
    --
    --  Marks data invalid if there is no next.
 
-   function Valid (T : in Table'Class) return Boolean;
-   --  True if current data is valid (Next, Find or Fetch returned a row)
-
-   function Valid_Field
-     (T     : in Table'Class;
-      Field : in GNATCOLL.SQL.Exec.Field_Index)
-     return Boolean;
-   --  True if Valid and Field is non-null
-
    ----------
    --  Dispatching Table operations
 
@@ -90,6 +82,19 @@ package Books.Database is
 
    overriding procedure Finalize (T : in out Table);
    --  Free all statements. Root version frees common statements.
+
+   function Valid (T : in Table) return Boolean;
+   --  True if current data is valid (Next, Find or Fetch returned a row)
+   --
+   --  Dispatching for object.method notation
+
+   function Valid_Field
+     (T     : in Table;
+      Field : in GNATCOLL.SQL.Exec.Field_Index)
+     return Boolean;
+   --  True if Valid and Field is non-null
+   --
+   --  Dispatching for object.method notation
 
 private
 

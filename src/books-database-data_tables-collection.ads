@@ -21,16 +21,10 @@ package Books.Database.Data_Tables.Collection is
 
    use type GNATCOLL.SQL.Exec.Field_Index;
 
-   type Table (DB : access Database'Class) is new Data_Tables.Table (DB => DB) with null record;
+   type Table (DB : access Books.Database.Database'Class) is new Data_Tables.Table (DB => DB) with null record;
    type Table_Access is access all Table;
 
-   ----------
-   --  Override parent operations.
-
    overriding procedure Initialize (T : in out Table);
-
-   ----------
-   --  New operations
 
    Title_Index : constant GNATCOLL.SQL.Exec.Field_Index := ID_Index + 1;
    Year_Index  : constant GNATCOLL.SQL.Exec.Field_Index := ID_Index + 2;

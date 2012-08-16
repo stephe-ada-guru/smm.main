@@ -34,23 +34,12 @@ package Books.Table_Views is
    type Gtk_Table_View is access all Gtk_Table_View_Record'Class;
 
    type Table_Array_Table_View_Type is array (Table_Names) of Gtk_Table_View;
-   type Table_Array_Data_Table_Access_Type is array (Table_Names) of Books.Database.Data_Tables.Table_Access;
-
-   type Tables_Type is record
-      --  FIXME: why is this public?
-      Sibling : Table_Array_Data_Table_Access_Type;
-
-      AuthorTitle      : Books.Database.Link_Tables.Table_Access;
-      AuthorCollection : Books.Database.Link_Tables.Table_Access;
-      AuthorSeries     : Books.Database.Link_Tables.Table_Access;
-      CollectionTitle  : Books.Database.Link_Tables.Table_Access;
-      SeriesTitle      : Books.Database.Link_Tables.Table_Access;
-   end record;
 
    type Create_Parameters_Type is record
-      DB     : Books.Database.Database_Access;
-      Tables : Tables_Type;
-      Config : SAL.Config_Files.Configuration_Access_Type;
+      DB       : Books.Database.Database_Access;
+      Siblings : Table_Arrays;
+      Links    : Link_Arrays;
+      Config   : SAL.Config_Files.Configuration_Access_Type;
    end record;
 
    ----------
@@ -139,7 +128,8 @@ private
       --  All table views share the same tables, for cross-referencing
       Primary_Kind  : Table_Names;
       Primary_Table : Books.Database.Data_Tables.Table_Access;
-      Tables        : Tables_Type;
+      Siblings      : Table_Arrays;
+      Links         : Link_Arrays;
    end record;
 
    --  For children to call

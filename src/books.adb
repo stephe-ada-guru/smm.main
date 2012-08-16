@@ -15,12 +15,14 @@
 --  License distributed with this program; see file COPYING. If not,
 --  write to the Free Software Foundation, 59 Temple Place - Suite
 --  330, Boston, MA 02111-1307, USA.
---
+
+pragma License (GPL);
+
 package body Books is
 
    function Version return String is
    begin
-      return "0.54";
+      return "1.00";
    end Version;
 
    function Image (Item : in Table_Names) return String

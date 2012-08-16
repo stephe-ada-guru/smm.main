@@ -393,7 +393,9 @@ package body Books.Table_Views is
      (Table_View : access constant Gtk_Table_View_Record;
       Kind       : in Table_Names)
      return Books.Database.Link_Tables.Table_Access
-   is begin
+   is
+      use Books.Database;
+   begin
       case Table_View.Primary_Kind is
       when Author =>
          case Kind is
@@ -401,19 +403,19 @@ package body Books.Table_Views is
             raise SAL.Programmer_Error;
 
          when Collection =>
-            return Table_View.Tables.AuthorCollection;
+            return Link_Tables.Table_Access (Table_View.Links (Author, Collection));
 
          when Series =>
-            return Table_View.Tables.AuthorSeries;
+            return Link_Tables.Table_Access (Table_View.Links (Author, Series));
 
          when Books.Title =>
-            return Table_View.Tables.AuthorTitle;
+            return Link_Tables.Table_Access (Table_View.Links (Author, Title));
          end case;
 
       when Collection =>
          case Kind is
          when Author =>
-            return Table_View.Tables.AuthorCollection;
+            return Link_Tables.Table_Access (Table_View.Links (Author, Collection));
 
          when Collection =>
             raise SAL.Programmer_Error;
@@ -422,13 +424,13 @@ package body Books.Table_Views is
             raise SAL.Programmer_Error;
 
          when Books.Title =>
-            return Table_View.Tables.CollectionTitle;
+            return Link_Tables.Table_Access (Table_View.Links (Collection, Title));
          end case;
 
       when Series =>
          case Kind is
          when Author =>
-            return Table_View.Tables.AuthorSeries;
+            return Link_Tables.Table_Access (Table_View.Links (Author, Series));
 
          when Collection =>
             raise SAL.Programmer_Error;
@@ -437,19 +439,19 @@ package body Books.Table_Views is
             raise SAL.Programmer_Error;
 
          when Books.Title =>
-            return Table_View.Tables.SeriesTitle;
+            return Link_Tables.Table_Access (Table_View.Links (Series, Title));
          end case;
 
       when Title =>
          case Kind is
          when Author =>
-            return Table_View.Tables.AuthorTitle;
+            return Link_Tables.Table_Access (Table_View.Links (Author, Title));
 
          when Collection =>
-            return Table_View.Tables.CollectionTitle;
+            return Link_Tables.Table_Access (Table_View.Links (Collection, Title));
 
          when Series =>
-            return Table_View.Tables.SeriesTitle;
+            return Link_Tables.Table_Access (Table_View.Links (Series, Title));
 
          when Books.Title =>
             raise SAL.Programmer_Error;
@@ -575,8 +577,8 @@ package body Books.Table_Views is
       use Books.Database;
       Table_View : constant Gtk_Table_View := Gtk_Table_View (Gtk.Button.Get_Toplevel (Button));
    begin
-      Next (Table_View.Primary_Table.all);
-      if Valid (Table_View.Primary_Table.all) then
+      Table_View.Primary_Table.Next;
+      if Table_View.Primary_Table.Valid then
          Update_Display (Table_View);
       else
          --  restart search
@@ -795,7 +797,7 @@ package body Books.Table_Views is
    begin
       --  Caller is responsible for calling Find to get a valid record.
 
-      if not Database.Valid (Table_View.Primary_Table.all) then
+      if not Table_View.Primary_Table.Valid then
          Gtk.Label.Set_Text (Table_View.Private_Stuff.ID_Display, "");
          Clear_Primary_Display (Table_View);
          List_View.Clear;

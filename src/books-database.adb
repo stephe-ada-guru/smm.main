@@ -152,13 +152,13 @@ package body Books.Database is
       T.Cursor.Next;
    end Next;
 
-   function Valid (T : in Table'Class) return Boolean
+   function Valid (T : in Table) return Boolean
    is begin
       return T.Cursor.Has_Row;
    end Valid;
 
    function Valid_Field
-     (T     : in Table'Class;
+     (T     : in Table;
       Field : in GNATCOLL.SQL.Exec.Field_Index)
      return Boolean
    is begin
