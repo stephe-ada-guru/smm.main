@@ -18,54 +18,61 @@
 
 pragma License (GPL);
 
-package body Books.Database.Gen_Link_Tables is
+package body Books.Database.Link_Tables is
 
-   function To_Params (Data : in Source_Array_ID_Type) return GNATCOLL.SQL.Exec.SQL_Parameters
+   function To_Params (Data : in Link_Array_ID_Type) return GNATCOLL.SQL.Exec.SQL_Parameters
    is
       use GNATCOLL.SQL.Exec;
    begin
       return
-        (1 => +Data (Source_Array_ID_Type'First),
-         2 => +Data (Source_Array_ID_Type'Last));
+        (1 => +Data (Link_Array_ID_Type'First),
+         2 => +Data (Link_Array_ID_Type'Last));
    end To_Params;
 
-   procedure Delete (T : in out Table; Data : in Source_Array_ID_Type)
+   function Find_Link_Index (T : in Table'Class; Name : in Table_Names) return Link_Index
+   is begin
+      if T.Link_Names (1) = Name then
+         return 1;
+      elsif T.Link_Names (2) = Name then
+         return 2;
+      else
+         raise SAL.Programmer_Error with Table_Names'Image (Name) & " is not a link in link table " &
+           Table_Names'Image (T.Link_Names (1)) & Table_Names'Image (T.Link_Names (2));
+      end if;
+   end Find_Link_Index;
+
+   procedure Delete (T : in out Table; Data : in Link_Array_ID_Type)
    is begin
       Checked_Execute (T, T.Delete_By_ID_Statement.all, To_Params (Data));
    end Delete;
 
-   procedure Find (T : in out Table; Source : in Source_Labels_Type; Item : in ID_Type)
+   procedure Find (T : in out Table; Name : in Table_Names; Item : in ID_Type)
    is
       use type GNATCOLL.SQL.Exec.SQL_Parameter;
    begin
-      Find (T, T.Find_By_Source_Statement (Source), Params => (1 => +Item));
+      Find (T, T.Find_By_Link_Statement (Find_Link_Index (T, Name)), Params => (1 => +Item));
    end Find;
 
-   function ID (T : in Table; Source : in Source_Labels_Type) return ID_Type is
+   function ID (T : in Table; Name : in Table_Names) return ID_Type is
    begin
-      return ID_Type'Value (Field (T, Source_Labels_Type'Pos (Source)));
+      return ID_Type'Value (Field (T, Find_Link_Index (T, Name)));
    end ID;
 
    overriding procedure Initialize (T : in out Table)
    is
-      First_Column_Name : constant String := Source_Labels_Type'Image (Source_Labels_Type'First);
-      Last_Column_Name  : constant String := Source_Labels_Type'Image (Source_Labels_Type'Last);
+      First_Column_Name : constant String := Table_Names'Image (T.Link_Names (1));
+      Last_Column_Name  : constant String := Table_Names'Image (T.Link_Names (2));
 
       Table_Name : constant String := First_Column_Name & Last_Column_Name;
    begin
 
-      for I in Source_Labels_Type loop
-         T.Find_By_Source_Statement (I) := new String'
-           ("SELECT " &
-              First_Column_Name &
-              ", " &
-              Last_Column_Name &
-              " FROM " &
-              Table_Name &
-              " WHERE " &
-              Source_Labels_Type'Image (I) &
-              " = ?");
-      end loop;
+      T.Find_By_Link_Statement (1) := new String'
+        ("SELECT " & First_Column_Name & ", " & Last_Column_Name & " FROM " & Table_Name &
+           " WHERE " & First_Column_Name & " = ?");
+
+      T.Find_By_Link_Statement (1) := new String'
+        ("SELECT " & First_Column_Name & ", " & Last_Column_Name & " FROM " & Table_Name &
+           " WHERE " & Last_Column_Name & " = ?");
 
       T.Insert_Statement := new String'
         ("INSERT INTO " &
@@ -85,9 +92,9 @@ package body Books.Database.Gen_Link_Tables is
 
    end Initialize;
 
-   procedure Insert (T : in out Table; Data : in Source_Array_ID_Type)
+   procedure Insert (T : in out Table; Data : in Link_Array_ID_Type)
    is begin
       Checked_Execute (T, T.Insert_Statement.all, To_Params (Data));
    end Insert;
 
-end Books.Database.Gen_Link_Tables;
+end Books.Database.Link_Tables;

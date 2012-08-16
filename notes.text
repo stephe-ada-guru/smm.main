@@ -3,10 +3,24 @@ doc/C/books.texinfo
 file://c:/Gnu/GtkAda-2.2.0/share/gtk-doc/html/gtk/index.html
 file://c:/Gnu/GtkAda-2.2.0/share/gtk-doc/html/gdk/index.html
 
+compiling
 
-consider generic for books-database-data_tables-*, -view-*
-    map db record directly to gtk view!
-    sql_parameters <=> display collection
+
+data_tables.fetch is used for two things:
+    1) fetch data to display in primary view
+
+    2) fetch data to display in list view of sibling view
+
+    fetch should not change find statement
+        why do we need a persistent find statement?
+
+    2 should restore original display id; need Fetch_No_Display, end_fetch_no_display
+        or restore view.display_id
+        or something
+
+split out list views as derived objects, share
+
+change list of link tables to square array with nulls
 
 added author_collection, author_series tables
     requires schema change; need books_migrate.adb

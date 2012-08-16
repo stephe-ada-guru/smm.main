@@ -2,7 +2,7 @@
 --
 --  Root of Stephe's Books Database Interface.
 --
---  Copyright (C) 2002, 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002, 2009, 2012 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -21,9 +21,9 @@ package Books is
 
    function Version return String;
 
-   type Table_Name_Type is (Author, Collection, Series, Title);
+   type Table_Names is (Author, Collection, Series, Title);
 
-   function Image (Item : in Table_Name_Type) return String;
+   function Image (Item : in Table_Names) return String;
    --  With proper capitalization.
 
 end Books;

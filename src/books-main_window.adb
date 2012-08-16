@@ -2,7 +2,7 @@
 --
 --  See spec.
 --
---  Copyright (C) 2002 - 2005, 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002 - 2005, 2009, 2012 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -16,14 +16,14 @@
 --  write to the Free Software Foundation, 59 Temple Place - Suite
 --  330, Boston, MA 02111-1307, USA.
 
+pragma License (GPL);
+
 with Ada.Text_IO;
 with Books.Database.Data_Tables.Author;
 with Books.Database.Data_Tables.Collection;
 with Books.Database.Data_Tables.Series;
 with Books.Database.Data_Tables.Title;
-with Books.Database.Link_Tables.AuthorTitle;
-with Books.Database.Link_Tables.CollectionTitle;
-with Books.Database.Link_Tables.SeriesTitle;
+with Books.Database.Link_Tables;
 with Books.Database;
 with Gdk.Event;
 with Gdk.Window;
@@ -38,15 +38,16 @@ package body Books.Main_Window is
 
    procedure Initialize_DB (Tables : in out Table_Views.Tables_Type; DB : in Books.Database.Database_Access)
    is
+      use Books.Database.Link_Tables;
       use type Books.Database.Data_Tables.Table_Access;
    begin
       Tables.Sibling (Author)     := new Books.Database.Data_Tables.Author.Table (DB);
       Tables.Sibling (Title)      := new Books.Database.Data_Tables.Title.Table (DB);
       Tables.Sibling (Collection) := new Books.Database.Data_Tables.Collection.Table (DB);
       Tables.Sibling (Series)     := new Books.Database.Data_Tables.Series.Table (DB);
-      Tables.AuthorTitle          := new Books.Database.Link_Tables.AuthorTitle.Table (DB);
-      Tables.CollectionTitle      := new Books.Database.Link_Tables.CollectionTitle.Table (DB);
-      Tables.SeriesTitle          := new Books.Database.Link_Tables.SeriesTitle.Table (DB);
+      Tables.AuthorTitle          := new Books.Database.Link_Tables.Table (new Link_Names'(Author, Title), DB);
+      Tables.CollectionTitle      := new Books.Database.Link_Tables.Table (new Link_Names'(Collection, Title), DB);
+      Tables.SeriesTitle          := new Books.Database.Link_Tables.Table (new Link_Names'(Series, Title), DB);
 
       Books.Database.Data_Tables.Author.Initialize
         (Books.Database.Data_Tables.Author.Table (Tables.Sibling (Author).all));
@@ -56,9 +57,9 @@ package body Books.Main_Window is
         (Books.Database.Data_Tables.Collection.Table (Tables.Sibling (Collection).all));
       Books.Database.Data_Tables.Series.Initialize
         (Books.Database.Data_Tables.Series.Table (Tables.Sibling (Series).all));
-      Books.Database.Link_Tables.AuthorTitle.Initialize (Tables.AuthorTitle.all);
-      Books.Database.Link_Tables.CollectionTitle.Initialize (Tables.CollectionTitle.all);
-      Books.Database.Link_Tables.SeriesTitle.Initialize (Tables.SeriesTitle.all);
+      Books.Database.Link_Tables.Initialize (Tables.AuthorTitle.all);
+      Books.Database.Link_Tables.Initialize (Tables.CollectionTitle.all);
+      Books.Database.Link_Tables.Initialize (Tables.SeriesTitle.all);
 
    end Initialize_DB;
 

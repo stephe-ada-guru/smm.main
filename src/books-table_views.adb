@@ -2,7 +2,7 @@
 --
 --  See spec.
 --
---  Copyright (C) 2002 - 2005, 2009, 2010 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002 - 2005, 2009, 2010, 2012 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -15,7 +15,8 @@
 --  distributed with this program; see file COPYING. If not, write to
 --  the Free Software Foundation, 59 Temple Place - Suite 330, Boston,
 --  MA 02111-1307, USA.
---
+
+pragma License (GPL);
 
 with Ada.Exceptions;
 with Ada.Text_IO;
@@ -41,7 +42,7 @@ with Interfaces.C.Strings;
 with SAL.Config_Files.Boolean;
 package body Books.Table_Views is
 
-   type Table_Array_Scroll_Type is array (Table_Name_Type) of Gtk.Scrolled_Window.Gtk_Scrolled_Window;
+   type Table_Array_Scroll_Type is array (Table_Names) of Gtk.Scrolled_Window.Gtk_Scrolled_Window;
 
    type Private_Stuff_Record is record
       Button_Box    : Gtk.Box.Gtk_Box;
@@ -132,85 +133,19 @@ package body Books.Table_Views is
    --  Show controls for Edit display, hide main.
 
    procedure Update_Display (Table_View : access Gtk_Table_View_Record'class);
-   --  Update common parts of display, call Update_Display_Child.
 
    ----------
    --  Bodies (alphabetical order)
 
-   procedure Add_Link (Table_View : in Gtk_Table_View; Kind : in Table_Name_Type)
+   procedure Add_Link (Table_View : in Gtk_Table_View; Kind : in Table_Names)
    is
-      use Books.Database.Link_Tables;
-      Link_ID : constant Database.ID_Type := Table_View.Sibling_Views (Kind).Displayed_ID;
+      Link_ID : constant Database.ID_Type := ID (Table_View.Sibling_Views (Kind));
    begin
-      case Table_View.Primary_Kind is
-      when Author =>
-         case Kind is
-         when Author =>
-            raise SAL.Programmer_Error;
-
-         when Collection =>
-            --  not a link, but a typical user error; need to edit directly
-            Gdk.Main.Beep;
-
-         when Series =>
-            --  not a link, but a typical user error; need to edit directly
-            Gdk.Main.Beep;
-
-         when Books.Title =>
-            AuthorTitle.Insert
-              (Table_View.Tables.AuthorTitle.all, (Author => Table_View.Displayed_ID, Title => Link_ID));
-         end case;
-
-      when Collection =>
-         case Kind is
-         when Author =>
-            null; -- Done by Insert_Database
-
-         when Collection =>
-            raise SAL.Programmer_Error;
-
-         when Series =>
-            raise SAL.Programmer_Error;
-
-         when Books.Title =>
-            CollectionTitle.Insert
-              (Table_View.Tables.CollectionTitle.all, (Collection => Table_View.Displayed_ID, Title => Link_ID));
-         end case;
-
-      when Series =>
-         case Kind is
-         when Author =>
-            null; -- Done by Insert_Database
-
-         when Collection =>
-            raise SAL.Programmer_Error;
-
-         when Series =>
-            raise SAL.Programmer_Error;
-
-         when Books.Title =>
-            SeriesTitle.Insert
-              (Table_View.Tables.SeriesTitle.all, (Series => Table_View.Displayed_ID, Title => Link_ID));
-         end case;
-
-      when Title =>
-         case Kind is
-         when Author =>
-            AuthorTitle.Insert
-              (Table_View.Tables.AuthorTitle.all, (Title => Table_View.Displayed_ID, Author => Link_ID));
-
-         when Collection =>
-            CollectionTitle.Insert
-              (Table_View.Tables.CollectionTitle.all, (Title => Table_View.Displayed_ID, Collection => Link_ID));
-
-         when Series =>
-            SeriesTitle.Insert
-              (Table_View.Tables.SeriesTitle.all, (Title => Table_View.Displayed_ID, Series => Link_ID));
-
-         when Books.Title =>
-            raise SAL.Programmer_Error;
-         end case;
-      end case;
+      if Table_View.Primary_Kind < Kind then
+         Link_Table (Table_View, Kind).Insert ((ID (Table_View), Link_ID));
+      else
+         Link_Table (Table_View, Kind).Insert ((Link_ID, ID (Table_View)));
+      end if;
    end Add_Link;
 
    procedure Create_GUI
@@ -354,14 +289,14 @@ package body Books.Table_Views is
       --  List_Select radio buttons
       Gtk.Box.Gtk_New_Hbox (Table_View.Private_Stuff.List_Select_Hbox);
 
-      for I in Table_Name_Type loop
-         if I = Table_Name_Type'First then
+      for I in Table_Names loop
+         if I = Table_Names'First then
             --  Start the radio button group
             Gtk.Radio_Button.Gtk_New (Table_View.List_Select (I), Label => Image (I));
          else
             --  Add to the group
             Gtk.Radio_Button.Gtk_New
-              (Table_View.List_Select (I), Table_View.List_Select (Table_Name_Type'First), Label => Image (I));
+              (Table_View.List_Select (I), Table_View.List_Select (Table_Names'First), Label => Image (I));
          end if;
 
          Gtk.Button.Signal.Connect_Clicked (Table_View.List_Select (I), On_List_Select_Clicked'Access);
@@ -387,7 +322,7 @@ package body Books.Table_Views is
       Gtk.Box.Pack_Start (Vbox, Table_View.Private_Stuff.List_Edit_Hbox, Expand => False);
 
       --  List display.
-      for I in Table_Name_Type loop
+      for I in Table_Names loop
          Gtk.Scrolled_Window.Gtk_New (Table_View.Private_Stuff.List_Display_Scroll (I));
          Gtk.Scrolled_Window.Set_Policy
            (Table_View.Private_Stuff.List_Display_Scroll (I),
@@ -446,7 +381,7 @@ package body Books.Table_Views is
       --  hide stuff.
       Show_All (Table_View);
 
-      for I in Table_Name_Type loop
+      for I in Table_Names loop
          Gtk.Scrolled_Window.Hide (Table_View.Private_Stuff.List_Display_Scroll (I));
       end loop;
 
@@ -454,23 +389,86 @@ package body Books.Table_Views is
 
    end Create_GUI;
 
+   function Link_Table
+     (Table_View : access constant Gtk_Table_View_Record;
+      Kind       : in Table_Names)
+     return Books.Database.Link_Tables.Table_Access
+   is begin
+      case Table_View.Primary_Kind is
+      when Author =>
+         case Kind is
+         when Author =>
+            raise SAL.Programmer_Error;
+
+         when Collection =>
+            return Table_View.Tables.AuthorCollection;
+
+         when Series =>
+            return Table_View.Tables.AuthorSeries;
+
+         when Books.Title =>
+            return Table_View.Tables.AuthorTitle;
+         end case;
+
+      when Collection =>
+         case Kind is
+         when Author =>
+            return Table_View.Tables.AuthorCollection;
+
+         when Collection =>
+            raise SAL.Programmer_Error;
+
+         when Series =>
+            raise SAL.Programmer_Error;
+
+         when Books.Title =>
+            return Table_View.Tables.CollectionTitle;
+         end case;
+
+      when Series =>
+         case Kind is
+         when Author =>
+            return Table_View.Tables.AuthorSeries;
+
+         when Collection =>
+            raise SAL.Programmer_Error;
+
+         when Series =>
+            raise SAL.Programmer_Error;
+
+         when Books.Title =>
+            return Table_View.Tables.SeriesTitle;
+         end case;
+
+      when Title =>
+         case Kind is
+         when Author =>
+            return Table_View.Tables.AuthorTitle;
+
+         when Collection =>
+            return Table_View.Tables.CollectionTitle;
+
+         when Series =>
+            return Table_View.Tables.SeriesTitle;
+
+         when Books.Title =>
+            raise SAL.Programmer_Error;
+         end case;
+      end case;
+   end Link_Table;
+
    procedure Set_Display (Table_View : access Gtk_Table_View_Record'Class; ID : in Books.Database.ID_Type)
    is
       use Books.Database;
    begin
       Gtk.GEntry.Set_Text (Table_View.Find_Text, "");
       Data_Tables.Fetch (Table_View.Primary_Table.all, ID);
-      if Valid (Table_View.Primary_Table.all) then
-         Table_View.Displayed_ID := Books.Database.Data_Tables.ID (Table_View.Primary_Table.all);
-      else
-         Table_View.Displayed_ID := Invalid_ID;
-      end if;
       Update_Display (Table_View);
    end Set_Display;
 
    procedure Set_Visibility (Table_View : access Gtk_Table_View_Record'class)
    is begin
-      for I in Table_Name_Type loop
+      for I in Table_Names loop
          Gtk.Scrolled_Window.Hide (Table_View.Private_Stuff.List_Display_Scroll (I));
       end loop;
 
@@ -480,8 +478,13 @@ package body Books.Table_Views is
 
    function ID (Table_View : access Gtk_Table_View_Record'Class) return Books.Database.ID_Type
    is begin
-      return Table_View.Displayed_ID;
+      return Books.Database.Data_Tables.ID (Table_View.Primary_Table.all);
    end ID;
+
+   function ID_Image (Table_View : access Gtk_Table_View_Record'Class) return String
+   is begin
+      return Books.Database.Data_Tables.ID_Image (Table_View.Primary_Table.all);
+   end ID_Image;
 
    procedure On_Button_Add (Button : access Gtk.Button.Gtk_Button_Record'Class)
    is
@@ -503,7 +506,6 @@ package body Books.Table_Views is
       Table_View : constant Gtk_Table_View := Gtk_Table_View (Gtk.Button.Get_Toplevel (Button));
    begin
       Books.Database.Data_Tables.Delete (Table_View.Primary_Table.all);
-      Table_View.Displayed_ID := Books.Database.Data_Tables.ID (Table_View.Primary_Table.all);
       Update_Display (Table_View);
    end On_Button_Delete;
 
@@ -521,10 +523,8 @@ package body Books.Table_Views is
       --  Add main data
       Insert_Database (Table_View);
 
-      Table_View.Displayed_ID := Database.Data_Tables.ID (Table_View.Primary_Table.all);
-
       --  Add links
-      for I in Table_Name_Type loop
+      for I in Table_Names loop
          if Gtk.Check_Button.Get_Active (Table_View.Links_Buttons (I)) then
             Add_Link (Table_View, I);
          end if;
@@ -567,11 +567,6 @@ package body Books.Table_Views is
       --  FIXME: should check Index.
       Data_Tables.Set_Find_By_Name (Table_View.Primary_Table.all);
       Data_Tables.Find (Table_View.Primary_Table.all, Gtk.GEntry.Get_Text (GEntry));
-      if Valid (Table_View.Primary_Table.all) then
-         Table_View.Displayed_ID := Data_Tables.ID (Table_View.Primary_Table.all);
-      else
-         Table_View.Displayed_ID := Invalid_ID;
-      end if;
       Update_Display (Table_View);
    end On_Find_Changed;
 
@@ -582,7 +577,6 @@ package body Books.Table_Views is
    begin
       Next (Table_View.Primary_Table.all);
       if Valid (Table_View.Primary_Table.all) then
-         Table_View.Displayed_ID := Data_Tables.ID (Table_View.Primary_Table.all);
          Update_Display (Table_View);
       else
          --  restart search
@@ -619,78 +613,20 @@ package body Books.Table_Views is
       end if;
 
       declare
-         Row            : constant Glib.Gint := Gtk.Enums.Gint_List.Get_Data (Gtk.Enums.Gint_List.First (Selected));
-         Link_ID_String : constant String    := Gtk.Clist.Get_Text (List_Display, Row, Column => 0);
-         Link_ID        : constant ID_Type   := Value (Link_ID_String);
+         Row               : constant Glib.Gint := Gtk.Enums.Gint_List.Get_Data (Gtk.Enums.Gint_List.First (Selected));
+         Sibling_ID_String : constant String    := Gtk.Clist.Get_Text (List_Display, Row, Column => 0);
+         Sibling_ID        : constant ID_Type   := ID_Type'Value (Sibling_ID_String);
+
+         Primary_Kind : Table_Names renames Table_View.Primary_Kind;
+         Sibling_Kind : Table_Names renames Table_View.Current_List;
+
+         Link_Table : constant Link_Tables.Table_Access := Table_View.Link_Table (Sibling_Kind);
       begin
-         case Table_View.Primary_Kind is
-         when Author =>
-            case Table_View.Current_List is
-            when Author =>
-               raise SAL.Programmer_Error;
-
-            when Collection =>
-               raise SAL.Programmer_Error;
-
-            when Series =>
-               raise SAL.Programmer_Error;
-
-            when Books.Title =>
-               AuthorTitle.Delete
-                 (Table_View.Tables.AuthorTitle.all, (Author => Table_View.Displayed_ID, Title => Link_ID));
-            end case;
-
-         when Collection =>
-            case Table_View.Current_List is
-            when Author =>
-               --  not a link, but a typical user error; need to edit directly
-               Gdk.Main.Beep;
-
-            when Collection =>
-               raise SAL.Programmer_Error;
-
-            when Series =>
-               raise SAL.Programmer_Error;
-
-            when Books.Title =>
-               CollectionTitle.Delete
-                 (Table_View.Tables.CollectionTitle.all, (Collection => Table_View.Displayed_ID, Title => Link_ID));
-            end case;
-
-         when Series =>
-            case Table_View.Current_List is
-            when Author =>
-               raise SAL.Programmer_Error;
-
-            when Collection =>
-               raise SAL.Programmer_Error;
-
-            when Series =>
-               raise SAL.Programmer_Error;
-
-            when Books.Title =>
-               SeriesTitle.Delete
-                 (Table_View.Tables.SeriesTitle.all, (Series => Table_View.Displayed_ID, Title => Link_ID));
-            end case;
-
-         when Title =>
-            case Table_View.Current_List is
-            when Author =>
-               AuthorTitle.Delete
-                 (Table_View.Tables.AuthorTitle.all, (Title => Table_View.Displayed_ID, Author => Link_ID));
-
-            when Collection =>
-               CollectionTitle.Delete
-                 (Table_View.Tables.CollectionTitle.all, (Title => Table_View.Displayed_ID, Collection => Link_ID));
-
-            when Series =>
-               SeriesTitle.Delete
-                 (Table_View.Tables.SeriesTitle.all, (Title => Table_View.Displayed_ID, Series => Link_ID));
-
-            when Books.Title =>
-               raise SAL.Programmer_Error;
-            end case;
-         end case;
+         if Primary_Kind < Sibling_Kind then
+            Link_Table.Delete ((ID (Table_View), Sibling_ID));
+         else
+            Link_Table.Delete ((Sibling_ID, ID (Table_View)));
+         end if;
 
          Update_Display (Table_View);
       end;
@@ -850,23 +786,45 @@ package body Books.Table_Views is
    procedure Update_Display (Table_View : access Gtk_Table_View_Record'class)
    is
       use type Books.Database.ID_Type;
+      use Database, Interfaces.C.Strings;
+      Width   : Glib.Gint;
+      pragma Unreferenced (Width);
+
+      Link_Table : Link_Tables.Table_Access renames Table_View.Link_Table (Table_View.Current_List);
+      List_View  : Gtk.Clist.Gtk_Clist renames Table_View.List_Display (Table_View.Current_List);
    begin
-      --  Fetch changes find statement, so only call it if we have to.
-      if Database.Valid (Table_View.Primary_Table.all) then
-         if Table_View.Displayed_ID /= Database.Data_Tables.ID (Table_View.Primary_Table.all) then
-            Database.Data_Tables.Fetch (Table_View.Primary_Table.all, Table_View.Displayed_ID);
-         end if;
-      else
-         Database.Data_Tables.Fetch (Table_View.Primary_Table.all, Table_View.Displayed_ID);
-      end if;
+      --  Caller is responsible for calling Find to get a valid record.
 
-      if Database.Valid (Table_View.Primary_Table.all) then
-         Gtk.Label.Set_Text (Table_View.Private_Stuff.ID_Display, Books.Database.Image (Table_View.Displayed_ID));
-      else
+      if not Database.Valid (Table_View.Primary_Table.all) then
          Gtk.Label.Set_Text (Table_View.Private_Stuff.ID_Display, "");
+         Clear_Primary_Display (Table_View);
+         List_View.Clear;
+         return;
       end if;
 
-      Update_Display_Child (Table_View);
+      Gtk.Label.Set_Text (Table_View.Private_Stuff.ID_Display, ID_Image (Table_View));
+      Update_Primary_Display (Table_View);
+      Link_Table.Find (Table_View.Primary_Kind, ID (Table_View));
+
+      if not Link_Table.Valid then
+         List_View.Clear;
+         return;
+      end if;
+
+      List_View.Freeze;
+      List_View.Clear;
+
+      loop
+         Table_View.Insert_List_Row (Link_Table.ID (Table_View.Current_List));
+
+         Link_Table.Next;
+         exit when not Link_Table.Valid;
+      end loop;
+
+      List_View.Sort;
+      Width := List_View.Columns_Autosize;
+      List_View.Thaw;
+
    end Update_Display;
 
    function Find_Entry (Table_View : access Gtk_Table_View_Record'Class) return Gdk.Test_Events.Point_Type

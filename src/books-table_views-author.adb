@@ -2,7 +2,7 @@
 --
 --  See spec.
 --
---  Copyright (C) 2002 - 2004, 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002 - 2004, 2009, 2012 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -15,23 +15,18 @@
 --  distributed with this program; see file COPYING. If not, write to
 --  the Free Software Foundation, 59 Temple Place - Suite 330, Boston,
 --  MA 02111-1307, USA.
---
 
-with Ada.Strings.Fixed;
+pragma License (GPL);
+
 with Books.Database.Data_Tables.Author;
 with Books.Database.Data_Tables.Collection;
-with Books.Database.Data_Tables.Title;
 with Books.Database.Data_Tables.Series;
-with Glib;
-with Gtk.Clist;
+with Books.Database.Data_Tables.Title;
 with Gtk.Enums;
 with Gtk.Radio_Button;
 with Gtk.Table;
 with Interfaces.C.Strings;
 package body Books.Table_Views.Author is
-
-   procedure Update_Display_AuthorTitle (Author_View : access Gtk_Author_View_Record);
-   --  Update Author_View.Title_List.
 
    ----------
    --  Bodies (alphabetical order)
@@ -39,8 +34,7 @@ package body Books.Table_Views.Author is
    procedure Create_GUI
      (Author_View : access Gtk_Author_View_Record'Class;
       Config      : in     SAL.Config_Files.Configuration_Access_Type)
-   is
-   begin
+   is begin
       Books.Table_Views.Create_GUI (Author_View, Config);
 
       --  Data_Table
@@ -109,7 +103,7 @@ package body Books.Table_Views.Author is
 
       To_Main (Author_View);
 
-      Set_Display (Author_View, Database.Invalid_ID);
+      --  Clear_Display (Author_View); FIXME: need this?
    end Initialize;
 
    overriding procedure Insert_Database (Author_View : access Gtk_Author_View_Record)
@@ -120,7 +114,6 @@ package body Books.Table_Views.Author is
          First_Name  => Gtk.GEntry.Get_Text (Author_View.First_Text),
          Middle_Name => Gtk.GEntry.Get_Text (Author_View.Middle_Text),
          Last_Name   => Gtk.GEntry.Get_Text (Author_View.Last_Text));
-
    end Insert_Database;
 
    overriding function Main_Index_Name (Author_View : access Gtk_Author_View_Record) return String
@@ -139,149 +132,60 @@ package body Books.Table_Views.Author is
          Last_Name   => Gtk.GEntry.Get_Text (Author_View.Last_Text));
    end Update_Database;
 
-   procedure Update_Display_AuthorTitle (Author_View : access Gtk_Author_View_Record)
+   overriding procedure Insert_List_Row
+     (Table_View : access Gtk_Author_View_Record;
+      Sibling_ID : in     Books.Database.ID_Type)
    is
-      use Database, Interfaces.C.Strings;
-      Width     : Glib.Gint;
-      pragma Unreferenced (Width);
-      Author_ID : constant ID_Type := Data_Tables.ID (Author_View.Primary_Table.all);
+      use Books.Database;
+      use Interfaces.C.Strings; -- New_String
+      Sibling_Table : Data_Tables.Table_Access renames Table_View.Tables.Sibling (Table_View.Current_List);
    begin
-      Link_Tables.AuthorTitle.Fetch_Links_Of
-        (Author_View.Tables.AuthorTitle.all, Link_Tables.Author, Author_ID);
+      Sibling_Table.Fetch (Sibling_ID);
 
-      if not Valid (Author_View.Tables.AuthorTitle.all) then
-         Gtk.Clist.Clear (Author_View.List_Display (Title));
-         return;
-      end if;
+      case Table_View.Current_List is
+      when Books.Author =>
+         raise SAL.Programmer_Error;
 
-      Gtk.Clist.Freeze (Author_View.List_Display (Title));
-      Gtk.Clist.Clear (Author_View.List_Display (Title));
-
-      loop
-         declare
-            use Ada.Strings, Ada.Strings.Fixed;
-            Title_ID : constant ID_Type :=
-              Link_Tables.AuthorTitle.ID (Author_View.Tables.AuthorTitle.all, Link_Tables.Title);
-         begin
-            Data_Tables.Fetch (Author_View.Tables.Sibling (Title).all, Title_ID);
-
-            Gtk.Clist.Insert
-              (Author_View.List_Display (Title),
-               0,
-               (1 => New_String (Image (Title_ID)),
-                2 => New_String (Data_Tables.Title.Title (Author_View.Tables.Sibling (Title))),
-                3 => New_String
-                  (Trim
-                     (Interfaces.Unsigned_16'Image
-                        (Data_Tables.Title.Year (Author_View.Tables.Sibling (Title))), Left))));
-
-            Next (Author_View.Tables.AuthorTitle.all);
-            exit when not Valid (Author_View.Tables.AuthorTitle.all);
-         end;
-      end loop;
-
-      Gtk.Clist.Sort (Author_View.List_Display (Title));
-      Width := Gtk.Clist.Columns_Autosize (Author_View.List_Display (Title));
-      Gtk.Clist.Thaw (Author_View.List_Display (Title));
-
-   end Update_Display_AuthorTitle;
-
-   procedure Update_Display_AuthorCollection (Author_View : access Gtk_Author_View_Record)
-   is
-      use Database, Interfaces.C.Strings;
-      Width : Glib.Gint;
-      pragma Unreferenced (Width);
-   begin
-      Data_Tables.Collection.Find_Editor
-        (Author_View.Tables.Sibling (Collection), Data_Tables.ID (Author_View.Primary_Table.all));
-
-      if not Valid (Author_View.Tables.Sibling (Collection).all) then
-         Gtk.Clist.Clear (Author_View.List_Display (Collection));
-         return;
-      end if;
-
-      Gtk.Clist.Freeze (Author_View.List_Display (Collection));
-      Gtk.Clist.Clear (Author_View.List_Display (Collection));
-
-      loop
+      when Books.Collection =>
          Gtk.Clist.Insert
-           (Author_View.List_Display (Collection),
+           (Table_View.List_Display (Collection),
             0,
-            (1 => New_String (Image (Data_Tables.ID (Author_View.Tables.Sibling (Collection).all))),
-             2 => New_String (Data_Tables.Collection.Name (Author_View.Tables.Sibling (Collection)))));
+            (1 => New_String (Image (Sibling_ID)),
+             2 => New_String (Sibling_Table.Field (Data_Tables.Collection.Title_Index)),
+             3 => New_String (Sibling_Table.Field (Data_Tables.Collection.Year_Index))));
 
-         Next (Author_View.Tables.Sibling (Collection).all);
-         exit when not Valid (Author_View.Tables.Sibling (Collection).all);
-      end loop;
-
-      Gtk.Clist.Sort (Author_View.List_Display (Collection));
-      Width := Gtk.Clist.Columns_Autosize (Author_View.List_Display (Collection));
-      Gtk.Clist.Thaw (Author_View.List_Display (Collection));
-
-   end Update_Display_AuthorCollection;
-
-   procedure Update_Display_AuthorSeries (Author_View : access Gtk_Author_View_Record)
-   is
-      use Database, Interfaces.C.Strings;
-      Width : Glib.Gint;
-      pragma Unreferenced (Width);
-   begin
-      Data_Tables.Series.Find_Author (Author_View.Tables.Sibling (Series), Author_View.Displayed_ID);
-
-      if not Valid (Author_View.Tables.Sibling (Series).all) then
-         Gtk.Clist.Clear (Author_View.List_Display (Series));
-         return;
-      end if;
-
-      Gtk.Clist.Freeze (Author_View.List_Display (Series));
-      Gtk.Clist.Clear (Author_View.List_Display (Series));
-
-      loop
+      when Books.Series =>
          Gtk.Clist.Insert
-           (Author_View.List_Display (Series),
+           (Table_View.List_Display (Series),
             0,
-            (1 => New_String (Image (Data_Tables.ID (Author_View.Tables.Sibling (Series).all))),
-             2 => New_String (Data_Tables.Series.Title (Author_View.Tables.Sibling (Series)))));
+            (1 => New_String (Image (Sibling_ID)),
+             2 => New_String (Sibling_Table.Field (Data_Tables.Series.Title_Index))));
 
-         Next (Author_View.Tables.Sibling (Series).all);
-         exit when not Valid (Author_View.Tables.Sibling (Series).all);
-      end loop;
+      when Books.Title =>
+         Gtk.Clist.Insert
+           (Table_View.List_Display (Title),
+            0,
+            (1 => New_String (Image (Sibling_ID)),
+             2 => New_String (Sibling_Table.Field (Data_Tables.Title.Title_Index)),
+             3 => New_String (Sibling_Table.Field (Data_Tables.Title.Year_Index))));
 
-      Gtk.Clist.Sort (Author_View.List_Display (Series));
-      Width := Gtk.Clist.Columns_Autosize (Author_View.List_Display (Series));
-      Gtk.Clist.Thaw (Author_View.List_Display (Series));
+      end case;
+   end Insert_List_Row;
 
-   end Update_Display_AuthorSeries;
+   overriding procedure Update_Primary_Display (Author_View : access Gtk_Author_View_Record)
+   is
+      use Database.Data_Tables.Author;
+   begin
+      Gtk.GEntry.Set_Text (Author_View.First_Text, Author_View.Primary_Table.Field (First_Name_Index));
+      Gtk.GEntry.Set_Text (Author_View.Middle_Text, Author_View.Primary_Table.Field (Middle_Name_Index));
+      Gtk.GEntry.Set_Text (Author_View.Last_Text, Author_View.Primary_Table.Field (Last_Name_Index));
+   end Update_Primary_Display;
 
-   overriding procedure Update_Display_Child (Author_View : access Gtk_Author_View_Record)
+   overriding procedure Clear_Primary_Display (Author_View : access Gtk_Author_View_Record)
    is begin
-      if Database.Valid (Author_View.Primary_Table.all) then
-         declare
-            use Database.Data_Tables.Author;
-         begin
-            Gtk.GEntry.Set_Text (Author_View.First_Text, First_Name (Author_View.Primary_Table));
-            Gtk.GEntry.Set_Text (Author_View.Middle_Text, Middle_Name (Author_View.Primary_Table));
-            Gtk.GEntry.Set_Text (Author_View.Last_Text, Last_Name (Author_View.Primary_Table));
-         end;
-
-         case Author_View.Current_List is
-         when Books.Author =>
-            null;
-         when Collection =>
-            Update_Display_AuthorCollection (Author_View);
-         when Series =>
-            Update_Display_AuthorSeries (Author_View);
-         when Title =>
-            Update_Display_AuthorTitle (Author_View);
-         end case;
-
-      else
-         Gtk.GEntry.Set_Text (Author_View.First_Text, "");
-         Gtk.GEntry.Set_Text (Author_View.Middle_Text, "");
-         Gtk.GEntry.Set_Text (Author_View.Last_Text, "");
-         Gtk.Clist.Clear (Author_View.List_Display (Author_View.Current_List));
-      end if;
-
-   end Update_Display_Child;
+      Gtk.GEntry.Set_Text (Author_View.First_Text, "");
+      Gtk.GEntry.Set_Text (Author_View.Middle_Text, "");
+      Gtk.GEntry.Set_Text (Author_View.Last_Text, "");
+   end Clear_Primary_Display;
 
 end Books.Table_Views.Author;

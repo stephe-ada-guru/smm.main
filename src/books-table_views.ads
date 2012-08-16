@@ -2,7 +2,7 @@
 --
 --  Base database table view widget for Books application.
 --
---  Copyright (C) 2002, 2004, 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002, 2004, 2009, 2012 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -16,10 +16,10 @@
 --  the Free Software Foundation, 59 Temple Place - Suite 330, Boston,
 --  MA 02111-1307, USA.
 
+pragma License (GPL);
+
 with Books.Database.Data_Tables;
-with Books.Database.Link_Tables.AuthorTitle;
-with Books.Database.Link_Tables.CollectionTitle;
-with Books.Database.Link_Tables.SeriesTitle;
+with Books.Database.Link_Tables;
 with Gdk.Test_Events;
 with Gtk.Check_Button;
 with Gtk.Clist;
@@ -33,15 +33,18 @@ package Books.Table_Views is
    type Gtk_Table_View_Record is abstract new Gtk.Window.Gtk_Window_Record with private;
    type Gtk_Table_View is access all Gtk_Table_View_Record'Class;
 
-   type Table_Array_Table_View_Type is array (Table_Name_Type) of Gtk_Table_View;
-   type Table_Array_Data_Table_Access_Type is array (Table_Name_Type) of Books.Database.Data_Tables.Table_Access;
+   type Table_Array_Table_View_Type is array (Table_Names) of Gtk_Table_View;
+   type Table_Array_Data_Table_Access_Type is array (Table_Names) of Books.Database.Data_Tables.Table_Access;
 
    type Tables_Type is record
+      --  FIXME: why is this public?
       Sibling : Table_Array_Data_Table_Access_Type;
 
-      AuthorTitle     : Books.Database.Link_Tables.AuthorTitle.Table_Access;
-      CollectionTitle : Books.Database.Link_Tables.CollectionTitle.Table_Access;
-      SeriesTitle     : Books.Database.Link_Tables.SeriesTitle.Table_Access;
+      AuthorTitle      : Books.Database.Link_Tables.Table_Access;
+      AuthorCollection : Books.Database.Link_Tables.Table_Access;
+      AuthorSeries     : Books.Database.Link_Tables.Table_Access;
+      CollectionTitle  : Books.Database.Link_Tables.Table_Access;
+      SeriesTitle      : Books.Database.Link_Tables.Table_Access;
    end record;
 
    type Create_Parameters_Type is record
@@ -73,25 +76,39 @@ package Books.Table_Views is
    function ID (Table_View : access Gtk_Table_View_Record'Class) return Books.Database.ID_Type;
    --  Return ID of main record in view.
 
+   function ID_Image (Table_View : access Gtk_Table_View_Record'Class) return String;
+
    ----------
    --  New dispatching operations.
 
    procedure Default_Add (Table_View : access Gtk_Table_View_Record) is abstract;
    --  Set default contents of Add display, set focus.
 
+   function Link_Table
+     (Table_View : access constant Gtk_Table_View_Record;
+      Kind       : in Table_Names)
+     return Books.Database.Link_Tables.Table_Access;
+   --  Dispatching to allow Object.Method syntax
+
    function Main_Index_Name (Table_View : access Gtk_Table_View_Record) return String is abstract;
    --  Return the name of the main index (for index select drop box).
-
-   procedure Update_Display_Child (Table_View : access Gtk_Table_View_Record) is abstract;
-   --  Update child-specific display with current database values.
-   --
-   --  In List_Display, column 0 contains the linked database ID
 
    procedure Update_Database (Table_View : access Gtk_Table_View_Record) is abstract;
    --  Update current database record with values from display.
 
    procedure Insert_Database (Table_View : access Gtk_Table_View_Record) is abstract;
    --  Insert a new database record with values from display.
+
+   procedure Update_Primary_Display (Table_View : access Gtk_Table_View_Record) is abstract;
+   procedure Clear_Primary_Display (Table_View : access Gtk_Table_View_Record) is abstract;
+
+   procedure Insert_List_Row
+     (Table_View : access Gtk_Table_View_Record;
+      Sibling_ID : in     Books.Database.ID_Type)
+      is abstract;
+   --  Insert data from sibling table for Sibling_ID into current List_Display.
+   --
+   --  Called in loop while updating display; List_Display is frozen.
 
    --  For unit tests
    type Test_Hook_Type is access procedure (Table_View : in Gtk_Table_View);
@@ -101,9 +118,9 @@ private
    type Private_Stuff_Record;
    type Private_Stuff_Access is access Private_Stuff_Record;
 
-   type Table_Array_Radio_Type is array (Table_Name_Type) of Gtk.Radio_Button.Gtk_Radio_Button;
-   type Table_Array_Clist_Type is array (Table_Name_Type) of Gtk.Clist.Gtk_Clist;
-   type Table_Array_Check_Button_Type is array (Table_Name_Type) of Gtk.Check_Button.Gtk_Check_Button;
+   type Table_Array_Radio_Type is array (Table_Names) of Gtk.Radio_Button.Gtk_Radio_Button;
+   type Table_Array_Clist_Type is array (Table_Names) of Gtk.Clist.Gtk_Clist;
+   type Table_Array_Check_Button_Type is array (Table_Names) of Gtk.Check_Button.Gtk_Check_Button;
 
    type Gtk_Table_View_Record is abstract new Gtk.Window.Gtk_Window_Record with record
       Private_Stuff : Private_Stuff_Access;
@@ -113,16 +130,15 @@ private
 
       List_Select  : Table_Array_Radio_Type; --  Children need to set and check these.
       List_Display : Table_Array_Clist_Type; --  Children need to update these.
-      Current_List : Table_Name_Type := Table_Name_Type'First;
+      Current_List : Table_Names := Table_Names'First;
 
       Sibling_Views : Table_Array_Table_View_Type;
 
       --  Non-GUI stuff
 
-      --  All table views share the same tables
-      Primary_Kind  : Table_Name_Type;
+      --  All table views share the same tables, for cross-referencing
+      Primary_Kind  : Table_Names;
       Primary_Table : Books.Database.Data_Tables.Table_Access;
-      Displayed_ID  : Books.Database.ID_Type := 0;
       Tables        : Tables_Type;
    end record;
 

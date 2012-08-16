@@ -24,7 +24,9 @@ package body Books.Database.Data_Tables.Title is
    --  Subprogram bodies (alphabetical order)
 
    overriding procedure Initialize (T : in out Table)
-   is begin
+   is
+      use type GNATCOLL.SQL.Exec.SQL_Parameter;
+   begin
       T.All_By_ID_Statement := new String'("SELECT ID, Title, Year, Comment, Rating FROM Title ORDER BY ID");
 
       T.Find_By_ID_Statement := new String'("SELECT ID, Title, Year, Comment, Rating FROM Title WHERE ID = ?");

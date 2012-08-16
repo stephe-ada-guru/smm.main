@@ -15,7 +15,8 @@
 --  distributed with this program; see file COPYING. If not, write to
 --  the Free Software Foundation, 59 Temple Place - Suite 330, Boston,
 --  MA 02111-1307, USA.
---
+
+pragma License (GPL);
 
 package Books.Database.Data_Tables is
 
@@ -43,6 +44,8 @@ package Books.Database.Data_Tables is
    --  Return ID of current record via Field.
 
    function ID (T : in Table'Class) return ID_Type;
+
+   function ID_Image (T : in Table'Class) return String;
 
    procedure Fetch (T : in out Table'Class; ID : in ID_Type);
    --  Set Find to By_ID, find ID.

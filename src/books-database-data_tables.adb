@@ -43,6 +43,11 @@ package body Books.Database.Data_Tables is
       return ID_Type'Value (Field (T, ID_Index));
    end ID;
 
+   function ID_Image (T : in Table'Class) return String
+   is begin
+      return Field (T, ID_Index);
+   end ID_Image;
+
    procedure Set_Find_By_ID (T : in out Table'Class)
    is begin
       T.Find_Statement := T.Find_By_ID_Statement;

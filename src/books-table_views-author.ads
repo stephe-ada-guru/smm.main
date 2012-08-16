@@ -2,7 +2,7 @@
 --
 --  Author list widget for Books application.
 --
---  Copyright (C) 2002, 2004, 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002, 2004, 2009, 2012 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -15,7 +15,8 @@
 --  distributed with this program; see file COPYING. If not, write to
 --  the Free Software Foundation, 59 Temple Place - Suite 330, Boston,
 --  MA 02111-1307, USA.
---
+
+pragma License (GPL);
 
 with Books.Database;
 with Gtk.GEntry;
@@ -35,13 +36,15 @@ package Books.Table_Views.Author is
    --  Create GUI elements, copy Tables, set initial database values.
    --  DB is assumed already Connected.
 
-   ----------
-   --  Override Table_View operations.
    overriding procedure Default_Add (Author_View : access Gtk_Author_View_Record);
-   overriding function Main_Index_Name       (Author_View : access Gtk_Author_View_Record) return String;
-   overriding procedure Update_Display_Child (Author_View : access Gtk_Author_View_Record);
-   overriding procedure Update_Database      (Author_View : access Gtk_Author_View_Record);
-   overriding procedure Insert_Database      (Author_View : access Gtk_Author_View_Record);
+   overriding function Main_Index_Name (Author_View : access Gtk_Author_View_Record) return String;
+   overriding procedure Update_Database (Author_View : access Gtk_Author_View_Record);
+   overriding procedure Insert_Database (Author_View : access Gtk_Author_View_Record);
+   overriding procedure Insert_List_Row
+     (Table_View : access Gtk_Author_View_Record;
+      Sibling_ID : in     Books.Database.ID_Type);
+   overriding procedure Update_Primary_Display (Author_View : access Gtk_Author_View_Record);
+   overriding procedure Clear_Primary_Display (Author_View : access Gtk_Author_View_Record);
 
 private
 

@@ -2,7 +2,7 @@
 --
 --  Series view widget for Books application.
 --
---  Copyright (C) 2002, 2004, 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002, 2004, 2009, 2012 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -39,9 +39,13 @@ package Books.Table_Views.Series is
    --  Override Table_View operations.
    overriding procedure Default_Add (Series_View : access Gtk_Series_View_Record);
    overriding function Main_Index_Name       (Series_View : access Gtk_Series_View_Record) return String;
-   overriding procedure Update_Display_Child (Series_View : access Gtk_Series_View_Record);
    overriding procedure Update_Database      (Series_View : access Gtk_Series_View_Record);
    overriding procedure Insert_Database      (Series_View : access Gtk_Series_View_Record);
+   overriding procedure Insert_List_Row
+     (Series_View : access Gtk_Series_View_Record;
+      Sibling_ID  : in     Books.Database.ID_Type);
+   overriding procedure Update_Primary_Display (Series_View : access Gtk_Series_View_Record);
+   overriding procedure Clear_Primary_Display (Series_View : access Gtk_Series_View_Record);
 
 private
 
@@ -50,10 +54,6 @@ private
       --  Row 0:
       Title_Label : Gtk.Label.Gtk_Label;
       Title_Text  : Gtk.GEntry.Gtk_Entry;
-
-      --  Row 1:
-      Author_Label : Gtk.Label.Gtk_Label;
-      Author_Text  : Gtk.GEntry.Gtk_Entry;
 
       --  End of Data_Table
 

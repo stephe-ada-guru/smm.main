@@ -2,7 +2,7 @@
 --
 --  Title view widget for Books application.
 --
---  Copyright (C) 2002, 2004, 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002, 2004, 2009, 2012 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -40,9 +40,13 @@ package Books.Table_Views.Title is
    --  Override Table_View operations.
    overriding procedure Default_Add (Title_View : access Gtk_Title_View_Record);
    overriding function Main_Index_Name       (Title_View : access Gtk_Title_View_Record) return String;
-   overriding procedure Update_Display_Child (Title_View : access Gtk_Title_View_Record);
    overriding procedure Update_Database      (Title_View : access Gtk_Title_View_Record);
    overriding procedure Insert_Database      (Title_View : access Gtk_Title_View_Record);
+   overriding procedure Insert_List_Row
+     (Title_View : access Gtk_Title_View_Record;
+      Sibling_ID : in     Books.Database.ID_Type);
+   overriding procedure Update_Primary_Display (Title_View : access Gtk_Title_View_Record);
+   overriding procedure Clear_Primary_Display (Title_View : access Gtk_Title_View_Record);
 
 private
 
