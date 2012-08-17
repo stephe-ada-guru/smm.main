@@ -103,15 +103,7 @@ begin
             return;
          end;
 
-         declare
-            Name : constant String := Relative_Name (Destination, Target);
-         begin
-            if Verbosity > 0 then
-               Put_Line ("adding " & Name);
-            end if;
-
-            Put_Line (Playlist_File, Name);
-         end;
+         Put_Line (Playlist_File, Relative_Name (Destination, Target));
 
          Write_Last_Downloaded (Db, Current (I), Download_Time);
 

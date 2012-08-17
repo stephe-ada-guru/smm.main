@@ -1,11 +1,9 @@
 # gnu make file
-# (sal-standard)
-# (dvc.stephe)
 # (dvc-status "../..")
 
 include ../common.make
 
-export ADA_PROJECT_PATH = $(GDS_ROOT)/main/makerules;$(GDS_ROOT)/main/sal/Build/x86_gnu_windows_release;$(GDS_ROOT)/main/sal/build
+export ADA_PROJECT_PATH = $(GDS_ROOT)/main_lynx_5/makerules;$(GDS_ROOT)/main_lynx_5/sal/Build/x86_gnu_windows_release;$(GDS_ROOT)/main_lynx_5/sal/build
 
 # ../../test/test_one_harness.adb
 one : test_one_harness.run
@@ -19,6 +17,7 @@ trace :
 
 #
 #Local Variables:
+#eval: (sal-standard)
 #eval: (ada-parse-prj-file "smm.prj")
 #eval: (ada-select-prj-file "smm.prj")
 #End:
