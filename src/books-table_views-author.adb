@@ -19,13 +19,12 @@
 pragma License (GPL);
 
 with Books.Database.Data_Tables.Author;
-with Books.Database.Data_Tables.Collection;
-with Books.Database.Data_Tables.Series;
-with Books.Database.Data_Tables.Title;
+with Books.List_Views.Collection;
+with Books.List_Views.Series;
+with Books.List_Views.Title;
 with Gtk.Enums;
 with Gtk.Radio_Button;
 with Gtk.Table;
-with Interfaces.C.Strings;
 package body Books.Table_Views.Author is
 
    ----------
@@ -71,6 +70,24 @@ package body Books.Table_Views.Author is
       Gtk.Radio_Button.Hide (Author_View.List_Select (Books.Author));
    end Create_GUI;
 
+   overriding procedure Create_List_View (Table_View : access Gtk_Author_View_Record; List : in Table_Names)
+   is begin
+      case List is
+      when Books.Author =>
+         null;
+
+      when Collection =>
+         Books.List_Views.Collection.Gtk_New (Table_View.List_Display (Collection));
+
+      when Series =>
+         Books.List_Views.Series.Gtk_New (Table_View.List_Display (Series));
+
+      when Title =>
+         Books.List_Views.Title.Gtk_New (Table_View.List_Display (Title));
+
+      end case;
+   end Create_List_View;
+
    overriding procedure Default_Add (Author_View : access Gtk_Author_View_Record)
    is begin
       Gtk.GEntry.Set_Text (Author_View.First_Text, "");
@@ -83,18 +100,9 @@ package body Books.Table_Views.Author is
      (Author_View :    out Gtk_Author_View;
       Parameters  : in     Create_Parameters_Type)
    is
-   begin
-      Author_View := new Gtk_Author_View_Record;
-      Initialize (Author_View, Parameters);
-   end Gtk_New;
-
-   procedure Initialize
-     (Author_View : access Gtk_Author_View_Record'Class;
-      Parameters  : in     Create_Parameters_Type)
-   is
       use Books.Database;
    begin
-      Author.Create_GUI (Author_View, Parameters.Config);
+      Author_View := new Gtk_Author_View_Record;
 
       Author_View.Siblings := Parameters.Siblings;
       Author_View.Links    := Parameters.Links;
@@ -102,18 +110,19 @@ package body Books.Table_Views.Author is
       Author_View.Primary_Kind  := Books.Author;
       Author_View.Primary_Table := Data_Tables.Table_Access (Author_View.Siblings (Books.Author));
 
+      Author.Create_GUI (Author_View, Parameters.Config);
+
       Gtk.Radio_Button.Set_Active (Author_View.List_Select (Title), True);
 
       To_Main (Author_View);
 
       --  Clear_Display (Author_View); FIXME: need this?
-   end Initialize;
+   end Gtk_New;
 
    overriding procedure Insert_Database (Author_View : access Gtk_Author_View_Record)
    is begin
-      Database.Data_Tables.Author.Insert
-        (Database.Data_Tables.Author.Table (Author_View.Primary_Table.all),
-         First_Name  => Gtk.GEntry.Get_Text (Author_View.First_Text),
+      Database.Data_Tables.Author.Table (Author_View.Primary_Table.all).Insert
+        (First_Name  => Gtk.GEntry.Get_Text (Author_View.First_Text),
          Middle_Name => Gtk.GEntry.Get_Text (Author_View.Middle_Text),
          Last_Name   => Gtk.GEntry.Get_Text (Author_View.Last_Text));
    end Insert_Database;
@@ -134,54 +143,13 @@ package body Books.Table_Views.Author is
          Last_Name   => Gtk.GEntry.Get_Text (Author_View.Last_Text));
    end Update_Database;
 
-   overriding procedure Insert_List_Row
-     (Table_View : access Gtk_Author_View_Record;
-      Sibling_ID : in     Books.Database.ID_Type)
-   is
-      use Books.Database;
-      use Interfaces.C.Strings; -- New_String
-      Sibling_Table : constant Data_Tables.Table_Access := Data_Tables.Table_Access
-        (Table_View.Siblings (Table_View.Current_List));
-   begin
-      Sibling_Table.Fetch (Sibling_ID);
-
-      case Table_View.Current_List is
-      when Books.Author =>
-         raise SAL.Programmer_Error;
-
-      when Books.Collection =>
-         Gtk.Clist.Insert
-           (Table_View.List_Display (Collection),
-            0,
-            (1 => New_String (Image (Sibling_ID)),
-             2 => New_String (Sibling_Table.Field (Data_Tables.Collection.Title_Index)),
-             3 => New_String (Sibling_Table.Field (Data_Tables.Collection.Year_Index))));
-
-      when Books.Series =>
-         Gtk.Clist.Insert
-           (Table_View.List_Display (Series),
-            0,
-            (1 => New_String (Image (Sibling_ID)),
-             2 => New_String (Sibling_Table.Field (Data_Tables.Series.Title_Index))));
-
-      when Books.Title =>
-         Gtk.Clist.Insert
-           (Table_View.List_Display (Title),
-            0,
-            (1 => New_String (Image (Sibling_ID)),
-             2 => New_String (Sibling_Table.Field (Data_Tables.Title.Title_Index)),
-             3 => New_String (Sibling_Table.Field (Data_Tables.Title.Year_Index))));
-
-      end case;
-   end Insert_List_Row;
-
    overriding procedure Update_Primary_Display (Author_View : access Gtk_Author_View_Record)
    is
       use Database.Data_Tables.Author;
    begin
-      Gtk.GEntry.Set_Text (Author_View.First_Text, Author_View.Primary_Table.Field (First_Name_Index));
-      Gtk.GEntry.Set_Text (Author_View.Middle_Text, Author_View.Primary_Table.Field (Middle_Name_Index));
-      Gtk.GEntry.Set_Text (Author_View.Last_Text, Author_View.Primary_Table.Field (Last_Name_Index));
+      Author_View.First_Text.Set_Text (Author_View.Primary_Table.Field (First_Name_Index));
+      Author_View.Middle_Text.Set_Text (Author_View.Primary_Table.Field (Middle_Name_Index));
+      Author_View.Last_Text.Set_Text (Author_View.Primary_Table.Field (Last_Name_Index));
    end Update_Primary_Display;
 
    overriding procedure Clear_Primary_Display (Author_View : access Gtk_Author_View_Record)

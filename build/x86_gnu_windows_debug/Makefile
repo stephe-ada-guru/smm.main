@@ -1,6 +1,6 @@
-all : books.exe
+all : books-main.exe
 
-one : books.run
+one : books-main.run
 
 #../../test/test_books-one_harness.adb
 t_one : RUN_ARGS := 1

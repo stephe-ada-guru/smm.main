@@ -30,21 +30,11 @@ package Books.Table_Views.Title is
      (Title_View :    out Gtk_Title_View;
       Parameters : in     Create_Parameters_Type);
 
-   procedure Initialize
-     (Title_View : access Gtk_Title_View_Record'Class;
-      Parameters : in     Create_Parameters_Type);
-   --  Create GUI elements, set initial database values. DB is assumed
-   --  already Connected.
-
-   ----------
-   --  Override Table_View operations.
+   overriding procedure Create_List_View (Table_View : access Gtk_Title_View_Record; List : in Table_Names);
    overriding procedure Default_Add (Title_View : access Gtk_Title_View_Record);
    overriding function Main_Index_Name       (Title_View : access Gtk_Title_View_Record) return String;
    overriding procedure Update_Database      (Title_View : access Gtk_Title_View_Record);
    overriding procedure Insert_Database      (Title_View : access Gtk_Title_View_Record);
-   overriding procedure Insert_List_Row
-     (Title_View : access Gtk_Title_View_Record;
-      Sibling_ID : in     Books.Database.ID_Type);
    overriding procedure Update_Primary_Display (Title_View : access Gtk_Title_View_Record);
    overriding procedure Clear_Primary_Display (Title_View : access Gtk_Title_View_Record);
 

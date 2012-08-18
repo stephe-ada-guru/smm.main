@@ -18,13 +18,12 @@
 
 pragma License (GPL);
 
-with Books.Database.Data_Tables.Author;
 with Books.Database.Data_Tables.Collection;
-with Books.Database.Data_Tables.Title;
+with Books.List_Views.Author;
+with Books.List_Views.Title;
 with Gtk.Enums;
 with Gtk.Radio_Button;
 with Gtk.Table;
-with Interfaces.C.Strings;
 package body Books.Table_Views.Collection is
 
    ----------
@@ -63,6 +62,25 @@ package body Books.Table_Views.Collection is
       Gtk.Radio_Button.Hide (Collection_View.List_Select (Series));
    end Create_GUI;
 
+   overriding procedure Create_List_View (Table_View : access Gtk_Collection_View_Record; List : in Table_Names)
+   is begin
+      case List is
+      when Author =>
+         Books.List_Views.Author.Gtk_New (Table_View.List_Display (Author));
+
+      when Books.Collection =>
+         null;
+
+      when Series =>
+         null;
+
+      when Title =>
+         Books.List_Views.Title.Gtk_New (Table_View.List_Display (Title));
+
+      end case;
+
+   end Create_List_View;
+
    overriding procedure Default_Add (Collection_View : access Gtk_Collection_View_Record)
    is begin
       Gtk.GEntry.Set_Text (Collection_View.Title_Text, Gtk.GEntry.Get_Text (Collection_View.Find_Text));
@@ -73,17 +91,11 @@ package body Books.Table_Views.Collection is
    procedure Gtk_New
      (Collection_View :    out Gtk_Collection_View;
       Parameters      : in     Create_Parameters_Type)
-   is begin
-      Collection_View := new Gtk_Collection_View_Record;
-      Initialize (Collection_View, Parameters);
-   end Gtk_New;
-
-   procedure Initialize
-     (Collection_View : access Gtk_Collection_View_Record'Class;
-      Parameters      : in     Create_Parameters_Type)
    is
       use Books.Database;
    begin
+      Collection_View := new Gtk_Collection_View_Record;
+
       Collection.Create_GUI (Collection_View, Parameters.Config);
 
       Collection_View.Siblings := Parameters.Siblings;
@@ -95,7 +107,7 @@ package body Books.Table_Views.Collection is
       Gtk.Radio_Button.Set_Active (Collection_View.List_Select (Title), True);
 
       To_Main (Collection_View);
-   end Initialize;
+   end Gtk_New;
 
    overriding procedure Insert_Database (Collection_View : access Gtk_Collection_View_Record)
    is
@@ -141,43 +153,6 @@ package body Books.Table_Views.Collection is
          Year       => Year,
          Year_Valid => Year_Valid);
    end Update_Database;
-
-   overriding procedure Insert_List_Row
-     (Table_View : access Gtk_Collection_View_Record;
-      Sibling_ID : in     Books.Database.ID_Type)
-   is
-      use Books.Database;
-      use Interfaces.C.Strings; -- New_String
-      Sibling_Table : constant Data_Tables.Table_Access := Data_Tables.Table_Access
-        (Table_View.Siblings (Table_View.Current_List));
-   begin
-      Sibling_Table.Fetch (Sibling_ID);
-
-      case Table_View.Current_List is
-      when Books.Author =>
-         Gtk.Clist.Insert
-           (Table_View.List_Display (Author),
-            0,
-            (1 => New_String (Image (Sibling_ID)),
-             2 => New_String (Sibling_Table.Field (Data_Tables.Author.First_Name_Index)),
-             3 => New_String (Sibling_Table.Field (Data_Tables.Author.Middle_Name_Index)),
-             4 => New_String (Sibling_Table.Field (Data_Tables.Author.Last_Name_Index))));
-
-      when Books.Collection =>
-         raise SAL.Programmer_Error;
-
-      when Books.Series =>
-         raise SAL.Programmer_Error;
-
-      when Books.Title =>
-         Gtk.Clist.Insert
-           (Table_View.List_Display (Title),
-            0,
-            (1 => New_String (Image (Sibling_ID)),
-             2 => New_String (Sibling_Table.Field (Data_Tables.Title.Title_Index)),
-             3 => New_String (Sibling_Table.Field (Data_Tables.Title.Year_Index))));
-      end case;
-   end Insert_List_Row;
 
    overriding procedure Update_Primary_Display (Collection_View : access Gtk_Collection_View_Record)
    is

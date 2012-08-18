@@ -1,6 +1,6 @@
 --  Abstract :
 --
---  Author list widget for Books application.
+--  Author edit/display widget for Books application.
 --
 --  Copyright (C) 2002, 2004, 2009, 2012 Stephen Leake.  All Rights Reserved.
 --
@@ -30,19 +30,11 @@ package Books.Table_Views.Author is
      (Author_View :    out Gtk_Author_View;
       Parameters  : in     Create_Parameters_Type);
 
-   procedure Initialize
-     (Author_View : access Gtk_Author_View_Record'Class;
-      Parameters  : in     Create_Parameters_Type);
-   --  Create GUI elements, copy Tables, set initial database values.
-   --  DB is assumed already Connected.
-
+   overriding procedure Create_List_View (Table_View : access Gtk_Author_View_Record; List : in Table_Names);
    overriding procedure Default_Add (Author_View : access Gtk_Author_View_Record);
    overriding function Main_Index_Name (Author_View : access Gtk_Author_View_Record) return String;
    overriding procedure Update_Database (Author_View : access Gtk_Author_View_Record);
    overriding procedure Insert_Database (Author_View : access Gtk_Author_View_Record);
-   overriding procedure Insert_List_Row
-     (Table_View : access Gtk_Author_View_Record;
-      Sibling_ID : in     Books.Database.ID_Type);
    overriding procedure Update_Primary_Display (Author_View : access Gtk_Author_View_Record);
    overriding procedure Clear_Primary_Display (Author_View : access Gtk_Author_View_Record);
 

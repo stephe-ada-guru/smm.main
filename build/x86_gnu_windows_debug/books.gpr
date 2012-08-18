@@ -18,7 +18,7 @@ project Books is
         Standard_Common.Compiler.Debug_Switches &
         Standard_Common.Compiler.Style_Checks &
         Standard_Common.Compiler'Default_Switches ("Ada") &
-        ("-gnatwJ", "-gnatyO");
+        ("-gnatwJ");
 
    end Compiler;
 

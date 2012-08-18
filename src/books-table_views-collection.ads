@@ -29,23 +29,13 @@ package Books.Table_Views.Collection is
      (Collection_View :    out Gtk_Collection_View;
       Parameters      : in     Create_Parameters_Type);
 
-   procedure Initialize
-     (Collection_View : access Gtk_Collection_View_Record'Class;
-      Parameters      : in     Create_Parameters_Type);
-   --  Create GUI elements, set initial database values. DB is assumed
-   --  already Connected.
-
-   ----------
-   --  Override Table_View operations.
+   overriding procedure Create_List_View (Table_View : access Gtk_Collection_View_Record; List : in Table_Names);
    overriding procedure Default_Add (Collection_View : access Gtk_Collection_View_Record);
    overriding function Main_Index_Name
      (Collection_View : access Gtk_Collection_View_Record)
      return String;
    overriding procedure Update_Database (Collection_View : access Gtk_Collection_View_Record);
    overriding procedure Insert_Database (Collection_View : access Gtk_Collection_View_Record);
-   overriding procedure Insert_List_Row
-     (Table_View : access Gtk_Collection_View_Record;
-      Sibling_ID : in     Books.Database.ID_Type);
    overriding procedure Update_Primary_Display (Collection_View : access Gtk_Collection_View_Record);
    overriding procedure Clear_Primary_Display (Collection_View : access Gtk_Collection_View_Record);
 

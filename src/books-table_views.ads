@@ -20,6 +20,7 @@ pragma License (GPL);
 
 with Books.Database.Data_Tables;
 with Books.Database.Link_Tables;
+with Books.List_Views;
 with Gdk.Test_Events;
 with Gtk.Check_Button;
 with Gtk.Clist;
@@ -36,6 +37,7 @@ package Books.Table_Views is
    type Table_Array_Table_View_Type is array (Table_Names) of Gtk_Table_View;
 
    type Create_Parameters_Type is record
+      --  used by child Gtk_New procedures
       DB       : Books.Database.Database_Access;
       Siblings : Table_Arrays;
       Links    : Link_Arrays;
@@ -88,16 +90,9 @@ package Books.Table_Views is
    procedure Insert_Database (Table_View : access Gtk_Table_View_Record) is abstract;
    --  Insert a new database record with values from display.
 
+   procedure Create_List_View (Table_View : access Gtk_Table_View_Record; List : in Table_Names) is abstract;
    procedure Update_Primary_Display (Table_View : access Gtk_Table_View_Record) is abstract;
    procedure Clear_Primary_Display (Table_View : access Gtk_Table_View_Record) is abstract;
-
-   procedure Insert_List_Row
-     (Table_View : access Gtk_Table_View_Record;
-      Sibling_ID : in     Books.Database.ID_Type)
-      is abstract;
-   --  Insert data from sibling table for Sibling_ID into current List_Display.
-   --
-   --  Called in loop while updating display; List_Display is frozen.
 
    --  For unit tests
    type Test_Hook_Type is access procedure (Table_View : in Gtk_Table_View);
@@ -108,7 +103,7 @@ private
    type Private_Stuff_Access is access Private_Stuff_Record;
 
    type Table_Array_Radio_Type is array (Table_Names) of Gtk.Radio_Button.Gtk_Radio_Button;
-   type Table_Array_Clist_Type is array (Table_Names) of Gtk.Clist.Gtk_Clist;
+   type Table_Array_List_Type  is array (Table_Names) of Books.List_Views.Gtk_List_View;
    type Table_Array_Check_Button_Type is array (Table_Names) of Gtk.Check_Button.Gtk_Check_Button;
 
    type Gtk_Table_View_Record is abstract new Gtk.Window.Gtk_Window_Record with record
@@ -118,7 +113,7 @@ private
       Data_Table    : Gtk.Table.Gtk_Table;  --  Contents unique to child type.
 
       List_Select  : Table_Array_Radio_Type; --  Children need to set and check these.
-      List_Display : Table_Array_Clist_Type; --  Children need to update these.
+      List_Display : Table_Array_List_Type;
       Current_List : Table_Names := Table_Names'First;
 
       Sibling_Views : Table_Array_Table_View_Type;

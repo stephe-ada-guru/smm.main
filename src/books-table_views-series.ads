@@ -29,21 +29,11 @@ package Books.Table_Views.Series is
      (Series_View :    out Gtk_Series_View;
       Parameters  : in     Create_Parameters_Type);
 
-   procedure Initialize
-     (Series_View : access Gtk_Series_View_Record'Class;
-      Parameters  : in     Create_Parameters_Type);
-   --  Create GUI elements, set initial database values. DB is assumed
-   --  already Connected.
-
-   ----------
-   --  Override Table_View operations.
+   overriding procedure Create_List_View (Table_View : access Gtk_Series_View_Record; List : in Table_Names);
    overriding procedure Default_Add (Series_View : access Gtk_Series_View_Record);
    overriding function Main_Index_Name       (Series_View : access Gtk_Series_View_Record) return String;
    overriding procedure Update_Database      (Series_View : access Gtk_Series_View_Record);
    overriding procedure Insert_Database      (Series_View : access Gtk_Series_View_Record);
-   overriding procedure Insert_List_Row
-     (Series_View : access Gtk_Series_View_Record;
-      Sibling_ID  : in     Books.Database.ID_Type);
    overriding procedure Update_Primary_Display (Series_View : access Gtk_Series_View_Record);
    overriding procedure Clear_Primary_Display (Series_View : access Gtk_Series_View_Record);
 

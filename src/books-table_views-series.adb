@@ -2,7 +2,7 @@
 --
 --  See spec.
 --
---  Copyright (C) 2002 - 2004, 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002 - 2004, 2009, 2012 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -16,18 +16,15 @@
 --  the Free Software Foundation, 59 Temple Place - Suite 330, Boston,
 --  MA 02111-1307, USA.
 
-with Books.Database.Data_Tables.Author;
+pragma License (GPL);
+
 with Books.Database.Data_Tables.Series;
-with Books.Database.Data_Tables.Title;
-with Glib;
-with Gtk.Clist;
+with Books.List_Views.Author;
+with Books.List_Views.Title;
 with Gtk.Enums;
 with Gtk.Radio_Button;
 with Gtk.Table;
-with Interfaces.C.Strings;
 package body Books.Table_Views.Series is
-
-   procedure Update_Display_SeriesTitle (Series_View : access Gtk_Series_View_Record);
 
    ----------
    --  Bodies (alphabetical order)
@@ -47,14 +44,6 @@ package body Books.Table_Views.Series is
       Gtk.Table.Attach (Series_View.Data_Table, Series_View.Title_Label, 0, 1, 0, 1);
       Gtk.Table.Attach (Series_View.Data_Table, Series_View.Title_Text, 1, 3, 0, 1);
 
-      --  Row 2
-      Gtk.Label.Gtk_New (Series_View.Author_Label, "Author");
-      Gtk.Label.Set_Justify (Series_View.Author_Label, Gtk.Enums.Justify_Right);
-      Gtk.GEntry.Gtk_New (Series_View.Author_Text);
-
-      Gtk.Table.Attach (Series_View.Data_Table, Series_View.Author_Label, 0, 1, 3, 4);
-      Gtk.Table.Attach (Series_View.Data_Table, Series_View.Author_Text, 1, 3, 3, 4);
-
       Gtk.Table.Show_All (Series_View.Data_Table);
 
       --  Hide invalid stuff
@@ -65,61 +54,53 @@ package body Books.Table_Views.Series is
       Gtk.Radio_Button.Hide (Series_View.List_Select (Collection));
    end Create_GUI;
 
+   overriding procedure Create_List_View (Table_View : access Gtk_Series_View_Record; List : in Table_Names)
+   is begin
+      case List is
+      when Author =>
+         Books.List_Views.Author.Gtk_New (Table_View.List_Display (Author));
+
+      when Collection | Books.Series =>
+         null;
+
+      when Title =>
+         Books.List_Views.Title.Gtk_New (Table_View.List_Display (Title));
+
+      end case;
+   end Create_List_View;
+
    overriding procedure Default_Add (Series_View : access Gtk_Series_View_Record)
    is begin
       Gtk.GEntry.Set_Text (Series_View.Title_Text, Gtk.GEntry.Get_Text (Series_View.Find_Text));
-      Gtk.GEntry.Set_Text (Series_View.Author_Text, "");
       Gtk.GEntry.Grab_Focus (Series_View.Title_Text);
    end Default_Add;
 
    procedure Gtk_New
      (Series_View :    out Gtk_Series_View;
       Parameters  : in     Create_Parameters_Type)
-   is begin
+   is
+      use Books.Database;
+   begin
       Series_View := new Gtk_Series_View_Record;
-      Initialize (Series_View, Parameters);
-   end Gtk_New;
 
-   procedure Initialize
-     (Series_View : access Gtk_Series_View_Record'Class;
-      Parameters  : in     Create_Parameters_Type)
-   is begin
-      Series.Create_GUI (Series_View, Parameters.Config);
-
-      Series_View.Tables := Parameters.Tables;
+      Series_View.Siblings := Parameters.Siblings;
+      Series_View.Links    := Parameters.Links;
 
       Series_View.Primary_Kind  := Books.Series;
-      Series_View.Primary_Table := Series_View.Tables.Sibling (Books.Series);
+      Series_View.Primary_Table := Data_Tables.Table_Access (Series_View.Siblings (Books.Series));
+
+      Series.Create_GUI (Series_View, Parameters.Config);
 
       Gtk.Radio_Button.Set_Active (Series_View.List_Select (Title), True);
 
       To_Main (Series_View);
 
-      Set_Display (Series_View, Database.Invalid_ID);
-   end Initialize;
+   end Gtk_New;
 
    overriding procedure Insert_Database (Series_View : access Gtk_Series_View_Record)
-   is
-      Author       : Database.ID_Type;
-      Author_Valid : Boolean := True;
-   begin
-      begin
-         Author := Database.Value (Gtk.GEntry.Get_Text (Series_View.Author_Text));
-      exception
-      when others =>
-         if Gtk.Check_Button.Get_Active (Series_View.Links_Buttons (Books.Author)) then
-            Author := ID (Series_View.Sibling_Views (Books.Author));
-         else
-            Author_Valid := False;
-         end if;
-      end;
-
-      Database.Data_Tables.Series.Insert
-        (Database.Data_Tables.Series.Table (Series_View.Primary_Table.all),
-         Title        => Gtk.GEntry.Get_Text (Series_View.Title_Text),
-         Author       => Author,
-         Author_Valid => Author_Valid);
-
+   is begin
+      Database.Data_Tables.Series.Table (Series_View.Primary_Table.all).Insert
+        (Title => Gtk.GEntry.Get_Text (Series_View.Title_Text));
    end Insert_Database;
 
    overriding function Main_Index_Name (Series_View : access Gtk_Series_View_Record) return String
@@ -130,130 +111,21 @@ package body Books.Table_Views.Series is
    end Main_Index_Name;
 
    overriding procedure Update_Database (Series_View : access Gtk_Series_View_Record)
-   is
-      Author       : Database.ID_Type;
-      Author_Valid : Boolean := True;
-   begin
-      begin
-         Author := Database.Value (Gtk.GEntry.Get_Text (Series_View.Author_Text));
-      exception
-      when others =>
-         Author_Valid := False;
-      end;
-
-      Database.Data_Tables.Series.Update
-        (Database.Data_Tables.Series.Table (Series_View.Primary_Table.all),
-         Title        => Gtk.GEntry.Get_Text (Series_View.Title_Text),
-         Author       => Author,
-         Author_Valid => Author_Valid);
+   is begin
+      Database.Data_Tables.Series.Table (Series_View.Primary_Table.all).Update
+        (Title => Gtk.GEntry.Get_Text (Series_View.Title_Text));
    end Update_Database;
 
-   procedure Update_Display_Author (Series_View : access Gtk_Series_View_Record)
+   overriding procedure Update_Primary_Display (Series_View : access Gtk_Series_View_Record)
    is
-      use Database, Interfaces.C.Strings;
-      Width     : Glib.Gint;
-      pragma Unreferenced (Width);
-      Author_ID : constant ID_Type := Data_Tables.Series.Author (Series_View.Primary_Table);
+      use Database.Data_Tables.Series;
    begin
-      --  We display the Editor both in the primary table and in this
-      --  list, to allow using Add_Link and Delete_Link buttons.
-      Data_Tables.Fetch (Series_View.Tables.Sibling (Author).all, Author_ID);
+      Series_View.Title_Text.Set_Text (Series_View.Primary_Table.Field (Title_Index));
+   end Update_Primary_Display;
 
-      if not Valid (Series_View.Tables.Sibling (Author).all) then
-         Gtk.Clist.Clear (Series_View.List_Display (Author));
-         return;
-      end if;
-
-      Gtk.Clist.Freeze (Series_View.List_Display (Author));
-      Gtk.Clist.Clear (Series_View.List_Display (Author));
-
-      Gtk.Clist.Insert
-        (Series_View.List_Display (Author),
-         0,
-         (1 => New_String (Image (Author_ID)),
-          2 => New_String (Data_Tables.Author.First_Name (Series_View.Tables.Sibling (Author))),
-          3 => New_String (Data_Tables.Author.Middle_Name (Series_View.Tables.Sibling (Author))),
-          4 => New_String (Data_Tables.Author.Last_Name (Series_View.Tables.Sibling (Author)))));
-
-      Width := Gtk.Clist.Columns_Autosize (Series_View.List_Display (Author));
-      Gtk.Clist.Thaw (Series_View.List_Display (Author));
-
-   end Update_Display_Author;
-
-   procedure Update_Display_SeriesTitle (Series_View : access Gtk_Series_View_Record)
-   is
-      use Database, Interfaces.C.Strings;
-      Width : Glib.Gint;
-      pragma Unreferenced (Width);
-      Series_ID : constant ID_Type := Series_View.Displayed_ID;
-   begin
-      Link_Tables.SeriesTitle.Fetch_Links_Of (Series_View.Tables.SeriesTitle.all, Link_Tables.Series, Series_ID);
-
-      if not Valid (Series_View.Tables.SeriesTitle.all) then
-         Gtk.Clist.Clear (Series_View.List_Display (Title));
-         return;
-      end if;
-
-      Gtk.Clist.Freeze (Series_View.List_Display (Title));
-      Gtk.Clist.Clear (Series_View.List_Display (Title));
-
-      loop
-         declare
-            Title_ID : constant ID_Type :=
-              Link_Tables.SeriesTitle.ID (Series_View.Tables.SeriesTitle.all, Link_Tables.Title);
-         begin
-            Data_Tables.Fetch (Series_View.Tables.Sibling (Title).all, Title_ID);
-
-            Gtk.Clist.Insert
-              (Series_View.List_Display (Title),
-               0,
-               (1 => New_String (Image (Title_ID)),
-                2 => New_String (Data_Tables.Title.Title (Series_View.Tables.Sibling (Title))),
-                3 => New_String
-                  (Interfaces.Unsigned_16'Image (Data_Tables.Title.Year (Series_View.Tables.Sibling (Title))))));
-
-            Next (Series_View.Tables.SeriesTitle.all);
-            exit when not Valid (Series_View.Tables.SeriesTitle.all);
-         end;
-      end loop;
-
-      Gtk.Clist.Sort (Series_View.List_Display (Title));
-      Width := Gtk.Clist.Columns_Autosize (Series_View.List_Display (Title));
-      Gtk.Clist.Thaw (Series_View.List_Display (Title));
-
-   end Update_Display_SeriesTitle;
-
-   overriding procedure Update_Display_Child (Series_View : access Gtk_Series_View_Record)
+   overriding procedure Clear_Primary_Display (Series_View : access Gtk_Series_View_Record)
    is begin
-      if Database.Valid (Series_View.Primary_Table.all) then
-         declare
-            use Database.Data_Tables.Series;
-         begin
-            Gtk.GEntry.Set_Text (Series_View.Title_Text, Title (Series_View.Primary_Table));
-
-            if Author_Valid (Series_View.Primary_Table) then
-               Gtk.GEntry.Set_Text (Series_View.Author_Text, Database.Image (Author (Series_View.Primary_Table)));
-            else
-               Gtk.GEntry.Set_Text (Series_View.Author_Text, "");
-            end if;
-         end;
-
-         case Series_View.Current_List is
-         when Author =>
-            Update_Display_Author (Series_View);
-         when Collection =>
-            null;
-         when Books.Series =>
-            null;
-         when Title =>
-            Update_Display_SeriesTitle (Series_View);
-         end case;
-
-      else
-         Gtk.GEntry.Set_Text (Series_View.Title_Text, "");
-         Gtk.GEntry.Set_Text (Series_View.Author_Text, "");
-         Gtk.Clist.Clear (Series_View.List_Display (Series_View.Current_List));
-      end if;
-   end Update_Display_Child;
+      Gtk.GEntry.Set_Text (Series_View.Title_Text, "");
+   end Clear_Primary_Display;
 
 end Books.Table_Views.Series;

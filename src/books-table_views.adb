@@ -38,7 +38,6 @@ with Gtk.Scrolled_Window;
 with Gtk.Widget;
 with Gtk.Window.Config;
 with Gtk.Window.Signal;
-with Interfaces.C.Strings;
 with SAL.Config_Files.Boolean;
 package body Books.Table_Views is
 
@@ -152,6 +151,8 @@ package body Books.Table_Views is
      (Table_View : access Gtk_Table_View_Record'Class;
       Config     : in     SAL.Config_Files.Configuration_Access_Type)
    is
+      use type Books.List_Views.Gtk_List_View;
+
       Vbox : Gtk.Box.Gtk_Box; -- contains everthing
    begin
       Gtk.Window.Initialize (Table_View, Gtk.Enums.Window_Toplevel);
@@ -321,60 +322,27 @@ package body Books.Table_Views is
         (Table_View.Private_Stuff.List_Edit_Hbox, Table_View.Private_Stuff.List_Edit_Delete_Button, Expand => False);
       Gtk.Box.Pack_Start (Vbox, Table_View.Private_Stuff.List_Edit_Hbox, Expand => False);
 
-      --  List display.
+      --  List displays.
       for I in Table_Names loop
-         Gtk.Scrolled_Window.Gtk_New (Table_View.Private_Stuff.List_Display_Scroll (I));
-         Gtk.Scrolled_Window.Set_Policy
-           (Table_View.Private_Stuff.List_Display_Scroll (I),
-            H_Scrollbar_Policy => Gtk.Enums.Policy_Automatic,
-            V_Scrollbar_Policy => Gtk.Enums.Policy_Automatic);
+         Create_List_View (Table_View, I);
 
-         Gtk.Box.Pack_Start (Vbox, Table_View.Private_Stuff.List_Display_Scroll (I));
+         if Table_View.List_Display (I) /= null then
+            Gtk.Scrolled_Window.Gtk_New (Table_View.Private_Stuff.List_Display_Scroll (I));
+            Gtk.Scrolled_Window.Set_Policy
+              (Table_View.Private_Stuff.List_Display_Scroll (I),
+               H_Scrollbar_Policy => Gtk.Enums.Policy_Automatic,
+               V_Scrollbar_Policy => Gtk.Enums.Policy_Automatic);
 
-         case I is
-         when Author =>
-            Gtk.Clist.Gtk_New
-              (Table_View.List_Display (I),
-               Columns => 4,
-               Titles =>
-                 (1 => Interfaces.C.Strings.New_String ("ID"),
-                  2 => Interfaces.C.Strings.New_String ("First"),
-                  3 => Interfaces.C.Strings.New_String ("M"),
-                  4 => Interfaces.C.Strings.New_String ("Last")));
+            Gtk.Box.Pack_Start (Vbox, Table_View.Private_Stuff.List_Display_Scroll (I));
 
-         when Collection =>
-            Gtk.Clist.Gtk_New
-              (Table_View.List_Display (I),
-               Columns => 2,
-               Titles =>
-                 (1 => Interfaces.C.Strings.New_String ("ID"),
-                  2 => Interfaces.C.Strings.New_String ("Title")));
+            List_Views.Set_Sort_Column (Table_View.List_Display (I), 0);
+            List_Views.Set_Sort_Type (Table_View.List_Display (I), Gtk.Clist.Ascending);
 
-         when Title =>
-            Gtk.Clist.Gtk_New
-              (Table_View.List_Display (I),
-               Columns => 3,
-               Titles =>
-                 (1 => Interfaces.C.Strings.New_String ("ID"),
-                  2 => Interfaces.C.Strings.New_String ("Title"),
-                  3 => Interfaces.C.Strings.New_String ("Year")));
+            Gtk.Clist.Signal.Connect_Click_Column (Table_View.List_Display (I), On_List_Column'Access);
+            Gtk.Clist.Signal.Connect_Button_Press_Event (Table_View.List_Display (I), On_List_Double_Click'Access);
 
-         when Series =>
-            Gtk.Clist.Gtk_New
-              (Table_View.List_Display (I),
-               Columns => 2,
-               Titles =>
-                 (1 => Interfaces.C.Strings.New_String ("ID"),
-                  2 => Interfaces.C.Strings.New_String ("Title")));
-
-         end case;
-
-         Gtk.Clist.Set_Sort_Column (Table_View.List_Display (I), 0);
-         Gtk.Clist.Set_Sort_Type (Table_View.List_Display (I), Gtk.Clist.Ascending);
-         Gtk.Clist.Signal.Connect_Click_Column (Table_View.List_Display (I), On_List_Column'Access);
-         Gtk.Clist.Signal.Connect_Button_Press_Event (Table_View.List_Display (I), On_List_Double_Click'Access);
-
-         Gtk.Scrolled_Window.Add (Table_View.Private_Stuff.List_Display_Scroll (I), Table_View.List_Display (I));
+            Gtk.Scrolled_Window.Add (Table_View.Private_Stuff.List_Display_Scroll (I), Table_View.List_Display (I));
+         end if;
       end loop;
 
       --  Show everything except the list displays, let To_Main etc
@@ -602,11 +570,11 @@ package body Books.Table_Views is
       use type Glib.Guint;
       Table_View : constant Gtk_Table_View := Gtk_Table_View (Gtk.Button.Get_Toplevel (Button));
 
-      List_Display : Gtk.Clist.Gtk_Clist renames Table_View.List_Display (Table_View.Current_List);
-      Selected     : constant Gtk.Enums.Gint_List.Glist :=  Gtk.Clist.Get_Selection (List_Display);
+      List_Display : List_Views.Gtk_List_View renames Table_View.List_Display (Table_View.Current_List);
+      Selected     : constant Gtk.Enums.Gint_List.Glist :=  List_Views.Get_Selection (List_Display);
 
    begin
-      --  Clist selection mode is Selection_Single, so we only have to
+      --  List_View selection mode is Selection_Single, so we only have to
       --  deal with deleting one link.
 
       if Gtk.Enums.Gint_List.Length (Selected) = 0 then
@@ -616,7 +584,7 @@ package body Books.Table_Views is
 
       declare
          Row               : constant Glib.Gint := Gtk.Enums.Gint_List.Get_Data (Gtk.Enums.Gint_List.First (Selected));
-         Sibling_ID_String : constant String    := Gtk.Clist.Get_Text (List_Display, Row, Column => 0);
+         Sibling_ID_String : constant String    := List_Views.Get_Text (List_Display, Row, Column => 0);
          Sibling_ID        : constant ID_Type   := ID_Type'Value (Sibling_ID_String);
 
          Primary_Kind : Table_Names renames Table_View.Primary_Kind;
@@ -636,8 +604,8 @@ package body Books.Table_Views is
 
    procedure On_List_Column (Clist : access Gtk.Clist.Gtk_Clist_Record'Class; Column : in Glib.Gint)
    is begin
-      Gtk.Clist.Set_Sort_Column (Clist, Column);
-      Gtk.Clist.Sort (Clist);
+      Clist.Set_Sort_Column (Column);
+      Clist.Sort;
    end On_List_Column;
 
    function On_List_Double_Click
@@ -647,20 +615,19 @@ package body Books.Table_Views is
    is
       use Gdk.Event;
       use type Glib.Guint;
-      Table_View : constant Gtk_Table_View := Gtk_Table_View (Gtk.Clist.Get_Toplevel (Clist));
+      Table_View : constant Gtk_Table_View := Gtk_Table_View (Clist.Get_Toplevel);
    begin
       case Get_Event_Type (Event) is
       when Gdk_2button_Press =>
          declare
-            Clist : Gtk.Clist.Gtk_Clist renames Table_View.List_Display (Table_View.Current_List);
+            List_View : List_Views.Gtk_List_View renames Table_View.List_Display (Table_View.Current_List);
 
-            Selected_Rows : constant Gtk.Enums.Gint_List.Glist := Gtk.Clist.Get_Selection (Clist);
+            Selected_Rows : constant Gtk.Enums.Gint_List.Glist := List_Views.Get_Selection (List_View);
          begin
             if Gtk.Enums.Gint_List.Length (Selected_Rows) >= 1 then
                declare
-                  ID_String : constant String := Gtk.Clist.Get_Text
-                    (Clist  => Clist,
-                     Row    => Gtk.Enums.Gint_List.Get_Data (Selected_Rows),
+                  ID_String : constant String := List_View.Get_Text
+                    (Row    => Gtk.Enums.Gint_List.Get_Data (Selected_Rows),
                      Column => 0);
                begin
                   if ID_String'Length = 0 then
@@ -788,12 +755,14 @@ package body Books.Table_Views is
    procedure Update_Display (Table_View : access Gtk_Table_View_Record'class)
    is
       use type Books.Database.ID_Type;
-      use Database, Interfaces.C.Strings;
+      use Database;
       Width   : Glib.Gint;
       pragma Unreferenced (Width);
 
-      Link_Table : Link_Tables.Table_Access renames Table_View.Link_Table (Table_View.Current_List);
-      List_View  : Gtk.Clist.Gtk_Clist renames Table_View.List_Display (Table_View.Current_List);
+      Link_Table    : Link_Tables.Table_Access renames Table_View.Link_Table (Table_View.Current_List);
+      Sibling_Table : constant Data_Tables.Table_Access := Data_Tables.Table_Access
+        (Table_View.Siblings (Table_View.Current_List));
+      List_View     : List_Views.Gtk_List_View renames Table_View.List_Display (Table_View.Current_List);
    begin
       --  Caller is responsible for calling Find to get a valid record.
 
@@ -817,7 +786,13 @@ package body Books.Table_Views is
       List_View.Clear;
 
       loop
-         Table_View.Insert_List_Row (Link_Table.ID (Table_View.Current_List));
+         declare
+            Sibling_ID : constant Books.Database.ID_Type := Link_Table.ID (Table_View.Current_List);
+         begin
+            Sibling_Table.Fetch (Sibling_ID);
+
+            List_View.Insert_List_Row (Sibling_Table, Sibling_ID);
+         end;
 
          Link_Table.Next;
          exit when not Link_Table.Valid;
