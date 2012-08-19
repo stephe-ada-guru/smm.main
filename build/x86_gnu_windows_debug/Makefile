@@ -1,6 +1,9 @@
 all : books-main.exe
+all : books-backup.exe
+all : books-import-main.exe
 
-one : books-main.run
+#one : books-main.run
+one : books-import-main.run
 
 #../../test/test_books-one_harness.adb
 t_one : RUN_ARGS := 1
@@ -12,7 +15,7 @@ t_all : RUN_ARGS := 1 -v
 t_all : test_books-all_harness.diff
 
 trace :
-	addr2line -e test_books-one_harness.exe 0x467994 0x46afeb 0x475121 0x4929eb 0x43cf13 0x43f5de 0x63a42f64 0x63a5114e 0x63a52169 0x63a52328 0x61798815 0x61799a87 0x61799afc 0x61815681 0x63a42f64 0x63a51296 0x63a51f3b 0x63a52328 0x618d4078 0x618136ae 0x61813970 0x467b1d 0x6c364ffa 0x685dfb1f 0x685e0f1b 0x685e11a2 0x61814094 0x49dc5b 0x4ea584 0x7c80b727
+	addr2line -e books-main.exe  0x00456FC8 0x00428F76 0x0042A9CD 0x0042D96E 0x0042D547 0x00434572 0x00440928 0x00441368 0x0044D87B 0x00402D89 0x004010B9 0x004012A6 0x76A83398 0x77679EF0 0x77679EC3
 include ../common.make
 
 GNAT_PROJECT := books.gpr

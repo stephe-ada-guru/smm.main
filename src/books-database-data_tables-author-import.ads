@@ -2,7 +2,7 @@
 --
 --  Import the Author table.
 --
---  Copyright (C) 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2009, 2012 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -18,4 +18,4 @@
 
 pragma License (GPL);
 
-procedure Import_Books.Import_Author (Root_File_Name : in String);
+procedure Books.Database.Data_Tables.Author.Import (Root_File_Name : in String);

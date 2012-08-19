@@ -43,13 +43,17 @@ package body Books.Database.Data_Tables.Author is
    is
       use type GNATCOLL.SQL.Exec.SQL_Parameter;
 
+      First  : aliased String := First_Name;
+      Middle : aliased String := Middle_Name;
+      Last   : aliased String := Last_Name;
+
       --  We use parameters so we don't have to quote the names
       Statement : constant String := "INSERT INTO Author (First, Middle, Last) VALUES (?, ?, ?)";
    begin
-      --  FIXME: when do these allocations get freed?
+      --  FIXME: when do these allocations get freed? Try Unchecked_Access
       Checked_Execute
-        (T, Statement, Params => (+new String'(First_Name), +new String'(Middle_Name), +new String'(Last_Name)));
-      Find (T, Last_Name);
+        (T, Statement, Params => (+First'Unchecked_Access, +Middle'Unchecked_Access, +Last'Unchecked_Access));
+      Find_By_Name (T, Last_Name);
    end Insert;
 
    procedure Update

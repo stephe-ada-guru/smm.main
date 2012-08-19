@@ -3,25 +3,29 @@ doc/C/books.texinfo
 file://c:/Gnu/GtkAda-2.2.0/share/gtk-doc/html/gtk/index.html
 file://c:/Gnu/GtkAda-2.2.0/share/gtk-doc/html/gdk/index.html
 
-review fixme
-
-add alternate indexes
-
-finish series, title
-
 added author_collection, author_series tables
     requires schema change; need books_migrate.adb
+        have books-backup.adb; writes .csv
+            run it on old computer
 
-    fix mote in god's eye series
+        have import_books-main; reads .csv?
+            rewrite to use books-*_tables-import
 
-replace obsolescent gtk packages with new ones
-    clist => tree_view
-        way more complicated to use!
+    insert ids in restore (don't create new)? try it; saves space, time in backup (no lookup, duplicate names)
+    database in c:/mysql/data/books; copied to c:/mysql/data/books-backup
 
-(books.exe:4016): GLib-WARNING **: Passing a non-NULL package to g_win32_get_package_installation_directory() is deprecated and will not work in GLib after 2.18.
+get it working!
 
-need to move add/delete link back to table-specific
-    allow changing collection editor, series author via buttons
+fix mote in god's eye series
+
+add rating search, allow for 'unrated'
+
+review fixme
+
+text box
+    C-e = end
+    C-a = select all (toggle?)
+        need to find gtk source for widget, editable
 
 update linked sibling views on insert_database
 
@@ -29,66 +33,37 @@ need 'enter' key for double-click on list
 
 add keyboard shortcuts for links in Add windows
 
-handle bad ids in link displays
-    see books-table_views-title.adb Update_Display_CollectionTitle
-        need to abstract one level up
+replace obsolescent gtk packages with new ones
+    clist => tree_view
+        way more complicated to use!
+
+(books.exe:4016): GLib-WARNING **: Passing a non-NULL package to g_win32_get_package_installation_directory() is deprecated and will not work in GLib after 2.18.
+
+add alternate indexes
 
 rating shows as 0
     should be blank
 
-add rating search, allow for 'unrated'
-
-text box
-    C-e = end
-    C-a = select all (toggle?)
-        need to find gtk source for widget, editable
-
-indicate when text field is full
-    use unconstrained db data!
-
-get one top level window!
+get one top level window?
 
 add main menu
     add import, export
 
 port to Android!
     try app inventor; generic db browser?
-    need to switch to sqlite; read-only db avail via crashplan
-
-refresh other window on delete/add link
-
-clean up connects
+    read-only db avail via crashplan
 
 clean up private stuff
     only keep things that are referenced after creation
 
 release_process.text
 
- bugs that need tests
-
-last button doesn't work
-
-index drop box doesn't work; "widget not realized"
-
-next button gives "function sequence error" if hit too many times
-
-Collections Author radio doesn't stick
-
-Collections name not changing with search
-
- gnade issues
-
-use pragma convention_identifier instead of gnatprep
-
-need debug/optimize in gnade/dbi/odbc/odbc.gpr
-
  GtkAda issues
-using 2.2.2
 
 GtkAda.MDI.put calls show_all! destroying my carefully setup show/hide structure
     offered to submit patch; wait for response.
 
- work
+ other
 use pkg-config
 
 use gtkada.dialogs in body of gtk_more/gtk.message_box
@@ -96,91 +71,6 @@ use gtkada.dialogs in body of gtk_more/gtk.message_box
 see GPS source c:/Gnu/GPS-1.4.1/glide/src/gps.adb
 (ada-parse-prj-file "c:/Gnu/GPS-1.4.1/glide/gps.prj")
 
-use drag and drop
-
-collections Editor entry takes number?
-    lookup name?
-
-replace CTree with something else
-    other obsolete Gtk stuff?
-
-need debug/optimize in books.gpr
-
-upgrade MySQL, MySQL ODBC
-
-add AM_SAL
-
 show database name, location in main screen
-
-write defaulted values to config file, so user knows what to edit.
-    or put comments in created initial config file
-
-fix books-backup ?
-
- even later
-http://home.cogeco.ca/~ve3wwg/software.html#APQ
-    alternate MySQL binding (no ODBC, could add?)
-
-AM_GRACE broken in autoconf 2.13
-    just using $GRACE in makefile for now (no check)
-
-~/Ada/Books/src/books-backup.adb
-    insert ids in restore? try it; saves space, time in backup
-    database in c:/mysql/data/books; copied to c:/mysql/data/books-backup
-
-need -largs -mwindows for cygwin
-
-do gettext
-    po, intl
-
- bugs:
-author_list
-    delete space between top buttons
-
-    index combo drop list needs to be allocated more space?
-        fill/expand property?
-
-books-database-author.adb Initialize
-        when set SQL_SCROLLABLE (or equivalent), get "Operation invalid at this time"
-
-configure
-    choose GNAT_DEBUG_DEFAULTS or GNAT_RELEASE_DEFAULTS
-        configure --debug | --release ?
-        or just doc in INSTALL
-
-    AM_GTKADA
-        arg!! need to change /cygdrive/c/ to c: for gnat/Windows!
-        kludge it in makefile for now
-
-gnade problems
-
-    sqlcli 'attributes' stuff is just flakey
-        has non-static stuff in spec, so can't be preelaborate
-
-    Debian:
-        gnade/make.conf.in does _not_ use $host; it uses $build_os-$build_cpu
-        gnade-config does not have executable permission
-        gnade-config is just wrong! see gnade.m4 for some fixes.
-
-    gnade.m4:
-        need to check for which odbc library; "iodbc" needs -liodbc
-        should be done in 'pragma Link_Args'?
-
-
- Linux notes
-installing GtkAda; compiling is very slow
-    GtkAda installs gate-in as gate-in.exe!
-        just rename it for now
-
-./macros/autogen.sh --host=i586-pc-linux-gnu
-    done
-
-../build-books/Makefile
-    make -r
-        links
-
-../build-books/src/Makefile
-    make -r run
-raised GNU.DB.SQLCLI.DATABASE_ERROR : [Proc=SQLConnect][Server=][State=00000][iODBC][Driver Manager]/home/stephe/Gnu/local/lib/libmyodbc3.so: undefined symbol: _dig_vec
 
 (end of file)

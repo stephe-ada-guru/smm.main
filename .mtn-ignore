@@ -1,10 +1,11 @@
 .*\.exe$
-^build/x86_gnu_windows_debug/objects$
 ^build/x86_gnu_windows_debug/.*\.diff$
 ^build/x86_gnu_windows_debug/.*\.out$
+^build/x86_gnu_windows_debug/objects$
 ^build/x86_gnu_windows_release/.*\.diff$
 ^build/x86_gnu_windows_release/.*\.out$
 ^build/x86_gnu_windows_release/csv$
 ^build/x86_gnu_windows_release/objects$
+^doc/books\.html$
 books\.config$
 doc/books.info

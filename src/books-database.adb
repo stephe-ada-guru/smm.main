@@ -32,10 +32,11 @@ package body Books.Database is
       Statement : in     String;
       Params    : in     GNATCOLL.SQL.Exec.SQL_Parameters := GNATCOLL.SQL.Exec.No_Parameters)
    is begin
-      --  FIXME: close cursor?
       GNATCOLL.SQL.Exec.Fetch (T.Cursor, T.DB.Connection, Statement, Params);
 
-      --  FIXME: exceptions? Errors?
+      if not T.DB.Connection.Success then
+         raise Entry_Error with T.DB.Connection.Error;
+      end if;
    end Checked_Execute;
 
    function Field
@@ -68,9 +69,7 @@ package body Books.Database is
      (T         : in out Table'Class;
       Statement : in     String;
       Params    : in     GNATCOLL.SQL.Exec.SQL_Parameters := GNATCOLL.SQL.Exec.No_Parameters)
-   is
-   begin
-      --  FIXME: close cursor?
+   is begin
       Checked_Execute (T, Statement, Params);
       Next (T);
    end Find;
@@ -111,11 +110,13 @@ package body Books.Database is
       Descrip : constant Database_Description := GNATCOLL.SQL.Sqlite.Setup (Db_File);
    begin
 
-      if Descrip = null then
-         raise SAL.Config_File_Error with Db_File & " database file not found or not valid";
-      end if;
-
       DB.Connection := GNATCOLL.SQL.Exec.Build_Connection (Descrip);
+
+      if not DB.Connection.Success then
+         --  This doesn't fail if Db_File doesn't exist; SQLite creates :memory: database?
+         --  But then later queries fail. IMPROVEME: check for schema.
+         raise SAL.Config_File_Error with Db_File & DB.Connection.Error;
+      end if;
 
       Ada.Text_IO.Put_Line ("Connected to database " & Db_File);
    end Initialize;

@@ -6,7 +6,7 @@
 
 @setchapternewpage off
 
-@node Top, Development Environment, (dir), (dir)
+@node Top, Debian Development Environment, (dir), (dir)
 @top Books
 
 Books is a user interface to a database holding information on books,
@@ -21,12 +21,14 @@ Books is written in Ada, using the Gnu Ada tools, which don't need
 autoconf and automake.
 
 @menu
-* Development Environment::
+* Debian Development Environment::
+* Windows Development Environment::
+* Install application::
 * Program design::
 * Database schema::
 @end menu
 
-@node Debian Development Environment, Program design, Top, Top
+@node Debian Development Environment, Windows Development Environment, Top, Top
 @chapter Debian Development Environment
 
 I follow the Debian Ada policy
@@ -57,7 +59,7 @@ file @file{sal.gpr}: @*
 This environment variable is used by the Books Makefile to set @var{ADA_PROJECT_PATH}.
 @end enumerate
 
-@node Windows Development Environment, Program design, Top, Top
+@node Windows Development Environment, Install application, Debian Development Environment, Top
 @chapter Windows Development Environment
 
 @multitable {Tool} {Version} {Source}
@@ -97,7 +99,7 @@ file @file{sal.gpr}: @*
 This environment variable is used by the Books Makefile to set @var{ADA_PROJECT_PATH}.
 @end enumerate
 
-@node Install application,  , Development Environment Installation, Development Environment
+@node Install application, Program design, Windows Development Environment, Top
 @chapter Install application
 To run the database, we need to install MySQL and MyODBC, then create
 the ODBC data source, the database user account, and the database. We
@@ -213,7 +215,7 @@ quit;
 @subsection Compile Books
 See @file{Books/INSTALL}
 
-@node Program design, Database schema, Development Environment, Top
+@node Program design, Database schema, Install application, Top
 @chapter Program design
 
 The user interface is written in Ada, using the GtkAda toolkit. I

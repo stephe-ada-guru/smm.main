@@ -1,9 +1,9 @@
-all : dirs books.exe tests
+all : books-main.exe tests
 
-install : books.exe
-	strip -o ~/bin books.exe
+install : books-main.exe
+	strip -o ~/bin books-main.exe
 
-one : books.run
+one : books-main.run
 
 two : RUN_ARGS := stephe csv/jet
 two : import_books-main.run
@@ -20,9 +20,13 @@ include ../common.make
 GNAT_PROJECT := books.gpr
 
 # ADA_PROJECT_PATH is also set by books.prj, but that's not guarranteed to be current
-export ADA_PROJECT_PATH := $(GDS_ROOT)/main/makerules/;$(GDS_ROOT)/main/sal/build/x86_gnu_windows_release;../../../gnade/dbi/odbc/;$(GDS_ROOT)/main/sal/build;$(GDS_ROOT)/main/sal/build/x86_gnu_windows_gtk_release;$(GTKADA)
+# We are using main_lynx_5 for Ada 2012
+export ADA_PROJECT_PATH := $(GDS_ROOT)/main_lynx_5/makerules/
+export ADA_PROJECT_PATH := $(ADA_PROJECT_PATH);$(GDS_ROOT)/main_lynx_5/sal/build/x86_gnu_windows_release
+export ADA_PROJECT_PATH := $(ADA_PROJECT_PATH);$(GDS_ROOT)/main_lynx_5/sal/build/x86_gnu_windows_gtk_release
 
 # Local Variables:
+# eval: (gnat-2012)
 # eval: (ada-parse-prj-file "books.prj")
 # eval: (ada-select-prj-file "books.prj")
 # end:
