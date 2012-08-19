@@ -33,8 +33,6 @@ package Books.Database.Link_Tables is
 
    type Link_Array_ID_Type is array (Link_Index) of aliased ID_Type;
 
-   overriding procedure Initialize (T : in out Table);
-
    function ID (T : in Table; Name : in Table_Names) return ID_Type;
    --  Retrieve data from current record
 

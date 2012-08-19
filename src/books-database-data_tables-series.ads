@@ -21,7 +21,8 @@ package Books.Database.Data_Tables.Series is
 
    use type GNATCOLL.SQL.Exec.Field_Index;
 
-   type Table (DB : access Books.Database.Database'Class) is new Data_Tables.Table (DB => DB) with null record;
+   type Table (DB : access Books.Database.Database'Class)
+      is new Data_Tables.Table (DB => DB, Name => new String'("Series")) with null record;
    type Table_Access is access all Table;
 
    overriding procedure Initialize (T : in out Table);

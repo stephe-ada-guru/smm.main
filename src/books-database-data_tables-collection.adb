@@ -25,20 +25,13 @@ package body Books.Database.Data_Tables.Collection is
 
    overriding procedure Initialize (T : in out Table)
    is begin
-      --  from Database
-      T.All_By_ID_Statement := new String'("SELECT ID, Title, Year FROM Collection ORDER BY ID");
-
       --  from Database.Data_Tables
       T.Find_By_ID_Statement := new String'("SELECT ID, Title, Year FROM Collection WHERE ID = ?");
 
       T.Find_By_Name_Statement := new String'
         ("SELECT ID, Title, Year FROM Collection WHERE Title LIKE ? ORDER BY Title_Name");
 
-      T.Delete_By_ID_Statement := new String'("DELETE FROM Collection WHERE ID = ?");
-
-      T.Find_Statement := T.Find_By_Name_Statement;
-
-      Checked_Execute (T, T.Find_Statement.all); --  So Next is valid.
+      Checked_Execute (T, T.Find_By_Name_Statement.all); --  So Next is valid.
 
    end Initialize;
 

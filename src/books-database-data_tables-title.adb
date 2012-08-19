@@ -27,18 +27,12 @@ package body Books.Database.Data_Tables.Title is
    is
       use type GNATCOLL.SQL.Exec.SQL_Parameter;
    begin
-      T.All_By_ID_Statement := new String'("SELECT ID, Title, Year, Comment, Rating FROM Title ORDER BY ID");
-
       T.Find_By_ID_Statement := new String'("SELECT ID, Title, Year, Comment, Rating FROM Title WHERE ID = ?");
 
       T.Find_By_Name_Statement := new String'
         ("SELECT ID, Title, Year, Comment, Rating FROM Title WHERE Title LIKE ? ORDER BY Title");
 
-      T.Delete_By_ID_Statement := new String'("DELETE FROM Title WHERE ID = ?");
-
-      T.Find_Statement := T.Find_By_Name_Statement;
-
-      Checked_Execute (T, T.Find_Statement.all, Params => (1 => +ID (T))); --  So Next is valid.
+      Checked_Execute (T, T.Find_By_Name_Statement.all, Params => (1 => +ID (T))); --  So Next is valid.
 
    end Initialize;
 

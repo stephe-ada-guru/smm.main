@@ -55,23 +55,11 @@ package Books.Database is
 
    procedure Free (Pointer : in out Table_Access);
 
-   ----------
-   --  Classwide Table operations
-
-   procedure Find_All_By_ID (T : in out Table'Class);
-   --  Set current find statement to return all records ordered by ID.
-   --  Fetch first.
-
    procedure Next (T : in out Table'Class);
    --  Move cursor to next record, according to current find
    --  statement.
    --
    --  Marks data invalid if there is no next.
-
-   ----------
-   --  Dispatching Table operations
-
-   --  Initialize should create database access statements, fetch first record.
 
    function Field
      (T           : in Table;
@@ -79,9 +67,6 @@ package Books.Database is
      return String;
    --  Raises No_Data if cursor has no row.
    --  Raises Null_Field if field has no data.
-
-   overriding procedure Finalize (T : in out Table);
-   --  Free all statements. Root version frees common statements.
 
    function Valid (T : in Table) return Boolean;
    --  True if current data is valid (Next, Find or Fetch returned a row)
@@ -106,14 +91,6 @@ private
 
    type Table (DB : access Database'Class) is abstract new Ada.Finalization.Limited_Controlled with record
 
-      --  FIXME: don't need these?
-      Update_Statement    : access constant String;
-      Insert_Statement    : access constant String;
-
-      Delete_By_ID_Statement : access constant String;
-      All_By_ID_Statement    : access constant String;
-      Find_Statement         : access constant String;
-
       Cursor : GNATCOLL.SQL.Exec.Forward_Cursor;
       --  Holds result of last Find
    end record;
@@ -127,9 +104,8 @@ private
 
    procedure Find
      (T         : in out Table'Class;
-      Statement : access constant String;
+      Statement : in     String;
       Params    : in     GNATCOLL.SQL.Exec.SQL_Parameters := GNATCOLL.SQL.Exec.No_Parameters);
-   --  Close appropriate cursors, set T.Find_Statement, execute
-   --  statement, call Next.
+   --  Execute statement, call Next.
 
 end Books.Database;

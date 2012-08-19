@@ -534,9 +534,8 @@ package body Books.Table_Views is
       use Books.Database;
       Table_View : constant Gtk_Table_View := Gtk_Table_View (Gtk.GEntry.Get_Toplevel (GEntry));
    begin
-      --  FIXME: should check Index.
-      Data_Tables.Set_Find_By_Name (Table_View.Primary_Table.all);
-      Data_Tables.Find (Table_View.Primary_Table.all, Gtk.GEntry.Get_Text (GEntry));
+      --  FIXME: should use selected Index.
+      Data_Tables.Find_By_Name (Table_View.Primary_Table.all, Gtk.GEntry.Get_Text (GEntry));
       Update_Display (Table_View);
    end On_Find_Changed;
 

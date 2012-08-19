@@ -20,7 +20,7 @@ pragma License (GPL);
 
 package Books.Database.Data_Tables is
 
-   type Table is abstract new Books.Database.Table with private;
+   type Table (DB : access Database'Class; Name : access String) is abstract new Books.Database.Table with private;
    type Table_Access is access all Table'Class;
 
    --  Class-wide operations
@@ -29,14 +29,9 @@ package Books.Database.Data_Tables is
    --  current find statement. Calls Clear_Data in case there is no
    --  next.
 
-   procedure Set_Find_By_ID (T : in out Table'Class);
-   procedure Set_Find_By_Name (T : in out Table'Class);
-   --  Set current find statement. 'name' can be author name,
-   --  collection title, item title.
-
-   procedure Find (T : in out Table'Class; Item : in String);
-   --  Search for records with data starting with String, using
-   --  current find statement. Fetch first.
+   procedure Find_By_Name (T : in out Table'Class; Name : in String);
+   --  Search for records with data starting with Name. Name can be
+   --  author name, collection title, item title.
    --
    --  If there is no match, Field will raise No_Data.
 
@@ -60,8 +55,14 @@ package Books.Database.Data_Tables is
 
 private
 
-   type Table is abstract new Books.Database.Table with record
+   type Table
+     (DB : access Database'Class;
+      Name : access String)
+   is abstract new Books.Database.Table (DB => DB) with record
 
+      --  We use different Find_By statements for each table, to
+      --  ensure the fields are in the correct order (matching
+      --  *_Index).
       Find_By_ID_Statement   : access constant String;
       Find_By_Name_Statement : access constant String;
    end record;

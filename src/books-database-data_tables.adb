@@ -24,13 +24,13 @@ package body Books.Database.Data_Tables is
 
    procedure Delete (T : in out Table'Class)
    is begin
-      Checked_Execute (T, T.Delete_By_ID_Statement.all, Params => (1 => +ID (T)));
+      Checked_Execute (T, "DELETE FROM " & T.Name.all & " WHERE ID = ?", Params => (1 => +ID (T)));
       Next (T);
    end Delete;
 
    procedure Fetch (T : in out Table'Class; ID : in ID_Type)
    is begin
-      Find (T, T.Find_By_ID_Statement, Params => (1 => +ID));
+      Find (T, T.Find_By_ID_Statement.all, Params => (1 => +ID));
    end Fetch;
 
    overriding procedure Finalize (T : in out Table)
@@ -48,20 +48,10 @@ package body Books.Database.Data_Tables is
       return Field (T, ID_Index);
    end ID_Image;
 
-   procedure Set_Find_By_ID (T : in out Table'Class)
-   is begin
-      T.Find_Statement := T.Find_By_ID_Statement;
-   end Set_Find_By_ID;
-
-   procedure Set_Find_By_Name (T : in out Table'Class)
-   is begin
-      T.Find_Statement := T.Find_By_Name_Statement;
-   end Set_Find_By_Name;
-
-   procedure Find (T : in out Table'Class; Item : in String)
+   procedure Find_By_Name (T : in out Table'Class; Name : in String)
    is begin
       --  FIXME: when is this allocation freed?
-      Find (T, T.Find_By_Name_Statement, Params => (1 => +(new String'(Item & '%'))));
-   end Find;
+      Find (T, T.Find_By_Name_Statement.all, Params => (1 => +(new String'(Name & '%'))));
+   end Find_By_Name;
 
 end Books.Database.Data_Tables;

@@ -52,27 +52,6 @@ package body Books.Database is
       end if;
    end Field;
 
-   overriding procedure Finalize (T : in out Table)
-   is begin
-      --  We only finalize a table when we are about to close the
-      --  application, when all memory will be recovered anyway. So we
-      --  don't bother freeing the strings (this avoids using a named
-      --  type).
-      --  if T.Update_Statement /= null then
-      --     Free (T.Update_Statement);
-      --  end if;
-      --  if T.Insert_Statement /= null then
-      --     Free (T.Insert_Statement);
-      --  end if;
-      --  if T.Delete_Statement /= null then
-      --     Free (T.Delete_Statement);
-      --  end if;
-      --  if T.All_By_ID_Statement /= null then
-      --     Free (T.All_By_ID_Statement);
-      --  end if;
-      null; --  FIXME: delete this procedure!
-   end Finalize;
-
    overriding procedure Finalize (DB : in out Database)
    is begin
       Ada.Text_IO.Put ("Disconnecting from database ... ");
@@ -87,20 +66,14 @@ package body Books.Database is
 
    procedure Find
      (T         : in out Table'Class;
-      Statement : access constant String;
+      Statement : in     String;
       Params    : in     GNATCOLL.SQL.Exec.SQL_Parameters := GNATCOLL.SQL.Exec.No_Parameters)
    is
    begin
       --  FIXME: close cursor?
-      T.Find_Statement := Statement;
-      Checked_Execute (T, T.Find_Statement.all, Params);
+      Checked_Execute (T, Statement, Params);
       Next (T);
    end Find;
-
-   procedure Find_All_By_ID (T : in out Table'Class)
-   is begin
-      Find (T, T.All_By_ID_Statement);
-   end Find_All_By_ID;
 
    procedure Free (Pointer : in out Database_Access)
    is

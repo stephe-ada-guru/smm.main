@@ -42,15 +42,33 @@ package body Books.Database.Link_Tables is
    end Find_Link_Index;
 
    procedure Delete (T : in out Table; Data : in Link_Array_ID_Type)
-   is begin
-      Checked_Execute (T, T.Delete_By_ID_Statement.all, To_Params (Data));
+   is
+      First_Column_Name : constant String := Table_Names'Image (T.Link_Names (1));
+      Last_Column_Name  : constant String := Table_Names'Image (T.Link_Names (2));
+      Table_Name        : constant String := First_Column_Name & Last_Column_Name;
+   begin
+      Checked_Execute
+        (T,
+         "DELETE FROM " &
+           Table_Name &
+           " WHERE " &
+           First_Column_Name & " = ? AND " &
+           Last_Column_Name & " = ?",
+         To_Params (Data));
    end Delete;
 
    procedure Find (T : in out Table; Name : in Table_Names; Item : in ID_Type)
    is
       use type GNATCOLL.SQL.Exec.SQL_Parameter;
+      First_Column_Name : constant String := Table_Names'Image (T.Link_Names (1));
+      Last_Column_Name  : constant String := Table_Names'Image (T.Link_Names (2));
+      Table_Name        : constant String := First_Column_Name & Last_Column_Name;
    begin
-      Find (T, T.Find_By_Link_Statement (Find_Link_Index (T, Name)), Params => (1 => +Item));
+      Find
+        (T,
+         "SELECT " & First_Column_Name & ", " & Last_Column_Name & " FROM " & Table_Name &
+           " WHERE " & Table_Names'Image (T.Link_Names (Find_Link_Index (T, Name))) & " = ?",
+         Params => (1 => +Item));
    end Find;
 
    function ID (T : in Table; Name : in Table_Names) return ID_Type is
@@ -58,43 +76,16 @@ package body Books.Database.Link_Tables is
       return ID_Type'Value (Field (T, Find_Link_Index (T, Name)));
    end ID;
 
-   overriding procedure Initialize (T : in out Table)
+   procedure Insert (T : in out Table; Data : in Link_Array_ID_Type)
    is
       First_Column_Name : constant String := Table_Names'Image (T.Link_Names (1));
       Last_Column_Name  : constant String := Table_Names'Image (T.Link_Names (2));
-
-      Table_Name : constant String := First_Column_Name & Last_Column_Name;
+      Table_Name        : constant String := First_Column_Name & Last_Column_Name;
    begin
-
-      T.Find_By_Link_Statement (1) := new String'
-        ("SELECT " & First_Column_Name & ", " & Last_Column_Name & " FROM " & Table_Name &
-           " WHERE " & First_Column_Name & " = ?");
-
-      T.Find_By_Link_Statement (1) := new String'
-        ("SELECT " & First_Column_Name & ", " & Last_Column_Name & " FROM " & Table_Name &
-           " WHERE " & Last_Column_Name & " = ?");
-
-      T.Insert_Statement := new String'
-        ("INSERT INTO " &
-           Table_Name &
-           "(" &
-           First_Column_Name &
-           ", " &
-           Last_Column_Name &
-           ") VALUES (?, ?)");
-
-      T.Delete_By_ID_Statement := new String'
-        ("DELETE FROM " &
-           Table_Name &
-           " WHERE " &
-           First_Column_Name & " = ? AND " &
-           Last_Column_Name & " = ?");
-
-   end Initialize;
-
-   procedure Insert (T : in out Table; Data : in Link_Array_ID_Type)
-   is begin
-      Checked_Execute (T, T.Insert_Statement.all, To_Params (Data));
+      Checked_Execute
+        (T,
+         "INSERT INTO " & Table_Name & "(" & First_Column_Name & ", " & Last_Column_Name & ") VALUES (?, ?)",
+         To_Params (Data));
    end Insert;
 
 end Books.Database.Link_Tables;

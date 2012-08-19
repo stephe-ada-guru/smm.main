@@ -17,6 +17,13 @@ data_tables.fetch is used for two things:
             don't need two whole objects, just two cursors
         or something
 
+    database.table is just:
+        db (pointer to connection)
+        cursor (need one per view)
+        collection of statement strings
+
+review fixme
+
 add alternate indexes
 
 finish series, title
