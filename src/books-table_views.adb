@@ -680,8 +680,22 @@ package body Books.Table_Views is
    procedure On_Window_Destroy (Object : access Gtk.Object.Gtk_Object_Record'Class)
    is
       Table_View : constant Gtk_Table_View := Gtk_Table_View (Object);
+      use type Books.Database.Data_Tables.Table_Access;
    begin
       Free (Table_View.Private_Stuff);
+
+      for I in Table_View.Siblings'Range loop
+         if Table_View.Siblings (I) /= null then
+            Books.Database.Free (Books.Database.Table_Access (Table_View.Siblings (I)));
+         end if;
+      end loop;
+      for I in Table_View.Links'Range (1) loop
+         for J in Table_View.Links'Range (2) loop
+            if Table_View.Links (I, J) /= null then
+               Books.Database.Free (Books.Database.Table_Access (Table_View.Links (I, J)));
+            end if;
+         end loop;
+      end loop;
    end On_Window_Destroy;
 
    procedure Set_Sibling_Views

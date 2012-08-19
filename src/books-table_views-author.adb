@@ -19,6 +19,10 @@
 pragma License (GPL);
 
 with Books.Database.Data_Tables.Author;
+with Books.Database.Data_Tables.Collection;
+with Books.Database.Data_Tables.Series;
+with Books.Database.Data_Tables.Title;
+with Books.Database.Link_Tables;
 with Books.List_Views.Collection;
 with Books.List_Views.Series;
 with Books.List_Views.Title;
@@ -98,19 +102,28 @@ package body Books.Table_Views.Author is
 
    procedure Gtk_New
      (Author_View :    out Gtk_Author_View;
-      Parameters  : in     Create_Parameters_Type)
+      DB          : in     Books.Database.Database_Access;
+      Config      : in     SAL.Config_Files.Configuration_Access_Type)
    is
       use Books.Database;
    begin
       Author_View := new Gtk_Author_View_Record;
 
-      Author_View.Siblings := Parameters.Siblings;
-      Author_View.Links    := Parameters.Links;
+      Author_View.Siblings (Title)      := new Data_Tables.Title.Table (DB);
+      Author_View.Siblings (Collection) := new Data_Tables.Collection.Table (DB);
+      Author_View.Siblings (Series)     := new Data_Tables.Series.Table (DB);
+
+      Author_View.Links (Books.Author, Collection) := new Link_Tables.Table
+        (new Link_Tables.Link_Names'(Books.Author, Collection), DB);
+      Author_View.Links (Books.Author, Series)     := new Link_Tables.Table
+        (new Link_Tables.Link_Names'(Books.Author, Series), DB);
+      Author_View.Links (Books.Author, Title)      := new Link_Tables.Table
+        (new Link_Tables.Link_Names'(Books.Author, Title), DB);
 
       Author_View.Primary_Kind  := Books.Author;
-      Author_View.Primary_Table := Data_Tables.Table_Access (Author_View.Siblings (Books.Author));
+      Author_View.Primary_Table := new Data_Tables.Author.Table (DB);
 
-      Author.Create_GUI (Author_View, Parameters.Config);
+      Author.Create_GUI (Author_View, Config);
 
       Gtk.Radio_Button.Set_Active (Author_View.List_Select (Title), True);
 

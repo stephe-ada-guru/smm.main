@@ -2,7 +2,7 @@
 --
 --  Main program for Books.
 --
---  Copyright (C) 2002, 2004, 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002, 2004, 2009, 2012 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -15,7 +15,8 @@
 --  License distributed with this program; see file COPYING. If not,
 --  write to the Free Software Foundation, 59 Temple Place - Suite
 --  330, Boston, MA 02111-1307, USA.
---
+
+pragma License (GPL);
 
 with Ada.Command_Line;
 with Ada.Exceptions;
@@ -26,7 +27,6 @@ with SAL.Traceback;
 procedure Books.Main
 is
    Main_Window : Books.Main_Window.Gtk_Window;
-
 begin
    Gtk.Main.Set_Locale;
    Gtk.Main.Init;

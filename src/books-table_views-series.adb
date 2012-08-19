@@ -18,7 +18,10 @@
 
 pragma License (GPL);
 
+with Books.Database.Data_Tables.Author;
 with Books.Database.Data_Tables.Series;
+with Books.Database.Data_Tables.Title;
+with Books.Database.Link_Tables;
 with Books.List_Views.Author;
 with Books.List_Views.Title;
 with Gtk.Enums;
@@ -77,19 +80,25 @@ package body Books.Table_Views.Series is
 
    procedure Gtk_New
      (Series_View :    out Gtk_Series_View;
-      Parameters  : in     Create_Parameters_Type)
+      DB          : in     Books.Database.Database_Access;
+      Config      : in     SAL.Config_Files.Configuration_Access_Type)
    is
       use Books.Database;
    begin
       Series_View := new Gtk_Series_View_Record;
 
-      Series_View.Siblings := Parameters.Siblings;
-      Series_View.Links    := Parameters.Links;
+      Series_View.Siblings (Author) := new Data_Tables.Author.Table (DB);
+      Series_View.Siblings (Title)  := new Data_Tables.Title.Table (DB);
+
+      Series_View.Links (Author, Books.Series) := new Link_Tables.Table
+        (new Link_Tables.Link_Names'(Author, Books.Series), DB);
+      Series_View.Links (Books.Series, Title)  := new Link_Tables.Table
+        (new Link_Tables.Link_Names'(Books.Series, Title), DB);
 
       Series_View.Primary_Kind  := Books.Series;
-      Series_View.Primary_Table := Data_Tables.Table_Access (Series_View.Siblings (Books.Series));
+      Series_View.Primary_Table := new Data_Tables.Series.Table (DB);
 
-      Series.Create_GUI (Series_View, Parameters.Config);
+      Series.Create_GUI (Series_View, Config);
 
       Gtk.Radio_Button.Set_Active (Series_View.List_Select (Title), True);
 

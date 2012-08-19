@@ -2,7 +2,7 @@
 --
 --  Main window for Books application
 --
---  Copyright (C) 2002, 2004, 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002, 2004, 2009, 2012 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -16,11 +16,15 @@
 --  the Free Software Foundation, 59 Temple Place - Suite 330, Boston,
 --  MA 02111-1307, USA.
 
+pragma License (GPL);
+
+with Books.Database;
 with Books.Table_Views.Author;
 with Books.Table_Views.Collection;
 with Books.Table_Views.Series;
 with Books.Table_Views.Title;
 with Gtk.Window;
+with SAL.Config_Files;
 package Books.Main_Window is
 
    type Gtk_Window_Record is new Gtk.Window.Gtk_Window_Record with record
@@ -30,14 +34,13 @@ package Books.Main_Window is
       Collection_View : Books.Table_Views.Collection.Gtk_Collection_View;
       Series_View     : Books.Table_Views.Series.Gtk_Series_View;
 
-      --  other
-      Parameters : Books.Table_Views.Create_Parameters_Type;
+      DB     : Books.Database.Database_Access;
+      Config : SAL.Config_Files.Configuration_Access_Type;
    end record;
    type Gtk_Window is access all Gtk_Window_Record'Class;
 
    procedure Gtk_New
      (Window      :    out Gtk_Window;
       Config_File : in     String     := "books.config");
-
 
 end Books.Main_Window;

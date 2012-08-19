@@ -18,7 +18,11 @@
 
 pragma License (GPL);
 
+with Books.Database.Data_Tables.Author;
 with Books.Database.Data_Tables.Collection;
+with Books.Database.Data_Tables.Series;
+with Books.Database.Data_Tables.Title;
+with Books.Database.Link_Tables;
 with Books.List_Views.Author;
 with Books.List_Views.Title;
 with Gtk.Enums;
@@ -90,19 +94,26 @@ package body Books.Table_Views.Collection is
 
    procedure Gtk_New
      (Collection_View :    out Gtk_Collection_View;
-      Parameters      : in     Create_Parameters_Type)
+      DB              : in     Books.Database.Database_Access;
+      Config          : in     SAL.Config_Files.Configuration_Access_Type)
    is
       use Books.Database;
    begin
       Collection_View := new Gtk_Collection_View_Record;
 
-      Collection.Create_GUI (Collection_View, Parameters.Config);
+      Collection_View.Siblings (Author) := new Data_Tables.Author.Table (DB);
+      Collection_View.Siblings (Title)  := new Data_Tables.Title.Table (DB);
+      Collection_View.Siblings (Series) := new Data_Tables.Series.Table (DB);
 
-      Collection_View.Siblings := Parameters.Siblings;
-      Collection_View.Links    := Parameters.Links;
+      Collection_View.Links (Author, Books.Collection) := new Link_Tables.Table
+        (new Link_Tables.Link_Names'(Author, Books.Collection), DB);
+      Collection_View.Links (Books.Collection, Title)  := new Link_Tables.Table
+        (new Link_Tables.Link_Names'(Books.Collection, Title), DB);
 
       Collection_View.Primary_Kind  := Books.Collection;
-      Collection_View.Primary_Table := Data_Tables.Table_Access (Collection_View.Siblings (Books.Collection));
+      Collection_View.Primary_Table := new Data_Tables.Collection.Table (DB);
+
+      Collection.Create_GUI (Collection_View, Config);
 
       Gtk.Radio_Button.Set_Active (Collection_View.List_Select (Title), True);
 

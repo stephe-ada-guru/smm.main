@@ -36,14 +36,6 @@ package Books.Table_Views is
 
    type Table_Array_Table_View_Type is array (Table_Names) of Gtk_Table_View;
 
-   type Create_Parameters_Type is record
-      --  used by child Gtk_New procedures
-      DB       : Books.Database.Database_Access;
-      Siblings : Table_Arrays;
-      Links    : Link_Arrays;
-      Config   : SAL.Config_Files.Configuration_Access_Type;
-   end record;
-
    ----------
    --  New class-wide operations.
 

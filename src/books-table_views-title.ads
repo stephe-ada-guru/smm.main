@@ -15,7 +15,8 @@
 --  distributed with this program; see file COPYING. If not, write to
 --  the Free Software Foundation, 59 Temple Place - Suite 330, Boston,
 --  MA 02111-1307, USA.
---
+
+pragma License (GPL);
 
 with Ada.Strings.Unbounded;
 with Books.Database;
@@ -28,7 +29,8 @@ package Books.Table_Views.Title is
 
    procedure Gtk_New
      (Title_View :    out Gtk_Title_View;
-      Parameters : in     Create_Parameters_Type);
+      DB         : in     Books.Database.Database_Access;
+      Config     : in     SAL.Config_Files.Configuration_Access_Type);
 
    overriding procedure Create_List_View (Table_View : access Gtk_Title_View_Record; List : in Table_Names);
    overriding procedure Default_Add (Title_View : access Gtk_Title_View_Record);

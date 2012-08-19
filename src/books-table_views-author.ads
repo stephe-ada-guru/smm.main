@@ -27,8 +27,9 @@ package Books.Table_Views.Author is
    type Gtk_Author_View is access all Gtk_Author_View_Record'Class;
 
    procedure Gtk_New
-     (Author_View :    out Gtk_Author_View;
-      Parameters  : in     Create_Parameters_Type);
+     (Author_View : out Gtk_Author_View;
+      DB          : in     Books.Database.Database_Access;
+      Config      : in     SAL.Config_Files.Configuration_Access_Type);
 
    overriding procedure Create_List_View (Table_View : access Gtk_Author_View_Record; List : in Table_Names);
    overriding procedure Default_Add (Author_View : access Gtk_Author_View_Record);

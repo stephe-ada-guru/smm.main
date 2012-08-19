@@ -18,7 +18,11 @@
 
 pragma License (GPL);
 
+with Books.Database.Data_Tables.Author;
+with Books.Database.Data_Tables.Collection;
+with Books.Database.Data_Tables.Series;
 with Books.Database.Data_Tables.Title;
+with Books.Database.Link_Tables;
 with Books.List_Views.Author;
 with Books.List_Views.Collection;
 with Books.List_Views.Series;
@@ -105,17 +109,28 @@ package body Books.Table_Views.Title is
 
    procedure Gtk_New
      (Title_View :    out Gtk_Title_View;
-      Parameters : in     Create_Parameters_Type)
-   is begin
+      DB         : in     Books.Database.Database_Access;
+      Config     : in     SAL.Config_Files.Configuration_Access_Type)
+   is
+      use Books.Database;
+   begin
       Title_View := new Gtk_Title_View_Record;
 
-      Title_View.Siblings := Parameters.Siblings;
-      Title_View.Links    := Parameters.Links;
+      Title_View.Siblings (Author)     := new Data_Tables.Author.Table (DB);
+      Title_View.Siblings (Collection) := new Data_Tables.Collection.Table (DB);
+      Title_View.Siblings (Series)     := new Data_Tables.Series.Table (DB);
+
+      Title_View.Links (Author, Books.Title)     := new Link_Tables.Table
+        (new Link_Tables.Link_Names'(Author, Books.Title), DB);
+      Title_View.Links (Collection, Books.Title) := new Link_Tables.Table
+        (new Link_Tables.Link_Names'(Collection, Books.Title), DB);
+      Title_View.Links (Series, Books.Title)     := new Link_Tables.Table
+        (new Link_Tables.Link_Names'(Series, Books.Title), DB);
 
       Title_View.Primary_Kind  := Books.Title;
-      Title_View.Primary_Table := Database.Data_Tables.Table_Access (Title_View.Siblings (Books.Title));
+      Title_View.Primary_Table := new Data_Tables.Title.Table (DB);
 
-      Title.Create_GUI (Title_View, Parameters.Config);
+      Title.Create_GUI (Title_View, Config);
 
       Gtk.Radio_Button.Set_Active (Title_View.List_Select (Series), True);
       Gtk.Radio_Button.Set_Active (Title_View.List_Select (Author), True);

@@ -19,12 +19,6 @@
 pragma License (GPL);
 
 with Ada.Text_IO;
-with Books.Database.Data_Tables.Author;
-with Books.Database.Data_Tables.Collection;
-with Books.Database.Data_Tables.Series;
-with Books.Database.Data_Tables.Title;
-with Books.Database.Link_Tables;
-with Books.Database;
 with Gdk.Event;
 with Gdk.Window;
 with Gtk.Enums;
@@ -33,45 +27,7 @@ with Gtk.Object.Signal;
 with Gtk.Widget.Signal;
 with Gtk.Window.Config;
 with Gtk.Window.Signal;
-with SAL.Config_Files;
 package body Books.Main_Window is
-
-   procedure Create_Tables
-     (DB       : in     Books.Database.Database_Access;
-      Siblings :    out Table_Arrays;
-      Links    :    out Link_Arrays)
-   is
-      use Books.Database.Link_Tables;
-      use type Books.Database.Data_Tables.Table_Access;
-   begin
-      Siblings (Author)          := new Books.Database.Data_Tables.Author.Table (DB);
-      Siblings (Title)           := new Books.Database.Data_Tables.Title.Table (DB);
-      Siblings (Collection)      := new Books.Database.Data_Tables.Collection.Table (DB);
-      Siblings (Series)          := new Books.Database.Data_Tables.Series.Table (DB);
-      Links (Author, Collection) := new Books.Database.Link_Tables.Table (new Link_Names'(Author, Collection), DB);
-      Links (Author, Series)     := new Books.Database.Link_Tables.Table (new Link_Names'(Author, Series), DB);
-      Links (Author, Title)      := new Books.Database.Link_Tables.Table (new Link_Names'(Author, Title), DB);
-      Links (Collection, Title)  := new Books.Database.Link_Tables.Table (new Link_Names'(Collection, Title), DB);
-      Links (Series, Title)      := new Books.Database.Link_Tables.Table (new Link_Names'(Series, Title), DB);
-   end Create_Tables;
-
-   procedure Free_Tables
-     (Siblings : in out Table_Arrays;
-      Links    : in out Link_Arrays)
-   is
-      use type Books.Database.Data_Tables.Table_Access;
-   begin
-      if Siblings (Author) /= null then
-         for I in Siblings'Range loop
-            Books.Database.Free (Books.Database.Table_Access (Siblings (I)));
-         end loop;
-         for I in Links'Range (1) loop
-            for J in Links'Range (2) loop
-               Books.Database.Free (Books.Database.Table_Access (Links (I, J)));
-            end loop;
-         end loop;
-      end if;
-   end Free_Tables;
 
    function On_Window_Configure_Event
      (Widget : access Gtk.Widget.Gtk_Widget_Record'Class;
@@ -81,7 +37,7 @@ package body Books.Main_Window is
       pragma Unreferenced (Event);
       Window : constant Gtk_Window := Gtk_Window (Widget);
    begin
-      Gtk.Window.Config.Save_Geometry (Window, Window.Parameters.Config.all, "Main");
+      Gtk.Window.Config.Save_Geometry (Window, Window.Config.all, "Main");
       return False; --  propagate signal
    end On_Window_Configure_Event;
 
@@ -104,15 +60,13 @@ package body Books.Main_Window is
          Window.Author_View := null;
       end if;
 
-      Free_Tables (Window.Parameters.Siblings, Window.Parameters.Links);
-
-      if Window.Parameters.DB /= null then
-         Books.Database.Free (Window.Parameters.DB);
+      if Window.DB /= null then
+         Books.Database.Free (Window.DB);
       end if;
 
-      if Window.Parameters.Config /= null then
-         SAL.Config_Files.Close (Window.Parameters.Config.all);
-         SAL.Config_Files.Free (Window.Parameters.Config);
+      if Window.Config /= null then
+         SAL.Config_Files.Close (Window.Config.all);
+         SAL.Config_Files.Free (Window.Config);
       end if;
 
       Gtk.Main.Main_Quit;
@@ -157,54 +111,52 @@ package body Books.Main_Window is
    begin
       --  Connect to the database first, so the various table
       --  interfaces can get the initial data.
-      if Window.Parameters.Config = null then
-         Window.Parameters.Config := new SAL.Config_Files.Configuration_Type;
+      if Window.Config = null then
+         Window.Config := new SAL.Config_Files.Configuration_Type;
 
          --  We save window positions in the config file, so it is not
          --  read-only.
-         SAL.Config_Files.Open (Window.Parameters.Config.all, Config_File, Read_Only => False);
+         SAL.Config_Files.Open (Window.Config.all, Config_File, Read_Only => False);
          Ada.Text_IO.Put_Line
-           ("using config file " & SAL.Config_Files.Writeable_File_Name (Window.Parameters.Config.all));
+           ("using config file " & SAL.Config_Files.Writeable_File_Name (Window.Config.all));
       end if;
 
-      if Window.Parameters.DB = null then
-         Window.Parameters.DB := new Books.Database.Database (Window.Parameters.Config);
+      if Window.DB = null then
+         Window.DB := new Books.Database.Database (Window.Config);
       end if;
 
       Gtk.Window.Initialize (Window, Window_Toplevel);
       Set_Title (Window, "Books");
       Gtk.Window.Config.Set_Geometry
-        (Window, Window.Parameters.Config.all, "Main", Default => (10, 10, 50, 50));
+        (Window, Window.Config.all, "Main", Default => (10, 10, 50, 50));
 
       Gtk.Window.Signal.Connect_Configure_Event (Window, On_Window_Configure_Event'Access);
       Gtk.Object.Signal.Connect_Destroy (Window, On_Window_Destroy'Access);
       Gtk.Widget.Signal.Connect_Window_State_Event (Window, On_Window_State_Event'Access);
 
-      Create_Tables (Window.Parameters.DB, Window.Parameters.Siblings, Window.Parameters.Links);
-
-      Books.Table_Views.Author.Gtk_New (Window.Author_View, Window.Parameters);
+      Books.Table_Views.Author.Gtk_New (Window.Author_View, Window.DB, Window.Config);
       Books.Table_Views.Author.Set_Title (Window.Author_View, "Author");
       Books.Table_Views.Author.Show (Window.Author_View);
       Gtk.Window.Config.Set_Geometry
-        (Window.Author_View, Window.Parameters.Config.all, "Author", Default => (10, 10, 150, 250));
+        (Window.Author_View, Window.Config.all, "Author", Default => (10, 10, 150, 250));
 
-      Books.Table_Views.Title.Gtk_New (Window.Title_View, Window.Parameters);
-      Books.Table_Views.Title.Set_Title (Window.Title_View, "Title");
-      Books.Table_Views.Title.Show (Window.Title_View);
-      Gtk.Window.Config.Set_Geometry
-        (Window.Title_View, Window.Parameters.Config.all, "Title", Default => (10, 10, 150, 250));
-
-      Books.Table_Views.Collection.Gtk_New (Window.Collection_View, Window.Parameters);
+      Books.Table_Views.Collection.Gtk_New (Window.Collection_View, Window.DB, Window.Config);
       Books.Table_Views.Collection.Set_Title (Window.Collection_View, "Collection");
       Books.Table_Views.Collection.Show (Window.Collection_View);
       Gtk.Window.Config.Set_Geometry
-        (Window.Collection_View, Window.Parameters.Config.all, "Collection", Default => (10, 10, 150, 250));
+        (Window.Collection_View, Window.Config.all, "Collection", Default => (10, 10, 150, 250));
 
-      Books.Table_Views.Series.Gtk_New (Window.Series_View, Window.Parameters);
+      Books.Table_Views.Series.Gtk_New (Window.Series_View, Window.DB, Window.Config);
       Books.Table_Views.Series.Set_Title (Window.Series_View, "Series");
       Books.Table_Views.Series.Show (Window.Series_View);
       Gtk.Window.Config.Set_Geometry
-        (Window.Series_View, Window.Parameters.Config.all, "Series", Default => (10, 10, 150, 250));
+        (Window.Series_View, Window.Config.all, "Series", Default => (10, 10, 150, 250));
+
+      Books.Table_Views.Title.Gtk_New (Window.Title_View, Window.DB, Window.Config);
+      Books.Table_Views.Title.Set_Title (Window.Title_View, "Title");
+      Books.Table_Views.Title.Show (Window.Title_View);
+      Gtk.Window.Config.Set_Geometry
+        (Window.Title_View, Window.Config.all, "Title", Default => (10, 10, 150, 250));
 
       declare
          Sibling_Views : constant Books.Table_Views.Table_Array_Table_View_Type :=

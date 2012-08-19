@@ -27,7 +27,8 @@ package Books.Table_Views.Collection is
 
    procedure Gtk_New
      (Collection_View :    out Gtk_Collection_View;
-      Parameters      : in     Create_Parameters_Type);
+      DB              : in     Books.Database.Database_Access;
+      Config          : in     SAL.Config_Files.Configuration_Access_Type);
 
    overriding procedure Create_List_View (Table_View : access Gtk_Collection_View_Record; List : in Table_Names);
    overriding procedure Default_Add (Collection_View : access Gtk_Collection_View_Record);
