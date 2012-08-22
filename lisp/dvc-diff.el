@@ -394,7 +394,7 @@ If on a message, mark the group to the next message."
   (let ((fileinfo (dvc-fileinfo-current-fileinfo)))
     (etypecase fileinfo
       (dvc-fileinfo-file
-       (dvc-fileinfo-mark-file))
+       (dvc-fileinfo-mark-file nil))
 
       (dvc-fileinfo-message
        (dvc-diff-mark-group))
@@ -433,7 +433,7 @@ a 'file."
         (if (dvc-fileinfo-file-p fileinfo)
             (if unmark
                 (dvc-fileinfo-unmark-file)
-              (dvc-fileinfo-mark-file))
+              (dvc-fileinfo-mark-file nil))
           ;; legacy
           (if unmark
               (setq dvc-buffer-marked-file-list
