@@ -318,6 +318,8 @@ header."
   ;; resolved_keep_left
   ;; resolved_user_left <file>
   ;; rename can follow user
+  ;;
+  ;; If not recreated, only one resolution, either right or left
 
   (let ((conflict (make-xmtn-conflicts-conflict)))
     (setf (xmtn-conflicts-conflict-conflict_type conflict) 'dropped_modified)
@@ -359,47 +361,32 @@ header."
      (t
       (error "unsupported right_type %s" (xmtn-conflicts-conflict-right_type conflict))))
 
-    ;; look for a left resolution
-    (case (xmtn-basic-io--peek)
-      ((empty eof) nil)
-      (t
-       (xmtn-basic-io-parse-line
-        (cond
-          ((string= "resolved_keep_left" symbol)
-           (setf (xmtn-conflicts-conflict-left_resolution conflict) (list 'resolved_keep)))
-          ((string= "resolved_drop_left" symbol)
-           (setf (xmtn-conflicts-conflict-left_resolution conflict) (list 'resolved_drop)))
-          ((string= "resolved_user_left" symbol)
-           (setf (xmtn-conflicts-conflict-left_resolution conflict) (list 'resolved_user (cadar value))))
-          ((string= "resolved_rename_left" symbol)
-           (setf (xmtn-conflicts-conflict-left_resolution conflict) (list 'resolved_rename (cadar value))))
-          (t
-           (error "unsupported left_resolution %s" symbol))))
+    ;; look for resolutions
+    (while  (not (memq (xmtn-basic-io--peek) '(empty eof)))
+      (xmtn-basic-io-optional-line "resolved_keep_left"
+	(setf (xmtn-conflicts-conflict-left_resolution conflict) (list 'resolved_keep)))
 
-       (if (eq (car (xmtn-conflicts-conflict-left_resolution conflict) 'resolved_user))
-	   (xmtn-basic-io-optional-line "resolved_rename_left"
-	     (setf (xmtn-conflicts-conflict-left_resolution conflict) (list 'resolved_rename (cadar value)))))))
+      (xmtn-basic-io-optional-line "resolved_drop_left"
+	(setf (xmtn-conflicts-conflict-left_resolution conflict) (list 'resolved_drop)))
 
-    ;; look for a right resolution
-    (case (xmtn-basic-io--peek)
-      ((empty eof) nil)
-      (t
-       (xmtn-basic-io-parse-line
-        (cond
-          ((string= "resolved_keep_right" symbol)
-           (setf (xmtn-conflicts-conflict-right_resolution conflict) (list 'resolved_keep)))
-          ((string= "resolved_drop_right" symbol)
-           (setf (xmtn-conflicts-conflict-right_resolution conflict) (list 'resolved_drop)))
-          ((string= "resolved_user_right" symbol)
-           (setf (xmtn-conflicts-conflict-right_resolution conflict) (list 'resolved_user (cadar value))))
-          ((string= "resolved_rename_right" symbol)
-           (setf (xmtn-conflicts-conflict-right_resolution conflict) (list 'resolved_rename (cadar value))))
-          (t
-           (error "unsupported right_resolution %s" symbol))))
+      (xmtn-basic-io-optional-line "resolved_user_left"
+	(setf (xmtn-conflicts-conflict-left_resolution conflict) (list 'resolved_user (cadar value))))
 
-	(if (eq (car (xmtn-conflicts-conflict-right_resolution conflict)) 'resolved_user)
-	    (xmtn-basic-io-optional-line "resolved_rename_right"
-	      (setf (xmtn-conflicts-conflict-right_resolution conflict) (list 'resolved_rename (cadar value)))))))
+      (xmtn-basic-io-optional-line "resolved_rename_left"
+	(setf (xmtn-conflicts-conflict-left_resolution conflict) (list 'resolved_rename (cadar value))))
+
+      (xmtn-basic-io-optional-line "resolved_keep_right"
+	(setf (xmtn-conflicts-conflict-right_resolution conflict) (list 'resolved_keep)))
+
+      (xmtn-basic-io-optional-line "resolved_drop_right"
+	(setf (xmtn-conflicts-conflict-right_resolution conflict) (list 'resolved_drop)))
+
+      (xmtn-basic-io-optional-line "resolved_user_right"
+	(setf (xmtn-conflicts-conflict-right_resolution conflict) (list 'resolved_user (cadar value))))
+
+      (xmtn-basic-io-optional-line "resolved_rename_right"
+	(setf (xmtn-conflicts-conflict-right_resolution conflict) (list 'resolved_rename (cadar value))))
+      )
 
     (setq xmtn-conflicts-total-count (+ 1 xmtn-conflicts-total-count))
     (if (and (xmtn-conflicts-conflict-left_resolution conflict)
