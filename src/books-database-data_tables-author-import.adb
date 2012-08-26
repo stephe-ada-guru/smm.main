@@ -46,22 +46,38 @@ begin
          Middle_Name : aliased constant String := Unquote (Read (File, 3));
          Last_Name   : aliased constant String := Unquote (Read (File, 4));
       begin
-         Author_Table.Insert (First_Name, Middle_Name, Last_Name);
+         begin
+            Author_Table.Insert (First_Name, Middle_Name, Last_Name);
+         exception
+         when Entry_Error =>
+            --  Presumably a duplicate name; find it, map a second old id to it
+            New_Line;
+            --  GNATCOLL.Fetch outputs a nice error message for the failed insert
+         end;
 
-         Author_ID_Map.Add ((Old_ID, Author_Table.ID));
-      exception
-      when Entry_Error =>
-         New_Line;
-         --  GNATCOLL.Fetch outputs a nice error message for the failed insert
-
-         --  Presumably a duplicate name; find it, map both old ids to it
-         Checked_Execute
-           (Author_Table.all,
-            "SELECT ID, First, Middle, Last FROM Author WHERE First = ? and Middle = ? and Last = ?",
-            (+First_Name'Unchecked_Access, +Middle_Name'Unchecked_Access, +Last_Name'Unchecked_Access));
+         --  FIXME: use Exec.Last_ID?
+         if Middle_Name'Length > 0 then
+            Find
+              (Author_Table.all,
+               "SELECT ID, First, Middle, Last FROM Author WHERE First = ? and Middle = ? and Last = ?",
+               (+First_Name'Unchecked_Access, +Middle_Name'Unchecked_Access, +Last_Name'Unchecked_Access));
+         else
+            Find
+              (Author_Table.all,
+               "SELECT ID, First, Middle, Last FROM Author WHERE First = ? and Last = ?",
+               (+First_Name'Unchecked_Access, +Last_Name'Unchecked_Access));
+         end if;
 
          if Author_Table.Valid then
+            --  At this point, either the newly inserted, or another matching, record is current
             Author_ID_Map.Add ((Old_ID, Author_Table.ID));
+         else
+            --  Some other error occurred; one of the above statements
+            --  should have raised an exception that was not handled.
+            --  But just in case:
+            raise SAL.Programmer_Error with Integer'Image (Old_ID) & ", '" &
+              First_Name & "', '" & Middle_Name & "', '" & Last_Name &
+              "' not found in Authors";
          end if;
       end;
 

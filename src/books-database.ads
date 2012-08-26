@@ -102,13 +102,16 @@ private
      (T         : in out Table'Class;
       Statement : in     String;
       Params    : in     GNATCOLL.SQL.Exec.SQL_Parameters := GNATCOLL.SQL.Exec.No_Parameters);
-   --  Execute Statement, catch GNU.DB.SQLCLI.Database_Error, check
-   --  error message, convert to Entry_Error if recognized.
+   --  Execute Statement, then commit. Statement should be insert or
+   --  delete, not select (does not set Cursor).
+   --
+   --  Raises Entry_Error if statement fails.
 
    procedure Find
      (T         : in out Table'Class;
       Statement : in     String;
       Params    : in     GNATCOLL.SQL.Exec.SQL_Parameters := GNATCOLL.SQL.Exec.No_Parameters);
-   --  Execute statement, call Next.
+   --  Execute statement, set Cursor; Cursor is at first record in
+   --  result. Statement should be select.
 
 end Books.Database;

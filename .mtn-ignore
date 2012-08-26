@@ -2,6 +2,8 @@
 ^backup$
 ^build/x86_gnu_windows_debug/.*\.diff$
 ^build/x86_gnu_windows_debug/.*\.out$
+^build/x86_gnu_windows_debug/author\.csv$
+^build/x86_gnu_windows_debug/books\.db$
 ^build/x86_gnu_windows_debug/objects$
 ^build/x86_gnu_windows_release/.*\.diff$
 ^build/x86_gnu_windows_release/.*\.out$

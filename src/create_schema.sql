@@ -66,4 +66,7 @@ CREATE TABLE CollectionTitle
 CREATE INDEX CollectionTitle_Collection on CollectionTitle (Collection);
 CREATE INDEX CollectionTitle_Title on CollectionTitle (Title);
 
+--  .exit here does not cause sqlite3 to leave interactive mode.
+--  Providing a useless statement on the sqlite3 command line does.
+
 -- end of file

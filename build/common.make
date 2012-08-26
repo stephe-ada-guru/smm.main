@@ -2,9 +2,9 @@ books.exe : books-main.exe
 
 tests : test_books-all_harness.diff
 
-# this doesn't terminate (it enters interactive mode), but it works
+# the 'select' statement makes sqlite3 terminate instead of entering interactive mode
 create_books_db :
-	sqlite3 -echo -init ../../src/create_schema.sql ~/.books/books.db
+	sqlite3 -echo -init ../../src/create_schema.sql ~/.books/books.db "select * from Author"
 
 clean_books_db :
 	rm ~/.books/books.db

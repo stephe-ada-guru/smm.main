@@ -23,6 +23,7 @@ with Ada.Exceptions;
 with Ada.Strings.Fixed;
 with Ada.Text_IO;
 with Ada.Unchecked_Deallocation;
+with GNATCOLL.SQL.Exec.Aux;
 with GNATCOLL.SQL.Sqlite;
 with SAL.File_Names;
 package body Books.Database is
@@ -34,11 +35,26 @@ package body Books.Database is
       Statement : in     String;
       Params    : in     GNATCOLL.SQL.Exec.SQL_Parameters := GNATCOLL.SQL.Exec.No_Parameters)
    is begin
-      GNATCOLL.SQL.Exec.Fetch (T.Cursor, T.DB.Connection, Statement, Params);
+      GNATCOLL.SQL.Exec.Execute (T.DB.Connection, Statement, Params);
 
-      GNATCOLL.SQL.Exec.Commit_Or_Rollback (T.DB.Connection);
-      if not T.DB.Connection.Success then
-         raise Entry_Error with T.DB.Connection.Error;
+      if T.DB.Connection.Success then
+         GNATCOLL.SQL.Exec.Commit (T.DB.Connection);
+      else
+         declare
+            Msg : constant String := T.DB.Connection.Error;
+         begin
+            --  GNATCOLL SQLite has obscure behavior with respect to
+            --  cursors and rollback; if a cursor is active, it prevents
+            --  Rollback from working (SQLite reports "database locked").
+            --  It doesn't prevent a successful INSERT. So we have to
+            --  Finalize any cursor before calling Rollback. Another
+            --  GNATCOLL quirk makes Finalize (Cursor) not visible, so we
+            --  use our own GNATCOLL.SQL.Exec.Aux
+            GNATCOLL.SQL.Exec.Aux.Finalize (T.Cursor);
+            GNATCOLL.SQL.Exec.Rollback (T.DB.Connection);
+
+            raise Entry_Error with Msg;
+         end;
       end if;
    end Checked_Execute;
 
@@ -73,8 +89,11 @@ package body Books.Database is
       Statement : in     String;
       Params    : in     GNATCOLL.SQL.Exec.SQL_Parameters := GNATCOLL.SQL.Exec.No_Parameters)
    is begin
-      Checked_Execute (T, Statement, Params);
-      Next (T);
+      GNATCOLL.SQL.Exec.Fetch (T.Cursor, T.DB.Connection, Statement, Params);
+
+      if not T.DB.Connection.Success then
+         raise Entry_Error with T.DB.Connection.Error; --  FIXME: bad exception name
+      end if;
    end Find;
 
    procedure Free (Pointer : in out Database_Access)

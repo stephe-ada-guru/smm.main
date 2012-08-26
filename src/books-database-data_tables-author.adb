@@ -50,12 +50,6 @@ package body Books.Database.Data_Tables.Author is
         (T,
          "INSERT INTO Author (First, Middle, Last) VALUES (?, ?, ?)",
          (+First'Unchecked_Access, +Middle'Unchecked_Access, +Last'Unchecked_Access));
-
-      Checked_Execute
-        (T,
-         "SELECT ID, First, Middle, Last FROM Author WHERE First = ? and Middle = ? and Last = ?",
-         (+First'Unchecked_Access, +Middle'Unchecked_Access, +Last'Unchecked_Access));
-      --  inserted record is current
    end Insert;
 
    procedure Update
