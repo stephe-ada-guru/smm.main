@@ -19,12 +19,16 @@
 pragma License (GPL);
 
 with Books.Database;
+with Books.Database.Link_Tables;
 package Books.List_Views.Author is
 
    type Gtk_Author_List_Record is new Gtk_List_View_Record with null record;
    type Gtk_Author_List is access all Gtk_Author_List_Record'Class;
 
-   procedure Gtk_New (Author_View : out Gtk_List_View);
+   procedure Gtk_New
+     (Author_View   :    out Gtk_List_View;
+      Links         : access Books.Database.Link_Tables.Table;
+      Primary_Index : in     Books.Database.Link_Tables.Link_Index);
 
    overriding procedure Insert_List_Row
      (List_View : access Gtk_Author_List_Record;

@@ -72,6 +72,7 @@ package body Books.Table_Views.Author is
       Gtk.Check_Button.Hide (Author_View.Links_Buttons (Collection));
 
       Gtk.Radio_Button.Hide (Author_View.List_Select (Books.Author));
+
    end Create_GUI;
 
    overriding procedure Create_List_View (Table_View : access Gtk_Author_View_Record; List : in Table_Names)
@@ -81,13 +82,22 @@ package body Books.Table_Views.Author is
          null;
 
       when Collection =>
-         Books.List_Views.Collection.Gtk_New (Table_View.List_Display (Collection));
+         Books.List_Views.Collection.Gtk_New
+           (Table_View.List_Display (Collection),
+            Table_View.Links (Books.Author, Collection),
+            Primary_Index => 1);
 
       when Series =>
-         Books.List_Views.Series.Gtk_New (Table_View.List_Display (Series));
+         Books.List_Views.Series.Gtk_New
+           (Table_View.List_Display (Series),
+            Table_View.Links (Books.Author, Series),
+            Primary_Index => 1);
 
       when Title =>
-         Books.List_Views.Title.Gtk_New (Table_View.List_Display (Title));
+         Books.List_Views.Title.Gtk_New
+           (Table_View.List_Display (Title),
+            Table_View.Links (Books.Author, Title),
+            Primary_Index => 1);
 
       end case;
    end Create_List_View;
@@ -125,7 +135,9 @@ package body Books.Table_Views.Author is
 
       Author.Create_GUI (Author_View, Config);
 
-      Gtk.Radio_Button.Set_Active (Author_View.List_Select (Title), True);
+      Author_View.Current_List := Title;
+
+      Gtk.Radio_Button.Set_Active (Author_View.List_Select (Author_View.Current_List), True);
 
       To_Main (Author_View);
 

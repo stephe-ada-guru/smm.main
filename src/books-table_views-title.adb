@@ -85,13 +85,22 @@ package body Books.Table_Views.Title is
    is begin
       case List is
       when Author =>
-         Books.List_Views.Author.Gtk_New (Table_View.List_Display (Author));
+         Books.List_Views.Author.Gtk_New
+           (Table_View.List_Display (Author),
+            Table_View.Links (Author, Books.Title),
+            Primary_Index => 2);
 
       when Collection =>
-         Books.List_Views.Collection.Gtk_New (Table_View.List_Display (Collection));
+         Books.List_Views.Collection.Gtk_New
+           (Table_View.List_Display (Collection),
+            Table_View.Links (Collection, Books.Title),
+            Primary_Index => 2);
 
       when Series =>
-         Books.List_Views.Series.Gtk_New (Table_View.List_Display (Series));
+         Books.List_Views.Series.Gtk_New
+           (Table_View.List_Display (Series),
+            Table_View.Links (Series, Books.Title),
+            Primary_Index => 2);
 
       when Books.Title =>
          null;
@@ -132,8 +141,9 @@ package body Books.Table_Views.Title is
 
       Title.Create_GUI (Title_View, Config);
 
-      Gtk.Radio_Button.Set_Active (Title_View.List_Select (Series), True);
-      Gtk.Radio_Button.Set_Active (Title_View.List_Select (Author), True);
+      Title_View.Current_List := Author;
+
+      Gtk.Radio_Button.Set_Active (Title_View.List_Select (Title_View.Current_List), True);
 
       To_Main (Title_View);
 

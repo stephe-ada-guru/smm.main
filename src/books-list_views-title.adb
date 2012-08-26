@@ -22,15 +22,23 @@ with Books.Database.Data_Tables.Title;
 with Interfaces.C.Strings;
 package body Books.List_Views.Title is
 
-   procedure Gtk_New (Title_View : out Gtk_List_View)
-   is begin
+   procedure Gtk_New
+     (Title_View    :    out Gtk_List_View;
+      Links         : access Books.Database.Link_Tables.Table;
+      Primary_Index : in     Books.Database.Link_Tables.Link_Index)
+   is
+      Clist : Gtk.Clist.Gtk_Clist;
+   begin
       Gtk.Clist.Gtk_New
-        (Gtk.Clist.Gtk_Clist (Title_View),
+        (Clist,
          Columns => 3,
          Titles  =>
            (1    => Interfaces.C.Strings.New_String ("ID"),
             2    => Interfaces.C.Strings.New_String ("Title"),
             3    => Interfaces.C.Strings.New_String ("Year")));
+
+      Title_View := new Gtk_Title_List_Record'
+        (Gtk.Clist.Gtk_Clist_Record (Clist.all) with Links, Primary_Index);
    end Gtk_New;
 
    overriding procedure Insert_List_Row

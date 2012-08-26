@@ -152,6 +152,7 @@ package body Books.Table_Views is
       Config     : in     SAL.Config_Files.Configuration_Access_Type)
    is
       use type Books.List_Views.Gtk_List_View;
+      use type Gtk.Scrolled_Window.Gtk_Scrolled_Window;
 
       Vbox : Gtk.Box.Gtk_Box; -- contains everthing
    begin
@@ -350,10 +351,10 @@ package body Books.Table_Views is
       Show_All (Table_View);
 
       for I in Table_Names loop
-         Gtk.Scrolled_Window.Hide (Table_View.Private_Stuff.List_Display_Scroll (I));
+         if Table_View.Private_Stuff.List_Display_Scroll (I) /= null then
+            Gtk.Scrolled_Window.Hide (Table_View.Private_Stuff.List_Display_Scroll (I));
+         end if;
       end loop;
-
-      To_Main (Table_View);
 
    end Create_GUI;
 

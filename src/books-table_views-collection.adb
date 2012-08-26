@@ -70,7 +70,10 @@ package body Books.Table_Views.Collection is
    is begin
       case List is
       when Author =>
-         Books.List_Views.Author.Gtk_New (Table_View.List_Display (Author));
+         Books.List_Views.Author.Gtk_New
+           (Table_View.List_Display (Author),
+            Table_View.Links (Author, Books.Collection),
+            Primary_Index => 2);
 
       when Books.Collection =>
          null;
@@ -79,7 +82,10 @@ package body Books.Table_Views.Collection is
          null;
 
       when Title =>
-         Books.List_Views.Title.Gtk_New (Table_View.List_Display (Title));
+         Books.List_Views.Title.Gtk_New
+           (Table_View.List_Display (Title),
+            Table_View.Links (Author, Books.Title),
+            Primary_Index => 2);
 
       end case;
 
@@ -115,7 +121,9 @@ package body Books.Table_Views.Collection is
 
       Collection.Create_GUI (Collection_View, Config);
 
-      Gtk.Radio_Button.Set_Active (Collection_View.List_Select (Title), True);
+      Collection_View.Current_List := Title;
+
+      Gtk.Radio_Button.Set_Active (Collection_View.List_Select (Collection_View.Current_List), True);
 
       To_Main (Collection_View);
    end Gtk_New;
