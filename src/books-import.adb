@@ -39,6 +39,7 @@ package body Books.Import is
       Data : constant String := SAL.CSV.Read (File, Column);
    begin
       Value := Integer'Value (Data);
+      Valid := True;
    exception
    when Constraint_Error =>
       Value := 0;

@@ -17,6 +17,10 @@ sqlite command line insert ignores uniqueness!?
 
 get it working!
 
+need delete links with table item
+    delete Bookshelf, paperback collections
+    add binding to title?
+
 fix mote in god's eye series
 
 add rating search, allow for 'unrated'

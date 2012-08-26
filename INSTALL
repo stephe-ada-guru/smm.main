@@ -8,6 +8,8 @@ Cygwin for make, bash, subversion
        http://cygwin.com/setup.exe
 
 GNAT GPL 2012 for Ada, GtkAda, Gnatcoll for SQLite3 binding
+     gdb in this distrib doesn't run under Emacs 23.4.1, so we have to use another gdb, but that works
+     
      http://libre.adacore.com/download/configurations
      gnat-gpl-2012-i686-pc-mingw32-bin.exe
      gtkada-gpl-2.24.2-nt.exe

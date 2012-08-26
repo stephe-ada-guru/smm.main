@@ -55,7 +55,9 @@ begin
             --  GNATCOLL.Fetch outputs a nice error message for the failed insert
          end;
 
-         --  FIXME: use Exec.Last_ID?
+         --  We don't use Last_ID, because we might be looking for the
+         --  previous ID with the same name.
+
          if Middle_Name'Length > 0 then
             Find
               (Author_Table.all,

@@ -40,17 +40,22 @@ package body Books.Database.Data_Tables.Collection is
       Year_Valid : in     Boolean)
    is
       use GNATCOLL.SQL.Exec;
-
-      Statement : constant String := "INSERT INTO Collection (Title, Year) VALUES (?, ?)";
    begin
-      Checked_Execute
-        (T,
-         Statement,
-         Params =>
-           (1 => +new String'(Title),
-            2 => (if Year_Valid then +Year else Null_Parameter)));
+      if Year_Valid then
+         Checked_Execute
+           (T,
+            "INSERT INTO Collection (Title, Year) VALUES (?, ?)",
+            Params =>
+              (1 => +new String'(Title),
+               2 => +Year));
+      else
+         Checked_Execute
+           (T,
+            "INSERT INTO Collection (Title) VALUES (?)",
+            Params =>
+              (1 => +new String'(Title)));
+      end if;
 
-      Find (T, Title);
    end Insert;
 
    procedure Update

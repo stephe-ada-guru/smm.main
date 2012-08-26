@@ -22,13 +22,20 @@ with Ada.Command_Line; use Ada.Command_Line;
 with Ada.Exceptions;
 with Ada.Text_IO;      use Ada.Text_IO;
 with Books.Database.Data_Tables.Author.Import;
-with Books.Database.Data_Tables.Collection;
+with Books.Database.Data_Tables.Collection.Import;
+with Books.Database.Data_Tables.Gen_Import;
 with Books.Database.Data_Tables.Series;
 with Books.Database.Data_Tables.Title;
 with Books.Database.Link_Tables;
 with SAL.Config_Files;
 procedure Books.Import.Main
-is begin
+is
+
+   procedure Import_Collection is new Books.Database.Data_Tables.Gen_Import
+     (Table_Name       => "Collection",
+      Column_Count     => 4, --  ID, Title, Year, editor_id
+      Read_Insert_Find => Books.Database.Data_Tables.Collection.Import.Read_Insert_Find);
+begin
    if Argument_Count /= 2 then
       Put_Line ("usage: books-import-main.exe <config_file> <root_csv_file_path>");
       Put_Line ("config: ");
@@ -59,7 +66,7 @@ is begin
       Links (Series, Title)     := new Link_Tables.Table (new Link_Tables.Link_Names'(Series, Title), DB);
 
       Data_Tables.Author.Import (Root_File_Name);
-      --  Import_Books.Import_Collection (Root_File_Name);
+      Import_Collection (Root_File_Name);
       --  Import_Books.Import_Series (Root_File_Name);
       --  Import_Books.Import_Title (Root_File_Name);
 
