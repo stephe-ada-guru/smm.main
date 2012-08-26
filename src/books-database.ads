@@ -65,6 +65,9 @@ package Books.Database is
      (T           : in Table;
       Field_Index : in GNATCOLL.SQL.Exec.Field_Index)
      return String;
+   --  Return string from Field_Index column of last query.
+   --  First column is index 0.
+   --
    --  Raises No_Data if cursor has no row.
    --  Raises Null_Field if field has no data.
 

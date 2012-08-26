@@ -32,8 +32,6 @@ package body Books.Database.Data_Tables.Title is
       T.Find_By_Name_Statement := new String'
         ("SELECT ID, Title, Year, Comment, Rating FROM Title WHERE Title LIKE ? ORDER BY Title");
 
-      Checked_Execute (T, T.Find_By_Name_Statement.all, Params => (1 => +ID (T))); --  So Next is valid.
-
    end Initialize;
 
    procedure Insert

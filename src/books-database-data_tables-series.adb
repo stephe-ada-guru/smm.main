@@ -29,8 +29,6 @@ package body Books.Database.Data_Tables.Series is
       T.Find_By_ID_Statement := new String'("SELECT ID, Title FROM Series WHERE ID = ?");
 
       T.Find_By_Name_Statement := new String'("SELECT ID, Title FROM Series WHERE Title LIKE ? ORDER BY Title");
-
-      Checked_Execute (T, T.Find_By_Name_Statement.all); --  So Next is valid.
    end Initialize;
 
    procedure Insert

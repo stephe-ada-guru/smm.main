@@ -18,16 +18,16 @@
 
 pragma License (GPL);
 
-with Ada.Text_IO;
+with Ada.Text_IO; use Ada.Text_IO;
 with Books.Import; use Books.Import;
 with SAL.CSV;      use SAL.CSV;
 procedure Books.Database.Data_Tables.Author.Import (Root_File_Name : in String)
 is
-   File_Name : constant String := Root_File_Name & "_author.csv";
+   File_Name : constant String := Root_File_Name & "author.csv";
 
-   File : File_Type;
+   File : SAL.CSV.File_Type;
 begin
-   Ada.Text_IO.Put_Line ("Importing Author table from " & File_Name);
+   Put_Line ("Importing Author table from " & File_Name);
 
    Open (File, File_Name, Max_Row_Size => 1024);
 
@@ -40,14 +40,29 @@ begin
 
    loop
       declare
-         Old_ID : constant Integer := Read (File, 1);
+         use type GNATCOLL.SQL.Exec.SQL_Parameter;
+         Old_ID      : constant Integer        := Read (File, 1);
+         First_Name  : aliased constant String := Unquote (Read (File, 2));
+         Middle_Name : aliased constant String := Unquote (Read (File, 3));
+         Last_Name   : aliased constant String := Unquote (Read (File, 4));
       begin
-         Author_Table.Insert
-           (First_Name  => Read (File, 2),
-            Middle_Name => Read (File, 3),
-            Last_Name   => Read (File, 4));
+         Author_Table.Insert (First_Name, Middle_Name, Last_Name);
 
          Author_ID_Map.Add ((Old_ID, Author_Table.ID));
+      exception
+      when Entry_Error =>
+         New_Line;
+         --  GNATCOLL.Fetch outputs a nice error message for the failed insert
+
+         --  Presumably a duplicate name; find it, map both old ids to it
+         Checked_Execute
+           (Author_Table.all,
+            "SELECT ID, First, Middle, Last FROM Author WHERE First = ? and Middle = ? and Last = ?",
+            (+First_Name'Unchecked_Access, +Middle_Name'Unchecked_Access, +Last_Name'Unchecked_Access));
+
+         if Author_Table.Valid then
+            Author_ID_Map.Add ((Old_ID, Author_Table.ID));
+         end if;
       end;
 
       Warm_Fuzzy;
@@ -58,7 +73,7 @@ begin
 
    end loop;
 
-   Ada.Text_IO.New_Line;
-   Ada.Text_IO.Put_Line (Integer'Image (Warm_Fuzzy_Count) & " authors");
+   New_Line;
+   Put_Line (Integer'Image (Warm_Fuzzy_Count) & " authors");
 
 end Books.Database.Data_Tables.Author.Import;

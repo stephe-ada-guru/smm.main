@@ -18,11 +18,13 @@
 
 pragma License (GPL);
 
+with Ada.Directories;
 with Ada.Exceptions;
 with Ada.Strings.Fixed;
 with Ada.Text_IO;
 with Ada.Unchecked_Deallocation;
 with GNATCOLL.SQL.Sqlite;
+with SAL.File_Names;
 package body Books.Database is
 
    --  Subprogram bodies (alphabetical order)
@@ -34,6 +36,7 @@ package body Books.Database is
    is begin
       GNATCOLL.SQL.Exec.Fetch (T.Cursor, T.DB.Connection, Statement, Params);
 
+      GNATCOLL.SQL.Exec.Commit_Or_Rollback (T.DB.Connection);
       if not T.DB.Connection.Success then
          raise Entry_Error with T.DB.Connection.Error;
       end if;
@@ -44,7 +47,7 @@ package body Books.Database is
       Field_Index : in GNATCOLL.SQL.Exec.Field_Index)
      return String
    is begin
-      if T.Cursor.Has_Row then
+      if not T.Cursor.Has_Row then
          raise No_Data;
       elsif T.Cursor.Is_Null (Field_Index) then
          raise Null_Field;
@@ -105,12 +108,17 @@ package body Books.Database is
    is
       use GNATCOLL.SQL.Exec;
       use SAL.Config_Files;
+      use SAL.File_Names;
 
-      Db_File : constant String := Read (DB.Config.all, "Database_File", "~/.books/books.db");
-      Descrip : constant Database_Description := GNATCOLL.SQL.Sqlite.Setup (Db_File);
+      Db_File     : constant String := Read (DB.Config.all, "Database_File", "$HOME/.books/books.db");
+      Db_File_Abs : constant String := Replace_Environment_Variables (Db_File);
    begin
 
-      DB.Connection := GNATCOLL.SQL.Exec.Build_Connection (Descrip);
+      if not Ada.Directories.Exists (Db_File_Abs) then
+         raise SAL.Config_File_Error with Db_File_Abs & " does not exist";
+      end if;
+
+      DB.Connection := GNATCOLL.SQL.Exec.Build_Connection (GNATCOLL.SQL.Sqlite.Setup (Db_File_Abs));
 
       if not DB.Connection.Success then
          --  This doesn't fail if Db_File doesn't exist; SQLite creates :memory: database?

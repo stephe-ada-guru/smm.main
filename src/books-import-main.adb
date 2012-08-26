@@ -18,9 +18,9 @@
 
 pragma License (GPL);
 
-with Ada.Command_Line;
+with Ada.Command_Line; use Ada.Command_Line;
 with Ada.Exceptions;
-with Ada.Text_IO;
+with Ada.Text_IO;      use Ada.Text_IO;
 with Books.Database.Data_Tables.Author.Import;
 with Books.Database.Data_Tables.Collection;
 with Books.Database.Data_Tables.Series;
@@ -28,24 +28,23 @@ with Books.Database.Data_Tables.Title;
 with Books.Database.Link_Tables;
 with SAL.Config_Files;
 procedure Books.Import.Main
-is
-   Config : constant SAL.Config_Files.Configuration_Access_Type := new SAL.Config_Files.Configuration_Type;
-begin
-   declare
-      use Ada.Command_Line;
-   begin
-      if Argument_Count /= 2 then
-         Ada.Text_IO.Put_Line ("usage: books-import-main.exe <config_file> <root_csv_file_name>");
-         Set_Exit_Status (Failure);
-         return;
-      end if;
-      SAL.Config_Files.Open (Config.all, Argument (1));
-   end;
+is begin
+   if Argument_Count /= 2 then
+      Put_Line ("usage: books-import-main.exe <config_file> <root_csv_file_path>");
+      Put_Line ("config: ");
+      Put_Line ("Database_File, default $HOME/.books/books.db");
+      Set_Exit_Status (Failure);
+      return;
+   end if;
 
    declare
       use Books.Database;
+
+      Config : constant SAL.Config_Files.Configuration_Access_Type := SAL.Config_Files.Open (Argument (1));
+
       Root_File_Name : constant String := Ada.Command_Line.Argument (2);
-      DB             : Database_Access := new Books.Database.Database (Config);
+
+      DB : Database_Access := new Books.Database.Database (Config);
    begin
       Author_Table     := new Data_Tables.Author.Table (DB);
       Title_Table      := new Data_Tables.Title.Table (DB);
@@ -69,9 +68,9 @@ begin
       --  Import_Books.Import_SeriesTitle (Root_File_Name);
    exception
    when E : others =>
-      Ada.Command_Line.Set_Exit_Status (Ada.Command_Line.Failure);
+      Set_Exit_Status (Ada.Command_Line.Failure);
 
-      Ada.Text_IO.Put_Line
+      Put_Line
         ("Exception " &
            Ada.Exceptions.Exception_Name (E) & " " &
            Ada.Exceptions.Exception_Message (E));

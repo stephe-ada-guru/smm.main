@@ -35,7 +35,7 @@ package Books.Database.Data_Tables is
    --
    --  If there is no match, Field will raise No_Data.
 
-   ID_Index : constant GNATCOLL.SQL.Exec.Field_Index := 1;
+   ID_Index : constant GNATCOLL.SQL.Exec.Field_Index := 0;
    --  Return ID of current record via Field.
 
    function ID (T : in Table'Class) return ID_Type;

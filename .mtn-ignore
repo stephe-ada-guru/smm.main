@@ -1,4 +1,5 @@
 .*\.exe$
+^backup$
 ^build/x86_gnu_windows_debug/.*\.diff$
 ^build/x86_gnu_windows_debug/.*\.out$
 ^build/x86_gnu_windows_debug/objects$

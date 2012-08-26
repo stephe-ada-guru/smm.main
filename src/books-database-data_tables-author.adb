@@ -31,8 +31,6 @@ package body Books.Database.Data_Tables.Author is
       T.Find_By_Name_Statement := new String'
         ("SELECT ID, First, Middle, Last FROM Author WHERE Last LIKE ? ORDER BY Last, First, Middle");
 
-      Checked_Execute (T, T.Find_By_Name_Statement.all); --  So Next is valid.
-
    end Initialize;
 
    procedure Insert
@@ -46,14 +44,18 @@ package body Books.Database.Data_Tables.Author is
       First  : aliased String := First_Name;
       Middle : aliased String := Middle_Name;
       Last   : aliased String := Last_Name;
-
-      --  We use parameters so we don't have to quote the names
-      Statement : constant String := "INSERT INTO Author (First, Middle, Last) VALUES (?, ?, ?)";
    begin
-      --  FIXME: when do these allocations get freed? Try Unchecked_Access
+      --  We use parameters so we don't have to quote the names
       Checked_Execute
-        (T, Statement, Params => (+First'Unchecked_Access, +Middle'Unchecked_Access, +Last'Unchecked_Access));
-      Find_By_Name (T, Last_Name);
+        (T,
+         "INSERT INTO Author (First, Middle, Last) VALUES (?, ?, ?)",
+         (+First'Unchecked_Access, +Middle'Unchecked_Access, +Last'Unchecked_Access));
+
+      Checked_Execute
+        (T,
+         "SELECT ID, First, Middle, Last FROM Author WHERE First = ? and Middle = ? and Last = ?",
+         (+First'Unchecked_Access, +Middle'Unchecked_Access, +Last'Unchecked_Access));
+      --  inserted record is current
    end Insert;
 
    procedure Update

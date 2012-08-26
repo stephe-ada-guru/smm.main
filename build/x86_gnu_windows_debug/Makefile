@@ -3,6 +3,7 @@ all : books-backup.exe
 all : books-import-main.exe
 
 #one : books-main.run
+one : RUN_ARGS := books.config ../../backup/
 one : books-import-main.run
 
 #../../test/test_books-one_harness.adb
@@ -16,6 +17,7 @@ t_all : test_books-all_harness.diff
 
 trace :
 	addr2line -e books-main.exe  0x00456FC8 0x00428F76 0x0042A9CD 0x0042D96E 0x0042D547 0x00434572 0x00440928 0x00441368 0x0044D87B 0x00402D89 0x004010B9 0x004012A6 0x76A83398 0x77679EF0 0x77679EC3
+
 include ../common.make
 
 GNAT_PROJECT := books.gpr

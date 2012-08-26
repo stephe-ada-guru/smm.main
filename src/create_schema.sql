@@ -1,62 +1,69 @@
-CREATE TABLE IF NOT EXISTS Author
-(ID     INTEGER UNSIGNED AUTO_INCREMENT,
+-- SQLite3 syntax
+
+CREATE TABLE Author
+(ID     INTEGER PRIMARY KEY,
  First  TEXT,
  Middle TEXT,
- Last   TEXT,
- PRIMARY KEY ID (ID),
- UNIQUE INDEX `Last Name` (Last, First, Middle),
- UNIQUE INDEX Name (First, Middle, Last));
+ Last   TEXT);
+ 
+CREATE UNIQUE INDEX Author_Last_Name on Author (Last, First, Middle);
+CREATE UNIQUE INDEX Author_Name on Author (First, Middle, Last);
 
-CREATE TABLE IF NOT EXISTS Collection
-(ID     INTEGER UNSIGNED AUTO_INCREMENT,
+CREATE TABLE Collection
+(ID     INTEGER PRIMARY KEY,
  Title  TEXT,
- Year   SMALLINT UNSIGNED,
- PRIMARY KEY ID (ID),
- UNIQUE INDEX Title_Year (Title, Year));
+ Year   SMALLINT UNSIGNED);
 
-CREATE TABLE IF NOT EXISTS Series
-(ID     INTEGER UNSIGNED AUTO_INCREMENT,
- Title  TEXT,
- PRIMARY KEY ID (ID),
- UNIQUE INDEX Title (Title));
+CREATE UNIQUE INDEX Collection_Title_Year on Collection (Title, Year);
 
-CREATE TABLE IF NOT EXISTS Title
-(ID     INTEGER UNSIGNED AUTO_INCREMENT,
+CREATE TABLE Series
+(ID     INTEGER PRIMARY KEY,
+ Title  TEXT);
+ 
+CREATE UNIQUE INDEX Series_Title on Series (Title);
+
+CREATE TABLE Title
+(ID     INTEGER PRIMARY KEY,
  Title  TEXT,
  Year   SMALLINT UNSIGNED,
  Comment TEXT,
- Rating TINYINT UNSIGNED,
- PRIMARY KEY ID (ID),
- UNIQUE INDEX `Title Year` (Title,Year));
+ Rating TINYINT UNSIGNED);
 
-CREATE TABLE IF NOT EXISTS AuthorCollection
+CREATE UNIQUE INDEX Title_Title_Year on Title (Title, Year);
+
+CREATE TABLE AuthorCollection
 (Author  INTEGER UNSIGNED,
- Collection INTEGER UNSIGNED,
- INDEX Author (Author),
- INDEX Collection (Collection));
+ Collection INTEGER UNSIGNED);
+ 
+CREATE INDEX AuthorCollection_Author on AuthorCollection (Author);
+CREATE INDEX AuthorCollection_Collection on AuthorCollection (Collection);
 
-CREATE TABLE IF NOT EXISTS AuthorSeries
-(Author  INTEGER UNSIGNED,
- Series INTEGER UNSIGNED,
- INDEX Author (Author),
- INDEX Series (Series));
-
-CREATE TABLE IF NOT EXISTS AuthorTitle
+CREATE TABLE AuthorSeries
 (Author INTEGER UNSIGNED,
- Title  INTEGER UNSIGNED,
- INDEX Author (Author),
- INDEX Title (Title));
+ Series INTEGER UNSIGNED);
 
-CREATE TABLE IF NOT EXISTS SeriesTitle
+CREATE INDEX AuthorSeries_Author on AuthorSeries (Author);
+CREATE INDEX AuthorSeries_Series on AuthorSeries (Series);
+
+CREATE TABLE AuthorTitle
+(Author INTEGER UNSIGNED,
+ Title  INTEGER UNSIGNED);
+
+CREATE INDEX AuthorTitle_Author on AuthorTitle (Author);
+CREATE INDEX AuthorTitle_Title on AuthorTitle (Title);
+
+CREATE TABLE SeriesTitle
 (Series INTEGER UNSIGNED,
- Title  INTEGER UNSIGNED,
- INDEX Series (Series),
- INDEX Title (Title));
+ Title  INTEGER UNSIGNED);
 
-CREATE TABLE IF NOT EXISTS CollectionTitle
+CREATE INDEX SeriesTitle_Series on SeriesTitle (Series);
+CREATE INDEX SeriesTitle_Title on SeriesTitle (Title);
+
+CREATE TABLE CollectionTitle
 (Collection INTEGER UNSIGNED,
- Title  INTEGER UNSIGNED,
- INDEX Collection (Collection),
- INDEX Title (Title));
+ Title  INTEGER UNSIGNED);
+ 
+CREATE INDEX CollectionTitle_Collection on CollectionTitle (Collection);
+CREATE INDEX CollectionTitle_Title on CollectionTitle (Title);
 
 -- end of file

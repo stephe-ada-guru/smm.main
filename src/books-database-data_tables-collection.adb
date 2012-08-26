@@ -29,9 +29,7 @@ package body Books.Database.Data_Tables.Collection is
       T.Find_By_ID_Statement := new String'("SELECT ID, Title, Year FROM Collection WHERE ID = ?");
 
       T.Find_By_Name_Statement := new String'
-        ("SELECT ID, Title, Year FROM Collection WHERE Title LIKE ? ORDER BY Title_Name");
-
-      Checked_Execute (T, T.Find_By_Name_Statement.all); --  So Next is valid.
+        ("SELECT ID, Title, Year FROM Collection WHERE Title LIKE ? ORDER BY Title");
 
    end Initialize;
 
