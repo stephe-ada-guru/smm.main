@@ -1,6 +1,6 @@
 --  Abstract :
 --
---  Facilities for importing Author table from .csv.
+--  Facilities for importing Series table from .csv.
 --
 --  Copyright (C) 2009, 2012 Stephen Leake.  All Rights Reserved.
 --
@@ -19,8 +19,8 @@
 pragma License (GPL);
 
 with SAL.CSV;
-package Books.Database.Data_Tables.Author.Import is
+package Books.Database.Data_Tables.Series.Import is
 
    procedure Read_Insert_Find (File : in out SAL.CSV.File_Type);
 
-end Books.Database.Data_Tables.Author.Import;
+end Books.Database.Data_Tables.Series.Import;

@@ -24,17 +24,32 @@ with Ada.Text_IO;      use Ada.Text_IO;
 with Books.Database.Data_Tables.Author.Import;
 with Books.Database.Data_Tables.Collection.Import;
 with Books.Database.Data_Tables.Gen_Import;
-with Books.Database.Data_Tables.Series;
-with Books.Database.Data_Tables.Title;
-with Books.Database.Link_Tables;
+with Books.Database.Data_Tables.Series.Import;
+with Books.Database.Data_Tables.Title.Import;
+with Books.Database.Link_Tables.Import;
 with SAL.Config_Files;
 procedure Books.Import.Main
 is
+   procedure Import_Author is new Books.Database.Data_Tables.Gen_Import
+     (Table_Name       => "Author",
+      Column_Count     => 4, --  ID, first, middle, last
+      Read_Insert_Find => Books.Database.Data_Tables.Author.Import.Read_Insert_Find);
 
    procedure Import_Collection is new Books.Database.Data_Tables.Gen_Import
      (Table_Name       => "Collection",
       Column_Count     => 4, --  ID, Title, Year, editor_id
       Read_Insert_Find => Books.Database.Data_Tables.Collection.Import.Read_Insert_Find);
+
+   procedure Import_Series is new Books.Database.Data_Tables.Gen_Import
+     (Table_Name       => "Series",
+      Column_Count     => 3, --  ID, Title, Author_id
+      Read_Insert_Find => Books.Database.Data_Tables.Series.Import.Read_Insert_Find);
+
+   procedure Import_Title is new Books.Database.Data_Tables.Gen_Import
+     (Table_Name       => "Title",
+      Column_Count     => 5, --  ID, Title, Year, Comment, Rating
+      Read_Insert_Find => Books.Database.Data_Tables.Title.Import.Read_Insert_Find);
+
 begin
    if Argument_Count /= 2 then
       Put_Line ("usage: books-import-main.exe <config_file> <root_csv_file_path>");
@@ -65,14 +80,14 @@ begin
       Links (Collection, Title) := new Link_Tables.Table (new Link_Tables.Link_Names'(Collection, Title), DB);
       Links (Series, Title)     := new Link_Tables.Table (new Link_Tables.Link_Names'(Series, Title), DB);
 
-      Data_Tables.Author.Import (Root_File_Name);
+      Import_Author (Root_File_Name);
       Import_Collection (Root_File_Name);
-      --  Import_Books.Import_Series (Root_File_Name);
-      --  Import_Books.Import_Title (Root_File_Name);
+      Import_Series (Root_File_Name);
+      Import_Title (Root_File_Name);
 
-      --  Import_Books.Import_AuthorTitle (Root_File_Name);
-      --  Import_Books.Import_CollectionTitle (Root_File_Name);
-      --  Import_Books.Import_SeriesTitle (Root_File_Name);
+      Link_Tables.Import (Root_File_Name, Links (Author, Title).all);
+      Link_Tables.Import (Root_File_Name, Links (Collection, Title).all);
+      Link_Tables.Import (Root_File_Name, Links (Series, Title).all);
    exception
    when E : others =>
       Set_Exit_Status (Ada.Command_Line.Failure);

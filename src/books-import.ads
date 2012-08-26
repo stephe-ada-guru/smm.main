@@ -53,7 +53,7 @@ package Books.Import is
    function To_Key (Item : in ID_Map_Item) return Database.ID_Type is (Item.Old_ID);
 
    package ID_Map_Aux is new SAL.Aux.Definite_Private_Items (ID_Map_Item);
-   package ID_Maps is new SAL.Poly.Binary_Trees.sorted
+   package ID_Trees is new SAL.Poly.Binary_Trees.sorted
      (Item_Type         => ID_Map_Item,
       Item_Node_Type    => ID_Map_Item,
       To_Item_Node      => ID_Map_Aux.To_Item_Node,
@@ -64,10 +64,8 @@ package Books.Import is
       Is_Equal          => "=",
       Node_Storage_Pool => Database.Database_Access'Storage_Pool);
 
-   Author_ID_Map     : ID_Maps.Tree_Type;
-   Collection_ID_Map : ID_Maps.Tree_Type;
-   Series_ID_Map     : ID_Maps.Tree_Type;
-   Title_ID_Map      : ID_Maps.Tree_Type;
+   type Map_Arrays is array (Table_Names) of ID_Trees.Tree_Type;
+   ID_Maps : Map_Arrays;
 
    Author_Table     : Books.Database.Data_Tables.Author.Table_Access;
    Collection_Table : Books.Database.Data_Tables.Collection.Table_Access;

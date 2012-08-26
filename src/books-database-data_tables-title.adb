@@ -55,8 +55,6 @@ package body Books.Database.Data_Tables.Title is
             2 => (if Year_Valid then +Year else Null_Parameter),
             3 => (if Comment'Length > 0 then +new String'(Comment) else Null_Parameter),
             4 => (if Rating_Valid then +Rating else Null_Parameter)));
-
-      Find (T, Title);
    end Insert;
 
    procedure Update

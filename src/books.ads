@@ -32,6 +32,6 @@ package Books is
 
    type Table_Arrays is array (Table_Names) of access Books.Database.Data_Tables.Table'Class;
 
-   type Link_Arrays is array (Table_Names, Table_Names) of access Books.Database.Link_Tables.Table'Class;
+   type Link_Arrays is array (Table_Names, Table_Names) of access Books.Database.Link_Tables.Table;
 
 end Books;

@@ -40,7 +40,6 @@ package body Books.Database.Data_Tables.Series is
       Statement : constant String := "INSERT INTO Series (Title) VALUES (?)";
    begin
       Checked_Execute (T, Statement, Params => (1 => +new String'(Title)));
-      Find (T, Title);
    end Insert;
 
    procedure Update
