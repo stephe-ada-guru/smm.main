@@ -2,9 +2,10 @@ all : books-main.exe
 all : books-backup.exe
 all : books-import-main.exe
 
-#one : books-main.run
-one : RUN_ARGS := books.config ../../backup/
-one : books-import-main.run
+one_check : books-main.check one
+one : books-main.run
+#one : RUN_ARGS := books.config ../../backup/
+#one : books-import-main.run
 
 #../../test/test_books-one_harness.adb
 t_one : RUN_ARGS := 1
