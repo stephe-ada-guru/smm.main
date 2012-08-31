@@ -146,18 +146,23 @@
      (insert "left:       ")
      (insert (xmtn-conflicts-conflict-left_type conflict))
      (insert " ")
-     (if (xmtn-conflicts-conflict-left_name conflict)
-	 (insert (xmtn-conflicts-conflict-left_name conflict)))
+     (insert (xmtn-conflicts-conflict-left_name conflict))
      (insert "\n")
      (insert "right:      ")
      (insert (xmtn-conflicts-conflict-right_type conflict))
      (insert " ")
-     (if (xmtn-conflicts-conflict-right_name conflict)
-	 (insert (xmtn-conflicts-conflict-right_name conflict)))
+     (insert (xmtn-conflicts-conflict-right_name conflict))
      (insert "\n")
-     (insert "resolution: ")
-     (insert (format "%s" (xmtn-conflicts-conflict-left_resolution conflict)))
-     (insert "\n")
+     (if (not (equal "dropped file" (xmtn-conflicts-conflict-left_type conflict)))
+	 (progn
+	   (insert "left resolution: ")
+	   (insert (format "%s" (xmtn-conflicts-conflict-left_resolution conflict)))
+	   (insert "\n")))
+     (if (not (equal "dropped file" (xmtn-conflicts-conflict-right_type conflict)))
+	 (progn
+	   (insert "right resolution: ")
+	   (insert (format "%s" (xmtn-conflicts-conflict-right_resolution conflict)))
+	   (insert "\n")))
      )
     ('duplicate_name
      (insert (dvc-face-add "duplicate_name\n" 'dvc-keyword))
@@ -299,10 +304,25 @@ header."
   ;;       right_name "file_2"
   ;;    right_file_id [4fd0fa24812427ee6c13a839d2a90bc0c6fc0091]
   ;;
+  ;;         conflict dropped_modified
+  ;;    ancestor_name "progs/arm_texi.adb"
+  ;; ancestor_file_id [e436d447b396126e672d921fd6a3860b343fffc4]
+  ;;        left_type "modified file"
+  ;;        left_name "progs/arm_texi.adb"
+  ;;     left_file_id [b58572b2ec440c605e7327f289510cfa7e80f4c2]
+  ;;       right_type "recreated file"
+  ;;       right_name "progs/arm_texi.adb"
+  ;;    right_file_id [1f26fddb4860d6ac50b6f3cdf777b8e5301a4b16]
+  ;;
   ;; resolutions:
+  ;; resolved_drop_left/_right
+  ;; resolved_rename_left <file>
   ;; resolved_keep_left
-  ;; resolved_drop_left
   ;; resolved_user_left <file>
+  ;; rename can follow user
+  ;;
+  ;; If not recreated, only one resolution, either right or left
+
   (let ((conflict (make-xmtn-conflicts-conflict)))
     (setf (xmtn-conflicts-conflict-conflict_type conflict) 'dropped_modified)
     (xmtn-basic-io-check-line "ancestor_name" (setf (xmtn-conflicts-conflict-ancestor_name conflict) (cadar value)))
@@ -315,6 +335,10 @@ header."
       (xmtn-basic-io-check-line "left_file_id" (setf (xmtn-conflicts-conflict-left_file_id conflict) (cadar value))))
 
      ((string= "modified file" (xmtn-conflicts-conflict-left_type conflict))
+      (xmtn-basic-io-check-line "left_name" (setf (xmtn-conflicts-conflict-left_name conflict) (cadar value)))
+      (xmtn-basic-io-check-line "left_file_id" (setf (xmtn-conflicts-conflict-left_file_id conflict) (cadar value))))
+
+     ((string= "recreated file" (xmtn-conflicts-conflict-left_type conflict))
       (xmtn-basic-io-check-line "left_name" (setf (xmtn-conflicts-conflict-left_name conflict) (cadar value)))
       (xmtn-basic-io-check-line "left_file_id" (setf (xmtn-conflicts-conflict-left_file_id conflict) (cadar value))))
 
@@ -332,23 +356,39 @@ header."
       (xmtn-basic-io-check-line "right_name" (setf (xmtn-conflicts-conflict-right_name conflict) (cadar value)))
       (xmtn-basic-io-check-line "right_file_id" (setf (xmtn-conflicts-conflict-right_file_id conflict) (cadar value))))
 
+     ((string= "recreated file" (xmtn-conflicts-conflict-right_type conflict))
+      (xmtn-basic-io-check-line "right_name" (setf (xmtn-conflicts-conflict-right_name conflict) (cadar value)))
+      (xmtn-basic-io-check-line "right_file_id" (setf (xmtn-conflicts-conflict-right_file_id conflict) (cadar value))))
+
      (t
       (error "unsupported right_type %s" (xmtn-conflicts-conflict-right_type conflict))))
 
-    ;; look for a resolution
-    (case (xmtn-basic-io--peek)
-      ((empty eof) nil)
-      (t
-       (xmtn-basic-io-parse-line
-        (cond
-          ((string= "resolved_keep_left" symbol)
-           (setf (xmtn-conflicts-conflict-left_resolution conflict) (list 'resolved_keep)))
-          ((string= "resolved_drop_left" symbol)
-           (setf (xmtn-conflicts-conflict-left_resolution conflict) (list 'resolved_drop)))
-          ((string= "resolved_user_left" symbol)
-           (setf (xmtn-conflicts-conflict-left_resolution conflict) (list 'resolved_user (cadar value))))
-          (t
-           (error "unsupported left_resolution %s" symbol))))))
+    ;; look for resolutions
+    (while  (not (memq (xmtn-basic-io--peek) '(empty eof)))
+      (xmtn-basic-io-optional-line "resolved_keep_left"
+	(setf (xmtn-conflicts-conflict-left_resolution conflict) (list 'resolved_keep)))
+
+      (xmtn-basic-io-optional-line "resolved_drop_left"
+	(setf (xmtn-conflicts-conflict-left_resolution conflict) (list 'resolved_drop)))
+
+      (xmtn-basic-io-optional-line "resolved_user_left"
+	(setf (xmtn-conflicts-conflict-left_resolution conflict) (list 'resolved_user (cadar value))))
+
+      (xmtn-basic-io-optional-line "resolved_rename_left"
+	(setf (xmtn-conflicts-conflict-left_resolution conflict) (list 'resolved_rename (cadar value))))
+
+      (xmtn-basic-io-optional-line "resolved_keep_right"
+	(setf (xmtn-conflicts-conflict-right_resolution conflict) (list 'resolved_keep)))
+
+      (xmtn-basic-io-optional-line "resolved_drop_right"
+	(setf (xmtn-conflicts-conflict-right_resolution conflict) (list 'resolved_drop)))
+
+      (xmtn-basic-io-optional-line "resolved_user_right"
+	(setf (xmtn-conflicts-conflict-right_resolution conflict) (list 'resolved_user (cadar value))))
+
+      (xmtn-basic-io-optional-line "resolved_rename_right"
+	(setf (xmtn-conflicts-conflict-right_resolution conflict) (list 'resolved_rename (cadar value))))
+      )
 
     (setq xmtn-conflicts-total-count (+ 1 xmtn-conflicts-total-count))
     (if (and (xmtn-conflicts-conflict-left_resolution conflict)
@@ -678,6 +718,10 @@ header."
     (xmtn-basic-io-write-str "left_name" (xmtn-conflicts-conflict-left_name conflict))
     (xmtn-basic-io-write-id "left_file_id" (xmtn-conflicts-conflict-left_file_id conflict)))
 
+   ((string= "recreated file" (xmtn-conflicts-conflict-left_type conflict))
+    (xmtn-basic-io-write-str "left_name" (xmtn-conflicts-conflict-left_name conflict))
+    (xmtn-basic-io-write-id "left_file_id" (xmtn-conflicts-conflict-left_file_id conflict)))
+
    (t
     (error "unsupported left_type %s" (xmtn-conflicts-conflict-left_type conflict))))
 
@@ -689,6 +733,10 @@ header."
     (xmtn-basic-io-write-id "right_file_id" (xmtn-conflicts-conflict-right_file_id conflict)))
 
    ((string= "modified file" (xmtn-conflicts-conflict-right_type conflict))
+    (xmtn-basic-io-write-str "right_name" (xmtn-conflicts-conflict-right_name conflict))
+    (xmtn-basic-io-write-id "right_file_id" (xmtn-conflicts-conflict-right_file_id conflict)))
+
+   ((string= "recreated file" (xmtn-conflicts-conflict-right_type conflict))
     (xmtn-basic-io-write-str "right_name" (xmtn-conflicts-conflict-right_name conflict))
     (xmtn-basic-io-write-id "right_file_id" (xmtn-conflicts-conflict-right_file_id conflict)))
 
@@ -707,8 +755,23 @@ header."
           (file-relative-name (cadr (xmtn-conflicts-conflict-left_resolution conflict)))))
         ))
 
+  (if (xmtn-conflicts-conflict-right_resolution conflict)
+      (ecase (car (xmtn-conflicts-conflict-right_resolution conflict))
+        (resolved_keep
+         (insert "resolved_keep_right \n"))
+        (resolved_drop
+         (insert "resolved_drop_right \n"))
+        (resolved_user
+         (xmtn-basic-io-write-str
+          "resolved_user_right"
+          (file-relative-name (cadr (xmtn-conflicts-conflict-right_resolution conflict)))))
+        ))
 
-  (if (xmtn-conflicts-conflict-left_resolution conflict)
+  (if (and
+       (or (equal "dropped file" (xmtn-conflicts-conflict-left_type conflict))
+	   (xmtn-conflicts-conflict-left_resolution conflict))
+       (or (equal "dropped file" (xmtn-conflicts-conflict-right_type conflict))
+	   (xmtn-conflicts-conflict-right_resolution conflict)))
       (setq xmtn-conflicts-resolved-count (+ 1 xmtn-conflicts-resolved-count)))
   )
 
@@ -1139,10 +1202,9 @@ header."
   (let* ((conflict (ewoc-data (ewoc-locate xmtn-conflicts-ewoc)))
          (type (xmtn-conflicts-conflict-conflict_type conflict)))
 
-    ;; duplicate_name is the only conflict type that needs a right resolution
     (and (xmtn-conflicts-right_resolution-needed conflict)
          (not (xmtn-conflicts-conflict-right_resolution conflict))
-         (equal type 'duplicate_name)
+         (member type '(dropped_modified duplicate_name))
          ;; if no file_id, it's a directory
          (xmtn-conflicts-conflict-right_file_id conflict)
          ;; user_right doesn't change name, so left resolution must change name or drop
@@ -1155,9 +1217,7 @@ header."
          (type (xmtn-conflicts-conflict-conflict_type conflict)))
 
     (and (not (xmtn-conflicts-conflict-left_resolution conflict))
-	 (or
-	  (equal type 'dropped_modified)
-	  (equal type 'duplicate_name)))))
+	 (member type '(dropped_modified duplicate_name)))))
 
 (defun xmtn-conflicts-resolve-keep_rightp ()
   "Non-nil if keep_right resolution is appropriate for current conflict."
@@ -1167,7 +1227,7 @@ header."
     ;; duplicate_name is the only conflict type that needs a right resolution
     (and (xmtn-conflicts-conflict-left_resolution conflict)
          (not (xmtn-conflicts-conflict-right_resolution conflict))
-         (equal type 'duplicate_name)
+         (member type '(dropped_modified duplicate_name))
          (let ((left-res (car (xmtn-conflicts-conflict-left_resolution conflict))))
            (member left-res '(resolved_drop resolved_rename))))))
 
@@ -1177,17 +1237,16 @@ header."
          (type (xmtn-conflicts-conflict-conflict_type conflict)))
 
     (and (not (xmtn-conflicts-conflict-left_resolution conflict))
-         (member type '(duplicate_name orphaned_node)))))
+         (member type '(dropped_modified duplicate_name orphaned_node)))))
 
 (defun xmtn-conflicts-resolve-rename_rightp ()
   "Non-nil if rename_right resolution is appropriate for current conflict."
   (let* ((conflict (ewoc-data (ewoc-locate xmtn-conflicts-ewoc)))
          (type (xmtn-conflicts-conflict-conflict_type conflict)))
 
-    ;; duplicate_name is the only conflict type that needs a right resolution
     (and (xmtn-conflicts-conflict-left_resolution conflict)
          (not (xmtn-conflicts-conflict-right_resolution conflict))
-         (equal type 'duplicate_name))))
+         (member type '(dropped_modified duplicate_name)))))
 
 (defun xmtn-conflicts-resolve-drop_leftp ()
   "Non-nil if drop_left resolution is appropriate for the current conflict."
@@ -1211,10 +1270,11 @@ header."
   (let* ((conflict (ewoc-data (ewoc-locate xmtn-conflicts-ewoc)))
          (type (xmtn-conflicts-conflict-conflict_type conflict)))
 
-    ;; duplicate_name is the only conflict type that needs a right resolution
     (and (xmtn-conflicts-conflict-left_resolution conflict)
          (not (xmtn-conflicts-conflict-right_resolution conflict))
-         (equal type 'duplicate_name)
+         (member type '(dropped_modified duplicate_name))
+	 ;; FIXME: some dropped_modified only need one resolution
+	 ;; FIXME: exclude dropped_modified orphaned
          ;; if no file_id, it's a directory; can't drop if not empty
          (xmtn-conflicts-conflict-right_file_id conflict))))
 
@@ -1223,9 +1283,7 @@ header."
   (let* ((conflict (ewoc-data (ewoc-locate xmtn-conflicts-ewoc)))
          (type (xmtn-conflicts-conflict-conflict_type conflict)))
 
-    ;; duplicate_name is the only conflict type that needs a right
-    ;; resolution, and thus a 'left' label
-    (if (equal type 'duplicate_name)
+    (if (member type '(dropped_modified duplicate_name))
 	"left: "
       "")))
 
