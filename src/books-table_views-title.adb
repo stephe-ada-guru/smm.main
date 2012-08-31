@@ -88,19 +88,19 @@ package body Books.Table_Views.Title is
          Books.List_Views.Author.Gtk_New
            (Table_View.List_Display (Author),
             Table_View.Links (Author, Books.Title),
-            Primary_Index => 2);
+            Primary_Index => 1);
 
       when Collection =>
          Books.List_Views.Collection.Gtk_New
            (Table_View.List_Display (Collection),
             Table_View.Links (Collection, Books.Title),
-            Primary_Index => 2);
+            Primary_Index => 1);
 
       when Series =>
          Books.List_Views.Series.Gtk_New
            (Table_View.List_Display (Series),
             Table_View.Links (Series, Books.Title),
-            Primary_Index => 2);
+            Primary_Index => 1);
 
       when Books.Title =>
          null;
@@ -226,7 +226,12 @@ package body Books.Table_Views.Title is
    begin
       Title_View.Title_Text.Set_Text (Title_View.Primary_Table.Field (Title_Index));
       Title_View.Year_Text.Set_Text (Title_View.Primary_Table.Field (Year_Index));
-      Title_View.Comment_Text.Set_Text (Title_View.Primary_Table.Field (Comment_Index));
+
+      if Title_View.Primary_Table.Valid_Field (Comment_Index) then
+         Title_View.Comment_Text.Set_Text (Title_View.Primary_Table.Field (Comment_Index));
+      else
+         Title_View.Rating_Text.Set_Text ("");
+      end if;
 
       if Title_View.Primary_Table.Valid_Field (Rating_Index) then
          Title_View.Rating_Text.Set_Text (Title_View.Primary_Table.Field (Rating_Index));

@@ -21,6 +21,7 @@ pragma License (GPL);
 with Ada.Directories;
 with Ada.Exceptions;
 with Ada.Strings.Fixed;
+with Ada.Tags;
 with Ada.Text_IO;
 with Ada.Unchecked_Deallocation;
 with GNATCOLL.SQL.Exec.Aux;
@@ -66,7 +67,8 @@ package body Books.Database is
       if not T.Cursor.Has_Row then
          raise No_Data;
       elsif T.Cursor.Is_Null (Field_Index) then
-         raise Null_Field;
+         raise Null_Field with Ada.Tags.Expanded_Name (Table'Class (T)'Tag) & " "
+           & GNATCOLL.SQL.Exec.Field_Index'Image (Field_Index);
       else
          return T.Cursor.Value (Field_Index);
       end if;

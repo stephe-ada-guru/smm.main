@@ -104,7 +104,7 @@ private
       Links_Buttons : Table_Array_Check_Button_Type;
       Data_Table    : Gtk.Table.Gtk_Table;  --  Contents unique to child type.
 
-      List_Select  : Table_Array_Radio_Type; --  Children need to set and check these.
+      List_Select  : Table_Array_Radio_Type;
       List_Display : Table_Array_List_Type;
       Current_List : Table_Names := Table_Names'First;
 

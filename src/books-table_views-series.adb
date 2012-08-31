@@ -64,7 +64,7 @@ package body Books.Table_Views.Series is
          Books.List_Views.Author.Gtk_New
            (Table_View.List_Display (Author),
             Table_View.Links (Author, Books.Series),
-            Primary_Index => 2);
+            Primary_Index => 1);
 
       when Collection | Books.Series =>
          null;
@@ -73,7 +73,7 @@ package body Books.Table_Views.Series is
          Books.List_Views.Title.Gtk_New
            (Table_View.List_Display (Title),
             Table_View.Links (Books.Series, Title),
-            Primary_Index => 1);
+            Primary_Index => 0);
 
       end case;
    end Create_List_View;

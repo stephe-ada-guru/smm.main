@@ -20,7 +20,7 @@ pragma License (GPL);
 
 package Books.Database.Link_Tables is
 
-   subtype Link_Index is GNATCOLL.SQL.Exec.Field_Index range 1 .. 2;
+   subtype Link_Index is GNATCOLL.SQL.Exec.Field_Index range 0 .. 1;
    type Link_Names is array (Link_Index) of Table_Names;
 
    type Table

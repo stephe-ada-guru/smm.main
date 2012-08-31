@@ -31,20 +31,20 @@ package body Books.Database.Link_Tables is
 
    function Find_Link_Index (T : in Table'Class; Name : in Table_Names) return Link_Index
    is begin
-      if T.Link_Names (1) = Name then
+      if T.Link_Names (0) = Name then
+         return 0;
+      elsif T.Link_Names (1) = Name then
          return 1;
-      elsif T.Link_Names (2) = Name then
-         return 2;
       else
          raise SAL.Programmer_Error with Table_Names'Image (Name) & " is not a link in link table " &
-           Table_Names'Image (T.Link_Names (1)) & Table_Names'Image (T.Link_Names (2));
+           Table_Names'Image (T.Link_Names (0)) & Table_Names'Image (T.Link_Names (1));
       end if;
    end Find_Link_Index;
 
    procedure Delete (T : in out Table; Data : in Link_Array_ID_Type)
    is
-      First_Column_Name : constant String := Table_Names'Image (T.Link_Names (1));
-      Last_Column_Name  : constant String := Table_Names'Image (T.Link_Names (2));
+      First_Column_Name : constant String := Table_Names'Image (T.Link_Names (0));
+      Last_Column_Name  : constant String := Table_Names'Image (T.Link_Names (1));
       Table_Name        : constant String := First_Column_Name & Last_Column_Name;
    begin
       Checked_Execute
@@ -60,8 +60,8 @@ package body Books.Database.Link_Tables is
    procedure Find (T : in out Table; Name : in Table_Names; Item : in ID_Type)
    is
       use type GNATCOLL.SQL.Exec.SQL_Parameter;
-      First_Column_Name : constant String := Table_Names'Image (T.Link_Names (1));
-      Last_Column_Name  : constant String := Table_Names'Image (T.Link_Names (2));
+      First_Column_Name : constant String := Table_Names'Image (T.Link_Names (0));
+      Last_Column_Name  : constant String := Table_Names'Image (T.Link_Names (1));
       Table_Name        : constant String := First_Column_Name & Last_Column_Name;
    begin
       Find
@@ -78,8 +78,8 @@ package body Books.Database.Link_Tables is
 
    procedure Insert (T : in out Table; Data : in Link_Array_ID_Type)
    is
-      First_Column_Name : constant String := Table_Names'Image (T.Link_Names (1));
-      Last_Column_Name  : constant String := Table_Names'Image (T.Link_Names (2));
+      First_Column_Name : constant String := Table_Names'Image (T.Link_Names (0));
+      Last_Column_Name  : constant String := Table_Names'Image (T.Link_Names (1));
       Table_Name        : constant String := First_Column_Name & Last_Column_Name;
    begin
       Checked_Execute

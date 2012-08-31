@@ -27,14 +27,17 @@ package body Books.List_Views.Collection is
       Links           : access Books.Database.Link_Tables.Table;
       Primary_Index   : in     Books.Database.Link_Tables.Link_Index)
    is
+      use Interfaces.C.Strings;
+
       Clist : Gtk.Clist.Gtk_Clist;
    begin
       Gtk.Clist.Gtk_New
         (Clist,
-         Columns => 2,
+         Columns => 3,
          Titles  =>
-           (1    => Interfaces.C.Strings.New_String ("ID"),
-            2    => Interfaces.C.Strings.New_String ("Title")));
+           (1    => New_String ("ID"),
+            2    => New_String ("Title"),
+            3    => New_String ("Year")));
 
       Collection_View := new Gtk_Collection_List_Record'
         (Gtk.Clist.Gtk_Clist_Record (Clist.all) with Links, Primary_Index);
@@ -49,11 +52,19 @@ package body Books.List_Views.Collection is
       use Interfaces.C.Strings; -- New_String
    begin
       if Table.Valid then
-         List_View.Insert
-           (0,
-            (1 => New_String (Image (ID)),
-             2 => New_String (Table.Field (Data_Tables.Collection.Title_Index)),
-             3 => New_String (Table.Field (Data_Tables.Collection.Year_Index))));
+         declare
+            Year : chars_ptr := Null_Ptr;
+         begin
+            if Table.Valid_Field (Data_Tables.Collection.Year_Index) then
+               Year := New_String (Table.Field (Data_Tables.Collection.Year_Index));
+            end if;
+
+            List_View.Insert
+              (0,
+               (1 => New_String (Image (ID)),
+                2 => New_String (Table.Field (Data_Tables.Collection.Title_Index)),
+                3 => Year));
+         end;
       else
          --  bad IDs left over from delete
          List_View.Insert

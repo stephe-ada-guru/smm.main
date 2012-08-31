@@ -650,6 +650,7 @@ package body Books.Table_Views is
    procedure On_List_Select_Clicked (Button : access Gtk.Button.Gtk_Button_Record'Class)
    is
       use type Gtk.Radio_Button.Gtk_Radio_Button;
+      use type Gtk.Scrolled_Window.Gtk_Scrolled_Window;
       Radio_Button : constant Gtk.Radio_Button.Gtk_Radio_Button := Gtk.Radio_Button.Gtk_Radio_Button (Button);
       Table_View   : constant Gtk_Table_View                    := Gtk_Table_View (Gtk.Button.Get_Toplevel (Button));
    begin
@@ -657,6 +658,11 @@ package body Books.Table_Views is
 
       for I in Table_View.List_Select'Range loop
          if Table_View.List_Select (I) = Radio_Button then
+            if Table_View.Private_Stuff.List_Display_Scroll (I) = null then
+               --  Something's screwed up. This happends during startup, so trust Table_View.Current_List.
+               Table_View.Private_Stuff.List_Display_Scroll (Table_View.Current_List).Show;
+               exit;
+            end if;
             Table_View.Current_List := I;
             Gtk.Scrolled_Window.Show (Table_View.Private_Stuff.List_Display_Scroll (I));
          end if;
