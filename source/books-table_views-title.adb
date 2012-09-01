@@ -230,7 +230,7 @@ package body Books.Table_Views.Title is
       if Title_View.Primary_Table.Valid_Field (Comment_Index) then
          Title_View.Comment_Text.Set_Text (Title_View.Primary_Table.Field (Comment_Index));
       else
-         Title_View.Rating_Text.Set_Text ("");
+         Title_View.Comment_Text.Set_Text ("");
       end if;
 
       if Title_View.Primary_Table.Valid_Field (Rating_Index) then

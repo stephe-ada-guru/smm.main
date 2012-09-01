@@ -4,7 +4,7 @@ with "sal";
 with "sal_gtk";
 with "standard_common";
 project Books is
-   for Source_Dirs use ("../../src", "../../test");
+   for Source_Dirs use ("../../source", "../../test");
 
    for Main use ("books-main");
 

@@ -103,7 +103,7 @@ package body Books.Main_Window is
 
    procedure Initialize
      (Window      : access Gtk_Window_Record'Class;
-      Config_File : in     String             := "books.config")
+      Config_File : in     String)
    is
       use type Books.Database.Database_Access;
       use type SAL.Config_Files.Configuration_Access_Type;
@@ -175,7 +175,7 @@ package body Books.Main_Window is
 
    procedure Gtk_New
      (Window      :    out Gtk_Window;
-      Config_File : in     String     := "books.config")
+      Config_File : in     String)
    is begin
       Window := new Gtk_Window_Record;
       Initialize (Window, Config_File);

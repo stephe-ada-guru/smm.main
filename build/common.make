@@ -15,7 +15,7 @@ empty_database_test :
 test_data :
 	mysql -u stephe --execute="source ../../test/create_test_data_mysql.sql"
 
-VPATH = ../../src
+VPATH = ../../source
 VPATH += ../../test
 VPATH += ../../../gnade-src-1.5.3b/dbi/odbc
 

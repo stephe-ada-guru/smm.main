@@ -18,7 +18,8 @@
 
 pragma License (GPL);
 
-with Ada.Command_Line;
+with Ada.Command_Line; use Ada.Command_Line;
+with Ada.Environment_Variables;
 with Ada.Exceptions;
 with Ada.Text_IO;
 with Books.Main_Window;
@@ -27,17 +28,17 @@ with SAL.Traceback;
 procedure Books.Main
 is
    Main_Window : Books.Main_Window.Gtk_Window;
+
+   Config_Filename : constant String :=
+     (if Argument_Count = 0 then
+        Ada.Environment_Variables.Value ("HOME") & "/.books/books.config"
+     else
+        Argument (1));
 begin
    Gtk.Main.Set_Locale;
    Gtk.Main.Init;
 
-   if Ada.Command_Line.Argument_Count = 0 then
-      Books.Main_Window.Gtk_New (Main_Window);
-   else
-      Books.Main_Window.Gtk_New
-        (Main_Window,
-         Config_File  => Ada.Command_Line.Argument (1));
-   end if;
+   Books.Main_Window.Gtk_New (Main_Window, Config_Filename);
 
    --  Easier to fix bugs if get stack trace
    --  Gdk.Event.Event_Handler_Set (Books.Event_Handler.Event_Handler'Access, System.Storage_Elements.To_Address (0));

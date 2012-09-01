@@ -45,11 +45,16 @@ package body Books.Database.Data_Tables.Author is
       Middle : aliased String := Middle_Name;
       Last   : aliased String := Last_Name;
    begin
-      --  We use parameters so we don't have to quote the names
       Checked_Execute
         (T,
          "INSERT INTO Author (First, Middle, Last) VALUES (?, ?, ?)",
          (+First'Unchecked_Access, +Middle'Unchecked_Access, +Last'Unchecked_Access));
+
+      Find
+        (T,
+         "SELECT ID, First, Middle, Last FROM Author WHERE First = ? and Middle = ? and Last = ?",
+         (+First'Unchecked_Access, +Middle'Unchecked_Access, +Last'Unchecked_Access));
+
    end Insert;
 
    procedure Update

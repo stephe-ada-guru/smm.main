@@ -4,7 +4,7 @@ all : books-import-main.exe
 # all : tests not up to date
 
 install : books-main.exe
-	strip -o ~/bin books-main.exe
+	strip -o ~/bin/books-main.exe books-main.exe
 
 one_check : books-main.check one
 one : books-main.run

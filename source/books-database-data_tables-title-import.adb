@@ -66,7 +66,7 @@ package body Books.Database.Data_Tables.Title.Import is
             Params (Last_Param) := +Year;
          end if;
 
-         Find (Title_Table.all, To_String (Statement), Params);
+         Find (Title_Table.all, To_String (Statement), Params (1 .. Last_Param));
       end;
 
       if Title_Table.Valid then

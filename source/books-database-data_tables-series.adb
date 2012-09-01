@@ -37,9 +37,11 @@ package body Books.Database.Data_Tables.Series is
    is
       use type GNATCOLL.SQL.Exec.SQL_Parameter;
 
-      Statement : constant String := "INSERT INTO Series (Title) VALUES (?)";
+      Statement : constant String         := "INSERT INTO Series (Title) VALUES (?)";
+      Title_1   : aliased constant String := Title;
    begin
-      Checked_Execute (T, Statement, Params => (1 => +new String'(Title)));
+      Checked_Execute (T, Statement, Params => (1 => +Title_1'Unchecked_Access));
+      Find (T, "SELECT ID, Title FROM Series WHERE Title = ?", (1 => +Title_1'Unchecked_Access));
    end Insert;
 
    procedure Update

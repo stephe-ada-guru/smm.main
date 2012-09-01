@@ -41,6 +41,6 @@ package Books.Main_Window is
 
    procedure Gtk_New
      (Window      :    out Gtk_Window;
-      Config_File : in     String     := "books.config");
+      Config_File : in     String);
 
 end Books.Main_Window;

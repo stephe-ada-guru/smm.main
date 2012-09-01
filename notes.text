@@ -3,50 +3,9 @@ doc/C/books.texinfo
 file://c:/Gnu/GtkAda-2.2.0/share/gtk-doc/html/gtk/index.html
 file://c:/Gnu/GtkAda-2.2.0/share/gtk-doc/html/gdk/index.html
 
-import old db; works, with following problems:
+author edit view should have collection link checkbox
 
-Importing Collection table from ../../backup/collection.csv
-    collection add link button dies
-Exception name: BOOKS.DATABASE.NO_DATA
-Message: books-database.adb:68
-
-The Magazine of Fantasy and Science Fiction 30 Ye has no editor
-Galaxy Thirty Years of Innovative Science Fiction has no editor
-Hatrack River has no editor
-The New Hugo Winners has no editor
-The Crystal Ship has no editor
-The 1984 Annual World's Best SF has no editor
-Science Fiction Showcase has no editor
-Bookshelf has no editor
-paperback has no editor
- 294 Collection
-Importing Series table from ../../backup/series.csv
-Tom Swift has no author
-Wild Cards has no author
-Star Trek has no author
-Earthgate has no author
- 94 Series
-
-AUTHORTITLE 387 2239:  1 not found in AUTHOR
-AUTHORTITLE 0 2686:  1 not found in AUTHOR
-AUTHORTITLE 0 1419:  1 not found in AUTHOR
-COLLECTIONTITLE 466 1780:  1 not found in COLLECTION
-COLLECTIONTITLE 466 1780:  1 not found in COLLECTION
-COLLECTIONTITLE 466 1780:  1 not found in COLLECTION
-COLLECTIONTITLE 466 1780:  1 not found in COLLECTION
-COLLECTIONTITLE 466 1780:  1 not found in COLLECTION
-COLLECTIONTITLE 466 1780:  1 not found in COLLECTION
-COLLECTIONTITLE 466 1780:  1 not found in COLLECTION
-COLLECTIONTITLE 466 1780:  1 not found in COLLECTION
-COLLECTIONTITLE 0 2498:  1 not found in COLLECTION
-COLLECTIONTITLE 294 2787:  1 not found in COLLECTION
-COLLECTIONTITLE 294 2788:  1 not found in COLLECTION
-COLLECTIONTITLE 294 2789:  1 not found in COLLECTION
-COLLECTIONTITLE 294 2801:  1 not found in COLLECTION
-COLLECTIONTITLE 294 2802:  1 not found in COLLECTION
-SERIESTITLE 20 223:  1 not found in SERIES
-SERIESTITLE 20 2399:  1 not found in SERIES
-
+can't shrink window below config geometry
 
 should not be able to type in display fields
 
