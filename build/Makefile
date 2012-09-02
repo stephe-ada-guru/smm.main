@@ -16,6 +16,13 @@ source-clean :
 install-emulator: ANDROID_DEVICE := -e
 install-emulator: install
 
+# ethernet address can change
+connect-tv:
+	adb connect 192.168.0.101
+
+install:
+	adb install -r org.stephe_leake.android.stephes_music.sdk_20-release.apk
+
 # push music files to running android emulator
 sdcard :
 	adb shell echo "Vocal/01 - Fill Me Up.mp3" > /sdcard/Audio/vocal.m3u

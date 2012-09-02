@@ -4,10 +4,23 @@ src/org/stephe_leake/android/stephes_music/service.java
 (dvc-status)
 ~/Misc/android.text
 
+Galaxy Note:
+    position wrong on restart (with SDK 12 build)
+
+lock screen option; prevent clock on TV?
+    testing
+
+add about dialog, with sdk version
+
+
 sdk_20 apk crashes on HTC
     install catlog, debug
 
-add log verbosity control?
+test on TV
+
+add log verbosity control
+    enable in utils, set in menu
+    enable by default while debugging, off for release
 
 need on-screen volume control
 
@@ -16,8 +29,6 @@ in progressbar:
 
  smm
 /Projects/smm/smm.main/build/x86_gnu_windows_release/Makefile
-
-Galaxy note is android 2.3.6
 
 multiple categories:
     vocal/protest/intro

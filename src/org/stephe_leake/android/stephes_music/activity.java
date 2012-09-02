@@ -32,6 +32,7 @@ import android.content.res.Resources;
 import android.preference.PreferenceManager;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.os.PowerManager.WakeLock;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -74,6 +75,7 @@ public class activity extends android.app.Activity
    private ImageButton playPauseButton;
    private SeekBar     progressBar;
    private TextView    playlistTitle;
+   private WakeLock    wakeLock;
 
    // Cached values
    private int trackDuration = 0; // track duration in milliseconds
@@ -307,11 +309,18 @@ public class activity extends android.app.Activity
       super.onResume();
       try
       {
-         IntentFilter f = new IntentFilter();
+         Resources         res   = getResources();
+         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        IntentFilter       f     = new IntentFilter();
          f.addAction(utils.META_CHANGED);
          f.addAction(utils.PLAYSTATE_CHANGED);
          registerReceiver(broadcastReceiver, f);
          sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_UPDATE_DISPLAY));
+
+         if (prefs.getBoolean (res.getString(R.string.always_on_key), false))
+         {
+            wakeLock.acquire();
+         }
       }
       catch (RuntimeException e)
       {
@@ -321,8 +330,14 @@ public class activity extends android.app.Activity
 
    @Override protected void onPause()
    {
+      Resources         res   = getResources();
+      SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
       super.onPause();
       unregisterReceiver(broadcastReceiver);
+      if (prefs.getBoolean (res.getString(R.string.always_on_key), false))
+      {
+         wakeLock.release();
+      }
    }
 
    @Override protected void onDestroy()
