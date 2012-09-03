@@ -74,7 +74,18 @@ public class preferences extends android.preference.PreferenceActivity
 
       super.onCreate(savedInstanceState);
 
-      addPreferencesFromResource(R.xml.preferences);
+      try
+      {
+         addPreferencesFromResource(R.xml.preferences);
+      }
+      catch (RuntimeException e)
+      {
+         // Probably a stored preference value is now incompatible
+         // with new code. There doesn't seem to be a way to clear all
+         // stored preferences from code; user must delete stored
+         // preferences in Settings | Applications
+         utils.errorLog(this, "Can't read stored preferences: clear data in Settings | Applications");
+      }
 
       ListPreference playlistPref = (ListPreference)findPreference(res.getString(R.string.playlist_directory_key));
 

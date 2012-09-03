@@ -47,14 +47,12 @@ write to the Free Software Foundation, 51 Franklin Street, Suite
         android:summary="@string/text_scale_summary"
         android:dialogTitle="@string/text_scale_dialog_title" />
 
-    <ListPreference
+    <CheckBoxPreference
         android:key="@string/always_on_key"
         android:defaultValue="false"
         android:title="@string/always_on_title"
         android:summary="@string/always_on_summary"
-        android:dialogTitle="@string/always_on_dialog_title"
-        android:entries="@array/always_on_entries"
-        android:entryValues="@array/always_on_entryValues"/>
+        android:dialogTitle="@string/always_on_dialog_title"/>
         
   </PreferenceCategory>
   

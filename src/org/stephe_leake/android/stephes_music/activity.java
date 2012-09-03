@@ -32,6 +32,7 @@ import android.content.res.Resources;
 import android.preference.PreferenceManager;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -253,6 +254,9 @@ public class activity extends android.app.Activity
 
          startService (new Intent(this, service.class));
 
+         PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+         wakeLock = powerManager.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK, getClass().getName());
+
          // Set up displays, top to bottom left to right
 
          artistTitle = utils.findTextViewById(this, R.id.artistTitle);
@@ -330,13 +334,21 @@ public class activity extends android.app.Activity
 
    @Override protected void onPause()
    {
-      Resources         res   = getResources();
-      SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
       super.onPause();
-      unregisterReceiver(broadcastReceiver);
-      if (prefs.getBoolean (res.getString(R.string.always_on_key), false))
+
+      try
       {
-         wakeLock.release();
+         Resources         res   = getResources();
+         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+         unregisterReceiver(broadcastReceiver);
+         if (prefs.getBoolean (res.getString(R.string.always_on_key), false))
+         {
+            wakeLock.release();
+         }
+      }
+      catch (RuntimeException e)
+      {
+         utils.errorLog(this, "onPause: ", e);
       }
    }
 

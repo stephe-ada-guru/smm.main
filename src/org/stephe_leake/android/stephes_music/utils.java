@@ -168,7 +168,7 @@ public class utils
    {
       // programmer errors (possibly due to Android bugs :)
       Log.e(serviceClassName, msg, e);
-      Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
+      Toast.makeText(context, msg + e.toString(), Toast.LENGTH_LONG).show();
    }
 
    public static void errorLog(Context context, String msg)
