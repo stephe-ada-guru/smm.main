@@ -52,19 +52,11 @@ package body Books.List_Views.Collection is
       use Interfaces.C.Strings; -- New_String
    begin
       if Table.Valid then
-         declare
-            Year : chars_ptr := Null_Ptr;
-         begin
-            if Table.Valid_Field (Data_Tables.Collection.Year_Index) then
-               Year := New_String (Table.Field (Data_Tables.Collection.Year_Index));
-            end if;
-
-            List_View.Insert
-              (0,
-               (1 => New_String (Image (ID)),
-                2 => New_String (Table.Field (Data_Tables.Collection.Title_Index)),
-                3 => Year));
-         end;
+         List_View.Insert
+           (0,
+            (1 => New_String (Image (ID)),
+             2 => Field (Table, Data_Tables.Collection.Title_Index),
+             3 => Field (Table, Data_Tables.Collection.Year_Index)));
       else
          --  bad IDs left over from delete
          List_View.Insert

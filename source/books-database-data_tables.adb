@@ -18,19 +18,30 @@
 
 package body Books.Database.Data_Tables is
 
-   use type GNATCOLL.SQL.Exec.SQL_Parameter; -- for "+"
-
    --  Subprogram bodies (alphabetical order)
 
+   function Param (Valid : in Boolean; Item : in Integer) return GNATCOLL.SQL.Exec.SQL_Parameter
+   is
+      use GNATCOLL.SQL.Exec;
+   begin
+      if Valid then
+         return +Item;
+      else
+         return Null_Parameter;
+      end if;
+   end Param;
+
    procedure Delete (T : in out Table'Class)
-   is begin
-      Checked_Execute (T, "DELETE FROM " & T.Name.all & " WHERE ID = ?", Params => (1 => +ID (T)));
+   is
+      use type GNATCOLL.SQL.Exec.SQL_Parameter;
+   begin
+      Checked_Execute (T, "DELETE FROM " & T.Name.all & " WHERE ID = ?", Params => (1 => +T.ID));
       Next (T);
    end Delete;
 
    procedure Fetch (T : in out Table'Class; ID : in ID_Type)
    is begin
-      Find (T, T.Find_By_ID_Statement.all, Params => (1 => +ID));
+      Find (T, T.Find_By_ID_Statement.all, Params => (1 => GNATCOLL.SQL.Exec."+" (ID)));
    end Fetch;
 
    overriding procedure Finalize (T : in out Table)
@@ -49,9 +60,11 @@ package body Books.Database.Data_Tables is
    end ID_Image;
 
    procedure Find_By_Name (T : in out Table'Class; Name : in String)
-   is begin
-      --  FIXME: when is this allocation freed?
-      Find (T, T.Find_By_Name_Statement.all, Params => (1 => +(new String'(Name & '%'))));
+   is
+      use type GNATCOLL.SQL.Exec.SQL_Parameter;
+      Name_1 : aliased String := Name & '%';
+   begin
+      Find (T, T.Find_By_Name_Statement.all, Params => (1 => +Name_1'Unchecked_Access));
    end Find_By_Name;
 
 end Books.Database.Data_Tables;

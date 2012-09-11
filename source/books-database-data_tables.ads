@@ -67,4 +67,7 @@ private
       Find_By_Name_Statement : access constant String;
    end record;
 
+   function Param (Valid : in Boolean; Item : in Integer) return GNATCOLL.SQL.Exec.SQL_Parameter;
+   --  If Valid, return +Item; otherwise return Null_parameter
+
 end Books.Database.Data_Tables;

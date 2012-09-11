@@ -47,7 +47,7 @@ package body Books.Database.Data_Tables.Collection is
            (T,
             "INSERT INTO Collection (Title, Year) VALUES (?, ?)",
             Params =>
-              (1 => +Title_1'Undhecked_Access,
+              (1 => +Title_1'Unchecked_Access,
                2 => +Year));
 
          Find
@@ -75,7 +75,9 @@ package body Books.Database.Data_Tables.Collection is
       Year       : in     Natural;
       Year_Valid : in     Boolean)
    is
-      use GNATCOLL.SQL.Exec;
+      use type GNATCOLL.SQL.Exec.SQL_Parameter;
+
+      Title_1 : aliased String := Title;
 
       Statement : constant String := "UPDATE Collection SET Title = ?, Year = ? WHERE ID = ?";
    begin
@@ -83,9 +85,11 @@ package body Books.Database.Data_Tables.Collection is
         (T,
          Statement,
          Params =>
-           (1 => +new String'(Title),
-            2 => (if Year_Valid then +Year else Null_Parameter),
-            3 => +ID (T)));
+           (1 => +Title_1'Unchecked_Access,
+            2 => Param (Year_Valid, Year),
+            3 => +T.ID));
+
+      T.Fetch (T.ID);
    end Update;
 
 end Books.Database.Data_Tables.Collection;

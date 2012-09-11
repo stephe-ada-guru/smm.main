@@ -64,14 +64,23 @@ package body Books.Database.Data_Tables.Author is
       Last_Name   : in     String)
    is
       use type GNATCOLL.SQL.Exec.SQL_Parameter;
+      First  : aliased String := First_Name;
+      Middle : aliased String := Middle_Name;
+      Last   : aliased String := Last_Name;
 
       --  We use parameters so we don't have to quote the names
       Statement : constant String := "UPDATE Author SET First = ?, Middle = ?, Last = ? WHERE ID = " &
         Field (T, ID_Index);
    begin
-      --  FIXME: when do these allocations get freed?
       Checked_Execute
-        (T, Statement, Params => (+new String'(First_Name), +new String'(Middle_Name), +new String'(Last_Name)));
+        (T,
+         Statement,
+         (1 => +First'Unchecked_Access,
+          2 => +Middle'Unchecked_Access,
+          3 => +Last'Unchecked_Access,
+          4 => +T.ID));
+
+      T.Fetch (T.ID);
    end Update;
 
 end Books.Database.Data_Tables.Author;

@@ -47,13 +47,14 @@ package body Books.Database.Data_Tables.Title is
       use Ada.Strings.Unbounded;
       use GNATCOLL.SQL.Exec;
 
+      Title_1   : aliased constant String := Title;
+      Comment_1 : aliased constant String := Comment;
+
       Statement  : Unbounded_String := To_Unbounded_String ("INSERT INTO Title (Title, Comment");
       Values     : Unbounded_String := To_Unbounded_String (" VALUES (?,?");
       Params     : SQL_Parameters (1 .. 4);
       Last_Param : Positive         := 1;
 
-      Title_1   : aliased constant String := Title;
-      Comment_1 : aliased constant String := Comment;
    begin
       Params (Last_Param) := +Title_1'Unchecked_Access;
       Last_Param          := Last_Param + 1;
@@ -105,16 +106,22 @@ package body Books.Database.Data_Tables.Title is
    is
       use GNATCOLL.SQL.Exec;
 
+      Title_1   : aliased constant String := Title;
+      Comment_1 : aliased constant String := Comment;
+
       Statement : constant String := "UPDATE Title SET Title = ?, Year = ?, Comment = ?, Rating = ? WHERE ID = ?";
    begin
       Checked_Execute
         (T,
          Statement,
          Params =>
-           (1 => +new String'(Title),
-            2 => (if Year_Valid then +Year else Null_Parameter),
-            3 => (if Comment'Length > 0 then +new String'(Comment) else Null_Parameter),
-            4 => (if Rating_Valid then +Rating else Null_Parameter)));
+           (1 => +Title_1'Unchecked_Access,
+            2 => Param (Year_Valid, Year),
+            3 => +Comment_1'Unchecked_Access,
+            4 => Param (Rating_Valid, Rating),
+            5 => +T.ID));
+
+      T.Fetch (T.ID);
    end Update;
 
 end Books.Database.Data_Tables.Title;

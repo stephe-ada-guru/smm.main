@@ -18,34 +18,19 @@
 
 pragma License (GPL);
 
-with Books.Database.Link_Tables;
-with GNATCOLL.SQL.Exec;
-with Gtk.Clist;
-with Interfaces.C.Strings;
-package Books.List_Views is
-
-   type Gtk_List_View_Record is abstract new Gtk.Clist.Gtk_Clist_Record with private;
-   type Gtk_List_View is access all Gtk_List_View_Record'Class;
-
-   procedure Insert_List_Row
-     (List_View : access Gtk_List_View_Record;
-      Table     : access Books.Database.Data_Tables.Table'Class;
-      ID        : in     Books.Database.ID_Type)
-      is abstract;
-   --  Insert data from table for ID into List_View.
-   --
-   --  Called in loop while updating display; List_View is frozen.
-
-private
-
-   type Gtk_List_View_Record is abstract new Gtk.Clist.Gtk_Clist_Record with record
-      Links         : access Books.Database.Link_Tables.Table;
-      Primary_Index : Books.Database.Link_Tables.Link_Index;
-   end record;
+with Books.Database.Data_Tables;
+package body Books.List_Views is
 
    function Field
      (Table : in Books.Database.Data_Tables.Table_Access;
       Index : in GNATCOLL.SQL.Exec.Field_Index)
-     return Interfaces.C.Strings.chars_ptr;
+      return Interfaces.C.Strings.chars_ptr
+   is begin
+      if Table.Valid_Field (Index) then
+         return Interfaces.C.Strings.New_String (Table.Field (Index));
+      else
+         return Interfaces.C.Strings.Null_Ptr;
+      end if;
+   end Field;
 
 end Books.List_Views;

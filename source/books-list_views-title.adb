@@ -47,14 +47,15 @@ package body Books.List_Views.Title is
       ID        : in     Books.Database.ID_Type)
    is
       use Database;
+      use Data_Tables.Title;
       use Interfaces.C.Strings; -- New_String
    begin
       if Table.Valid then
          List_View.Insert
            (0,
             (1 => New_String (Image (ID)),
-             2 => New_String (Table.Field (Data_Tables.Title.Title_Index)),
-             3 => New_String (Table.Field (Data_Tables.Title.Year_Index))));
+             2 => Field (Table, Title_Index),
+             3 => Field (Table, Year_Index)));
       else
          --  bad IDs left over from delete
          List_View.Insert

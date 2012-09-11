@@ -50,9 +50,12 @@ package body Books.Database.Data_Tables.Series is
    is
       use type GNATCOLL.SQL.Exec.SQL_Parameter;
 
+      Title_1   : aliased String  := Title;
       Statement : constant String := "UPDATE Series SET Title = ? WHERE ID = ?";
    begin
-      Checked_Execute (T, Statement, Params => (+new String'(Title), +ID (T)));
+      Checked_Execute (T, Statement, Params => (+Title_1'Unchecked_Access, +T.ID));
+
+      T.Fetch (T.ID);
    end Update;
 
 end Books.Database.Data_Tables.Series;

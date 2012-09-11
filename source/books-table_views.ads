@@ -21,6 +21,7 @@ pragma License (GPL);
 with Books.Database.Data_Tables;
 with Books.Database.Link_Tables;
 with Books.List_Views;
+with GNATCOLL.SQL.Exec;
 with Gdk.Test_Events;
 with Gtk.Check_Button;
 with Gtk.Clist;
@@ -122,6 +123,12 @@ private
    --  For children to call
    procedure To_Main (Table_View : access Gtk_Table_View_Record'class);
    --  Show controls for main display, hide edit, add.
+
+   procedure Set_Text
+     (Text_View : in Gtk.GEntry.Gtk_Entry;
+      Table     : in Books.Database.Data_Tables.Table_Access;
+      Field     : in GNATCOLL.SQL.Exec.Field_Index);
+   --  If Table.Field (Field) is valid, set Text_View to it; else set Text_View to "".
 
    --  For unit tests
    Test_Hook : Test_Hook_Type;

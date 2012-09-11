@@ -1,7 +1,13 @@
 build/x86_gnu_windows_debug/Makefile
+build/x86_gnu_windows_release/Makefile
 doc/C/books.texinfo
 file://c:/Gnu/GtkAda-2.2.0/share/gtk-doc/html/gtk/index.html
 file://c:/Gnu/GtkAda-2.2.0/share/gtk-doc/html/gdk/index.html
+
+can't delete a year from a title
+    not a problem?
+
+last button does nothing in collection
 
 author edit view should have collection link checkbox
 

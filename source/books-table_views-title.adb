@@ -224,21 +224,10 @@ package body Books.Table_Views.Title is
    is
       use Database.Data_Tables.Title;
    begin
-      Title_View.Title_Text.Set_Text (Title_View.Primary_Table.Field (Title_Index));
-      Title_View.Year_Text.Set_Text (Title_View.Primary_Table.Field (Year_Index));
-
-      if Title_View.Primary_Table.Valid_Field (Comment_Index) then
-         Title_View.Comment_Text.Set_Text (Title_View.Primary_Table.Field (Comment_Index));
-      else
-         Title_View.Comment_Text.Set_Text ("");
-      end if;
-
-      if Title_View.Primary_Table.Valid_Field (Rating_Index) then
-         Title_View.Rating_Text.Set_Text (Title_View.Primary_Table.Field (Rating_Index));
-      else
-         Title_View.Rating_Text.Set_Text ("");
-      end if;
-
+      Set_Text (Title_View.Title_Text,   Title_View.Primary_Table, Title_Index);
+      Set_Text (Title_View.Year_Text,    Title_View.Primary_Table, Year_Index);
+      Set_Text (Title_View.Comment_Text, Title_View.Primary_Table, Comment_Index);
+      Set_Text (Title_View.Rating_Text,  Title_View.Primary_Table, Rating_Index);
    end Update_Primary_Display;
 
    overriding procedure Clear_Primary_Display (Title_View : access Gtk_Title_View_Record)

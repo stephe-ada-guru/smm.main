@@ -172,9 +172,9 @@ package body Books.Table_Views.Author is
    is
       use Database.Data_Tables.Author;
    begin
-      Author_View.First_Text.Set_Text (Author_View.Primary_Table.Field (First_Name_Index));
-      Author_View.Middle_Text.Set_Text (Author_View.Primary_Table.Field (Middle_Name_Index));
-      Author_View.Last_Text.Set_Text (Author_View.Primary_Table.Field (Last_Name_Index));
+      Set_Text (Author_View.First_Text, Author_View.Primary_Table, First_Name_Index);
+      Set_Text (Author_View.Middle_Text, Author_View.Primary_Table, Middle_Name_Index);
+      Set_Text (Author_View.Last_Text, Author_View.Primary_Table, Last_Name_Index);
    end Update_Primary_Display;
 
    overriding procedure Clear_Primary_Display (Author_View : access Gtk_Author_View_Record)

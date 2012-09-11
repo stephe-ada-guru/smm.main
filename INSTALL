@@ -7,6 +7,9 @@ On Windows
 Cygwin for make, bash, subversion
        http://cygwin.com/setup.exe
 
+MinGW SQLite3
+      see monotone install-windows_native.text
+      
 GNAT GPL 2012 for Ada, GtkAda, Gnatcoll for SQLite3 binding
      gdb in this distrib doesn't run under Emacs 23.4.1, so we have to use another gdb, but that works
      

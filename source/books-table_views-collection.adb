@@ -177,13 +177,8 @@ package body Books.Table_Views.Collection is
    is
       use Database.Data_Tables.Collection;
    begin
-      Collection_View.Title_Text.Set_Text (Collection_View.Primary_Table.Field (Title_Index));
-
-      if Collection_View.Primary_Table.Valid_Field (Year_Index) then
-         Collection_View.Year_Text.Set_Text (Collection_View.Primary_Table.Field (Year_Index));
-      else
-         Collection_View.Year_Text.Set_Text ("");
-      end if;
+      Set_Text (Collection_View.Title_Text, Collection_View.Primary_Table, Title_Index);
+      Set_Text (Collection_View.Year_Text, Collection_View.Primary_Table, Year_Index);
    end Update_Primary_Display;
 
    overriding procedure Clear_Primary_Display (Collection_View : access Gtk_Collection_View_Record)

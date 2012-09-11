@@ -44,13 +44,15 @@ package body Books.Database is
          declare
             Msg : constant String := T.DB.Connection.Error;
          begin
-            --  GNATCOLL SQLite has obscure behavior with respect to
-            --  cursors and rollback; if a cursor is active, it prevents
-            --  Rollback from working (SQLite reports "database locked").
-            --  It doesn't prevent a successful INSERT. So we have to
-            --  Finalize any cursor before calling Rollback. Another
-            --  GNATCOLL quirk makes Finalize (Cursor) not visible, so we
-            --  use our own GNATCOLL.SQL.Exec.Aux
+            --  WORKAROUND: GNAT GPL 2012 GNATCOLL SQLite has obscure
+            --  behavior with respect to cursors and rollback; if a
+            --  cursor is active, it prevents Rollback from working
+            --  (SQLite reports "database locked"). Rumored to be
+            --  fixed for next version of GNAT. It doesn't prevent a
+            --  successful INSERT. So we have to Finalize any cursor
+            --  before calling Rollback. Another GNATCOLL quirk makes
+            --  Finalize (Cursor) not visible, so we use our own
+            --  GNATCOLL.SQL.Exec.Aux
             GNATCOLL.SQL.Exec.Aux.Finalize (T.Cursor);
             GNATCOLL.SQL.Exec.Rollback (T.DB.Connection);
 

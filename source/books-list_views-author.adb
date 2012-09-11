@@ -54,9 +54,9 @@ package body Books.List_Views.Author is
          List_View.Insert
            (0,
             (1 => New_String (Image (ID)),
-             2 => New_String (Table.Field (Data_Tables.Author.First_Name_Index)),
-             3 => New_String (Table.Field (Data_Tables.Author.Middle_Name_Index)),
-             4 => New_String (Table.Field (Data_Tables.Author.Last_Name_Index))));
+             2 => Field (Table, Data_Tables.Author.First_Name_Index),
+             3 => Field (Table, Data_Tables.Author.Middle_Name_Index),
+             4 => Field (Table, Data_Tables.Author.Last_Name_Index)));
       else
          --  bad IDs left over from delete
          List_View.Insert

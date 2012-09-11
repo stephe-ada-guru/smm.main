@@ -137,14 +137,20 @@ package body Books.Table_Views is
    --  Bodies (alphabetical order)
 
    procedure Add_Link (Table_View : in Gtk_Table_View; Kind : in Table_Names)
-   is
-      Link_ID : constant Database.ID_Type := ID (Table_View.Sibling_Views (Kind));
-   begin
-      if Table_View.Primary_Kind < Kind then
-         Link_Table (Table_View, Kind).Insert ((ID (Table_View), Link_ID));
-      else
-         Link_Table (Table_View, Kind).Insert ((Link_ID, ID (Table_View)));
-      end if;
+   is begin
+      declare
+         Link_ID : constant Database.ID_Type := ID (Table_View.Sibling_Views (Kind));
+      begin
+         if Table_View.Primary_Kind < Kind then
+            Link_Table (Table_View, Kind).Insert ((ID (Table_View), Link_ID));
+         else
+            Link_Table (Table_View, Kind).Insert ((Link_ID, ID (Table_View)));
+         end if;
+      end;
+   exception
+   when Database.No_Data =>
+      --  From ID (Sibling)
+      null;
    end Add_Link;
 
    procedure Create_GUI
@@ -436,6 +442,18 @@ package body Books.Table_Views is
       Data_Tables.Fetch (Table_View.Primary_Table.all, ID);
       Update_Display (Table_View);
    end Set_Display;
+
+   procedure Set_Text
+     (Text_View : in Gtk.GEntry.Gtk_Entry;
+      Table     : in Books.Database.Data_Tables.Table_Access;
+      Field     : in GNATCOLL.SQL.Exec.Field_Index)
+   is begin
+      if Table.Valid_Field (Field) then
+         Text_View.Set_Text (Table.Field (Field));
+      else
+         Text_View.Set_Text ("");
+      end if;
+   end Set_Text;
 
    procedure Set_Visibility (Table_View : access Gtk_Table_View_Record'class)
    is begin
