@@ -468,26 +468,19 @@ NOT-RECURSIVE is nil, mark all files in that directory."
 
 (defun dvc-fileinfo-mark-file (not-recursive)
   "Mark the file under point. If a directory, mark all files in
-that directory. Then move to next ewoc entry."
+that directory (unless NOT-RECURSIVE (defaults to prefix)).
+Then move to next ewoc entry."
   (interactive "P")
   (dvc-fileinfo-mark-file-1 t not-recursive)
   (dvc-fileinfo-next))
 
-(defun dvc-fileinfo-unmark-file (&optional prev)
+(defun dvc-fileinfo-unmark-file (not-recursive)
   "Unmark the file under point. If a directory, unmark all files
-in that directory. If PREV non-nil, move to previous ewoc entry;
-otherwise move to next."
-  (interactive)
-  (dvc-fileinfo-mark-file-1 nil)
-  (if prev
-      (dvc-fileinfo-prev)
-    (dvc-fileinfo-next)))
-
-(defun dvc-fileinfo-unmark-file-up ()
-  "Unmark the file under point. If a directory, unmark all files
-in that directory. Then move to previous ewoc entry."
-  (interactive)
-  (dvc-fileinfo-unmark-file t))
+in that directory (unless NOT-RECURSIVE (defaults to prefix)).
+Then move to next ewoc entry."
+  (interactive "P")
+  (dvc-fileinfo-mark-file-1 nil not-recursive)
+  (dvc-fileinfo-next))
 
 (defun dvc-fileinfo-mark-all ()
   "Mark all files and directories."
