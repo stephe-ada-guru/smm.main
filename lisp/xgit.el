@@ -135,7 +135,7 @@ uncommitted changes."
   (interactive)
   (let ((version (dvc-run-dvc-sync 'xgit (list "version")
                                    :finished 'dvc-output-buffer-handler)))
-    (when (interactive-p)
+    (when (called-interactively-p)
       (message "Git Version: %s" version))
     version))
 
@@ -170,7 +170,7 @@ This is done only for files in the current directory tree."
 (defun xgit-reset-hard (&rest extra-param)
   "Run 'git reset --hard'"
   (interactive)
-  (when (interactive-p)
+  (when (called-interactively-p)
     (setq extra-param (list (ido-completing-read "git reset --hard " '("HEAD" "ORIG_HEAD")
                                                  nil nil nil nil '("HEAD" "ORIG_HEAD")))))
   (dvc-run-dvc-sync 'xgit (append '("reset" "--hard") extra-param)))
@@ -522,7 +522,7 @@ many generations back we want to go from the given commit ID.")
   "Call git fetch.
 When called with a prefix argument, ask for the fetch source."
   (interactive "P")
-  (when (interactive-p)
+  (when (called-interactively-p)
     (when current-prefix-arg
       (setq repository (read-string "Git fetch from: "))))
   (dvc-run-dvc-async 'xgit (list "fetch" repository)))
@@ -547,7 +547,7 @@ with prefix arg ask for branch, default to master."
   "Call git pull.
 When called with a prefix argument, ask for the pull source."
   (interactive "P")
-  (when (interactive-p)
+  (when (called-interactively-p)
     (when current-prefix-arg
       (setq repository (read-string "Git pull from: "))))
   (dvc-run-dvc-async 'xgit (list "pull" repository)
@@ -702,7 +702,7 @@ files changed in the revision is passed to
                                                 (mapconcat #'identity
                                                            args " ")))
                                 (dvc-diff-mode)
-                                (toggle-read-only 1)))))))))
+                                (setq buffer-read-only 1)))))))))
 
 (defvar xgit-describe-regexp "^\\(.*?\\)-\\([0-9]+\\)-g[[:xdigit:]]\\{7\\}")
 
@@ -836,7 +836,7 @@ FILE is filename in the repository at DIR."
 (defun xgit-tag-list ()
   "Run \"git tag\" and list all defined tags"
   (interactive)
-  (if (interactive-p)
+  (if (called-interactively-p)
       (dvc-run-dvc-display-as-info 'xgit (list "tag"))
     (dvc-run-dvc-sync 'xgit (list "tag")
                       :finished 'dvc-output-buffer-split-handler)))
@@ -847,7 +847,7 @@ When ALL is given, show all branches, using \"git branch -a\".
 When called via lisp, return the list of branches. The currently selected branch is
 returned as first entry."
   (interactive "P")
-  (if (interactive-p)
+  (if (called-interactively-p)
       (dvc-run-dvc-display-as-info 'xgit (list "branch" (when all "-a")))
     (let ((branch-list-raw
            (dvc-run-dvc-sync 'xgit (list "branch" (when all "-a"))

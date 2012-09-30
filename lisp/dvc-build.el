@@ -132,12 +132,10 @@
   (autoload 'line-beginning-position  "dvc-xemacs.el")
   (autoload 'line-end-position        "dvc-xemacs.el")
   (autoload 'match-string-no-properties "dvc-xemacs.el")
-  (autoload 'tla--run-tla-sync        "tla-core.el")
   (autoload 'dvc-switch-to-buffer     "dvc-buffers.el")
   (autoload 'dvc-trace                "dvc-utils.el")
   (autoload 'dvc-flash-line           "tla")
   (autoload 'tla-tree-root            "tla")
-  (autoload 'tla--name-construct      "tla-core")
   (defalias 'dvc-cmenu-mouse-avoidance-point-position
     'mouse-avoidance-point-position)
   ;; External things

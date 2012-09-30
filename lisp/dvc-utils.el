@@ -1,6 +1,6 @@
 ;;; dvc-utils.el --- Utility functions for DVC
 
-;; Copyright (C) 2005 - 2010 by all contributors
+;; Copyright (C) 2005 - 2010, 2012 by all contributors
 
 ;; Author: Matthieu Moy <Matthieu.Moy@imag.fr>
 
@@ -477,16 +477,6 @@ It's a macro so that it remains available after (unload-feature ...)."
            xhg-dvc
            xhg-gnus
            xhg
-           ;; tla
-           tla-dvc
-           tla-bconfig
-           tla-browse
-           tla-tests
-           tla
-           tla-core
-           tla-autoconf
-           tla-defs
-           tla-gnus
            ;; baz
            baz-dvc
            baz
@@ -799,7 +789,10 @@ according to `string-match'."
     (not (null matched))))
 
 (defun dvc-edit-exclude ()
-  "Edit the file \".dvc-exclude\" in `default-directory'."
+  "Edit the file \".dvc-exclude\" in `default-directory'.
+Syntax of \".dvc-exclude\" is shell wildcards. Files matching
+them are automatically marked 'excluded'; they will not be
+committed unless the user unmarks them."
   (interactive)
   (find-file ".dvc-exclude"))
 

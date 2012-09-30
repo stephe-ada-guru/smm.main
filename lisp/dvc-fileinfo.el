@@ -374,9 +374,9 @@ marked legacy fileinfos."
       ;; no marked files
       (progn
         ;; binding inhibit-read-only doesn't seem to work here
-        (toggle-read-only 0)
+        (setq buffer-read-only nil)
         (dvc-ewoc-delete dvc-fileinfo-ewoc (ewoc-locate dvc-fileinfo-ewoc))
-        (toggle-read-only 1))
+        (setq buffer-read-only t))
     ;; marked files
     (if (= 0 (length dvc-buffer-marked-file-list))
         ;; non-legacy files
@@ -524,7 +524,8 @@ Then move to next ewoc entry."
             dvc-fileinfo-ewoc))
 
 (defun dvc-fileinfo-toggle-exclude ()
-  "Toggle exclude for file under point. Does not edit default exclude file."
+  "Toggle exclude for file under point. Does not edit default exclude file.
+If a file is marked for exclude, it will not be committed."
   (interactive)
   (let* ((current (ewoc-locate dvc-fileinfo-ewoc))
          (fileinfo (ewoc-data current)))

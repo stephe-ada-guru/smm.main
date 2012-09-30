@@ -59,8 +59,7 @@ The file will contain a setq setting the vars during loading by
         v)
     (if (not (file-exists-p (file-name-directory state-file)))
         (make-directory (file-name-directory state-file) t))
-    (save-excursion
-      (set-buffer (get-buffer-create " *dvc-state*"))
+    (with-current-buffer (get-buffer-create " *dvc-state*")
       (erase-buffer)
       (insert ";; Generated file. Do not edit!!!\n(setq\n")
       (if pp
