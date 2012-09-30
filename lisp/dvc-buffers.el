@@ -379,7 +379,7 @@ being deleted."
   "Major mode for process buffers. Mainly defines \\[bury-buffer]
 to quit the buffer"
   (dvc-install-buffer-menu)
-  (toggle-read-only 1))
+  (setq buffer-read-only t))
 
 
 (defvar dvc-switched-buffer nil)

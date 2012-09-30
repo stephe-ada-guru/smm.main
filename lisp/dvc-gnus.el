@@ -23,8 +23,6 @@
 
 ;;; Commentary:
 
-(require 'tla-core)
-
 ;; gnus is optional. Load it at compile-time to avoid warnings.
 (eval-when-compile
   (condition-case nil
@@ -302,7 +300,7 @@ the patch sould be applied."
     (mm-save-part-to-file handle dvc-patch-name)
     (find-file dvc-patch-name)
     (diff-mode)
-    (toggle-read-only 1)
+    (setq buffer-read-only 1)
     (setq patch-buff (current-buffer))
     (delete-other-windows)
     (setq default-directory (dvc-gnus-suggest-apply-patch-directory))
@@ -326,7 +324,7 @@ the patch sould be applied."
     (diff-mode)
     (setq dvc-gnus-override-window-config (current-window-configuration))
     (dvc-buffer-push-previous-window-config window-conf)
-    (toggle-read-only 1)
+    (setq buffer-read-only 1)
     (other-window -1)
     (gnus-article-show-summary)))
 

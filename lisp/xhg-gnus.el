@@ -23,8 +23,6 @@
 
 ;;; Commentary:
 
-(require 'tla-core)
-
 ;; gnus is optional. Load it at compile-time to avoid warnings.
 (eval-when-compile
   (condition-case nil

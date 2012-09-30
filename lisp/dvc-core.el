@@ -841,7 +841,7 @@ When INFO-STRING is given, insert it at the buffer beginning."
                      (insert-buffer-substring output)
                      (when (capture show-error-buffer)
                        (insert-buffer-substring error))
-                     (toggle-read-only 1)))
+                     (setq buffer-read-only t)))
                  (dvc-switch-to-buffer (capture buffer)))))))
 
 (defvar dvc-info-buffer-mode-map
@@ -855,7 +855,7 @@ When INFO-STRING is given, insert it at the buffer beginning."
   "DVC info mode"
   "Major mode for dvc info buffers"
   (dvc-install-buffer-menu)
-  (toggle-read-only 1))
+  (setq buffer-read-only t))
 
 
 (defvar dvc-log-cookie nil)
@@ -1032,7 +1032,7 @@ Returns that event."
 (define-derived-mode dvc-log-buffer-mode fundamental-mode "DVC Log"
   "Major mode for DVC's internal log buffer. You can open this buffer
 with `dvc-open-internal-log-buffer'."
-  (toggle-read-only 1))
+  (setq buffer-read-only 1))
 
 (defun dvc-open-internal-log-buffer ()
   "Switch to the DVC's internal log buffer.
@@ -1184,7 +1184,7 @@ REVISION-ID is as specified in docs/DVC-API."
          (dvc-call "revision-get-last-revision"
                    file (dvc-revision-get-data revision-id))
          (set-buffer-modified-p nil)
-         (toggle-read-only 1)
+         (setq buffer-read-only 1)
          buffer))
 
       (t (error "TODO: dvc-revision-get-file-in-buffer type %S" type)))))

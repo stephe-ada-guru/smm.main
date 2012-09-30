@@ -89,7 +89,7 @@ PREFIX is passed to `popup-menu'."
                                              (line-end-position)))
              (b (if (and p (get-text-property p dvc-cmenu)) p (point)))
              (e (if n n (point))))
-        (if (and (not (featurep 'xemacs)) (interactive-p))
+        (if (and (not (featurep 'xemacs)) (called-interactively-p))
             (let* ((pos (dvc-cmenu-mouse-avoidance-point-position e))
                    (object (car pos))
                    (x (cadr pos))

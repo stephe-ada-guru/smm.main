@@ -1,6 +1,6 @@
 ;;; xmtn-ids.el --- Resolver routines for xmtn revision ids
 
-;; Copyright (C) 2008 - 2011 Stephen Leake
+;; Copyright (C) 2008 - 2012 Stephen Leake
 ;; Copyright (C) 2006, 2007 Christian M. Ohler
 
 ;; Author: Christian M. Ohler
@@ -8,7 +8,7 @@
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 2 of the License, or
+;; the Free Software Foundation; either version 3 of the License, or
 ;; (at your option) any later version.
 ;;
 ;; This file is distributed in the hope that it will be useful,
@@ -73,10 +73,9 @@
 ;;; There are some notes on the design of xmtn in
 ;;; docs/xmtn-readme.txt.
 
-(eval-and-compile
-  (require 'cl)
-  (require 'xmtn-automate)
-  (require 'xmtn-match))
+(require 'cl)
+(require 'xmtn-automate)
+(require 'xmtn-match)
 
 (defun xmtn--revision-hash-id (revision-id)
   "Return the hash-id from a REVISION-ID"

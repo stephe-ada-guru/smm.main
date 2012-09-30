@@ -432,7 +432,7 @@ a 'file."
         (dvc-trace "mark/unmark %S" file)
         (if (dvc-fileinfo-file-p fileinfo)
             (if unmark
-                (dvc-fileinfo-unmark-file)
+                (dvc-fileinfo-unmark-file nil)
               (dvc-fileinfo-mark-file nil))
           ;; legacy
           (if unmark
