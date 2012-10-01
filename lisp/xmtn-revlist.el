@@ -8,7 +8,7 @@
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 2 of the License, or
+;; the Free Software Foundation; either version 3 of the License, or
 ;; (at your option) any later version.
 ;;
 ;; This file is distributed in the hope that it will be useful,
@@ -31,16 +31,14 @@
 ;;; There are some notes on the design of xmtn in
 ;;; docs/xmtn-readme.txt.
 
-(eval-and-compile
-  (require 'cl) ;; yes, we are using cl at runtime; we're working towards eliminating that.
-  (require 'dvc-unified)
-  (require 'dvc-revlist)
-  (require 'xmtn-ids)
-  (require 'xmtn-basic-io)
-  (require 'xmtn-automate)
-  (require 'xmtn-match)
-  (require 'xmtn-dvc))
-
+(require 'cl)
+(require 'dvc-unified)
+(require 'dvc-revlist)
+(require 'xmtn-ids)
+(require 'xmtn-basic-io)
+(require 'xmtn-automate)
+(require 'xmtn-match)
+(require 'xmtn-dvc)
 
 (defvar xmtn--revlist-*info-generator-fn* nil)
 "Buffer-local variable pointing to a function that generates a
@@ -257,7 +255,7 @@ arg; root. Result is of the form:
   ;; versions of dvc-log are too different.
   (interactive)
   (let ((dvc-temp-current-active-dvc 'xmtn))
-    (if (interactive-p)
+    (if (called-interactively-p)
         (call-interactively 'dvc-log)
       (funcall 'dvc-log path last-n))))
 

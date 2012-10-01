@@ -94,7 +94,7 @@
 (require 'dvc-core)
 (require 'dvc-state)
 (require 'ewoc)
-(eval-when-compile (require 'cl))
+(require 'cl)
 
 ;; this were the settings used for tla
 ;; ;; Generated file. Do not edit!!!
@@ -1195,7 +1195,7 @@ or in the same sublist"
         (dvc-bookmarks-show-or-hide-subtree)
         (end-of-line)))
     (forward-line 1)))
-    
+
 
 (defvar dvc-bookmarks-tmp-yank-item '("hg" (local-tree "~/work/hg/hg")))
 

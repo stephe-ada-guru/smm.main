@@ -83,9 +83,8 @@ with the branch location."
                            `(bzr (revision (local "" ,(string-to-number revnr))))
                            nil
                            archive-location))
-          (save-excursion
-            (set-buffer diff-buffer)
-            (dvc-buffer-push-previous-window-config window-conf)))
+          (with-current-buffer diff-buffer
+	    (dvc-buffer-push-previous-window-config window-conf)))
       (message "No external bzr patch found in this article.")
       (set-window-configuration window-conf))))
 
@@ -154,5 +153,3 @@ Example setting: '((\"dvc-dev@gna.org\" \"~/work/bzr/dvc\"))"
 
 (provide 'bzr-gnus)
 ;;; bzr-gnus.el ends here
-
-

@@ -95,12 +95,12 @@
 It currently supports the initialization for bzr, xhg, xgit, tla.
 Note: this function is only useful when called interactively."
   (interactive)
-  (when (interactive-p)
+  (when (called-interactively-p)
     (let ((supported-variants (map t 'symbol-name dvc-registered-backends))
           (working-dir (dvc-uniquify-file-name default-directory))
           (dvc))
       ;; hide backends that don't provide an init function
-      (mapc '(lambda (elem)
+      (mapc #'(lambda (elem)
                 (setq supported-variants (delete elem supported-variants)))
               '("xdarcs" "xmtn" "baz"))
       (add-to-list 'supported-variants "bzr-repo")
@@ -176,7 +176,7 @@ not &rest."
 (defun dvc-clone (&optional dvc source-path dest-path rev)
   "Ask for the DVC to use and clone SOURCE-PATH."
   (interactive "P")
-  (when (interactive-p)
+  (when (called-interactively-p)
     (let* ((ffap-url-regexp
             (concat
              "\\`\\("
@@ -386,7 +386,7 @@ but to-file-name does, just record the rename in the back-end"
   "Returns and/or shows the version identity string of backend command."
   (interactive)
   (setq dvc-command-version (dvc-call "dvc-command-version"))
-  (when (interactive-p)
+  (when (called-interactively-p)
     (message "%s" dvc-command-version))
   dvc-command-version)
 
@@ -418,7 +418,7 @@ the current active back-end."
       (unless no-error (error "Tree %s is not under version control"
                               path))
       (setq root nil))
-    (when (interactive-p)
+    (when (called-interactively-p)
       (message "Root: %s (managed by %s)"
                root (dvc-variable dvc "backend-name")))
     root))

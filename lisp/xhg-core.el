@@ -52,7 +52,7 @@ fast.
 
 If NO-ERROR is non-nil, don't raise an error if LOCATION is not a
 mercurial managed tree (but return nil)."
-  (dvc-tree-root-helper ".hg/" (or interactive (interactive-p))
+  (dvc-tree-root-helper ".hg/" (or interactive (called-interactively-p))
                         "%S is not in a mercurial-managed tree!"
                         location no-error))
 

@@ -1,6 +1,6 @@
 ;;; xmtn-run.el --- Functions for runnning monotone commands
 
-;; Copyright (C) 2008 - 2011 Stephen Leake
+;; Copyright (C) 2008 - 2012 Stephen Leake
 ;; Copyright (C) 2006, 2007 Christian M. Ohler
 
 ;; Author: Christian M. Ohler
@@ -8,7 +8,7 @@
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 2 of the License, or
+;; the Free Software Foundation; either version 3 of the License, or
 ;; (at your option) any later version.
 ;;
 ;; This file is distributed in the hope that it will be useful,
@@ -32,14 +32,13 @@
 ;;; There are some notes on the design of xmtn in
 ;;; docs/xmtn-readme.txt.
 
-(eval-and-compile
-  (require 'cl)
-  (require 'dvc-unified)
-  (when (featurep 'xemacs)
-    (condition-case nil
-        (require 'un-define)
-      (error nil)))
-  (require 'xmtn-base))
+(require 'cl)
+(require 'dvc-unified)
+(when (featurep 'xemacs)
+  (condition-case nil
+      (require 'un-define)
+    (error nil)))
+(require 'xmtn-base)
 
 (define-coding-system-alias 'xmtn--monotone-normal-form 'utf-8-unix)
 

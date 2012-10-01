@@ -274,7 +274,7 @@ then use that value instead of the cache or searching."
               (puthash (dvc-uniquify-file-name root)
                        dvc dvc-current-active-dvc-cache))
 
-            (when (interactive-p)
+            (when (called-interactively-p)
               (message "DVC: using %s for %s" dvc default-directory))))
         dvc)))
 

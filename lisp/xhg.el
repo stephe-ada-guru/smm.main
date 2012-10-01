@@ -295,7 +295,7 @@ C-u C-u  : Show patches also, ask for revisions
 positive : Don't show patches, ask for revisions.
 negative : Don't show patches, limit to n revisions."
   (interactive "P")
-  (when (interactive-p)
+  (when (called-interactively-p)
     (cond ((equal current-prefix-arg '(4))
            (setq show-patch t)
            (setq r1 nil))
@@ -805,7 +805,7 @@ R = resolved"
   (interactive)
   (let ((version (dvc-run-dvc-sync 'xhg '("version")
                                    :finished 'dvc-output-buffer-handler)))
-    (when (interactive-p)
+    (when (called-interactively-p)
       (message "Mercurial version: %s" version))
     version))
 
@@ -819,10 +819,10 @@ display the current one."
                                   :finished 'dvc-output-buffer-handler)))
     (if (not new-name)
         (progn
-          (when (interactive-p)
+          (when (called-interactively-p)
             (message "xhg branch: %s" branch))
           branch)
-        (when (interactive-p)
+        (when (called-interactively-p)
           (setq new-name (read-string (format "Change branch from '%s' to: " branch) nil nil branch)))
         (dvc-run-dvc-sync 'xhg (list "branch" new-name)))))
 
@@ -912,7 +912,7 @@ Usually merge the change made in dev branch in default branch."
                       :error
                       (lambda (output error status arguments)
                         (setq id "<unknown>")))
-    (when (interactive-p)
+    (when (called-interactively-p)
       (message "hg identity for %s: %s" default-directory id))
     id))
 
@@ -938,7 +938,7 @@ Otherwise the return value depends on TYPE:
 'both      Return the aliases and the paths in a flat list
 otherwise: Return a list of two element sublists containing alias, path"
   (interactive)
-  (if (interactive-p)
+  (if (called-interactively-p)
       (dvc-run-dvc-display-as-info 'xhg '("paths"))
     (let* ((path-list (dvc-run-dvc-sync 'xhg (list "paths")
                                         :finished 'dvc-output-buffer-split-handler))

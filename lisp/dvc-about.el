@@ -132,7 +132,7 @@ Used in `dvc-about-message-with-bouncing' and `dvc-about-message-with-rolling'")
        "[" (dvc-about-insert-button "About" 'dvc-about)
        "]"
        "\n")
-      (toggle-read-only t)
+      (setq buffer-read-only t)
       (local-set-key [?q] (lambda () (interactive)
                             (kill-buffer (current-buffer)))))
     ;; TODO: Use CONTRIBUTORS file.

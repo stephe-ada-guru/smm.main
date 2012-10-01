@@ -374,9 +374,9 @@ marked legacy fileinfos."
       ;; no marked files
       (progn
         ;; binding inhibit-read-only doesn't seem to work here
-        (toggle-read-only 0)
+        (setq buffer-read-only nil)
         (dvc-ewoc-delete dvc-fileinfo-ewoc (ewoc-locate dvc-fileinfo-ewoc))
-        (toggle-read-only 1))
+        (setq buffer-read-only t))
     ;; marked files
     (if (= 0 (length dvc-buffer-marked-file-list))
         ;; non-legacy files
@@ -468,26 +468,19 @@ NOT-RECURSIVE is nil, mark all files in that directory."
 
 (defun dvc-fileinfo-mark-file (not-recursive)
   "Mark the file under point. If a directory, mark all files in
-that directory. Then move to next ewoc entry."
+that directory (unless NOT-RECURSIVE (defaults to prefix)).
+Then move to next ewoc entry."
   (interactive "P")
   (dvc-fileinfo-mark-file-1 t not-recursive)
   (dvc-fileinfo-next))
 
-(defun dvc-fileinfo-unmark-file (&optional prev)
+(defun dvc-fileinfo-unmark-file (not-recursive)
   "Unmark the file under point. If a directory, unmark all files
-in that directory. If PREV non-nil, move to previous ewoc entry;
-otherwise move to next."
-  (interactive)
-  (dvc-fileinfo-mark-file-1 nil)
-  (if prev
-      (dvc-fileinfo-prev)
-    (dvc-fileinfo-next)))
-
-(defun dvc-fileinfo-unmark-file-up ()
-  "Unmark the file under point. If a directory, unmark all files
-in that directory. Then move to previous ewoc entry."
-  (interactive)
-  (dvc-fileinfo-unmark-file t))
+in that directory (unless NOT-RECURSIVE (defaults to prefix)).
+Then move to next ewoc entry."
+  (interactive "P")
+  (dvc-fileinfo-mark-file-1 nil not-recursive)
+  (dvc-fileinfo-next))
 
 (defun dvc-fileinfo-mark-all ()
   "Mark all files and directories."
@@ -531,7 +524,8 @@ in that directory. Then move to previous ewoc entry."
             dvc-fileinfo-ewoc))
 
 (defun dvc-fileinfo-toggle-exclude ()
-  "Toggle exclude for file under point. Does not edit default exclude file."
+  "Toggle exclude for file under point. Does not edit default exclude file.
+If a file is marked for exclude, it will not be committed."
   (interactive)
   (let* ((current (ewoc-locate dvc-fileinfo-ewoc))
          (fileinfo (ewoc-data current)))
