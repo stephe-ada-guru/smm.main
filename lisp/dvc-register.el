@@ -1,13 +1,13 @@
 ;;; dvc-register.el --- Registration of DVC back-ends
 
-;; Copyright (C) 2005-2008 by all contributors
+;; Copyright (C) 2005-2008, 2012 by all contributors
 
 ;; Author: Stefan Reichoer, <stefan@xsteve.at>
 ;; Contributions from: Matthieu Moy <Matthieu.Moy@imag.fr>
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 2, or (at your option)
+;; the Free Software Foundation; either version 3, or (at your option)
 ;; any later version.
 
 ;; This file is distributed in the hope that it will be useful,
@@ -274,7 +274,7 @@ then use that value instead of the cache or searching."
               (puthash (dvc-uniquify-file-name root)
                        dvc dvc-current-active-dvc-cache))
 
-            (when (called-interactively-p)
+            (when (called-interactively-p 'any)
               (message "DVC: using %s for %s" dvc default-directory))))
         dvc)))
 

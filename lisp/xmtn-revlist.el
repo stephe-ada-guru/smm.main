@@ -255,7 +255,7 @@ arg; root. Result is of the form:
   ;; versions of dvc-log are too different.
   (interactive)
   (let ((dvc-temp-current-active-dvc 'xmtn))
-    (if (called-interactively-p)
+    (if (called-interactively-p 'any)
         (call-interactively 'dvc-log)
       (funcall 'dvc-log path last-n))))
 

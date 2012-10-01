@@ -1,6 +1,6 @@
 ;;; xmtn-minimal.el --- Definitions for detecting whether to activate xmtn
 
-;; Copyright (C) 2006, 2007 Christian M. Ohler
+;; Copyright (C) 2006, 2007, 2012 Christian M. Ohler
 
 ;; Author: Christian M. Ohler
 ;; Keywords: tools
@@ -38,7 +38,7 @@
 
 ;;;###autoload
 (defun xmtn-tree-root (&optional location no-error)
-  (dvc-tree-root-helper "_MTN/" (called-interactively-p)
+  (dvc-tree-root-helper "_MTN/" (called-interactively-p 'any)
                         "%s is not in a monotone-managed tree"
                         location no-error))
 
