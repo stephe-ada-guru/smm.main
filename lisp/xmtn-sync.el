@@ -111,6 +111,7 @@ The elements must all be of type xmtn-sync-sync.")
   rev-alist ;; alist of '(revid (date author changelog)) for received revs
   send-count ;; integer count of sent revs
   print-mode ;; 'summary | 'brief | 'full | 'started
+  ;; FIXME: make 'started state orthogonal to print-mode
   sort-key ;; for use by xmtn-sync-sort
   )
 
@@ -211,6 +212,7 @@ The elements must all be of type xmtn-sync-sync.")
   (interactive)
   (xmtn-sync-status)
   (if (xmtn-status-updatep)
+      ; (xmtn-sync-full); shows commit log; useful to see if we need to review the update. FIXME: doesn't work
       (xmtn-status-update)))
 
 (defun xmtn-sync-clean ()
@@ -242,6 +244,7 @@ The elements must all be of type xmtn-sync-sync.")
     (define-key map [?u]  '(menu-item "u) update" xmtn-sync-update :visible (xmtn-sync-rx-p)))
     map)
   "Keyboard menu keymap used in `xmtn-sync-mode'.")
+;; FIXME: make f cycle thru display modes summary, brief, full
 
 (defvar xmtn-sync-mode-map
   (let ((map (make-sparse-keymap)))
