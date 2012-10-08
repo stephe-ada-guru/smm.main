@@ -376,7 +376,7 @@ header."
           (t
            (error "unsupported left_resolution %s" symbol))))
 
-       (if (eq (car (xmtn-conflicts-conflict-left_resolution conflict) 'resolved_user))
+       (if (eq (car (xmtn-conflicts-conflict-left_resolution conflict)) 'resolved_user)
 	   (xmtn-basic-io-optional-line "resolved_rename_left"
 	     (setf (xmtn-conflicts-conflict-left_resolution conflict) (list 'resolved_rename (cadar value)))))))
 
