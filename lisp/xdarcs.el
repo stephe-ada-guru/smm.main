@@ -60,7 +60,7 @@
   (interactive)
   (let ((version (dvc-run-dvc-sync 'xdarcs '("--version")
                                    :finished 'dvc-output-buffer-handler)))
-    (when (called-interactively-p)
+    (when (interactive-p)
       (message "darcs version: %s" version))
     version))
 

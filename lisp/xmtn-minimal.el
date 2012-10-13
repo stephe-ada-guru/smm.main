@@ -38,7 +38,7 @@
 
 ;;;###autoload
 (defun xmtn-tree-root (&optional location no-error)
-  (dvc-tree-root-helper "_MTN/" (called-interactively-p 'any)
+  (dvc-tree-root-helper "_MTN/" (interactive-p)
                         "%s is not in a monotone-managed tree"
                         location no-error))
 

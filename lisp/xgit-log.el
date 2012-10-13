@@ -301,7 +301,7 @@ C-u C-u  : Show patches also, ask for revisions
 positive : Don't show patches, ask for revisions.
 negative : Don't show patches, limit to n revisions."
   (interactive "P")
-  (when (called-interactively-p)
+  (when (interactive-p)
     (cond ((equal current-prefix-arg '(4))
            (setq show-patch t)
            (setq r1 nil))

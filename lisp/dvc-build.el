@@ -298,10 +298,11 @@ fixed in Emacs after 21.3."
 ;; and compile everything that needs compiling.
 (defun dvc-build-all ()
   ;; interactive-p is obsolete in 23.2, and we get warnings about it
-  ;;in 24.2, but we are still supporting 23.1. So suppress that
-  ;;warning unless verbose
+  ;; in 24.2, but we are still supporting 23.1, which doesn't define
+  ;; the replacement called-interactively-p. So suppress that warning
+  ;; unless verbose. Also suppress warning about cl package runtime
   (unless command-line-args-left
-    (setq byte-compile-warnings '(not obsolete)))
+    (setq byte-compile-warnings '(not obsolete cl-functions)))
   (setq command-line-args-left nil)
 
   (let ((fake-c-l-a-l (list srcdir))

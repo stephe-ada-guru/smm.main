@@ -53,6 +53,10 @@ arg; root. Result is of the form:
 "Buffer-local variable containing path argument for log"
 (make-variable-buffer-local 'xmtn--revlist-*path*)
 
+(defvar xmtn--revlist-*to* nil)
+"Buffer-local variable containing path argument for log"
+(make-variable-buffer-local 'xmtn--revlist-*to*)
+
 (defstruct (xmtn--revlist-entry (:constructor xmtn--make-revlist-entry))
   revision-hash-id
   branches
@@ -256,7 +260,7 @@ arg; root. Result is of the form:
   ;; versions of dvc-log are too different.
   (interactive)
   (let ((dvc-temp-current-active-dvc 'xmtn))
-    (if (called-interactively-p 'any)
+    (if (interactive-p)
         (call-interactively 'dvc-log)
       (funcall 'dvc-log path last-n))))
 

@@ -325,7 +325,7 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
 	 (eq (xmtn-propagate-data-from-heads data)
 	     'need-update))))
 
-(defun xmtn-propagate-lca ()
+(defun xmtn-propagate-lca (data)
   "Return least common ancestor rev of `from', `to'."
   (let ((all-common-ancestors
 	 (xmtn-automate-command-output-lines
@@ -355,7 +355,7 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
        nil ;; path
        nil ;; first-line-only-p
        nil ;; last-n
-       (xmtn-propagate-lca);; from
+       (xmtn-propagate-lca data);; to
        ))
     ))
 

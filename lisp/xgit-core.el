@@ -87,7 +87,7 @@ fast.
 If NO-ERROR is non-nil, don't raise an error if LOCATION is not a
 git managed tree (but return nil)."
   (or (xgit-lookup-external-git-dir location t)
-      (dvc-tree-root-helper ".git/" (or interactive (called-interactively-p))
+      (dvc-tree-root-helper ".git/" (or interactive (interactive-p))
                             "%S is not in a git tree!"
                             location no-error)))
 

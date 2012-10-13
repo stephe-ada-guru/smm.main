@@ -52,7 +52,7 @@ fast.
 
 If NO-ERROR is non-nil, don't raise an error if LOCATION is not a
 git managed tree (but return nil)."
-  (dvc-tree-root-helper "_darcs/" (or interactive (called-interactively-p))
+  (dvc-tree-root-helper "_darcs/" (or interactive (interactive-p))
                         "%S is not in a darcs tree!"
                         location no-error))
 
