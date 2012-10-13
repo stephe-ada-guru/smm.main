@@ -1,6 +1,6 @@
 ;;; dvc-build.el --- compile-time helper.
 
-;; Copyright (C) 2004-2008 by all contributors
+;; Copyright (C) 2004-2008, 2012 by all contributors
 
 ;; Author: Matthieu Moy <Matthieu.Moy@imag.fr>
 ;;      Thien-Thi Nguyen <ttn@gnuvola.org>
@@ -297,9 +297,11 @@ fixed in Emacs after 21.3."
 ;; Update custom-autoloads and autoloads (merging them for GNU Emacs),
 ;; and compile everything that needs compiling.
 (defun dvc-build-all ()
-  ;; The default warnings don't look so bad to me!
-  ;;(unless command-line-args-left
-  ;;  (setq byte-compile-warnings --warnings))
+  ;; interactive-p is obsolete in 23.2, and we get warnings about it
+  ;;in 24.2, but we are still supporting 23.1. So suppress that
+  ;;warning unless verbose
+  (unless command-line-args-left
+    (setq byte-compile-warnings '(not obsolete)))
   (setq command-line-args-left nil)
 
   (let ((fake-c-l-a-l (list srcdir))

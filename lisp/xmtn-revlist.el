@@ -223,7 +223,7 @@ arg; root. Result is of the form:
           (ewoc-goto-node ewoc (ewoc-nth ewoc 0))))))
   nil)
 
-(defun xmtn--setup-revlist (root info-generator-fn path first-line-only-p last-n)
+(defun xmtn--setup-revlist (root info-generator-fn path first-line-only-p last-n &optional to)
   ;; Adapted from `dvc-build-revision-list'.
   ;; See xmtn--revlist-*info-generator-fn*
   (xmtn-automate-cache-session root)
@@ -233,6 +233,7 @@ arg; root. Result is of the form:
     (with-current-buffer buffer
       (setq xmtn--revlist-*info-generator-fn* info-generator-fn)
       (setq xmtn--revlist-*path* (when path (file-relative-name path root)))
+      (setq xmtn--revlist-*to* to)
       (xmtn--revlist-refresh))
     (xmtn--display-buffer-maybe buffer nil)
     ;; return buffer so it can be popped to and/or cleaned up
@@ -274,20 +275,25 @@ arg; root. Result is of the form:
     (let
 	((header
 	  (list (format "Log for branch %s" branch)))
-	 (options
-	  ;; FIXME: this gives most the recent date first, we want
-	  ;; that last. See mtn issue 118 for why we can't fix that
-	  ;; with more options. The 'toposort' in
-	  ;; xmtn--revlist-setup-ewoc puts it in the desired date
-	  ;; order. In general, it would be better if revlist-setup
-	  ;; did not alter the order.
-	  (if dvc-revlist-last-n
-	      (list "last" (format "%d" dvc-revlist-last-n))))
+	 (options nil)
 	 (command
 	  (if xmtn--revlist-*path*
 	      (list "log" xmtn--revlist-*path*)
 	    (list "log")))
 	 )
+      (when dvc-revlist-last-n
+	;; FIXME: this gives most the recent date first, we want that
+	;; last. See mtn issue 118 for why we can't fix that with more
+	;; options. The 'toposort' in xmtn--revlist-setup-ewoc puts it
+	;; in the desired date order. In general, it would be better
+	;; if revlist-setup did not alter the order.
+	(add-to-list 'options (format "%d" dvc-revlist-last-n))
+	(add-to-list 'options "last"))
+
+      (when xmtn--revlist-*to*
+	(add-to-list 'options xmtn--revlist-*to*)
+	(add-to-list 'options "to"))
+
       ;; See xmtn--revlist-*info-generator-fn* for result format
       (list header
 	    '() ;; footer
