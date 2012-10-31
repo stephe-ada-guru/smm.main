@@ -1,6 +1,6 @@
 ;;; dvc-buffers.el --- Buffer management for DVC
 
-;; Copyright (C) 2005-2011 by all contributors
+;; Copyright (C) 2005-2012 by all contributors
 
 ;; Author: Matthieu Moy <Matthieu.Moy@imag.fr>
 ;; Contributions from:
@@ -391,7 +391,7 @@ See `dvc-switch-to-buffer-mode' for possible settings."
   (setq dvc-switched-from-buffer (current-buffer))
   (cond
    (other-frame
-    (let ((display-reuse-frames t)
+    (let ((display-buffer-reuse-frames t)
           (pop-up-frames t)
           (pop-up-frame-alist `((width . ,dvc-other-frame-width)
                                 (height . ,dvc-other-frame-height)
