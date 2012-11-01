@@ -607,7 +607,7 @@ that is used in the generated email."
         (top-pos))
     (with-current-buffer (dvc-get-buffer 'xhg 'patch-queue)
       (let ((buffer-read-only nil)
-            (old-applied-patches (progn (goto-char (point-min)) (next-line 1)
+            (old-applied-patches (progn (goto-char (point-min)) (forward-line 1)
                                         (split-string (buffer-substring-no-properties (point) (- (point-max) 1)))))
             (act-patches (append applied unapplied)))
         (dolist (u unapplied)

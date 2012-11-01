@@ -27,6 +27,7 @@
 
 ;;; Code:
 
+(require 'add-log)
 (require 'dvc-unified)
 (require 'ediff)
 (require 'vc)
