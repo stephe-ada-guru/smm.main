@@ -756,11 +756,10 @@ FILE is filename in the repository at DIR."
 (defun xgit-annotate ()
   "Run git annotate"
   (interactive)
-  (let* ((line (dvc-line-number-at-pos))
-         (filename (dvc-confirm-read-file-name "Filename to annotate: "))
-         (default-directory (xgit-tree-root filename)))
-    (xgit-do-annotate default-directory filename)
-    (goto-line line)))
+  (save-excursion
+    (let* ((filename (dvc-confirm-read-file-name "Filename to annotate: "))
+	   (default-directory (xgit-tree-root filename)))
+      (xgit-do-annotate default-directory filename))))
 
 (defun xgit-stash-save (message)
   "Run git-stash."

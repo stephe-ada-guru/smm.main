@@ -346,7 +346,7 @@ Inserts the entry in the dvc log-edit buffer instead of the ChangeLog."
                  (goto-char (point-max))
                  (re-search-backward "^." nil t)
                  (forward-line 1)
-		 (if (> 0 (current-column))
+		 (if (< 0 (current-column))
 		     (insert "\n"))
 		 ;; Now on blank line after last entry. Delete any
 		 ;; whitespace between here and eob.

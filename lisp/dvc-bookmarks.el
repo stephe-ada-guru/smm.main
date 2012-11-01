@@ -245,7 +245,7 @@ Must be non-nil for some featurs of dvc-bookmarks to work.")
 
 (defun dvc-assq-all (key alist)
   "Return an alist containing all associations from ALIST matching KEY."
-  (delete nil (mapcar '(lambda (e)
+  (delete nil (mapcar #'(lambda (e)
                          (when (and (listp e) (eq (car e) key))
                            e))
                       alist)))
@@ -595,7 +595,7 @@ With prefix argument ARG, reload the bookmarks file from disk."
     (set-dvc-bookmarks-cache))
   (dvc-switch-to-buffer (get-buffer-create "*dvc-bookmarks*"))
   (let ((cur-pos (point)))
-    (toggle-read-only 0)
+    (setq buffer-read-only nil)
     (erase-buffer)
     (set (make-local-variable 'dvc-bookmarks-cookie)
          (ewoc-create (dvc-ewoc-create-api-select
@@ -617,7 +617,7 @@ With prefix argument ARG, reload the bookmarks file from disk."
   (use-local-map dvc-bookmarks-mode-map)
   (setq major-mode 'dvc-bookmarks-mode)
   (setq mode-name "dvc-bookmarks")
-  (toggle-read-only 1)
+  (setq buffer-read-only t)
   (run-hooks 'dvc-bookmarks-mode-hook))
 
 (defun dvc-bookmarks-quit ()

@@ -1210,10 +1210,8 @@ File can be, i.e. bazaar.conf, ignore, locations.conf, ..."
 (defun bzr-annotate ()
   "Run bzr annotate"
   (interactive)
-  (let* ((line (dvc-line-number-at-pos))
-         (filename (dvc-confirm-read-file-name "Filename to annotate: ")))
-    (bzr-do-annotate filename)
-    (goto-line line)))
+  (save-excursion
+    (bzr-do-annotate (dvc-confirm-read-file-name "Filename to annotate: "))))
 
 (defconst bzr-annon-parse-re
   "^\\(\\S-*\\)\\s-+\\(\\S-*\\)\\s-+\\([0-9]\\{4\\}\\)\\([0-9]\\{2\\}\\)\\([0-9]\\{2\\}\\)\\s-+|")
@@ -1235,7 +1233,7 @@ File can be, i.e. bazaar.conf, ignore, locations.conf, ..."
   (dvc-annotate-display-autoscale t)
   (dvc-annotate-lines (point-max))
   ;;(xgit-annotate-hide-revinfo)
-  (toggle-read-only 1))
+  (setq buffer-read-only t))
 
 (defun bzr-switch-checkout (target)
   "Switch the checkout to the branch TARGET"

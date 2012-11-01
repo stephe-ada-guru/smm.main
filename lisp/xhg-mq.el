@@ -639,7 +639,7 @@ that is used in the generated email."
   (let ((patch-name (or patch (xhg-mq-patch-name-at-point)))
         (cur-buf (current-buffer)))
     (find-file-other-window (xhg-mq-patch-file-name patch-name))
-    (toggle-read-only 1)
+    (setq buffer-read-only t)
     (diff-mode)
     (pop-to-buffer cur-buf)))
 
@@ -674,7 +674,7 @@ that is used in the generated email."
   "xhg mq mode"
   "Major mode for xhg mq interaction."
   (dvc-install-buffer-menu)
-  (toggle-read-only 1))
+  (setq buffer-read-only t))
 
 (defun xhg-mq-ewoc-data-at-point ()
   (if (or (= (dvc-line-number-at-pos) 1)

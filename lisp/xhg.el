@@ -352,7 +352,7 @@ negative : Don't show patches, limit to n revisions."
                                 (insert-buffer-substring output)
                                 (goto-char (point-min))
                                 (insert (format "hg log for %s\n\n" default-directory))
-                                (toggle-read-only 1)))))))))
+                                (setq buffer-read-only t)))))))))
 
 ;;;###autoload
 (defun xhg-search-regexp-in-log ()
@@ -375,7 +375,7 @@ negative : Don't show patches, limit to n revisions."
                               (insert-buffer-substring output)
                               (goto-char (point-min))
                               (insert (format "hg log for %s\n\n" default-directory))
-                              (toggle-read-only 1))))))))
+                              (setq buffer-read-only t))))))))
 
 (defun xhg-parse-diff (changes-buffer)
   (save-excursion
@@ -504,7 +504,7 @@ If DONT-SWITCH, don't switch to the diff buffer"
       (let ((inhibit-read-only t))
         (erase-buffer)
         (insert-buffer-substring output)
-        (toggle-read-only 1)))
+        (setq buffer-read-only t)))
     (let ((dvc-switch-to-buffer-mode 'show-in-other-window))
       (dvc-switch-to-buffer buffer))))
 
@@ -526,7 +526,7 @@ If DONT-SWITCH, don't switch to the diff buffer"
       (let ((inhibit-read-only t))
         (erase-buffer)
         (insert-buffer-substring output)
-        (toggle-read-only 1)))
+        (setq buffer-read-only t)))
     (let ((dvc-switch-to-buffer-mode 'show-in-other-window))
       (dvc-switch-to-buffer buffer))))
 
@@ -614,7 +614,7 @@ If DONT-SWITCH, don't switch to the diff buffer"
                                (insert-buffer-substring output)
                                (goto-char (point-min))
                                (insert (format "hg incoming for %s\n\n" default-directory))
-                               (toggle-read-only 1)
+                               (setq buffer-read-only t)
                                (xhg-log-next 1)))))
                        :error
                        (dvc-capturing-lambda (output error status arguments)
@@ -654,7 +654,7 @@ If DONT-SWITCH, don't switch to the diff buffer"
                                (insert-buffer-substring output)
                                (goto-char (point-min))
                                (insert (format "hg outgoing for %s\n\n" default-directory))
-                               (toggle-read-only 1)))))
+                               (setq buffer-read-only t)))))
                        :error
                        (dvc-capturing-lambda (output error status arguments)
                          (with-current-buffer output
@@ -874,7 +874,7 @@ Usually merge the change made in dev branch in default branch."
                             (let ((inhibit-read-only t))
                               (erase-buffer)
                               (insert-buffer-substring output)
-                              (toggle-read-only 1)))
+                              (setq buffer-read-only t)))
                           (dvc-switch-to-buffer (capture buffer)))))))
 
 ;;;###autoload
@@ -942,7 +942,7 @@ otherwise: Return a list of two element sublists containing alias, path"
       (dvc-run-dvc-display-as-info 'xhg '("paths"))
     (let* ((path-list (dvc-run-dvc-sync 'xhg (list "paths")
                                         :finished 'dvc-output-buffer-split-handler))
-           (lisp-path-list (mapcar '(lambda(arg) (dvc-split-string arg " = " arg)) path-list))
+           (lisp-path-list (mapcar #'(lambda(arg) (dvc-split-string arg " = " arg)) path-list))
            (result-list))
       (cond ((eq type 'alias)
              (setq result-list (mapcar 'car lisp-path-list)))
