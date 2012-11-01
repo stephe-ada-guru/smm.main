@@ -351,7 +351,9 @@ Inserts the entry in the dvc log-edit buffer instead of the ChangeLog."
 		 ;; Now on blank line after last entry. Delete any
 		 ;; whitespace between here and eob.
 		 (delete-region (point) (point-max))
-                 (insert "\n* ")
+		 (if (bobp)
+		     (insert "\n\n* ")
+		   (insert "\n* "))
                  )
              (forward-line 1)
              (while (looking-at "\\sW")
