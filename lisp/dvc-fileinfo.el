@@ -675,7 +675,9 @@ non-nil, show log-edit buffer in other frame."
   ;; whitespace between here and eob.
   (delete-region (point) (point-max))
   ;; insert entry
-  (insert "\n* ")
+  (if (bobp)
+      (insert "\n\n* ")
+    (insert "\n* "))
   (insert (dvc-fileinfo-path fileinfo))
   (insert ": ")
 
