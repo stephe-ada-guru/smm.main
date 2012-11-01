@@ -743,19 +743,21 @@ header."
    (t
     (error "unsupported right_type %s" (xmtn-conflicts-conflict-right_type conflict))))
 
-  (if (xmtn-conflicts-conflict-left_resolution conflict)
-      (ecase (car (xmtn-conflicts-conflict-left_resolution conflict))
-        (resolved_keep
-         (insert "resolved_keep_left \n"))
-        (resolved_drop
-         (insert "resolved_drop_left \n"))
-        (resolved_user
-         (xmtn-basic-io-write-str
-          "resolved_user_left"
-          (file-relative-name (cadr (xmtn-conflicts-conflict-left_resolution conflict)))))
-        ))
+  (if (and (not (equal "dropped file" (xmtn-conflicts-conflict-left_type conflict)))
+	   (xmtn-conflicts-conflict-left_resolution conflict))
+    (ecase (car (xmtn-conflicts-conflict-left_resolution conflict))
+      (resolved_keep
+       (insert "resolved_keep_left \n"))
+      (resolved_drop
+       (insert "resolved_drop_left \n"))
+      (resolved_user
+       (xmtn-basic-io-write-str
+	"resolved_user_left"
+	(file-relative-name (cadr (xmtn-conflicts-conflict-left_resolution conflict)))))
+      ))
 
-  (if (xmtn-conflicts-conflict-right_resolution conflict)
+  (if (and (not (equal "dropped file" (xmtn-conflicts-conflict-right_type conflict)))
+		(xmtn-conflicts-conflict-right_resolution conflict))
       (ecase (car (xmtn-conflicts-conflict-right_resolution conflict))
         (resolved_keep
          (insert "resolved_keep_right \n"))
@@ -1176,9 +1178,44 @@ header."
       (ewoc-invalidate xmtn-conflicts-ewoc elem)))
 
 (defun xmtn-conflicts-left_resolution-needed (conflict)
+  "Return t if CONFLICT has no left resolution and needs one.
+resolved_internal is treated as no resolution here."
   (let ((res (xmtn-conflicts-conflict-left_resolution conflict)))
-    (or (not res)
-      (eq (car res) 'resolved_internal))))
+    (cond
+     ((eq (car res) 'resolved_internal) t)
+
+     ((eq (xmtn-conflicts-conflict-conflict_type conflict) 'dropped_modified)
+      (cond
+       ((equal "dropped file" (xmtn-conflicts-conflict-left_type conflict))
+	nil)
+
+       ((not res) t)
+       ))
+
+     ((not res) t)
+
+     (t nil))))
+
+(defun xmtn-conflicts-right_resolution-needed (conflict)
+  "Return t if CONFLICT has no right resolution and needs one.
+resolved_internal is treated as no resolution here."
+  (let ((type (xmtn-conflicts-conflict-conflict_type conflict))
+	(res (xmtn-conflicts-conflict-right_resolution conflict)))
+    (cond
+     ((not (member type '(dropped_modified duplicate_name)))
+      nil)
+
+     ((eq type 'dropped_modified)
+      (cond
+       ((equal "dropped file" (xmtn-conflicts-conflict-right_type conflict))
+	nil)
+
+       ((not res) t)
+       ))
+
+     ((not res) t)
+
+     (t nil))))
 
 (defun xmtn-conflicts-resolve-user_leftp ()
   "Non-nil if user_left resolution is appropriate for current conflict."
@@ -1189,13 +1226,8 @@ header."
          (or (equal type 'content)
              (equal type 'dropped_modified)
              (and (equal type 'duplicate_name)
-                  ;; if no file_id, it's a directory
+                  ;; if no file_id, it's a directory; can't resolve with a single user file
                   (xmtn-conflicts-conflict-left_file_id conflict))) )))
-
-(defun xmtn-conflicts-right_resolution-needed (conflict)
-  (let ((res (xmtn-conflicts-conflict-right_resolution conflict)))
-    (or (not res)
-      (eq (car res) 'resolved_internal))))
 
 (defun xmtn-conflicts-resolve-user_rightp ()
   "Non-nil if user_right resolution is appropriate for current conflict."
@@ -1203,11 +1235,16 @@ header."
          (type (xmtn-conflicts-conflict-conflict_type conflict)))
 
     (and (xmtn-conflicts-right_resolution-needed conflict)
-         (not (xmtn-conflicts-conflict-right_resolution conflict))
-         (member type '(dropped_modified duplicate_name))
-         ;; if no file_id, it's a directory
+	 ;; don't prompt for a right resolution until after the left is specified
+	 (xmtn-conflicts-conflict-left_resolution conflict)
+
+         ;; if no file_id, it's a directory; can't resolve with a single user file
          (xmtn-conflicts-conflict-right_file_id conflict)
-         ;; user_right doesn't change name, so left resolution must change name or drop
+
+	 ;; check for left-right resolution consistency
+	 ;;
+         ;; user_right doesn't change name, so if left resolution is
+         ;; not change name or drop, user_right is not appropriate.
          (let ((left-res (car (xmtn-conflicts-conflict-left_resolution conflict))))
            (member left-res '(resolved_drop resolved_rename))))))
 
@@ -1216,7 +1253,7 @@ header."
   (let* ((conflict (ewoc-data (ewoc-locate xmtn-conflicts-ewoc)))
          (type (xmtn-conflicts-conflict-conflict_type conflict)))
 
-    (and (not (xmtn-conflicts-conflict-left_resolution conflict))
+    (and (xmtn-conflicts-left_resolution-needed conflict)
 	 (member type '(dropped_modified duplicate_name)))))
 
 (defun xmtn-conflicts-resolve-keep_rightp ()
@@ -1224,9 +1261,12 @@ header."
   (let* ((conflict (ewoc-data (ewoc-locate xmtn-conflicts-ewoc)))
          (type (xmtn-conflicts-conflict-conflict_type conflict)))
 
-    ;; duplicate_name is the only conflict type that needs a right resolution
-    (and (xmtn-conflicts-conflict-left_resolution conflict)
-         (not (xmtn-conflicts-conflict-right_resolution conflict))
+    (and (xmtn-conflicts-right_resolution-needed conflict)
+	 ;; see user_rightp
+	 ;;
+	 ;; At the moment, keep_rightp is the same as user_rightp; we
+	 ;; keep two functions to simplify the menu structure.
+	 (xmtn-conflicts-conflict-left_resolution conflict)
          (member type '(dropped_modified duplicate_name))
          (let ((left-res (car (xmtn-conflicts-conflict-left_resolution conflict))))
            (member left-res '(resolved_drop resolved_rename))))))
@@ -1236,7 +1276,7 @@ header."
   (let* ((conflict (ewoc-data (ewoc-locate xmtn-conflicts-ewoc)))
          (type (xmtn-conflicts-conflict-conflict_type conflict)))
 
-    (and (not (xmtn-conflicts-conflict-left_resolution conflict))
+    (and (xmtn-conflicts-left_resolution-needed conflict)
          (member type '(dropped_modified duplicate_name orphaned_node)))))
 
 (defun xmtn-conflicts-resolve-rename_rightp ()
@@ -1244,8 +1284,8 @@ header."
   (let* ((conflict (ewoc-data (ewoc-locate xmtn-conflicts-ewoc)))
          (type (xmtn-conflicts-conflict-conflict_type conflict)))
 
-    (and (xmtn-conflicts-conflict-left_resolution conflict)
-         (not (xmtn-conflicts-conflict-right_resolution conflict))
+    (and (xmtn-conflicts-right_resolution-needed conflict)
+	 (xmtn-conflicts-conflict-left_resolution conflict)
          (member type '(dropped_modified duplicate_name)))))
 
 (defun xmtn-conflicts-resolve-drop_leftp ()
@@ -1253,7 +1293,7 @@ header."
   (let* ((conflict (ewoc-data (ewoc-locate xmtn-conflicts-ewoc)))
          (type (xmtn-conflicts-conflict-conflict_type conflict)))
 
-    (and (not (xmtn-conflicts-conflict-left_resolution conflict))
+    (and (xmtn-conflicts-left_resolution-needed conflict)
          (or
 	  (equal type 'dropped_modified)
 	  (and (equal type 'duplicate_name)
@@ -1270,11 +1310,8 @@ header."
   (let* ((conflict (ewoc-data (ewoc-locate xmtn-conflicts-ewoc)))
          (type (xmtn-conflicts-conflict-conflict_type conflict)))
 
-    (and (xmtn-conflicts-conflict-left_resolution conflict)
-         (not (xmtn-conflicts-conflict-right_resolution conflict))
-         (member type '(dropped_modified duplicate_name))
-	 ;; FIXME: some dropped_modified only need one resolution
-	 ;; FIXME: exclude dropped_modified orphaned
+    (and (xmtn-conflicts-right_resolution-needed conflict)
+	 (xmtn-conflicts-conflict-left_resolution conflict)
          ;; if no file_id, it's a directory; can't drop if not empty
          (xmtn-conflicts-conflict-right_file_id conflict))))
 
