@@ -60,7 +60,7 @@
   (interactive)
   (let ((version (dvc-run-dvc-sync 'xdarcs '("--version")
                                    :finished 'dvc-output-buffer-handler)))
-    (when (called-interactively-p)
+    (when (interactive-p)
       (message "darcs version: %s" version))
     version))
 
@@ -196,7 +196,7 @@
   (dvc-install-buffer-menu)
   (set (make-local-variable 'font-lock-defaults)
        (list 'xdarcs-missing-font-lock-keywords t nil nil))
-  (toggle-read-only 1))
+  (setq buffer-read-only t))
 
 (defun xdarcs-missing-next (n)
   (interactive "p")
@@ -237,7 +237,7 @@ otherwise call `scroll-up'."
       (let ((inhibit-read-only t))
         (erase-buffer)
         (insert-buffer-substring output)
-        (toggle-read-only 1)))
+        (setq buffer-read-only t)))
     (let ((dvc-switch-to-buffer-mode 'show-in-other-window))
       (dvc-switch-to-buffer buffer))))
 

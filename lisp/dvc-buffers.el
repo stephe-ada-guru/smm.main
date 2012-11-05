@@ -1,6 +1,6 @@
 ;;; dvc-buffers.el --- Buffer management for DVC
 
-;; Copyright (C) 2005-2011 by all contributors
+;; Copyright (C) 2005-2012 by all contributors
 
 ;; Author: Matthieu Moy <Matthieu.Moy@imag.fr>
 ;; Contributions from:
@@ -391,7 +391,7 @@ See `dvc-switch-to-buffer-mode' for possible settings."
   (setq dvc-switched-from-buffer (current-buffer))
   (cond
    (other-frame
-    (let ((display-reuse-frames t)
+    (let ((display-buffer-reuse-frames t)
           (pop-up-frames t)
           (pop-up-frame-alist `((width . ,dvc-other-frame-width)
                                 (height . ,dvc-other-frame-height)
@@ -495,7 +495,7 @@ New buffer has type TYPE (default 'errors), mode MODE (default
         (submenu (make-sparse-keymap "Queue"))
         (i dvc-number-of-dead-process-buffer))
     ;; Debug QUEUE
-    (mapcar
+    (mapc
      (lambda (buffer)
        (when (buffer-live-p buffer)
          (define-key submenu (vector (make-symbol (buffer-name buffer)))
@@ -511,19 +511,19 @@ New buffer has type TYPE (default 'errors), mode MODE (default
       `(menu-item "Queue(DEBUG)"
                   ,submenu
                   :enable dvc-show-internal-buffers-on-menu))
-    (mapcar
+    (mapc
      (lambda (item)
        (let* ((dvc (car item))
               (type-list (cdr item))
               (dvc-label (capitalize (symbol-name dvc)))
               (submenu (make-sparse-keymap dvc-label)))
-         (mapcar
+         (mapc
           (lambda (type-list)
             (let* ((type-label
                     (concat dvc-label "-"
                             (capitalize (symbol-name (car type-list)))))
                    (type-submenu (make-sparse-keymap type-label)))
-              (mapcar
+              (mapc
                (lambda (subitem)
                  (let ((path (car subitem))
                        (buffer (cadr subitem)))

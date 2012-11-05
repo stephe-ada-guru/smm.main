@@ -360,7 +360,7 @@ These function bypasses the used revision control system."
   (let ((multiprompt (format "Are you sure to purge %%d files? "))
         (singleprompt (format "Purge file: ")))
     (when (dvc-confirm-read-file-name-list multiprompt files singleprompt nil)
-      (mapcar #'delete-file files)
+      (mapc #'delete-file files)
       (message "Purged %S" files))))
 
 (defun dvc-current-executable ()

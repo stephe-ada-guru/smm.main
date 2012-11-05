@@ -1,10 +1,10 @@
 ;;; xmtn-propagate.el --- manage multiple propagations for DVC backend for monotone
-
-;; Copyright (C) 2009 - 2011 Stephen Leake
-
+;;
+;; Copyright (C) 2009 - 2012 Stephen Leake
+;;
 ;; Author: Stephen Leake
 ;; Keywords: tools
-
+;;
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
 ;; the Free Software Foundation; either version 2 of the License, or
@@ -19,6 +19,8 @@
 ;; along with this file; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
 ;; Boston, MA  02110-1301  USA.
+
+;;;; code
 
 (eval-when-compile
   ;; these have macros we use
@@ -272,6 +274,19 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
     (and (not (xmtn-propagate-data-need-refresh data))
 	 (member (xmtn-propagate-data-from-local-changes data) '(need-commit need-scan)))))
 
+(defun xmtn-propagate-diff ()
+  "Preview propagate via diff."
+  (interactive)
+  (let* ((elem (ewoc-locate xmtn-propagate-ewoc))
+         (data (ewoc-data elem)))
+    (xmtn-propagate-need-refresh elem data)
+    (ewoc-invalidate xmtn-propagate-ewoc elem)
+
+    (xmtn-dvc-delta
+     (xmtn-propagate-data-from-head-revs data) ; = left
+     (xmtn-propagate-data-to-head-revs data) ; = right
+     )))
+
 (defun xmtn-propagate-update-to ()
   "Update current `to' workspace."
   (interactive)
@@ -309,6 +324,40 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
     (and (not (xmtn-propagate-data-need-refresh data))
 	 (eq (xmtn-propagate-data-from-heads data)
 	     'need-update))))
+
+(defun xmtn-propagate-lca (data)
+  "Return least common ancestor rev of `from', `to'."
+  (let ((all-common-ancestors
+	 (xmtn-automate-command-output-lines
+	  default-directory ;; root
+	  (list
+	   "common_ancestors"
+	   (xmtn-propagate-data-from-head-revs data)
+	   (xmtn-propagate-data-to-head-revs data)))))
+    (car (reverse
+	  (xmtn-automate-command-output-lines
+	  default-directory ;; root
+	  (cons "toposort" all-common-ancestors))))))
+
+(defun xmtn-propagate-preview ()
+  "Preview propagate via log of `from' since ancestor."
+  (interactive)
+  (let* ((elem (ewoc-locate xmtn-propagate-ewoc))
+         (data (ewoc-data elem)))
+    (xmtn-propagate-need-refresh elem data)
+    (ewoc-invalidate xmtn-propagate-ewoc elem)
+
+    (require 'xmtn-revlist)
+    (let ((default-directory (xmtn-propagate-from-work data)))
+      (xmtn--setup-revlist
+       (dvc-tree-root)
+       'xmtn--log-generator
+       nil ;; path
+       nil ;; first-line-only-p
+       nil ;; last-n
+       (xmtn-propagate-lca data);; to
+       ))
+    ))
 
 (defun xmtn-propagate-propagate ()
   "Propagate current workspace."
@@ -458,6 +507,12 @@ If SAVE-CONFLICTS non-nil, don't delete conflicts files."
     (define-key map [?g]  '(menu-item "g) refresh"
                                       xmtn-propagate-do-refresh-one
                                       :visible (xmtn-propagate-refreshp)))
+    (define-key map [?d]  '(menu-item "d) preview propagate diff"
+                                      xmtn-propagate-diff
+                                      :visible (xmtn-propagate-propagatep)))
+    (define-key map [?r]  '(menu-item "r) preview propagate log"
+                                      xmtn-propagate-preview
+                                      :visible (xmtn-propagate-propagatep)))
     (define-key map [?9]  '(menu-item (concat "9) status " (xmtn-propagate-to-name))
                                       xmtn-propagate-status-to
                                       :visible (xmtn-propagate-status-top)))

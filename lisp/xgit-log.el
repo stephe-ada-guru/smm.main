@@ -301,7 +301,7 @@ C-u C-u  : Show patches also, ask for revisions
 positive : Don't show patches, ask for revisions.
 negative : Don't show patches, limit to n revisions."
   (interactive "P")
-  (when (called-interactively-p)
+  (when (interactive-p)
     (cond ((equal current-prefix-arg '(4))
            (setq show-patch t)
            (setq r1 nil))
@@ -345,7 +345,7 @@ negative : Don't show patches, limit to n revisions."
                               (insert-buffer-substring output)
                               (goto-char (point-min))
                               (insert (format "xgit log for %s\n\n" default-directory))
-                              (toggle-read-only 1))))))))
+                              (setq buffer-read-only t))))))))
 
 (defconst xgit-changelog-start-regexp "^commit \\([0-9a-f]+\\)$")
 (defun xgit-changelog-next (n)

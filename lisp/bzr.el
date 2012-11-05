@@ -1002,7 +1002,7 @@ LAST-REVISION looks like
                      (set-buffer output)
                      (goto-char (point-min))
                      (buffer-substring (point) (point-at-eol)))))
-  (when (called-interactively-p 'any)
+  (when (interactive-p)
     (message "Bazaar-NG Version: %s" bzr-command-version))
   bzr-command-version)
 
@@ -1011,7 +1011,7 @@ LAST-REVISION looks like
   (interactive)
   (let ((whoami (dvc-run-dvc-sync 'bzr (list "whoami")
                                   :finished 'dvc-output-buffer-handler)))
-    (when (called-interactively-p 'any)
+    (when (interactive-p)
       (message "bzr whoami: %s" whoami))
     whoami))
 
@@ -1037,10 +1037,10 @@ display the current one."
                                 :finished 'dvc-output-buffer-handler)))
     (if (not new-nick)
         (progn
-          (when (called-interactively-p 'any)
+          (when (interactive-p)
             (message "bzr nick: %s" nick))
           nick)
-      (when (called-interactively-p 'any)
+      (when (interactive-p)
         (setq new-nick (read-string (format "Change nick from '%s' to: " nick) nil nil nick)))
       (dvc-run-dvc-sync 'bzr (list "nick" new-nick)))))
 
@@ -1102,7 +1102,7 @@ display the current one."
 (defun bzr-version-info ()
   "Run bzr verision-info."
   (interactive)
-  (if (called-interactively-p 'any)
+  (if (interactive-p)
       (dvc-run-dvc-display-as-info 'bzr '("version-info"))
     (dvc-run-dvc-sync 'bzr (list "version-info")
                       :finished 'dvc-output-buffer-handler)))
@@ -1210,10 +1210,8 @@ File can be, i.e. bazaar.conf, ignore, locations.conf, ..."
 (defun bzr-annotate ()
   "Run bzr annotate"
   (interactive)
-  (let* ((line (dvc-line-number-at-pos))
-         (filename (dvc-confirm-read-file-name "Filename to annotate: ")))
-    (bzr-do-annotate filename)
-    (goto-line line)))
+  (save-excursion
+    (bzr-do-annotate (dvc-confirm-read-file-name "Filename to annotate: "))))
 
 (defconst bzr-annon-parse-re
   "^\\(\\S-*\\)\\s-+\\(\\S-*\\)\\s-+\\([0-9]\\{4\\}\\)\\([0-9]\\{2\\}\\)\\([0-9]\\{2\\}\\)\\s-+|")
@@ -1235,7 +1233,7 @@ File can be, i.e. bazaar.conf, ignore, locations.conf, ..."
   (dvc-annotate-display-autoscale t)
   (dvc-annotate-lines (point-max))
   ;;(xgit-annotate-hide-revinfo)
-  (toggle-read-only 1))
+  (setq buffer-read-only t))
 
 (defun bzr-switch-checkout (target)
   "Switch the checkout to the branch TARGET"

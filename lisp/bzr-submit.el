@@ -142,7 +142,7 @@ interactively."
          (dvc-read-several-from-list
           "Files to include (all by default, RET ends): "
           (bzr-changed-files t))))
-  (when (and (not (called-interactively-p)) prompt-files)
+  (when (and (not (interactive-p)) prompt-files)
     (setq included-files (dvc-read-several-from-list
                           "Files to include (all by default, RET ends): "
                           (bzr-changed-files t))))
@@ -266,7 +266,7 @@ After the user has sent the message, `bzr-submit-patch-done' is called."
        tree-id
        dvc-patch-email-message-body-template
        nil
-       (called-interactively-p 'any)))))
+       (interactive-p)))))
 
 (provide 'bzr-submit)
 ;;; bzr-submit.el ends here

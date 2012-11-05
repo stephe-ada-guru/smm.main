@@ -295,7 +295,7 @@ C-u C-u  : Show patches also, ask for revisions
 positive : Don't show patches, ask for revisions.
 negative : Don't show patches, limit to n revisions."
   (interactive "P")
-  (when (called-interactively-p)
+  (when (interactive-p)
     (cond ((equal current-prefix-arg '(4))
            (setq show-patch t)
            (setq r1 nil))
@@ -352,7 +352,7 @@ negative : Don't show patches, limit to n revisions."
                                 (insert-buffer-substring output)
                                 (goto-char (point-min))
                                 (insert (format "hg log for %s\n\n" default-directory))
-                                (toggle-read-only 1)))))))))
+                                (setq buffer-read-only t)))))))))
 
 ;;;###autoload
 (defun xhg-search-regexp-in-log ()
@@ -375,7 +375,7 @@ negative : Don't show patches, limit to n revisions."
                               (insert-buffer-substring output)
                               (goto-char (point-min))
                               (insert (format "hg log for %s\n\n" default-directory))
-                              (toggle-read-only 1))))))))
+                              (setq buffer-read-only t))))))))
 
 (defun xhg-parse-diff (changes-buffer)
   (save-excursion
@@ -504,7 +504,7 @@ If DONT-SWITCH, don't switch to the diff buffer"
       (let ((inhibit-read-only t))
         (erase-buffer)
         (insert-buffer-substring output)
-        (toggle-read-only 1)))
+        (setq buffer-read-only t)))
     (let ((dvc-switch-to-buffer-mode 'show-in-other-window))
       (dvc-switch-to-buffer buffer))))
 
@@ -526,7 +526,7 @@ If DONT-SWITCH, don't switch to the diff buffer"
       (let ((inhibit-read-only t))
         (erase-buffer)
         (insert-buffer-substring output)
-        (toggle-read-only 1)))
+        (setq buffer-read-only t)))
     (let ((dvc-switch-to-buffer-mode 'show-in-other-window))
       (dvc-switch-to-buffer buffer))))
 
@@ -614,7 +614,7 @@ If DONT-SWITCH, don't switch to the diff buffer"
                                (insert-buffer-substring output)
                                (goto-char (point-min))
                                (insert (format "hg incoming for %s\n\n" default-directory))
-                               (toggle-read-only 1)
+                               (setq buffer-read-only t)
                                (xhg-log-next 1)))))
                        :error
                        (dvc-capturing-lambda (output error status arguments)
@@ -654,7 +654,7 @@ If DONT-SWITCH, don't switch to the diff buffer"
                                (insert-buffer-substring output)
                                (goto-char (point-min))
                                (insert (format "hg outgoing for %s\n\n" default-directory))
-                               (toggle-read-only 1)))))
+                               (setq buffer-read-only t)))))
                        :error
                        (dvc-capturing-lambda (output error status arguments)
                          (with-current-buffer output
@@ -805,7 +805,7 @@ R = resolved"
   (interactive)
   (let ((version (dvc-run-dvc-sync 'xhg '("version")
                                    :finished 'dvc-output-buffer-handler)))
-    (when (called-interactively-p)
+    (when (interactive-p)
       (message "Mercurial version: %s" version))
     version))
 
@@ -819,10 +819,10 @@ display the current one."
                                   :finished 'dvc-output-buffer-handler)))
     (if (not new-name)
         (progn
-          (when (called-interactively-p)
+          (when (interactive-p)
             (message "xhg branch: %s" branch))
           branch)
-        (when (called-interactively-p)
+        (when (interactive-p)
           (setq new-name (read-string (format "Change branch from '%s' to: " branch) nil nil branch)))
         (dvc-run-dvc-sync 'xhg (list "branch" new-name)))))
 
@@ -874,7 +874,7 @@ Usually merge the change made in dev branch in default branch."
                             (let ((inhibit-read-only t))
                               (erase-buffer)
                               (insert-buffer-substring output)
-                              (toggle-read-only 1)))
+                              (setq buffer-read-only t)))
                           (dvc-switch-to-buffer (capture buffer)))))))
 
 ;;;###autoload
@@ -912,7 +912,7 @@ Usually merge the change made in dev branch in default branch."
                       :error
                       (lambda (output error status arguments)
                         (setq id "<unknown>")))
-    (when (called-interactively-p)
+    (when (interactive-p)
       (message "hg identity for %s: %s" default-directory id))
     id))
 
@@ -938,11 +938,11 @@ Otherwise the return value depends on TYPE:
 'both      Return the aliases and the paths in a flat list
 otherwise: Return a list of two element sublists containing alias, path"
   (interactive)
-  (if (called-interactively-p)
+  (if (interactive-p)
       (dvc-run-dvc-display-as-info 'xhg '("paths"))
     (let* ((path-list (dvc-run-dvc-sync 'xhg (list "paths")
                                         :finished 'dvc-output-buffer-split-handler))
-           (lisp-path-list (mapcar '(lambda(arg) (dvc-split-string arg " = " arg)) path-list))
+           (lisp-path-list (mapcar #'(lambda(arg) (dvc-split-string arg " = " arg)) path-list))
            (result-list))
       (cond ((eq type 'alias)
              (setq result-list (mapcar 'car lisp-path-list)))

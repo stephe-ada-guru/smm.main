@@ -666,20 +666,18 @@ If OTHER-FRAME (default prefix) xor `dvc-log-edit-other-frame' is
 non-nil, show log-edit buffer in other frame."
   (dvc-log-edit other-frame t)
   (undo-boundary)
-  ;; dvc-log.el dvc-add-log-entry-internal does not add a newline
-  ;; after the entry, because it leaves point at the end of line for
-  ;; user input. And the user may not either, so check to see if we
-  ;; need to add one.
   (goto-char (point-max))
-  (beginning-of-line)
-  (if (= (point) (point-max))
-      (progn
-	(goto-char (point-max))
-	(newline 1))
-    (goto-char (point-max))
-    (newline 2))
-
-  (insert "* ")
+  (re-search-backward "^." nil t)
+  (forward-line 1)
+  (if (< 0 (current-column))
+      (insert "\n"))
+  ;; Now on blank line after last entry. Delete any
+  ;; whitespace between here and eob.
+  (delete-region (point) (point-max))
+  ;; insert entry
+  (if (bobp)
+      (insert "\n\n* ")
+    (insert "\n* "))
   (insert (dvc-fileinfo-path fileinfo))
   (insert ": ")
 
