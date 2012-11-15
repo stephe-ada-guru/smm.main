@@ -62,6 +62,7 @@ package body SMM is
    end As_Directory;
 
    Last_Downloaded_Key : constant String := "Last_Downloaded";
+   Prev_Downloaded_Key : constant String := "Prev_Downloaded";
 
    function Read_Last_Downloaded
      (Db : in SAL.Config_Files.Configuration_Type;
@@ -93,9 +94,14 @@ package body SMM is
      (Db       : in out SAL.Config_Files.Configuration_Type;
       Root_Key : in     String;
       Time     : in     SAL.Time_Conversions.Time_Type)
-   is begin
-      SAL.Config_Files.Write
-        (Db, Root_Key & "." & Last_Downloaded_Key, SAL.Time_Conversions.To_Extended_ASIST_String (Time));
+   is
+      use SAL.Config_Files;
+      Key : constant String := Root_Key & "." & Last_Downloaded_Key;
+   begin
+      if Is_Present (Db, Key) then
+         Write (Db, Root_Key & "." & Prev_Downloaded_Key,  Read (Db, Key));
+      end if;
+      Write (Db, Key, SAL.Time_Conversions.To_Extended_ASIST_String (Time));
    end Write_Last_Downloaded;
 
    procedure Randomize is new Song_Lists.Gen_Randomize;
