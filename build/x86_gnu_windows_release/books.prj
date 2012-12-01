@@ -1,6 +1,3 @@
-ada_project_path=$GDS_ROOT/main_lynx_5/makerules
-ada_project_path=$GDS_ROOT/main_lynx_5/sal/build/x86_gnu_windows_release
-ada_project_path=$GDS_ROOT/main_lynx_5/sal/build/x86_gnu_windows_gtk_release
-gpr_file=books.gpr
+gpr_file=books_agg.gpr
 
 casing=../emacs_case_exceptions

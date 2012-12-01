@@ -25,13 +25,8 @@ trace :
 
 include ../common.make
 
-GNAT_PROJECT := books.gpr
-
-# ADA_PROJECT_PATH is also set by books.prj, but that's not guarranteed to be current
-# We are using main_lynx_5 for Ada 2012
-export ADA_PROJECT_PATH := $(GDS_ROOT)/main_lynx_5/makerules/
-export ADA_PROJECT_PATH := $(ADA_PROJECT_PATH);$(GDS_ROOT)/main_lynx_5/sal/build/x86_gnu_windows_release
-export ADA_PROJECT_PATH := $(ADA_PROJECT_PATH);$(GDS_ROOT)/main_lynx_5/sal/build/x86_gnu_windows_gtk_release
+GNAT_PROJECT    := books_agg.gpr
+GPRBUILD_TARGET := x86-windows
 
 # Local Variables:
 # eval: (gnat-2012)

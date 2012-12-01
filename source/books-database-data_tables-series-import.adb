@@ -42,6 +42,7 @@ package body Books.Database.Data_Tables.Series.Import is
          null;
       end;
 
+      --  Unchecked_Access ok here, because value not needed after subprogram return.
       Find (Series_Table.all, "SELECT ID, Title FROM Series WHERE Title = ?", (1 => +Title'Unchecked_Access));
 
       if Series_Table.Valid then

@@ -18,6 +18,7 @@
 
 pragma License (GPL);
 
+with Ada.Strings.Unbounded;
 package Books.Database.Data_Tables is
 
    type Table (DB : access Database'Class; Name : access String) is abstract new Books.Database.Table with private;
@@ -65,6 +66,7 @@ private
       --  *_Index).
       Find_By_ID_Statement   : access constant String;
       Find_By_Name_Statement : access constant String;
+      Find_Param             : Ada.Strings.Unbounded.String_Access;
    end record;
 
    function Param (Valid : in Boolean; Item : in Integer) return GNATCOLL.SQL.Exec.SQL_Parameter;

@@ -22,9 +22,10 @@ trace :
 include ../common.make
 
 GNAT_PROJECT := books.gpr
+GPRBUILD_TARGET := x86-windows
 
 # ADA_PROJECT_PATH is also set by books.prj, but that's not guarranteed to be current
-# We are using main_lynx_5 for Ada 2012
+# We are using main_lynx_5 for Ada 2012, and gnat-gpl-2012 for gtk
 export ADA_PROJECT_PATH := $(GDS_ROOT)/main_lynx_5/makerules/
 export ADA_PROJECT_PATH := $(ADA_PROJECT_PATH);$(GDS_ROOT)/main_lynx_5/sal/build/x86_gnu_windows_debug
 export ADA_PROJECT_PATH := $(ADA_PROJECT_PATH);$(GDS_ROOT)/main_lynx_5/sal/build/x86_gnu_windows_gtk_debug

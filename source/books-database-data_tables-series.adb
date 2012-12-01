@@ -40,6 +40,7 @@ package body Books.Database.Data_Tables.Series is
       Statement : constant String         := "INSERT INTO Series (Title) VALUES (?)";
       Title_1   : aliased constant String := Title;
    begin
+      --  Unchecked_Access ok here, because value not needed after subprogram return.
       Checked_Execute (T, Statement, Params => (1 => +Title_1'Unchecked_Access));
       Find (T, "SELECT ID, Title FROM Series WHERE Title = ?", (1 => +Title_1'Unchecked_Access));
    end Insert;
@@ -53,6 +54,7 @@ package body Books.Database.Data_Tables.Series is
       Title_1   : aliased String  := Title;
       Statement : constant String := "UPDATE Series SET Title = ? WHERE ID = ?";
    begin
+      --  Unchecked_Access ok here, because value not needed after subprogram return.
       Checked_Execute (T, Statement, Params => (+Title_1'Unchecked_Access, +T.ID));
 
       T.Fetch (T.ID);

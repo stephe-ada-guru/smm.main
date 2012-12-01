@@ -61,10 +61,14 @@ package body Books.Database.Data_Tables is
 
    procedure Find_By_Name (T : in out Table'Class; Name : in String)
    is
+      use Ada.Strings.Unbounded;
       use type GNATCOLL.SQL.Exec.SQL_Parameter;
-      Name_1 : aliased String := Name & '%';
    begin
-      Find (T, T.Find_By_Name_Statement.all, Params => (1 => +Name_1'Unchecked_Access));
+      if T.Find_Param /= null then
+         Free (T.Find_Param);
+      end if;
+      T.Find_Param := new String'(Name & '%');
+      Find (T, T.Find_By_Name_Statement.all, Params => (1 => +T.Find_Param));
    end Find_By_Name;
 
 end Books.Database.Data_Tables;

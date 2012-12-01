@@ -56,6 +56,7 @@ package body Books.Database.Data_Tables.Title is
       Last_Param : Positive         := 1;
 
    begin
+      --  Unchecked_Access ok here, because value not needed after subprogram return.
       Params (Last_Param) := +Title_1'Unchecked_Access;
       Last_Param          := Last_Param + 1;
       Params (Last_Param) := +Comment_1'Unchecked_Access;
@@ -111,6 +112,7 @@ package body Books.Database.Data_Tables.Title is
 
       Statement : constant String := "UPDATE Title SET Title = ?, Year = ?, Comment = ?, Rating = ? WHERE ID = ?";
    begin
+      --  Unchecked_Access ok here, because value not needed after subprogram return.
       Checked_Execute
         (T,
          Statement,

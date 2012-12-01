@@ -58,6 +58,7 @@ package body Books.Database.Data_Tables.Title.Import is
          Last_Param : Positive := 1;
       begin
 
+         --  Unchecked_Access ok here, because value not needed after subprogram return.
          Params (Last_Param) := +Title'Unchecked_Access;
 
          if Year_Valid then

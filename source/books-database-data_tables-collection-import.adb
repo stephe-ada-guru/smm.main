@@ -45,6 +45,7 @@ package body Books.Database.Data_Tables.Collection.Import is
          null;
       end;
 
+      --  Unchecked_Access ok here, because value not needed after subprogram return.
       if Year_Valid then
          Find
            (Collection_Table.all,

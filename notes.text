@@ -2,7 +2,9 @@ build/x86_gnu_windows_debug/Makefile
 build/x86_gnu_windows_release/Makefile
 doc/C/books.texinfo
 file://c:/Gnu/GtkAda-2.2.0/share/gtk-doc/html/gtk/index.html
-file://c:/Gnu/GtkAda-2.2.0/share/gtk-doc/html/gdk/index.html
+
+try aggregate project to set ADA_PROJECT_PATH
+    done in release
 
 can't delete a year from a title
     not a problem?

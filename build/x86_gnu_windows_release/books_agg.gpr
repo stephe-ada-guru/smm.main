@@ -1,0 +1,9 @@
+aggregate project Books_Agg is
+   for Project_Path use
+     (external ("GDS_ROOT") & "/main_lynx_5/makerules/",
+      external ("GDS_ROOT") & "/main_lynx_5/sal/build/x86_gnu_windows_release",
+      external ("GDS_ROOT") & "/main_lynx_5/sal/build/x86_gnu_windows_gtk_release");
+
+   for Project_Files use ("books.gpr");
+
+end Books_Agg;

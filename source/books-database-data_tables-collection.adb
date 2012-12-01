@@ -42,6 +42,7 @@ package body Books.Database.Data_Tables.Collection is
       use GNATCOLL.SQL.Exec;
       Title_1 : aliased constant String := Title;
    begin
+      --  Unchecked_Access ok here, because value not needed after subprogram return.
       if Year_Valid then
          Checked_Execute
            (T,
@@ -81,6 +82,7 @@ package body Books.Database.Data_Tables.Collection is
 
       Statement : constant String := "UPDATE Collection SET Title = ?, Year = ? WHERE ID = ?";
    begin
+      --  Unchecked_Access ok here, because value not needed after subprogram return.
       Checked_Execute
         (T,
          Statement,

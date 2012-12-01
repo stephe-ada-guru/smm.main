@@ -45,6 +45,7 @@ package body Books.Database.Data_Tables.Author is
       Middle : aliased String := Middle_Name;
       Last   : aliased String := Last_Name;
    begin
+      --  Unchecked_Access ok here, because value not needed after subprogram return.
       Checked_Execute
         (T,
          "INSERT INTO Author (First, Middle, Last) VALUES (?, ?, ?)",
@@ -72,6 +73,7 @@ package body Books.Database.Data_Tables.Author is
       Statement : constant String := "UPDATE Author SET First = ?, Middle = ?, Last = ? WHERE ID = " &
         Field (T, ID_Index);
    begin
+      --  Unchecked_Access ok here, because value not needed after subprogram return.
       Checked_Execute
         (T,
          Statement,

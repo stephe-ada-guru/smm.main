@@ -42,6 +42,8 @@ package body Books.Database.Data_Tables.Author.Import is
 
       --  We don't use Last_ID, because we might be looking for the
       --  previous ID with the same name.
+      --
+      --  Unchecked_Access ok here, because value not needed after subprogram return.
 
       if Middle_Name'Length > 0 then
          Find
