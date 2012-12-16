@@ -33,6 +33,7 @@ with Gtk.GEntry.Signal;
 with Gtk.Label;
 with Gtk.List;
 with Gtk.List_Item;
+with Gtk.Message_Box;
 with Gtk.Object.Signal;
 with Gtk.Scrolled_Window;
 with Gtk.Widget;
@@ -522,6 +523,9 @@ package body Books.Table_Views is
       To_Main (Table_View);
 
       Update_Display (Table_View);
+   exception
+   when Books.Database.Entry_Error =>
+      Gtk.Message_Box.Information_Box ("Insert error", "most likely duplicate entry");
    end On_Button_Insert;
 
    procedure On_Button_Test (Button : access Gtk.Button.Gtk_Button_Record'Class)

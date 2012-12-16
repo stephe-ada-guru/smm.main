@@ -39,6 +39,8 @@ package Books.Database.Data_Tables.Author is
       Middle_Name : in     String;
       Last_Name   : in     String);
    --  Insert a new record, fetch it using Find.
+   --
+   --  Raises Entry_Error if insert fails.
 
    procedure Update
      (T           : in out Table;
