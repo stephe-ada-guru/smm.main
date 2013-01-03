@@ -705,7 +705,8 @@ Update to the current head.
 
 @item R
 Rename a missing to an unknown file. The two files must be marked
-first, and they must be the only files marked.
+first, and they must be the only files marked. This operation is just
+bookkeeping; it does not affect the actual disk files.
 
 @item t
 Create an entry in the @code{*dvc-log-edit*} for the current diff.
