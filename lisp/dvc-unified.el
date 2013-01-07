@@ -427,12 +427,16 @@ the current active back-end."
 ;;;###autoload
 (defun dvc-log-edit (&optional other-frame no-init)
   "Edit the log before commiting. Optional OTHER_FRAME (default
-user prefix) puts log edit buffer in a separate frame (or in the
-same frame if `dvc-log-edit-other-frame' is non-nil). Optional
-NO-INIT if non-nil suppresses initialization of buffer if one is
+user prefix) is interpreted according to
+`dvc-log-edit-other-frame'. Optional NO-INIT if non-nil
+suppresses initialization of buffer if one is
 reused. `default-directory' must be the tree root."
   (interactive "P")
-  (setq other-frame (dvc-xor other-frame dvc-log-edit-other-frame))
+  (setq other-frame
+	(if dvc-log-edit-other-frame
+	    (not other-frame)
+	  other-frame))
+
   ;; Reuse an existing log-edit buffer if possible.
   ;;
   ;; If this is invoked from a status or diff buffer,
