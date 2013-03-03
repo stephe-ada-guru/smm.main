@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2007 - 2009, 2012 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007 - 2009, 2012, 2013 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -150,10 +150,11 @@ package body Test_Download is
 
       SMM.Download
         (Db,
-         Category    => "vocal",
-         Destination => SMM.As_Directory (Current_Directory & "/tmp/target"),
-         Song_Count  => 6,
-         Seed        => 1);
+         Category       => "vocal",
+         Destination    => SMM.As_Directory (Current_Directory & "/tmp/target"),
+         Song_Count     => 6,
+         New_Song_Count => 4,
+         Seed           => 1);
 
       --  FIXME: check Last_Downloaded times updated
 
@@ -190,16 +191,7 @@ package body Test_Download is
    is
       use Standard.AUnit.Test_Cases.Registration;
    begin
-      case T.Debug is
-      when 0 =>
-         Register_Routine (T, Nominal'Access, "Nominal");
-
-      when 1 =>
-         Register_Routine (T, Nominal'Access, "Nominal");
-
-      when others =>
-         raise SAL.Programmer_Error;
-      end case;
+      Register_Routine (T, Nominal'Access, "Nominal");
    end Register_Tests;
 
    overriding procedure Set_Up_Case (T : in out Test_Case)

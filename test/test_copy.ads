@@ -1,8 +1,8 @@
 --  Abstract :
 --
---  Run one test
+--  Test SMM.Copy
 --
---  Copyright (C) 2007 - 2009, 2013 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2013 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -18,20 +18,18 @@
 
 pragma License (GPL);
 
-with AUnit.Test_Results.Text_Reporter;
-with AUnit.Test_Suites;
-with Test_Copy;
-procedure Test_One_Harness
-is
-   use AUnit.Test_Suites;
+with Ada.Strings.Unbounded;
+with AUnit.Test_Cases; use AUnit.Test_Cases;
+package Test_Copy is
 
-   Suite  : constant Access_Test_Suite := new Test_Suite;
-   Result : AUnit.Test_Results.Result;
-begin
-   Add_Test (Suite, new Test_Copy.Test_Case (Verbosity => 1));
+   type Test_Case
+     (Verbosity : Integer)
+      is new Standard.AUnit.Test_Cases.Test_Case with null record;
 
-   Run (Suite.all, Result);
+   overriding procedure Register_Tests (T : in out Test_Case);
 
-   AUnit.Test_Results.Text_Reporter.Report (Result);
+   overriding function Name (T : Test_Case) return Ada.Strings.Unbounded.String_Access;
 
-end Test_One_Harness;
+   overriding procedure Set_Up_Case (T : in out Test_Case);
+
+end Test_Copy;

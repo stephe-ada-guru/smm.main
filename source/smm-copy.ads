@@ -1,8 +1,8 @@
 --  Abstract :
 --
---  Run one test
+--  See below
 --
---  Copyright (C) 2007 - 2009, 2013 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2013 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -13,25 +13,17 @@
 --  PURPOSE. See the GNU General Public License for more details. You
 --  should have received a copy of the GNU General Public License
 --  distributed with this program; see file COPYING. If not, write to
---  the Free Software Foundation, 59 Temple Place - Suite 330, Boston,
---  MA 02111-1307, USA.
+--  the Free Software Foundation, 51 Franklin Street, Suite 500, Boston,
+--  MA 02110-1335, USA.
 
 pragma License (GPL);
 
-with AUnit.Test_Results.Text_Reporter;
-with AUnit.Test_Suites;
-with Test_Copy;
-procedure Test_One_Harness
-is
-   use AUnit.Test_Suites;
-
-   Suite  : constant Access_Test_Suite := new Test_Suite;
-   Result : AUnit.Test_Results.Result;
-begin
-   Add_Test (Suite, new Test_Copy.Test_Case (Verbosity => 1));
-
-   Run (Suite.all, Result);
-
-   AUnit.Test_Results.Text_Reporter.Report (Result);
-
-end Test_One_Harness;
+procedure SMM.Copy
+  (Playlist    : in String;
+   Destination : in String);
+--  Copy Playlist (a .m3u file) and referenced files to Destination directory,
+--  adjusting paths in playlist.
+--
+--  Current directory must be smm database root dir.
+--
+--  Files in Playlist must be in smm database root dir

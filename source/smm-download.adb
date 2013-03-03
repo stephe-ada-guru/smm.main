@@ -2,7 +2,7 @@
 --
 --  see spec
 --
---  Copyright (C) 2008 - 2009, 2011, 2012 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2009, 2011, 2012, 2013 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -80,7 +80,9 @@ begin
          Target     : constant String := Category_Dir & Relative;
          Target_Dir : constant String := Containing_Directory (Target);
       begin
-         Put_Line (Relative);
+         if Verbosity > 0 then
+            Put_Line (Relative);
+         end if;
 
          if not Exists (Target_Dir) then
             begin

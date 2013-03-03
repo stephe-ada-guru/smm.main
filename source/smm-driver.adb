@@ -2,7 +2,7 @@
 --
 --  main procedure for SMM application
 --
---  Copyright (C) 2008 - 2012 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2013 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -25,6 +25,7 @@ with Ada.Exceptions;
 with Ada.Text_IO; use Ada.Text_IO;
 with SAL.Command_Line_IO;
 with SAL.Config_Files;
+with SMM.Copy;
 with SMM.Download;
 with SMM.First_Pass;
 with SMM.Import;
@@ -55,6 +56,10 @@ is
       Put_Line ("    --replace - overwrite file; otherwise append");
       Put_Line ("    if <file> is in database root, paths in playlist are relative");
       New_Line;
+      Put_Line ("  copy_playlist <playlist> <target_dir>");
+      Put_Line ("    copy playlist and referenced files to target_dir");
+      Put_Line ("    current directory must be database root dir");
+      New_Line;
       Put_Line ("  import <category> <dir>");
       Put_Line ("    scan <dir> for new music; dir must be relative to database root dir");
    end Put_Usage;
@@ -84,7 +89,7 @@ is
 
    Home : constant String := Find_Home;
 
-   type Command_Type is (Download_Playlist, Playlist, Import);
+   type Command_Type is (Download_Playlist, Playlist, Copy_Playlist, Import);
 
    procedure Get_Command is new SAL.Command_Line_IO.Gen_Get_Discrete (Command_Type, "command", Next_Arg);
 
@@ -205,6 +210,14 @@ begin
          end if;
 
          SMM.Playlist (Db, Category, File_Name.all, Replace, Max_Song_Count, New_Song_Count);
+      end;
+
+   when Copy_Playlist =>
+      declare
+         Playlist_Name : constant String := Argument (Next_Arg);
+         Target_Dir    : constant String := As_Directory (Argument (Next_Arg + 1));
+      begin
+         SMM.Copy (Playlist_Name, Target_Dir);
       end;
 
    when Import =>

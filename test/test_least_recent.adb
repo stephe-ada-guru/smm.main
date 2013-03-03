@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2009, 2011, 2012 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2009, 2011, 2012, 2013 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -135,7 +135,7 @@ package body Test_Least_Recent is
       Create_Test_Db (Db);
 
       --  Songs from not-yet-downloaded block mixed in with others
-      SMM.Least_Recent_Songs (Db, "instrumental", Songs, Song_Count => 2, Seed => 1);
+      SMM.Least_Recent_Songs (Db, "instrumental", Songs, Song_Count => 2, New_Song_Count => 2, Seed => 1);
 
       Check ("song count", SMM.Count (Songs), 2);
 
@@ -150,7 +150,7 @@ package body Test_Least_Recent is
       Finalize (Songs);
 
       --  Can't get any songs from previous download, but not all from one block
-      SMM.Least_Recent_Songs (Db, "instrumental", Songs, Song_Count => 2, Seed => 2);
+      SMM.Least_Recent_Songs (Db, "instrumental", Songs, Song_Count => 2, New_Song_Count => 2, Seed => 2);
 
       Check ("song count", SMM.Count (Songs), 2);
 
