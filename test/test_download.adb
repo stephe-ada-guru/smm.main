@@ -55,9 +55,9 @@ package body Test_Download is
       --  We will download 'vocal'; put one instrumental in db with
       --  oldest time, to show it is excluded.
       --
-      --  We will download 6 files; four new, two least recently
-      --  played. Have more than 4 new, more than 2 played. Some
-      --  already played files are in target dir from previous
+      --  We will download 6 files; 3 new, 3 least recently
+      --  played. We have more than 4 new, more than 2 played in db.
+      --  Some already played files are in target dir from previous
       --  download.
       --
       --  Least_Recent_Songs randomizes 2 * Song_Count songs, 12 here.
@@ -153,7 +153,7 @@ package body Test_Download is
          Category       => "vocal",
          Destination    => SMM.As_Directory (Current_Directory & "/tmp/target"),
          Song_Count     => 6,
-         New_Song_Count => 4,
+         New_Song_Count => 8,
          Seed           => 1);
 
       --  FIXME: check Last_Downloaded times updated
@@ -166,12 +166,12 @@ package body Test_Download is
       Check (Playlist, "vocal/artist_1/in_target_2.mp3");
       Check (Playlist, "vocal/artist_2/in_target_3.mp3");
       --  new songs (random order)
-      Check (Playlist, "vocal/artist_1/new_1.mp3");
-      Check (Playlist, "vocal/artist_2/played_4.mp3");
-      Check (Playlist, "vocal/artist_1/played_2.mp3");
-      Check (Playlist, "vocal/artist_2/played_7.mp3");
-      Check (Playlist, "vocal/artist_1/played_1.mp3");
       Check (Playlist, "vocal/artist_2/played_5.mp3");
+      Check (Playlist, "vocal/artist_2/played_6.mp3");
+      Check (Playlist, "vocal/artist_2/played_8.mp3");
+      Check (Playlist, "vocal/artist_1/new_1.mp3");
+      Check (Playlist, "vocal/artist_1/new_2.mp3");
+      Check (Playlist, "vocal/artist_2/new_6.mp3");
       Check_End (Playlist);
       Close (Playlist);
 
@@ -184,7 +184,7 @@ package body Test_Download is
    is
       pragma Unreferenced (T);
    begin
-      return new String'("Test_Download");
+      return new String'("../../test/test_download.adb");
    end Name;
 
    overriding procedure Register_Tests (T : in out Test_Case)

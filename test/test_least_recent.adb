@@ -139,11 +139,13 @@ package body Test_Least_Recent is
 
       Check ("song count", SMM.Count (Songs), 2);
 
+      --  Results depend on random number generator, which can change
+      --  with compiler version. These are correct for GNAT 7.1.1.
       I := First (Songs);
-      Check ("1 1", Db, I, "I4.mp3");
+      Check ("1 1", Db, I, "I3.mp3");
       Next (I);
 
-      Check ("1 2", Db, I, "I1.mp3");
+      Check ("1 2", Db, I, "I4.mp3");
 
       Mark_Downloaded (Db, Songs, 2.0);
 
@@ -156,10 +158,10 @@ package body Test_Least_Recent is
 
       I := First (Songs);
 
-      Check ("2 1", Db, I, "I5.mp3");
+      Check ("2 1", Db, I, "I2.mp3");
       Next (I);
 
-      Check ("2 2", Db, I, "I2.mp3");
+      Check ("2 2", Db, I, "I6.mp3");
 
    end Nominal;
    ----------
@@ -169,7 +171,7 @@ package body Test_Least_Recent is
    is
       pragma Unreferenced (T);
    begin
-      return new String'("Test_Least_Recent");
+      return new String'("../../test/test_least_recent.adb");
    end Name;
 
    overriding procedure Register_Tests (T : in out Test_Case)

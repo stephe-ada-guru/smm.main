@@ -2,7 +2,7 @@
 --
 --  see spec
 --
---  Copyright (C) 2008, 2009, 2011, 2012 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008, 2009, 2011 - 2013 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -266,9 +266,11 @@ package body SMM is
          Time_List_Element : Time_List_Element_Type renames Time_Lists.Current (Time_List_I).all;
          Source : Song_Lists.List_Type renames Time_List_Element.Songs;
       begin
-         Ada.Text_IO.Put_Line
-           ("adding songs from " &
-              SAL.Time_Conversions.To_Extended_ASIST_String (Time_List_Element.Last_Downloaded));
+         if Verbosity > 0 then
+            Ada.Text_IO.Put_Line
+              ("adding songs from " &
+                 SAL.Time_Conversions.To_Extended_ASIST_String (Time_List_Element.Last_Downloaded));
+         end if;
 
          Splice_After
            (Source => Source,
@@ -313,7 +315,10 @@ package body SMM is
 
          elsif Count (Current (Time_List_I).Songs) > New_Song_Count then
             --  Only include a few new songs
-            Ada.Text_IO.Put_Line ("adding " & Integer'Image (New_Song_Count) & " new songs");
+            if Verbosity > 0 then
+               Ada.Text_IO.Put_Line ("adding " & Integer'Image (New_Song_Count) & " new songs");
+            end if;
+
             declare
                Source : Song_Lists.List_Type renames Current (Time_List_I).Songs;
                Last   : Song_Lists.Iterator_Type := First (Source);
@@ -327,7 +332,9 @@ package body SMM is
             Next (Time_List_I);
          else
             --  There are only a few new songs; include them all
-            Ada.Text_IO.Put_Line ("adding " & Integer'Image (Count (Current (Time_List_I).Songs)) & " new songs");
+            if Verbosity > 0 then
+               Ada.Text_IO.Put_Line ("adding " & Integer'Image (Count (Current (Time_List_I).Songs)) & " new songs");
+            end if;
             Songs := Current (Time_List_I).Songs;
             Next (Time_List_I);
          end if;

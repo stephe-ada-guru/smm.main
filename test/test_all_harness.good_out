@@ -1,15 +1,15 @@
+   Total Tests Run:  9
 
-......   Total Tests Run:  8
-
-   Successful Tests: 8
+   Successful Tests: 9
+../../test/test_copy.adb: Nominal
+../../test/test_download.adb: Nominal
 Test_First_Pass_Version_1: Nominal
 Test_First_Pass_Version_1: Empty_Playlist
 Test_First_Pass_Version_2: Nominal
 Test_First_Pass_Version_2: New_Playlist
 Test_First_Pass_Version_2: Finished_Playlist
-Test_Least_Recent: Nominal
+../../test/test_least_recent.adb: Nominal
 Test_Play_Before: Nominal
-Test_Download: Nominal
 
    Failed Tests: 0
 
