@@ -653,10 +653,11 @@ just bury it."
              (if (> number 1) "s" ""))))
 
 (defun dvc-kill-all-review ()
-  "Kill all buffers used in reviews; showing previous revisions."
+  "Kill all buffers used in reviews (buffers showing previous revisions)."
   (interactive)
-  (dvc-kill-all-type 'revision)
-  (dvc-kill-all-type 'last-revision))
+  ;; these display the number killed, so do last-revision first, since it is often 0
+  (dvc-kill-all-type 'last-revision)
+  (dvc-kill-all-type 'revision))
 
 (defun dvc-kill-all-workspace (workspace)
   "Kill all buffers whose files are in the WORKSPACE tree."

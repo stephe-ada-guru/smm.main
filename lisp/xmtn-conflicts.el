@@ -1,6 +1,6 @@
 ;;; xmtn-conflicts.el --- conflict resolution for DVC backend for monotone
 
-;; Copyright (C) 2008 - 2012 Stephen Leake
+;; Copyright (C) 2008 - 2013 Stephen Leake
 
 ;; Author: Stephen Leake
 ;; Keywords: tools
@@ -686,7 +686,9 @@ header."
   (xmtn-basic-io-write-str "right_name" (xmtn-conflicts-conflict-right_name conflict))
   (xmtn-basic-io-write-id "right_file_id" (xmtn-conflicts-conflict-right_file_id conflict))
 
-  (if (xmtn-conflicts-conflict-left_resolution conflict)
+  (if (or (xmtn-conflicts-conflict-left_resolution conflict)
+	  (and (eq (xmtn-conflicts-conflict-conflict_type conflict) 'dropped_modified)
+	       (xmtn-conflicts-conflict-right_resolution conflict)))
       (progn
         (setq xmtn-conflicts-resolved-count (+ 1 xmtn-conflicts-resolved-count))
         (ecase (car (xmtn-conflicts-conflict-left_resolution conflict))
@@ -958,7 +960,8 @@ header."
                   (setq xmtn-conflicts-resolved-internal-count (+ 1 xmtn-conflicts-resolved-internal-count))))))
 
        (dropped_modified
-        (if (xmtn-conflicts-conflict-left_resolution conflict)
+        (if (or (xmtn-conflicts-conflict-left_resolution conflict)
+		(xmtn-conflicts-conflict-right_resolution conflict))
 	    (setq xmtn-conflicts-resolved-count (+ 1 xmtn-conflicts-resolved-count))))
 
        (duplicate_name
@@ -981,8 +984,12 @@ header."
   "Return non-nil if ELEM contains a complete conflict resolution."
   (let ((conflict (ewoc-data elem)))
     (ecase (xmtn-conflicts-conflict-conflict_type conflict)
-      ((content dropped_modified orphaned_node)
+      ((content orphaned_node)
        (xmtn-conflicts-conflict-left_resolution conflict))
+      (dropped_modified
+       (or
+	(xmtn-conflicts-conflict-left_resolution conflict)
+	(xmtn-conflicts-conflict-right_resolution conflict)))
       (duplicate_name
        (and (xmtn-conflicts-conflict-left_resolution conflict)
             (xmtn-conflicts-conflict-right_resolution conflict)))
@@ -1311,9 +1318,16 @@ resolved_internal is treated as no resolution here."
          (type (xmtn-conflicts-conflict-conflict_type conflict)))
 
     (and (xmtn-conflicts-right_resolution-needed conflict)
-	 (xmtn-conflicts-conflict-left_resolution conflict)
-         ;; if no file_id, it's a directory; can't drop if not empty
-         (xmtn-conflicts-conflict-right_file_id conflict))))
+         (or
+	  (equal type 'dropped_modified)
+	  (and (equal type 'duplicate_name)
+	       ;; if no file_id, it's a directory; can't drop if not empty
+	       (xmtn-conflicts-conflict-right_file_id conflict))
+	  (and (equal type 'orphaned_node)
+	       ;; if no left or right file_id, it's a directory; can't drop if not empty
+	       (or (xmtn-conflicts-conflict-left_file_id conflict)
+		   (xmtn-conflicts-conflict-right_file_id conflict)
+		   ))))))
 
 (defun xmtn-conflicts-left-label ()
   "Return 'left: ' or '' as appropriate for current conflict."
