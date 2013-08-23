@@ -1,6 +1,6 @@
 ;;; dvc-unified.el --- The unification layer for dvc
 
-;; Copyright (C) 2005-2010, 2012 by all contributors
+;; Copyright (C) 2005-2010, 2012, 2013 by all contributors
 
 ;; Author: Stefan Reichoer, <stefan@xsteve.at>
 
@@ -559,19 +559,14 @@ directories of the workspace."
   "Ignore the file extensions of the marked files, only in the
 directories containing the files, and recursively below them."
   (interactive (list (dvc-current-file-list)))
-  ;; We have to match the extensions to the directories, so reject
-  ;; command if either is nil.
   (let* ((extensions (mapcar 'file-name-extension file-list))
          (dirs (mapcar 'file-name-directory file-list))
          (msg (case (length extensions)
-                (1 (format "extension *.%s in directory `%s'" (first extensions) (first dirs)))
+                (1 (format "extension *.%s in directory `%s'" (first extensions) (or (first dirs) ".")))
                 (t (format "%d extensions in directories" (length extensions))))))
     (dolist (extension extensions)
       (if (not extension)
           (error "A file with no extension selected")))
-    (dolist (dir dirs)
-      (if (not dir)
-          (error "A file with no directory selected")))
     (when (y-or-n-p (format "Ignore %s? " msg))
       (dvc-call "dvc-backend-ignore-file-extensions-in-dir" file-list))))
 
