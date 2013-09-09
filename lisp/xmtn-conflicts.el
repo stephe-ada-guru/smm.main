@@ -724,6 +724,10 @@ header."
     (xmtn-basic-io-write-str "left_name" (xmtn-conflicts-conflict-left_name conflict))
     (xmtn-basic-io-write-id "left_file_id" (xmtn-conflicts-conflict-left_file_id conflict)))
 
+   ((string= "renamed file" (xmtn-conflicts-conflict-left_type conflict))
+    (xmtn-basic-io-write-str "left_name" (xmtn-conflicts-conflict-left_name conflict))
+    (xmtn-basic-io-write-id "left_file_id" (xmtn-conflicts-conflict-left_file_id conflict)))
+
    (t
     (error "unsupported left_type %s" (xmtn-conflicts-conflict-left_type conflict))))
 
@@ -747,24 +751,32 @@ header."
 
   (if (and (not (equal "dropped file" (xmtn-conflicts-conflict-left_type conflict)))
 	   (xmtn-conflicts-conflict-left_resolution conflict))
-    (ecase (car (xmtn-conflicts-conflict-left_resolution conflict))
-      (resolved_keep
-       (insert "resolved_keep_left \n"))
-      (resolved_drop
-       (insert "resolved_drop_left \n"))
-      (resolved_user
-       (xmtn-basic-io-write-str
-	"resolved_user_left"
-	(file-relative-name (cadr (xmtn-conflicts-conflict-left_resolution conflict)))))
-      ))
+      (ecase (car (xmtn-conflicts-conflict-left_resolution conflict))
+	(resolved_drop
+	 (insert "resolved_drop_left \n"))
+	(resolved_keep
+	 (insert "resolved_keep_left \n"))
+	(resolved_rename
+	 (xmtn-basic-io-write-str
+	  "resolved_rename_left"
+	  (file-relative-name (cadr (xmtn-conflicts-conflict-left_resolution conflict)))))
+	(resolved_user
+	 (xmtn-basic-io-write-str
+	  "resolved_user_left"
+	  (file-relative-name (cadr (xmtn-conflicts-conflict-left_resolution conflict)))))
+	))
 
   (if (and (not (equal "dropped file" (xmtn-conflicts-conflict-right_type conflict)))
 		(xmtn-conflicts-conflict-right_resolution conflict))
       (ecase (car (xmtn-conflicts-conflict-right_resolution conflict))
-        (resolved_keep
-         (insert "resolved_keep_right \n"))
         (resolved_drop
          (insert "resolved_drop_right \n"))
+        (resolved_keep
+         (insert "resolved_keep_right \n"))
+	(resolved_rename
+	 (xmtn-basic-io-write-str
+	  "resolved_rename_right"
+	  (file-relative-name (cadr (xmtn-conflicts-conflict-right_resolution conflict)))))
         (resolved_user
          (xmtn-basic-io-write-str
           "resolved_user_right"
@@ -1174,8 +1186,8 @@ header."
          (conflict (ewoc-data elem))
          (result-file
           (file-relative-name
-           (read-file-name "rename file: " "" nil nil
-                           (concat "/" (xmtn-conflicts-conflict-right_name conflict))))))
+           (read-file-name "rename file: " default-directory nil nil
+                           (xmtn-conflicts-conflict-right_name conflict)))))
       (ecase side
         ('left
          (setf (xmtn-conflicts-conflict-left_resolution conflict) (list 'resolved_rename result-file)))
