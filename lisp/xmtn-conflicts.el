@@ -667,8 +667,10 @@ header."
   "Write revisions from EWOC-BUFFER header info in basic-io format to current buffer."
   (xmtn-basic-io-write-id "left" (with-current-buffer ewoc-buffer xmtn-conflicts-left-revision))
   (xmtn-basic-io-write-id "right" (with-current-buffer ewoc-buffer xmtn-conflicts-right-revision))
-  (if (with-current-buffer ewoc-buffer xmtn-conflicts-ancestor-revision)
-      (xmtn-basic-io-write-id "ancestor" (with-current-buffer ewoc-buffer xmtn-conflicts-ancestor-revision)))
+  ;; WORKAROUND: bug in monotone 1.0.90 (base revision: 7282e7ba458b5e92f9c3850486c7b1c0df13c951)
+  ;; it doesn't allow for 'ancestor' here
+  ;; (if (with-current-buffer ewoc-buffer xmtn-conflicts-ancestor-revision)
+  ;;     (xmtn-basic-io-write-id "ancestor" (with-current-buffer ewoc-buffer xmtn-conflicts-ancestor-revision)))
   )
 
 (defun xmtn-conflicts-write-content (conflict)
