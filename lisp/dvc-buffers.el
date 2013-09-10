@@ -389,19 +389,39 @@ to quit the buffer"
   "Switch to BUFFER using the user's preferred method.
 See `dvc-switch-to-buffer-mode' for possible settings."
   (setq dvc-switched-from-buffer (current-buffer))
-  (cond
-   ((memq other-frame '(t (16))); single C-u gives (4), means other window; double C-u gives (16)
-    (let ((display-buffer-reuse-frames t)
-          (pop-up-frames t)
-          (pop-up-frame-alist `((width . ,dvc-other-frame-width)
-                                (height . ,dvc-other-frame-height)
-                                (minibuffer . nil))))
-      (pop-to-buffer buffer)))
-   ((eq dvc-switch-to-buffer-mode 'pop-to-buffer)
+  (case dvc-switch-to-buffer-mode
+    (reuse-window
+     (let ((functions '(display-buffer-reuse-window))  ;; reuse window showing buffer in any frame
+	   (params
+	    `((inhibit-same-window . t)
+	      (reusable-frames . visible)
+	      (pop-up-frame-parameters
+	       ((width . ,dvc-other-frame-width)
+		(height . ,dvc-other-frame-height)
+		(minibuffer . nil)))))
+	   )
+       (if (or (eq other-frame 't)
+	       (and (not (null other-frame))
+		    (listp other-frame)
+		    (= (car other-frame) 16)));; C-u C-u
+	   ;; other frame
+	   (progn
+	     (when (functionp 'display-buffer-reuse-frame)
+	       (add-to-list 'functions 'display-buffer-reuse-frame t)) ;; reuse a window in other frame
+	     (add-to-list 'functions 'display-buffer-pop-up-frame t))
+
+	 ;; else other window
+	 (add-to-list 'functions 'display-buffer-use-some-window t))
+
+       (let ((display-buffer-overriding-action (cons functions params)))
+	 (pop-to-buffer buffer))
+      ))
+
+   (pop-to-buffer
     (pop-to-buffer buffer))
-   ((eq dvc-switch-to-buffer-mode 'single-window)
+   (single-window
     (switch-to-buffer buffer))
-   ((eq dvc-switch-to-buffer-mode 'show-in-other-window)
+   (show-in-other-window
     (pop-to-buffer buffer)
     (setq dvc-switched-buffer (current-buffer))
     (pop-to-buffer dvc-switched-from-buffer))
