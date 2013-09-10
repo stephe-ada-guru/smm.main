@@ -243,13 +243,13 @@ For use as add-log-file-name-function."
       (substring buffer-file (match-end 0))
     (file-name-nondirectory buffer-file)))
 
-(defun dvc-ediff-add-log-entry (&optional other-frame)
+(defun dvc-ediff-add-log-entry ()
   "Add new DVC log ChangeLog style entry; intended to be invoked
 from the ediff control buffer."
-  (interactive "P")
+  (interactive)
   (let ((dvc-temp-current-active-dvc dvc-buffer-current-active-dvc))
     (set-buffer ediff-buffer-B)         ; DVC puts workspace version here
-    (dvc-add-log-entry-internal other-frame)))
+    (dvc-add-log-entry-internal t)))
 
 (defun dvc-ediff-setup ()
   (define-key 'ediff-mode-map "t" 'dvc-ediff-add-log-entry)) ; matches dvc-diff-mode-map
