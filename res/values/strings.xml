@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 
+<!--
   Abstract :
 
   translatable strings for Stephe's Music Player.
@@ -33,7 +33,7 @@
   <string name="note_keep_before">Keep Before</string>
   <string name="note_other">Other</string>
   <string name="note_want_more">Want More</string>
-  
+
   <!-- menu -->
   <string name="menu_quit">Quit</string>
   <string name="menu_dump_log">Dump Log</string>
@@ -48,7 +48,7 @@
   <string name="playlist_directory_title">playlist directory</string>
   <string name="playlist_directory_summary">absolute path where playlists are stored</string>
   <string name="playlist_directory_dialog_title">playlist directory</string>
-  
+
   <string name="prev_threshold_key">prev_threshold</string>
   <string name="prev_threshold_default">5000</string>
   <string name="prev_threshold_title">previous threshold</string>
@@ -62,17 +62,16 @@
   <string name="text_scale_dialog_title">set text scale</string>
 
   <string name="always_on_key">always_on</string>
-  <string name="always_on_default">1.3</string>
   <string name="always_on_title">Always On</string>
   <string name="always_on_summary">keep screen on (to avoid screen savers on Google TV)</string>
   <string name="always_on_dialog_title">set always on</string>
 
   <!-- Do not translate, but may be locale-dependent. -->
-  
+
   <!-- Duration format for duration < 1 hour -->
   <string translatable="false" name="durationformatshort">%M:%S</string>
 
   <!-- Duration format for duration >= 1 hour -->
   <string translatable="false" name="durationformatlong">%H:%M:%S</string>
-  
+
 </resources>

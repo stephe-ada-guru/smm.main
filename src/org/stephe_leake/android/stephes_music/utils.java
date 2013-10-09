@@ -2,7 +2,7 @@
 //
 //  Provides User Interface to Stephe's Music Player.
 //
-//  Copyright (C) 2011, 2012 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2011, 2012, 2013 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -132,11 +132,11 @@ public class utils
    public static void debugLog(Object o)
    {
       // Cache error messages to be dumped by debugDump, which is
-      // called by 'adb shell dumpsys activity service ...service'.
-      // The former shows messages from all activities and services;
-      // the later just from this log.
+      // called by 'adb shell dumpsys activity service ...service' and
+      // activity menu "dump log".
       //
-      // However, this log disappears if the service dies.
+      // However, this log disappears if the service dies. FIXME: need
+      // 'dump log on service die' option.
       //
       // If 'o' is an Exception, the dump will include a stack trace.
 

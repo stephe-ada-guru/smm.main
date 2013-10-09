@@ -3,7 +3,7 @@
 //  Provides background audio playback capabilities, allowing the
 //  user to switch between activities without stopping playback.
 //
-//  Copyright (C) 2011, 2012 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2011, 2012, 2013 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -30,7 +30,6 @@ import android.content.res.Resources;
 import android.preference.PreferenceManager;
 import android.media.AudioManager.OnAudioFocusChangeListener;
 import android.media.AudioManager;
-import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.os.Environment;
 import android.os.Handler;
@@ -146,28 +145,25 @@ public class service extends Service
          }
          else
          {
-            final MediaMetadataRetriever retriever = new MediaMetadataRetriever();
-
             final String absFile = playlistDirectory + "/" + playlist.get(playlistPos);
+
+            final MetaData retriever = new MetaData(this, playlistFilename, absFile);
 
             try
             {
-               retriever.setDataSource(absFile);
-
                sendStickyBroadcast
                   (new Intent (utils.META_CHANGED).
-                   putExtra ("artist", retriever.extractMetadata (MediaMetadataRetriever.METADATA_KEY_ARTIST)).
-                   putExtra ("album", retriever.extractMetadata (MediaMetadataRetriever.METADATA_KEY_ALBUM)).
-                   putExtra ("track", retriever.extractMetadata (MediaMetadataRetriever.METADATA_KEY_TITLE)).
-                   putExtra
-                   ("duration", new Integer(retriever.extractMetadata (MediaMetadataRetriever.METADATA_KEY_DURATION))).
-                   putExtra
-                   ("playlist",
-                    playlistFilename + " " + (playlistPos + 1) + " / " + playlist.size()));
+                   putExtra ("artist", retriever.artist).
+                   putExtra ("album", retriever.album).
+                      putExtra ("track", retriever.title).
+                      putExtra ("duration", retriever.duration).
+                      putExtra
+                      ("playlist",
+                       playlistFilename + " " + (playlistPos + 1) + " / " + playlist.size()));
             }
             catch (RuntimeException e)
             {
-               utils.errorLog (this, "notifyChange SetDataSource (" + absFile + "): " + e);
+               utils.debugLog("notifyChange extractMetadata (" + absFile + "): " + e);
             };
          }
       }
@@ -180,7 +176,7 @@ public class service extends Service
       }
       else
       {
-         utils.errorLog (this, "notifyChange: unexpected 'what'");
+         utils.debugLog("notifyChange: unexpected 'what'");
       };
    }
 
@@ -236,7 +232,7 @@ public class service extends Service
             // We consider this a programmer error, because it
             // probably indicates an SMM sync bug. It could also be a
             // failing sdcard.
-            utils.errorLog(service.this, "can't play " + path, e);
+            utils.debugLog("can't play " + path + e.toString());
 
             notifyChange(utils.META_CHANGED);
             return;
@@ -254,7 +250,7 @@ public class service extends Service
       }
       catch (RuntimeException e)
       {
-         utils.errorLog (this, "play failed", e);
+         utils.debugLog("play failed" + e.toString());
       }
    }
 
@@ -282,7 +278,7 @@ public class service extends Service
       if (!playlistFile.canRead())
       {
          // This is an SMM error, or failing sdcard
-         utils.errorLog(this, "can't read " + filename);
+         utils.debugLog("can't read " + filename);
          throw new Fail();
       }
 
@@ -315,7 +311,7 @@ public class service extends Service
                }
                else
                {
-                  utils.errorLog(this, currentFile + " found more than once in playlist");
+                  utils.debugLog(currentFile + " found more than once in playlist");
                }
             }
 
@@ -328,7 +324,7 @@ public class service extends Service
 
          if (0 == tmpPlaylist.size())
          {
-            utils.errorLog (this, "no songs found in playlist file " + filename);
+            utils.debugLog("no songs found in playlist file " + filename);
             throw new Fail();
          }
 
@@ -374,17 +370,17 @@ public class service extends Service
       }
       catch (java.io.FileNotFoundException e)
       {
-         utils.errorLog (this, "playlist file not found: " + filename, e);
+         utils.debugLog("playlist file not found: " + filename + e.toString());
          throw new Fail();
       }
       catch (java.io.IOException e)
       {
-         utils.errorLog (this, "error reading playlist file: "  + filename, e);
+         utils.debugLog("error reading playlist file: "  + filename + e.toString());
          throw new Fail();
       }
       catch (RuntimeException e)
       {
-         utils.errorLog (this, "playList failed", e);
+         utils.debugLog("playList failed" + e.toString());
          throw new Fail();
       }
    }
@@ -394,7 +390,7 @@ public class service extends Service
       // FIXME: get in onCreate, then again only when it changes
       Resources         res   = getResources();
       SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-      final int prevThreshold = new Integer
+      final int prevThreshold = Integer.valueOf
          (prefs.getString
           (res.getString(R.string.prev_threshold_key),
            res.getString(R.string.prev_threshold_default)))
@@ -533,7 +529,7 @@ public class service extends Service
 
          if (result != android.media.AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
          {
-            utils.errorLog (this, "can't get audio focus");
+            utils.debugLog("can't get audio focus");
             return;
          }
       }
@@ -566,11 +562,11 @@ public class service extends Service
          }
          catch (IOException e)
          {
-            utils.errorLog(this, "can't write note file: " + e);
+            utils.debugLog("can't write note file: " + e);
          }
          catch (RuntimeException e)
          {
-            utils.errorLog(this, "writeNote: " + e);
+            utils.debugLog("writeNote: " + e);
          }
       }
    }
@@ -605,11 +601,11 @@ public class service extends Service
       }
       catch (IOException e)
       {
-         utils.errorLog(this, "can't write smm file: " + e);
+         utils.debugLog("can't write smm file: " + e);
       }
       catch (RuntimeException e)
       {
-         utils.errorLog(this, "writeSMMFile: " + e);
+         utils.debugLog("writeSMMFile: " + e);
       }
    }
 
@@ -663,7 +659,7 @@ public class service extends Service
             }
             else
             {
-               utils.errorLog(service.this, "broadcastReceiverFile.onReceive: unknown action: " + action);
+               utils.debugLog("broadcastReceiverFile.onReceive: unknown action: " + action);
             }
          }
       };
@@ -776,12 +772,12 @@ public class service extends Service
                }
                else
                {
-                  utils.errorLog(service.this, "broadcastReceiverCommand.onReceive: unknown command: " + command);
+                  utils.debugLog("broadcastReceiverCommand.onReceive: unknown command: " + command);
                }
             }
             else
             {
-               utils.errorLog(service.this, "broadcastReceiverCommand.onReceive: unknown action: " + action);
+               utils.debugLog("broadcastReceiverCommand.onReceive: unknown action: " + action);
             }
          }
       };
@@ -825,7 +821,7 @@ public class service extends Service
              }
              else
              {
-                utils.errorLog (service.this, "Unknown onAudioFocusChange code " + focusChange);
+                utils.debugLog("Unknown onAudioFocusChange code " + focusChange);
              }
           }
        };
@@ -967,7 +963,7 @@ public class service extends Service
       }
       else if (intent.getAction() != null)
       {
-         utils.errorLog(this, "onStartCommand got unexpected intent: " + intent);
+         utils.debugLog("onStartCommand got unexpected intent: " + intent);
       }
       return START_STICKY;
     }
@@ -987,7 +983,7 @@ public class service extends Service
       }
       catch (java.io.IOException e)
       {
-         utils.errorLog(this, "can't write log to " + logFilename);
+         utils.debugLog("can't write log to " + logFilename);
       }
    }
 

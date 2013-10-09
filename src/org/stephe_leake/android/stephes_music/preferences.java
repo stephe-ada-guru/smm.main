@@ -2,7 +2,7 @@
 //
 //  Provides User Interface to Stephe's Music Player.
 //
-//  Copyright (C) 2011, 2012 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2011, 2012, 2013 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -20,6 +20,7 @@ package org.stephe_leake.android.stephes_music;
 
 import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.os.Environment;
 import android.preference.ListPreference;
 import android.preference.PreferenceManager;
 
@@ -89,14 +90,15 @@ public class preferences extends android.preference.PreferenceActivity
 
       ListPreference playlistPref = (ListPreference)findPreference(res.getString(R.string.playlist_directory_key));
 
-      // Build list by scanning media for smm playlists.
+      // Build list by scanning media for top level directory containing smm playlists.
 
       LinkedList<String> smmDirs = new LinkedList<String>();
 
       LinkedList<String> likelyRoots = new LinkedList<String>();
 
-      likelyRoots.add("/sdcard"); // standard Android phone
-      likelyRoots.add("/mnt/sdcard/external_sd"); // Samsung Galaxy note
+      likelyRoots.add(Environment.getExternalStorageDirectory().getPath()); // standard Android phone (api 1)
+      likelyRoots.add("/storage/sdcard0"); // Samsung Galaxy note II internal
+      likelyRoots.add("/storage/extSdCard"); // Samsung Galaxy note II external
 
       // On a Google TV, there is no sdcard, but there are USB ports; search for those
       final File tvRoot = new File("/mnt/media");

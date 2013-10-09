@@ -4,14 +4,68 @@ src/org/stephe_leake/android/stephes_music/service.java
 (dvc-status)
 ~/Misc/android.text
 
+Galaxy Note I
+    SAMSUNG-SGH-1717
+    Android 2.3.6
+
+Galaxy Note II
+    SGH-T889
+    Android 4.1.2
+
+doesn't display metadata text
+    search for file in scanned media, retrieve metadata from cursor
+        see example in VanillaMusic player
+        https://github.com/kreed/vanilla/releases/tag/0.9.10
+        c:/Projects/android/vanilla-master/src/org/kreed/vanilla/Song.java
+            populate (called from MediaUtils.* ) uses scanned storage info
+
+    factor out MetaData class
+        doesn't work; can't search for file name
+        possibly because String does not compare with DATA STREAM?
+
+    find playlist, scan thru that comparing DATA
+        works, but duration is wrong! = 0.
+
+buttons too small
+    copy the button images from VanillaMusic
+
+notification bar controller
+    copy from VanillaMusic
+
+webdav
+    Mount network drive http://<ip>:<port>
+
+smm show last downloaded date for each song on verbosity 0
+    give number of songs to download
+
+smm via ssh
+    c:/Projects/smm.main/INSTALL.text
+    http://hg.stronglytyped.org/curl-ada
+        supports sftp
+
+smm delete empty dirs
+
+ignore blank line in mp3
+
+button to share song via email
+
+start over option for yoga
+
+restarts after system kills service, starts playing
+    don't request restart?
+    restore state should get pause, but gets play
+
+stop after n songs
+    instead of sleep timer
+
+handle back button
+
 Galaxy Note:
     position wrong on restart (with SDK 12 build)
 
-lock screen option; prevent clock on TV?
-    testing
+clean up menu
 
 add about dialog, with sdk version
-
 
 sdk_20 apk crashes on HTC
     install catlog, debug
@@ -27,8 +81,14 @@ need on-screen volume control
 in progressbar:
     if storage.pos > max, change max (bad .mp3 metadata)
 
+ port to windows
+http://libagar.org/
+
  smm
 /Projects/smm/smm.main/build/x86_gnu_windows_release/Makefile
+
+copy playlist
+    for yoga
 
 multiple categories:
     vocal/protest/intro
@@ -77,9 +137,11 @@ add to menu:
 transfer files to TV
     usb drive sneakernet for now
 
+    try webDAV
+
     mtp (Media Transfer Protocol)
         not reliable on Windows 7
-            PDA used to connect, now it doesn't
+            PDA used to connect, now it doesn't, now it does again
 
         windows development kit: /Archive/Android/mtppk12.exe
             /Apps/microsoft_mtpdk
@@ -88,7 +150,7 @@ transfer files to TV
             not HTC
             TV is at 'firmware version 3.1' = API level 12
 
-        TV doesn't show up on (need new computer name)
+        TV doesn't show up
 
     can use adb?
         has push, need read/edit
@@ -102,7 +164,11 @@ transfer files to TV
         there is an Android sftp client
 
         look for open source sftp (runs on TCP sockets), Ada binding
+            just command line, no libraries
+            use spawn scp to transfer files
+            use spawn ssh ls > foo to get dir listing
 
+        libcurl
 
     in-app socket protocol for metadata, sftp/ftp for music files
 

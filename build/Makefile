@@ -2,8 +2,14 @@
 
 .PHONY : force
 
-all : force
+# lint looks for compiled classes, to it has to run after the compiler
+all : compile lint
+
+compile : force
 	cd ..; ant release
+
+lint :
+	cmd.exe /c lint ..
 
 clean :
 	rm -rf ../bin/* ../gen/*
@@ -11,10 +17,18 @@ clean :
 source-clean :
 	find .. -name "*~" -print -delete
 
+tag :
+	mtn tag h:org.stephe_leake.music_player.java android-2.3
+
 ## test targets
 
-install-emulator: ANDROID_DEVICE := -e
-install-emulator: install
+# emulator from SDK 22.0.5 doesn't run on Windows 7
+#install-emulator: ANDROID_DEVICE := -e
+#install-emulator: install
+
+# assumes sdcard0 mounted via webDAV as z:
+install-pda : all
+	cp ../bin/org.stephe_leake.android.stephes_music.4.1-release.apk /cygdrive/z/Download
 
 # ethernet address can change
 connect-tv:

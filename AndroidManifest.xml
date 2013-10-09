@@ -20,18 +20,22 @@ along with GCC; see the file COPYING3.  If not see
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           package="org.stephe_leake.android.stephes_music"
-          android:versionCode="2"
-          android:versionName="2.0">
-  <uses-sdk android:minSdkVersion="10" />
+          android:versionCode="3"
+          android:versionName="3.0">
+  <!-- this is actually the Android API level, not the SDK level (sigh) -->
+  <uses-sdk android:minSdkVersion="16"
+            android:targetSdkVersion="16"/>
 
   <uses-permission android:name="android.permission.BROADCAST_STICKY" /> <!-- send data from service to activity -->
   <uses-permission android:name="android.permission.WAKE_LOCK" /> <!-- media player prevents screen from turning off -->
   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /> <!-- store last played song -->
   <uses-permission android:name="android.permission.WRITE_SETTINGS" /> <!-- preferences -->
 
-  <application 
-      android:icon="@drawable/icon" 
-      android:label="@string/app_name">
+  <application
+      android:icon="@drawable/icon"
+      android:label="@string/app_name"
+      android:allowBackup="false"
+  >
 
     <!--
         We use "singleTask" because there is only one server, and
@@ -51,7 +55,7 @@ along with GCC; see the file COPYING3.  If not see
       <intent-filter>
         <action android:name="android.intent.action.VIEW" />
         <category android:name="android.intent.category.DEFAULT" />
-        
+
         <!-- The current version only supports m3u playlists. -->
         <data android:mimeType="audio/x-mpegurl" android:scheme="file" />
       </intent-filter>

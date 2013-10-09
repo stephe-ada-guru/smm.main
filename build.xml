@@ -1,11 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- requires Android SDK 20
+<!-- requires Android SDK 22
 
-    We used to try to optimize the build, only compiling when the
-source had changed. But the Android SDK tools are not set up for that,
-so it's difficult to get the dependencies correct, and even harder to
-update this file when a new SDK is released. So we just use the
-default setup.
+We just use the default setup; see $ANDROID_HOME/tools/ant/build.xml imported below.
 -->
 
 <!--
@@ -15,7 +11,7 @@ changing these two does _not_ allow installing two copies of the app
 side by side; that requires changing all the class names. Changing the
 apk name does help in knowing which one you are installing.
 -->
-<project name="org.stephe_leake.android.stephes_music.sdk_20" default="help">
+<project name="org.stephe_leake.android.stephes_music.4.1" default="help">
 
 <property file="local.properties" />
 
@@ -25,7 +21,10 @@ apk name does help in knowing which one you are installing.
     <isset property="env.ANDROID_HOME" />
 </condition>
 
-<property name="target" value="android-10" />
+<property name="target" value="android-16" />
+
+
+<!-- FIXME: put this back: <property name="java.compilerargs" value="-Xlint:deprecation" /> -->
 
 <import file="${sdk.dir}/tools/ant/build.xml" />
 

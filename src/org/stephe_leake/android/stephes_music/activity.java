@@ -2,7 +2,7 @@
 //
 //  Provides User Interface to Stephe's Music Player.
 //
-//  Copyright (C) 2011, 2012 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2011, 2012, 2013 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -95,7 +95,7 @@ public class activity extends android.app.Activity
               res.getString(R.string.text_scale_default));
       try
       {
-         return new Float(scale).floatValue();
+         return  Float.valueOf(scale);
       }
       catch (NumberFormatException e)
       {

@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 
+<!--
   Abstract :
 
   UI layout for Stephe's Music Player, large screen portrait
 
   Sony Google TV is large, not xlarge!
      but it's always landscape, so this file doesn't apply to that
-     
+
   Samsung Galaxy Note is large; this file works for that
-  
+
   (ediff "../layout-normal/main.xml" "../layout-large/main.xml")
 
   Copyright (C) 2011 Stephen Leake.  All Rights Reserved.
@@ -46,7 +46,7 @@
     -->
     <View
         android:layout_width="match_parent"
-        android:layout_height="1px"
+        android:layout_height="1dp"
         android:background="#ff7f7f7f" />  <!-- separator -->
     <TextView
         android:layout_width="match_parent"
@@ -57,7 +57,7 @@
         android:textAppearance="?android:attr/textAppearanceLarge"/>
     <View
         android:layout_width="match_parent"
-        android:layout_height="1px"
+        android:layout_height="1dp"
         android:background="#ff7f7f7f" /> <!-- separator -->
     <TextView
         android:layout_width="match_parent"
@@ -68,7 +68,7 @@
         android:textAppearance="?android:attr/textAppearanceLarge"/>
     <View
         android:layout_width="match_parent"
-        android:layout_height="1px"
+        android:layout_height="1dp"
         android:background="#ff7f7f7f" /> <!-- separator -->
     <TextView
         android:layout_width="match_parent"
@@ -79,7 +79,7 @@
         android:id="@+id/songTitle"/>
     <View
         android:layout_width="match_parent"
-        android:layout_height="1px"
+        android:layout_height="1dp"
         android:background="#ffffffff"/> <!-- separator -->
     <LinearLayout
         android:layout_width="match_parent"
@@ -101,14 +101,20 @@
         <ImageButton
             android:id="@+id/prev"
             style="@android:style/MediaButton.Previous"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
             android:background="#00000000"/> <!-- transparent -->
         <ImageButton
             android:id="@+id/play_pause"
             style="@android:style/MediaButton.Play"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
             android:background="#00000000"/> <!-- transparent -->
         <ImageButton
             android:id="@+id/next"
             style="@android:style/MediaButton.Next"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
             android:background="#00000000"/> <!-- transparent -->
       </LinearLayout>
       <LinearLayout
@@ -146,6 +152,7 @@
         android:paddingRight="8dip"
         android:paddingBottom="4dip" />
     <LinearLayout
+        style="?android:attr/buttonBarButtonStyle"
         android:id="@+id/notes_buttons_1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -153,7 +160,7 @@
         android:layout_gravity="bottom"
         android:layout_marginTop="1dip"
         android:layout_marginBottom="2dip"
-        android:gravity="center"> 
+        android:gravity="center">
       <!-- can't use @string in textSize attribute, despite the documentation
            layout_height of wrap_content on buttons screws up
            only last button will wrap text
@@ -161,6 +168,7 @@
       <!-- notes buttons, row 1
       -->
       <Button
+          style="?android:attr/buttonBarButtonStyle"
           android:id="@+id/note_category"
           android:layout_height="match_parent"
           android:layout_width="wrap_content"
@@ -169,6 +177,7 @@
           android:textStyle="bold"
           android:onClick="onClickNote"/>
       <Button
+          style="?android:attr/buttonBarButtonStyle"
           android:id="@+id/note_dont_play"
           android:layout_height="match_parent"
           android:layout_width="wrap_content"
@@ -177,6 +186,7 @@
           android:textStyle="bold"
           android:onClick="onClickNote"/>
       <Button
+          style="?android:attr/buttonBarButtonStyle"
           android:id="@+id/note_keep_before"
           android:layout_height="match_parent"
           android:layout_width="wrap_content"
@@ -186,6 +196,7 @@
           android:onClick="onClickNote"/>
     </LinearLayout>
     <LinearLayout
+        style="?android:attr/buttonBarButtonStyle"
         android:id="@+id/notes_buttons_2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -198,6 +209,7 @@
       <!-- notes buttons, row 2
       -->
       <Button
+          style="?android:attr/buttonBarButtonStyle"
           android:id="@+id/note_want_more"
           android:layout_height="match_parent"
           android:layout_width="wrap_content"
@@ -206,6 +218,7 @@
           android:textStyle="bold"
           android:onClick="onClickNote"/>
       <Button
+          style="?android:attr/buttonBarButtonStyle"
           android:id="@+id/note_best_list"
           android:layout_height="match_parent"
           android:layout_width="wrap_content"
@@ -214,6 +227,7 @@
           android:textStyle="bold"
           android:onClick="onClickNote"/>
       <Button
+          style="?android:attr/buttonBarButtonStyle"
           android:id="@+id/note_other"
           android:layout_height="match_parent"
           android:layout_width="wrap_content"
@@ -228,7 +242,7 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:focusable="true"
-        android:text="(click to select playlist)"
+        android:text="@string/null_playlist"
         android:textAppearance="?android:attr/textAppearanceLarge"/>
   </LinearLayout>
 </ScrollView>
