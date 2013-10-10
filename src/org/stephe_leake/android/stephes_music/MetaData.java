@@ -58,88 +58,66 @@ public class MetaData
       {
          // We'd like to just query on sourceFile, but that doesn't
          // work, apparently because String doesn't compare to DATA
-         // STREAM. So we query on playlistName, then loop thru the
-         // playlist looking for sourceFile, comparing Strings.
+         // STREAM. So we query the MediaStore, which is produced by a
+         // scanner.
+         //
+         // This would be more efficient if we first searched for the
+         // playlist, then looped thru the playlist looking for
+         // sourceFile, comparing Strings. However, sometimes the
+         // scanner misses a playlist. So we just search the entire
+         // MediaStore.
          //
          // FIXME: EXTERNAL_CONTENT_URI might point to the wrong
          // volume; should use getContentUri(volumeName), but need
          // volumeName. Which is apparently either "internal" or
          // "external", but how do we know which?
-         Cursor playlistCursor = resolver.query
-            (MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI,
-             playlistFields, "\"NAME\" == \"" + playlistName +"\"", null, null);
+         Cursor cursor = resolver.query (MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, mediaFields, null, null, null);
 
-         if (playlistCursor == null ||
-             playlistCursor.getCount() < 1)
+         if (cursor == null ||
+             cursor.getCount() < 1)
          {
-            utils.debugLog("playlist query failed: " + playlistName);
+            utils.debugLog("media query failed: " + playlistName);
 
-            title    = "<playlist not found>";
-            album    = "<playlist not found>";
-            artist   = "<playlist not found>";
+            title    = "<query failed>";
+            album    = "<query failed>";
+            artist   = "<query failed>";
             duration = "0";
          }
          else
          {
-            // playlistCursor is valid; get members
-            playlistCursor.moveToNext();
+            // cursor is valid
+            cursor.moveToNext();
 
-            try
+            while (!cursor.isAfterLast())
             {
-               // FIXME: hardcoding "external" as volumeName; see above
-               Uri contentUri = MediaStore.Audio.Playlists.Members.getContentUri
-                  ("external", playlistCursor.getLong(0));
-               Cursor memberCursor = resolver.query (contentUri, mediaFields, null, null, null);
+               if (0 == sourceFile.compareTo(cursor.getString(4)))
+                  break;
+               cursor.moveToNext();
+            };
 
-               if (memberCursor == null ||
-                   memberCursor.getCount() < 1)
-               {
-                  utils.debugLog("playlist has no members: " + contentUri + "; " + playlistName);
-               }
-               else
-               {
-                  memberCursor.moveToNext();
-
-                  while (!memberCursor.isAfterLast())
-                  {
-                     if (0 == sourceFile.compareTo(memberCursor.getString(4)))
-                        break;
-                     memberCursor.moveToNext();
-                  };
-
-                  if (memberCursor.isAfterLast())
-                  {
-                     utils.debugLog("file not found on playlist: " + sourceFile);
-                     title    = "<file not found>";
-                     album    = "<file not found>";
-                     artist   = "<file not found>";
-                     duration = "0";
-                  }
-                  else
-                  {
-                     title    = memberCursor.getString(0);
-                     album    = memberCursor.getString(1);
-                     artist   = memberCursor.getString(2);
-                     duration = memberCursor.getString(3);
-                  }
-               }
-            }
-            catch (Exception e)
+            if (cursor.isAfterLast())
             {
-               utils.debugLog("member query failed: " + e);
-               title    = "<member query failed>";
-               album    = "<member query failed>";
-               artist   = "<member query failed>";
+               utils.debugLog("file not found: " + sourceFile);
+               title    = "<file not found>";
+               album    = "<file not found>";
+               artist   = "<file not found>";
                duration = "0";
+            }
+            else
+            {
+               title    = cursor.getString(0);
+               album    = cursor.getString(1);
+               artist   = cursor.getString(2);
+               duration = cursor.getString(3);
             }
          }
       }
       catch (Exception e)
       {
-         utils.debugLog("playlist query failed: " + e);
-         title    = "<playlist query failed>";
-         album    = "<playlist query failed>";
-         artist   = "<playlist query failed>";
+         utils.debugLog("query failed: " + e);
+         title    = "<query failed>";
+         album    = "<query failed>";
+         artist   = "<query failed>";
          duration = "0";
       }
    }
