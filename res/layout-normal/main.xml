@@ -6,7 +6,10 @@
 
   HTC Inspire is normal size
 
-  (ediff "../layout-normal/main.xml" "../layout-large/main.xml")
+  Galaxy Note II is normal size (sigh)
+
+  (ediff "../layout-normal/main.xml" "../layout-large-port/main.xml")
+  (ediff "../layout-normal/main.xml" "../layout-large-land/main.xml")
 
   Copyright (C) 2011 Stephen Leake.  All Rights Reserved.
 
@@ -36,7 +39,7 @@
     <!-- artist
          album
          song titles
-         next/play/prev buttons | time
+         prev/play/next buttons | time
          seekbar
          notes buttons
          playlist
@@ -84,7 +87,7 @@
         android:paddingTop="1dip"
         android:paddingBottom="4dip"
         android:orientation="horizontal">
-      <!-- next/play/prev buttons | time -->
+      <!-- prev/play/next buttons | time -->
       <LinearLayout
           android:layout_width="wrap_content"
           android:layout_height="match_parent"
@@ -94,24 +97,30 @@
           android:layout_marginTop="1dip"
           android:layout_marginBottom="2dip"
           android:gravity="center"> <!-- background for transparent part of buttons -->
-        <!-- next/play/prev buttons -->
+        <!-- prev/play/next buttons -->
         <ImageButton
             android:id="@+id/prev"
-            style="@android:style/MediaButton.Previous"
+            android:src="@drawable/previous"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
+            android:layout_marginLeft="4dip"
+            android:layout_marginRight="4dip"
             android:background="#00000000"/> <!-- transparent -->
         <ImageButton
             android:id="@+id/play_pause"
-            style="@android:style/MediaButton.Play"
+            android:src="@drawable/play"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
+            android:layout_marginLeft="4dip"
+            android:layout_marginRight="4dip"
             android:background="#00000000"/> <!-- transparent -->
         <ImageButton
             android:id="@+id/next"
-            style="@android:style/MediaButton.Next"
+            android:src="@drawable/next"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
+            android:layout_marginLeft="4dip"
+            android:layout_marginRight="4dip"
             android:background="#00000000"/> <!-- transparent -->
       </LinearLayout>
       <LinearLayout
@@ -119,6 +128,7 @@
           android:gravity="top"
           android:layout_width="match_parent"
           android:layout_height="match_parent"
+          android:layout_marginLeft="8dp"
           android:weightSum="1">
         <!-- times -->
         <TextView
@@ -140,8 +150,8 @@
       </LinearLayout>
     </LinearLayout>
     <SeekBar
-        style="?android:attr/progressBarStyleHorizontal"
         android:id="@android:id/progress"
+        style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"
         android:layout_height="36dip"
         android:paddingLeft="8dip"

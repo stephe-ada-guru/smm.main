@@ -9,7 +9,7 @@
 
   Samsung Galaxy Note is large; this file works for that
 
-  (ediff "../layout-normal/main.xml" "../layout-large/main.xml")
+  (ediff "../layout-normal/main.xml" "../layout-large-land/main.xml")
 
   Copyright (C) 2011 Stephen Leake.  All Rights Reserved.
 
@@ -39,7 +39,7 @@
     <!-- artist
          album
          song titles
-         next/play/prev buttons | time
+         prev/play/next buttons | time
          seekbar
          notes buttons
          playlist
@@ -87,7 +87,7 @@
         android:paddingTop="1dip"
         android:paddingBottom="4dip"
         android:orientation="horizontal">
-      <!-- next/play/prev buttons | time -->
+      <!-- prev/play/next buttons | time -->
       <LinearLayout
           android:layout_width="wrap_content"
           android:layout_height="match_parent"
@@ -96,32 +96,37 @@
           android:background="#ff5a5a5a"
           android:layout_marginTop="1dip"
           android:layout_marginBottom="2dip"
-          android:gravity="center">
-        <!-- layout background for transparent part of buttons -->
-        <!-- next/play/prev buttons -->
+          android:gravity="center"> <!-- background for transparent part of buttons -->
+        <!-- prev/play/next buttons -->
         <ImageButton
             android:id="@+id/prev"
-            style="@android:style/MediaButton.Previous"
+            android:src="@drawable/previous"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
+            android:layout_marginLeft="4dip"
+            android:layout_marginRight="4dip"
             android:background="#00000000"/> <!-- transparent -->
         <ImageButton
             android:id="@+id/play_pause"
-            style="@android:style/MediaButton.Play"
+            android:src="@drawable/play"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
+            android:layout_marginLeft="4dip"
+            android:layout_marginRight="4dip"
             android:background="#00000000"/> <!-- transparent -->
         <ImageButton
             android:id="@+id/next"
-            style="@android:style/MediaButton.Next"
+            android:src="@drawable/next"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
+            android:layout_marginLeft="4dip"
+            android:layout_marginRight="4dip"
             android:background="#00000000"/> <!-- transparent -->
       </LinearLayout>
       <LinearLayout
           android:orientation="vertical"
           android:gravity="top"
-          android:layout_width="wrap_content"
+          android:layout_width="match_parent"
           android:layout_height="match_parent"
           android:layout_marginLeft="8dp"
           android:weightSum="1">
@@ -163,9 +168,10 @@
         android:layout_marginTop="1dip"
         android:layout_marginBottom="2dip"
         android:gravity="center">
-      <!-- can't use @string in textSize attribute, despite the documentation
-           layout_height of wrap_content on buttons screws up -->
-      <!-- notes buttons, (one row in on xlarge screen)
+      <!-- SDK 20: can't use @string in textSize attribute, despite the documentation
+           API 10: layout_height of wrap_content on buttons screws up; only last button will wrap text
+      -->
+      <!-- notes buttons, row 1
       -->
       <Button
           style="?android:attr/buttonBarButtonStyle"

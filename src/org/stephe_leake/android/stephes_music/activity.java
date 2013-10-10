@@ -55,9 +55,8 @@ public class activity extends android.app.Activity
    private static final int maxProgress      = 1000;
    private static final int DIALOG_PLAYLIST  = 1;
    private static final int MENU_QUIT        = 0;
-   private static final int MENU_DUMP_LOG    = 1;
-   private static final int MENU_SAVE_STATE  = 2;
-   private static final int MENU_PREFERENCES = 3;
+   private static final int MENU_PREFERENCES = 1;
+   private static final int MENU_DUMP_LOG    = 2;
 
    private static final int RESULT_PREFERENCES = 1;
 
@@ -210,11 +209,11 @@ public class activity extends android.app.Activity
 
                   if (playing)
                   {
-                     playPauseButton.setImageResource(android.R.drawable.ic_media_pause);
+                     playPauseButton.setImageResource(R.drawable.pause);
                   }
                   else
                   {
-                     playPauseButton.setImageResource(android.R.drawable.ic_media_play);
+                     playPauseButton.setImageResource(R.drawable.play);
                   }
 
                   currentTime.setText(utils.makeTimeString(activity.this, currentPos));
@@ -479,9 +478,8 @@ public class activity extends android.app.Activity
    {
       super.onCreateOptionsMenu(menu);
       menu.add(0, MENU_QUIT, 0, R.string.menu_quit);
-      menu.add(0, MENU_DUMP_LOG, 0, R.string.menu_dump_log);
-      menu.add(0, MENU_SAVE_STATE, 0, R.string.menu_save_state);
       menu.add(0, MENU_PREFERENCES, 0, R.string.menu_preferences);
+      menu.add(0, MENU_DUMP_LOG, 0, R.string.menu_dump_log);
       return true; // display menu
    }
 
@@ -498,10 +496,6 @@ public class activity extends android.app.Activity
 
       case MENU_DUMP_LOG:
          sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_DUMP_LOG));
-         break;
-
-      case MENU_SAVE_STATE:
-         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_SAVE_STATE));
          break;
 
       case MENU_PREFERENCES:
