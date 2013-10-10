@@ -2,9 +2,9 @@
 //
 //  Provides abstract interface to retrieve metadata from audio files.
 //
-//  Android provides MediaMetadataRetriever, but that's broken on
-//  Samsung Galaxy Note II Android 4.1.2. So this uses the MediaStore
-//  interface.
+//  Android provides MediaMetadataRetriever, but that's broken for
+//  song title, album title, and artist on Samsung Galaxy Note II
+//  Android 4.1.2. So this uses the MediaStore interface.
 //
 //  Copyright (C) 2013 Stephen Leake.  All Rights Reserved.
 //
@@ -33,7 +33,7 @@ public class MetaData
    public String title;
    public String album;
    public String artist;
-   public long   duration;
+   public String duration; // service needs a string for sendStickyBroadcast, so don't bother with integer conversions
 
    public MetaData(Context context, String playlistName, String sourceFile)
    {
@@ -77,7 +77,7 @@ public class MetaData
             title    = "<playlist not found>";
             album    = "<playlist not found>";
             artist   = "<playlist not found>";
-            duration = 0;
+            duration = "0";
          }
          else
          {
@@ -113,15 +113,14 @@ public class MetaData
                      title    = "<file not found>";
                      album    = "<file not found>";
                      artist   = "<file not found>";
-                     duration = 0;
+                     duration = "0";
                   }
                   else
                   {
                      title    = memberCursor.getString(0);
                      album    = memberCursor.getString(1);
                      artist   = memberCursor.getString(2);
-                     // FIXME: duration is wrong! get from MediaMetadataRetriever (sigh).
-                     duration = memberCursor.getLong(3);
+                     duration = memberCursor.getString(3);
                   }
                }
             }
@@ -131,7 +130,7 @@ public class MetaData
                title    = "<member query failed>";
                album    = "<member query failed>";
                artist   = "<member query failed>";
-               duration = 0;
+               duration = "0";
             }
          }
       }
@@ -141,7 +140,7 @@ public class MetaData
          title    = "<playlist query failed>";
          album    = "<playlist query failed>";
          artist   = "<playlist query failed>";
-         duration = 0;
+         duration = "0";
       }
    }
 }

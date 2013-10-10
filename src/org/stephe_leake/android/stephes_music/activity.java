@@ -79,7 +79,7 @@ public class activity extends android.app.Activity
    private WakeLock    wakeLock;
 
    // Cached values
-   private int trackDuration = 0; // track duration in milliseconds
+   private long trackDuration = 0; // track duration in milliseconds
    private float defaultTextViewTextSize; // set in onCreate
 
    private AlertDialog playlistDialog;
@@ -198,7 +198,7 @@ public class activity extends android.app.Activity
                   artistTitle.setText(intent.getStringExtra("artist"));
                   albumTitle.setText(intent.getStringExtra("album"));
                   songTitle.setText(intent.getStringExtra("track"));
-                  trackDuration = intent.getIntExtra("duration", 0);
+                  trackDuration = Long.valueOf(intent.getStringExtra("duration"));
 
                   totalTime.setText(utils.makeTimeString(activity.this, trackDuration));
                   playlistTitle.setText(intent.getStringExtra("playlist"));

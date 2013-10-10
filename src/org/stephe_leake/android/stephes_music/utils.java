@@ -85,10 +85,10 @@ public class utils
       }
    }
 
-   public static String makeTimeString(Context context, int millisecs)
+   public static String makeTimeString(Context context, long millisecs)
    {
       final Time time     = new Time();
-      final int  oneHour  = 3600 * 1000; // milliseconds
+      final long oneHour  = 3600 * 1000; // milliseconds
       final String format = context.getString
          (millisecs < oneHour ? R.string.durationformatshort : R.string.durationformatlong);
 
