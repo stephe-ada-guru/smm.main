@@ -71,17 +71,24 @@ begin
 
    Least_Recent_Songs (Db, Category, Songs, Song_Count, New_Song_Count, Seed => Seed);
 
+   Put_Line ("downloading" & Integer'Image (Songs.Count) & " songs");
+
    I := First (Songs);
    loop
       exit when Is_Null (I);
       declare
+         use type SAL.Time_Conversions.Time_Type;
          Relative   : constant String := SAL.Config_Files.Read (Db, Current (I), File_Key);
          Source     : constant String := Source_Root & Relative;
          Target     : constant String := Category_Dir & Relative;
          Target_Dir : constant String := Containing_Directory (Target);
+
+         Last_Downloaded : constant SAL.Time_Conversions.Time_Type := Read_Last_Downloaded (Db, Current (I));
       begin
-         if Verbosity > 0 then
-            Put_Line (Relative);
+         if Last_Downloaded = 0.0 then
+            Put_Line (Relative & " : new");
+         else
+            Put_Line (Relative & " : " & SAL.Time_Conversions.To_Extended_ASIST_String (Last_Downloaded));
          end if;
 
          if not Exists (Target_Dir) then

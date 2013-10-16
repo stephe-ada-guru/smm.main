@@ -62,7 +62,6 @@ package body SMM is
    end As_Directory;
 
    Last_Downloaded_Key : constant String := "Last_Downloaded";
-   Prev_Downloaded_Key : constant String := "Prev_Downloaded";
 
    function Read_Last_Downloaded
      (Db : in SAL.Config_Files.Configuration_Type;
