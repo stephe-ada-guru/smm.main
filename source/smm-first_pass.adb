@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2007 - 2009, 2011, 2012 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007 - 2009, 2011, 2012, 2013 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -48,8 +48,13 @@ is
                   Filter  => (Directory => True, Ordinary_File => True, others => False),
                   Process => Process_Dir_Entry'Access);
 
-               --  FIXME: delete dir if empty
+               Delete_Directory (Full_Name (Dir_Entry));
+               Put_Line ("deleted directory " & Full_Name (Dir_Entry));
             end if;
+         exception
+         when Ada.Text_IO.Use_Error =>
+            --  From Delete_Directory; not empty, so just ignore
+            null;
          end;
 
       when Ordinary_File =>
