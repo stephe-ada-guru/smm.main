@@ -25,6 +25,7 @@
   <string name="app_name">Stephe\'s Music Player</string>
   <string name="dialog_playlist">Select a playlist</string>
   <string name="null_playlist">(click to select a playlist)</string>
+  <string name="null_playlist_directory">(set playlist directory in preferences)</string>
 
   <!-- note buttons -->
   <string name="note_best_list">Best List</string>

@@ -26,9 +26,16 @@ tag :
 #install-emulator: ANDROID_DEVICE := -e
 #install-emulator: install
 
-# assumes sdcard0 mounted via webDAV as z:
-install-pda : all
-	cp ../bin/org.stephe_leake.android.stephes_music.4.1-release.apk /cygdrive/z/Download
+# assumes extSdCard is mounted via webDAV as y:
+install-pda-webdav-apk : all install-pda-webdav
+install-pda-webdav :
+	cp ../bin/org.stephe_leake.android.stephes_music.4.1-release.apk /cygdrive/y/Download
+
+# assumes PDA is running sshDroid server, ssh key is active
+PDA_IP := 10.123.222.150
+install-pda-ssh : all
+install-pda-ssh :
+	scp -P 2222 ../bin/org.stephe_leake.android.stephes_music.4.1-release.apk root@$(PDA_IP):/storage/extSdCard/Download
 
 # ethernet address can change
 connect-tv:

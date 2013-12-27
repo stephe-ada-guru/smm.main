@@ -135,13 +135,22 @@ public class service extends Service
       {
          if (playing == PlayState.Idle)
          {
-            sendStickyBroadcast
-               (new Intent (utils.META_CHANGED).
-                putExtra ("artist", "").
-                putExtra ("album", "").
-                putExtra ("track", "").
-                putExtra ("duration", 0).
-                putExtra ("playlist", getResources().getString(R.string.null_playlist)));
+            if (playlistDirectory == null)
+               sendStickyBroadcast
+                  (new Intent (utils.META_CHANGED).
+                   putExtra ("artist", "").
+                   putExtra ("album", "").
+                   putExtra ("track", "").
+                   putExtra ("duration", 0).
+                   putExtra ("playlist", getResources().getString(R.string.null_playlist_directory)));
+            else
+               sendStickyBroadcast
+                  (new Intent (utils.META_CHANGED).
+                   putExtra ("artist", "").
+                   putExtra ("album", "").
+                   putExtra ("track", "").
+                   putExtra ("duration", 0).
+                   putExtra ("playlist", getResources().getString(R.string.null_playlist)));
          }
          else
          {
@@ -232,7 +241,7 @@ public class service extends Service
             // We consider this a programmer error, because it
             // probably indicates an SMM sync bug. It could also be a
             // failing sdcard.
-            utils.debugLog("can't play " + path + e.toString());
+            utils.debugLog("can't play '" + path + "' :"+ e.toString());
 
             notifyChange(utils.META_CHANGED);
             return;
@@ -264,23 +273,55 @@ public class service extends Service
       // Lookup the current file for the playlist from
       // SharedPreferences. If non-null, start at that file.
 
-      final File playlistFile        = new File(filename);
-      String     tmpPlaylistFilename = playlistFile.getName();
-
-      // Activity only sends filenames that end in .m3u; strip that
-      tmpPlaylistFilename  = tmpPlaylistFilename.substring(0, tmpPlaylistFilename.length() - 4);
-
-      SharedPreferences storage = getSharedPreferences(utils.serviceClassName, MODE_PRIVATE);
-
-      final String currentFile = storage.getString(tmpPlaylistFilename + keyCurrentFile, null);
-      int          pos         = 0;
-
+      final File playlistFile = new File(filename);
       if (!playlistFile.canRead())
       {
          // This is an SMM error, or failing sdcard
          utils.debugLog("can't read " + filename);
          throw new Fail();
       }
+
+      // There are two use cases where the playlist file absolute path
+      // changes, but we want to treat it as the same file:
+      //
+      // 1) root directory moved on a phone
+      //    - external sdcard to internal storage
+      //
+      // 2) USB stick moved to a different device
+      //    - Google TV to Neo
+      //    - back to Google TV in different USB port
+      //
+      // getName returns just the basename of a file, throwing away
+      // the absolute path.
+      String tmpPlaylistFilename = playlistFile.getName();
+
+      // Activity only sends filenames that end in .m3u; strip that
+      tmpPlaylistFilename  = tmpPlaylistFilename.substring(0, tmpPlaylistFilename.length() - 4);
+
+      SharedPreferences storage = getSharedPreferences(utils.serviceClassName, MODE_PRIVATE);
+
+      // This fails in case 2); use the .last smm file
+      String currentFile = storage.getString(tmpPlaylistFilename + keyCurrentFile, null);
+      int          pos         = 0;
+
+      if (currentFile == null)
+      {
+         final String smmFileName = playlistFile.getParent() + "/" + tmpPlaylistFilename + ".last";
+
+         try
+         {
+            BufferedReader reader = new BufferedReader(new FileReader(smmFileName));
+
+            currentFile = reader.readLine();
+            reader.close();
+         }
+         catch (IOException e)
+         {
+            utils.debugLog("can't read smm file: " + e);
+         }
+      }
+
+      utils.debugLog("start file: " + currentFile);
 
       try
       {
@@ -292,8 +333,9 @@ public class service extends Service
 
          while (line != null)
          {
-            // We don't check for readable now, because that might
-            // change by the time we get to actually playing a song.
+            // We don't check for .mp3 readable now, because that
+            // might change by the time we get to actually playing a
+            // song.
             //
             // In SMM playlists all lines are song filepaths, relative
             // to the directory filename is in.

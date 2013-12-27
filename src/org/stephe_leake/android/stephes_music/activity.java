@@ -194,13 +194,21 @@ public class activity extends android.app.Activity
             {
                if (action.equals(utils.META_CHANGED))
                {
+                  // On first start, with no playlist selected, these
+                  // are all empty strings except playlist, which
+                  // contains R.string.null_playlist or null_playlist_directory.
+                  playlistTitle.setText(intent.getStringExtra("playlist"));
                   artistTitle.setText(intent.getStringExtra("artist"));
                   albumTitle.setText(intent.getStringExtra("album"));
                   songTitle.setText(intent.getStringExtra("track"));
-                  trackDuration = Long.valueOf(intent.getStringExtra("duration"));
+
+                  final String trackDurationString = intent.getStringExtra("duration");
+                  if (trackDurationString != null)
+                     trackDuration = Long.valueOf(trackDurationString);
+                  else
+                     trackDuration = 0;
 
                   totalTime.setText(utils.makeTimeString(activity.this, trackDuration));
-                  playlistTitle.setText(intent.getStringExtra("playlist"));
                }
                else if (action.equals(utils.PLAYSTATE_CHANGED))
                {
@@ -230,7 +238,7 @@ public class activity extends android.app.Activity
             }
             catch (RuntimeException e)
             {
-               utils.errorLog(activity.this, "broadcastReceiver: ", e);
+               utils.debugLog("activity.broadcastReceiver: " + e);
             }
          }
       };

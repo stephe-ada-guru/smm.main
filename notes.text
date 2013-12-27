@@ -4,22 +4,11 @@ src/org/stephe_leake/android/stephes_music/service.java
 (dvc-status)
 ~/Misc/android.text
 
-Galaxy Note I
-    SAMSUNG-SGH-1717
-    Android 2.3.6
-
-Galaxy Note II
-    SGH-T889
-    Android 4.1.2
-
 button to share song via email
 
 start over option for yoga
-
-smm show last downloaded date for each song on verbosity 0
-    give number of songs to download
-
-smm delete empty dirs
+    on Google TV, where getmetadata works
+        need factory method for getmetadata indirection
 
 stop after n songs
     instead of sleep timer
@@ -29,27 +18,40 @@ notification bar controller
 
 ignore blank line in mp3
 
-restarts after system kills service, starts playing
-    don't request restart?
-    restore state should get pause, but gets play
+On Galaxy note I:
+    restarts after system kills service, starts playing
+        don't request restart?
+        restore state should get pause, but gets play
+
+    in progressbar:
+        if storage.pos > max, change max (bad .mp3 metadata)
 
 handle back button
 
 add about dialog, with sdk version
 
-need on-screen volume control
-
-in progressbar:
-    if storage.pos > max, change max (bad .mp3 metadata)
+on-screen volume control
 
 webdav
     Mount network drive http://<ip>:<port>
+
+ devices
+Galaxy Note I
+    SAMSUNG-SGH-1717
+    Android 2.3.6
+
+Galaxy Note II
+    SGH-T889
+    Android 4.1.2
 
  port to windows
 http://libagar.org/
 
  smm
-/Projects/smm/smm.main/build/x86_gnu_windows_release/Makefile
+/Projects/smm.main/build/x86_gnu_windows_release/Makefile
+
+    sal.time_conversions.to_extended_asist_string wrong for 0.0?
+        /Projects/GDS/main_lynx_5/sal/build/x86_gnu_windows_release/Makefile
 
 copy playlist
     for yoga
