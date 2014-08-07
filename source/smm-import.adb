@@ -2,7 +2,7 @@
 --
 --  Import new files into SMM db.
 --
---  Copyright (C) 2008 - 2010, 2012 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2010, 2012, 2014 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -18,6 +18,7 @@
 
 pragma License (GPL);
 
+with Ada.Containers.Indefinite_Doubly_Linked_Lists;
 with Ada.Directories;
 with Ada.Text_IO;
 with Interfaces;
@@ -32,6 +33,22 @@ is
    Song_Files : String_Maps.Map;
    Pos        : String_Maps.Cursor;
    Inserted   : Boolean;
+
+   package String_Lists is new Ada.Containers.Indefinite_Doubly_Linked_Lists
+     (Element_Type => String,
+      "=" => "=");
+
+   function Build_Extensions return String_Lists.List
+   is
+      use String_Lists;
+      Result : List;
+   begin
+      Result.Append ("mp3");
+      Result.Append ("flac");
+      return Result;
+   end Build_Extensions;
+
+   Extensions : constant String_Lists.List := Build_Extensions;
 
    procedure Get_Initial_Index
    is
@@ -78,6 +95,8 @@ is
       procedure Process_Dir_Entry (Dir_Entry : in Directory_Entry_Type)
       is
          use type Interfaces.Unsigned_32;
+         use type String_Lists.Cursor;
+
          Name        : constant String := Relative_Name (Root, Normalize (Full_Name (Dir_Entry)));
          Index_Image : constant String := Interfaces.Unsigned_32'Image (Index);
       begin
@@ -92,7 +111,7 @@ is
             Import_Dir (Root, Name);
 
          when Ordinary_File =>
-            if Extension (Name) = "mp3" then
+            if Extensions.Find (Extension (Name)) /= String_Lists.No_Element then
                String_Maps.Insert (Song_Files, Name, Null_Iterator, Pos, Inserted);
                if not Inserted then
                   if Verbosity > 1 then
