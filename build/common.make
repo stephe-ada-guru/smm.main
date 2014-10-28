@@ -4,9 +4,9 @@ all : smm.exe test_all_harness.diff smm.html
 
 tests : test_all_harness.diff
 
-include $(GDS_ROOT)/main/makerules/common_rules.make
-include $(GDS_ROOT)/main/makerules/gnat_project_rules.make
-include $(GDS_ROOT)/main/makerules/texinfo_rules.make
+include $(GDS_ROOT)/main_lynx_5/makerules/common_rules.make
+include $(GDS_ROOT)/main_lynx_5/makerules/gnat_project_rules.make
+include $(GDS_ROOT)/main_lynx_5/makerules/texinfo_rules.make
 
 # smm.adb is not the main program, so we need this rule
 smm.exe : force

@@ -1,5 +1,3 @@
-xref_tool=gnat_inspect
-
 ada_project_path=$GDS_ROOT/main_lynx_5/makerules
 ada_project_path=$GDS_ROOT/main_lynx_5/sal/build
 ada_project_path=$GDS_ROOT/main_lynx_5/sal/build/x86_gnu_windows_release

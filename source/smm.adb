@@ -2,7 +2,7 @@
 --
 --  see spec
 --
---  Copyright (C) 2008, 2009, 2011 - 2013 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008, 2009, 2011 - 2014 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -85,7 +85,12 @@ package body SMM is
      (Db   : in out SAL.Config_Files.Configuration_Type;
       I    : in     SAL.Config_Files.Iterator_Type;
       Time : in     SAL.Time_Conversions.Time_Type)
-   is begin
+   is
+      use SAL.Config_Files;
+   begin
+      if Is_Present (Db, I, Last_Downloaded_Key) then
+         Write (Db, I, Prev_Downloaded_Key,  Read (Db, I, Last_Downloaded_Key));
+      end if;
       SAL.Config_Files.Write (Db, I, Last_Downloaded_Key, SAL.Time_Conversions.To_Extended_ASIST_String (Time));
    end Write_Last_Downloaded;
 
