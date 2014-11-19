@@ -1,5 +1,6 @@
 with "standard_common";
-with "aunit";
+-- FIXME: conflict between installed and sal aunit; convert to installed, move sal to separate path
+-- with "aunit";
 with "sal";
 project Smm is
   for Source_Dirs use

@@ -5,7 +5,7 @@
 
 include ../common.make
 
-export ADA_PROJECT_PATH = $(GDS_ROOT)/main/makerules:$(GDS_ROOT)/main/sal/Build/x86_gnu_linux_release
+export ADA_PROJECT_PATH = $(GDS_ROOT)/main_lynx_5/makerules:$(GDS_ROOT)/main_lynx_5/sal/Build/x86_gnu_linux_release
 
 all : smm.exe
 

@@ -17,7 +17,6 @@ trace :
 
 #
 #Local Variables:
-#eval: (sal-standard)
 #eval: (ada-parse-prj-file "smm.prj")
 #eval: (ada-select-prj-file "smm.prj")
 #End:

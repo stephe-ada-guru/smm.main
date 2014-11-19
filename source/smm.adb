@@ -62,15 +62,17 @@ package body SMM is
    end As_Directory;
 
    Last_Downloaded_Key : constant String := "Last_Downloaded";
+   Prev_Downloaded_Key : constant String := "Prev_Downloaded";
 
-   function Read_Last_Downloaded
-     (Db : in SAL.Config_Files.Configuration_Type;
-      I  : in SAL.Config_Files.Iterator_Type)
+   function Read_Time
+     (Db  : in SAL.Config_Files.Configuration_Type;
+      I   : in SAL.Config_Files.Iterator_Type;
+      Key : in String)
      return SAL.Time_Conversions.Time_Type
    is
       use SAL.Config_Files;
       use SAL.Time_Conversions;
-      Temp : constant String := Read (Db, I, Last_Downloaded_Key);
+      Temp : constant String := Read (Db, I, Key);
    begin
       if Temp'Length = Extended_ASIST_Time_String_Type'Last and then Temp (5) = '-' then
          --  ASIST string
@@ -79,7 +81,23 @@ package body SMM is
          --  Time_type'image; old db, or unit test.
          return Time_Type'Value (Temp);
       end if;
+   end Read_Time;
+
+   function Read_Last_Downloaded
+     (Db : in SAL.Config_Files.Configuration_Type;
+      I  : in SAL.Config_Files.Iterator_Type)
+     return SAL.Time_Conversions.Time_Type
+   is begin
+      return Read_Time (Db, I, Last_Downloaded_Key);
    end Read_Last_Downloaded;
+
+   function Read_Prev_Downloaded
+     (Db : in SAL.Config_Files.Configuration_Type;
+      I  : in SAL.Config_Files.Iterator_Type)
+     return SAL.Time_Conversions.Time_Type
+   is begin
+      return Read_Time (Db, I, Prev_Downloaded_Key);
+   end Read_Prev_Downloaded;
 
    procedure Write_Last_Downloaded
      (Db   : in out SAL.Config_Files.Configuration_Type;
