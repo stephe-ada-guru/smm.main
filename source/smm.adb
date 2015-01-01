@@ -2,7 +2,7 @@
 --
 --  see spec
 --
---  Copyright (C) 2008, 2009, 2011 - 2014 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008, 2009, 2011 - 2015 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -72,14 +72,21 @@ package body SMM is
    is
       use SAL.Config_Files;
       use SAL.Time_Conversions;
-      Temp : constant String := Read (Db, I, Key);
    begin
-      if Temp'Length = Extended_ASIST_Time_String_Type'Last and then Temp (5) = '-' then
-         --  ASIST string
-         return To_TAI_Time (Temp, Absolute => True);
+      if Is_Present (Db, I, Key)  then
+         declare
+            Temp : constant String := Read (Db, I, Key);
+         begin
+            if Temp'Length = Extended_ASIST_Time_String_Type'Last and then Temp (5) = '-' then
+               --  ASIST string
+               return To_TAI_Time (Temp, Absolute => True);
+            else
+               --  Time_type'image; old db, or unit test.
+               return Time_Type'Value (Temp);
+            end if;
+         end;
       else
-         --  Time_type'image; old db, or unit test.
-         return Time_Type'Value (Temp);
+         return 0.0;
       end if;
    end Read_Time;
 
