@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<!-- Copyright (C) 2011 Stephen Leake stephen_leake@stephe-leake.org
+<!-- Copyright (C) 2011 - 2013, 2015 Stephen Leake stephen_leake@stephe-leake.org
 
 This application is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License as
@@ -22,9 +22,10 @@ along with GCC; see the file COPYING3.  If not see
           package="org.stephe_leake.android.stephes_music"
           android:versionCode="3"
           android:versionName="3.0">
-  <!-- this is actually the Android API level, not the SDK level (sigh) -->
-  <uses-sdk android:minSdkVersion="16"
-            android:targetSdkVersion="16"/>
+  <!-- this is actually the Android API level, not the SDK level (sigh)-->
+  <!-- and it is overridden by project.properties "target=*" (sigh) -->
+  <uses-sdk android:minSdkVersion="19"
+            android:targetSdkVersion="19"/>
 
   <uses-permission android:name="android.permission.BROADCAST_STICKY" /> <!-- send data from service to activity -->
   <uses-permission android:name="android.permission.WAKE_LOCK" /> <!-- media player prevents screen from turning off -->

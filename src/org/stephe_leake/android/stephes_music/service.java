@@ -3,7 +3,7 @@
 //  Provides background audio playback capabilities, allowing the
 //  user to switch between activities without stopping playback.
 //
-//  Copyright (C) 2011, 2012, 2013 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2011 - 2013, 2015 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -592,7 +592,7 @@ public class service extends Service
    {
       if (playlistPos > -1)
       {
-         final String noteFileName = playlistDirectory + "/" + playlistFilename + ".note";
+         final String noteFileName = smmDirectory + "/" + playlistFilename + ".note";
 
          try
          {
@@ -613,6 +613,15 @@ public class service extends Service
       }
    }
 
+   private void setSMMDirectory(Context context)
+   {
+      Resources         res   = getResources();
+      SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+      smmDirectory = prefs.getString
+         (res.getString(R.string.smm_directory_key),
+          res.getString(R.string.smm_directory_default));
+   }
+
    private void writeSMMFile()
    {
       // Tell smm what tracks from the current playlist have been
@@ -624,7 +633,7 @@ public class service extends Service
       if (playlistFilename == null)
          return;
 
-      final String smmFileName = playlistDirectory + "/" + playlistFilename + ".last";
+      final String smmFileName = smmDirectory + "/" + playlistFilename + ".last";
 
       try
       {
@@ -643,11 +652,11 @@ public class service extends Service
       }
       catch (IOException e)
       {
-         utils.debugLog("can't write smm file: " + e);
+         utils.errorLog(this, "can't write smm file: ", e);
       }
       catch (RuntimeException e)
       {
-         utils.debugLog("writeSMMFile: " + e);
+         utils.errorLog(this, "writeSMMFile: ", e);
       }
    }
 
@@ -785,6 +794,10 @@ public class service extends Service
                   mediaPlayer.seekTo(pos);
                   notifyChange(utils.PLAYSTATE_CHANGED);
                }
+               else if (command.equals(utils.COMMAND_SMM_DIRECTORY))
+               {
+                  setSMMDirectory(context);
+               }
                else if (command.equals (utils.COMMAND_TOGGLEPAUSE))
                {
                   switch (service.playing)
@@ -912,11 +925,20 @@ public class service extends Service
    private MediaPlayer mediaPlayer;
 
    ////////// state
+   private String smmDirectory;
+   // Absolute path to directory containing files used to interface
+   // with Stephe's Music manager (smm).
+   //
+   // Set by preferences.
+
    static private PlayState playing;
-   private String           playlistDirectory;
+
+   private String playlistDirectory;
    // Absolute path to directory where playlist files reside. The
    // list of available playlists consists of all .m3u files in
    // this directory.
+   //
+   // Set from playlist file passed to playList
 
    private String playlistFilename;
    // Relative to Playlist_Directory, without extension (suitable
@@ -941,6 +963,8 @@ public class service extends Service
    @Override public void onCreate()
    {
       super.onCreate();
+
+      setSMMDirectory (this);
 
       // We need two broadcast recievers because we can't wild card
       // all of the filter criteria.
@@ -1012,7 +1036,7 @@ public class service extends Service
 
    private void dumpLog()
    {
-      final String logFilename = playlistDirectory + "/" + playlistFilename + ".log";
+      final String logFilename = smmDirectory + "/stephes_music/" + playlistFilename + ".log";
 
       try
       {
@@ -1025,7 +1049,7 @@ public class service extends Service
       }
       catch (java.io.IOException e)
       {
-         utils.debugLog("can't write log to " + logFilename);
+         utils.errorLog(this, "can't write log to " + logFilename, e);
       }
    }
 

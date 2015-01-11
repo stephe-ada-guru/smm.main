@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 
+<!--
 Abstract :
 
 Preferences for Stephe's Music Player.
@@ -31,6 +31,14 @@ write to the Free Software Foundation, 51 Franklin Street, Suite
         android:dialogTitle="@string/playlist_directory_dialog_title" />
     <!-- list entries filled at runtime -->
 
+    <ListPreference
+        android:key="@string/smm_directory_key"
+        android:defaultValue="@string/smm_directory_default"
+        android:title="@string/smm_directory_title"
+        android:summary="@string/smm_directory_summary"
+        android:dialogTitle="@string/smm_directory_dialog_title" />
+    <!-- list entries filled at runtime -->
+
     <EditTextPreference
         android:key="@string/prev_threshold_key"
         android:defaultValue="@string/prev_threshold_default"
@@ -38,7 +46,7 @@ write to the Free Software Foundation, 51 Franklin Street, Suite
         android:title="@string/prev_threshold_title"
         android:summary="@string/prev_threshold_summary"
         android:dialogTitle="@string/prev_threshold_dialog_title" />
-        
+
     <EditTextPreference
         android:key="@string/text_scale_key"
         android:defaultValue="@string/text_scale_default"
@@ -53,7 +61,7 @@ write to the Free Software Foundation, 51 Franklin Street, Suite
         android:title="@string/always_on_title"
         android:summary="@string/always_on_summary"
         android:dialogTitle="@string/always_on_dialog_title"/>
-        
+
   </PreferenceCategory>
-  
+
 </PreferenceScreen>

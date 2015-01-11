@@ -2,7 +2,7 @@
 //
 //  Provides User Interface to Stephe's Music Player.
 //
-//  Copyright (C) 2011, 2012, 2013 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2011 - 2013, 2015 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -61,11 +61,14 @@ public class utils
    public static final String COMMAND_SAVE_STATE     = "org.stephe_leake.android.stephes_music.command.save_state";
    public static final String COMMAND_SEEK           = "org.stephe_leake.android.stephes_music.command.seek";
    // position  int (milliseconds)
+   public static final String COMMAND_SMM_DIRECTORY  = "org.stephe_leake.android.stephes_music.command.smm_directory";
+   // directory string (abs directory name)
    public static final String COMMAND_TOGGLEPAUSE    = "org.stephe_leake.android.stephes_music.command.togglepause";
    public static final String COMMAND_UPDATE_DISPLAY = "org.stephe_leake.android.stephes_music.command.update_display";
 
    // sub-activity result codes
-   public static final int RESULT_TEXT_SCALE = Activity.RESULT_FIRST_USER + 1;
+   public static final int RESULT_TEXT_SCALE    = Activity.RESULT_FIRST_USER + 1;
+   public static final int RESULT_SMM_DIRECTORY = Activity.RESULT_FIRST_USER + 2;
 
    // methods
 
@@ -149,6 +152,8 @@ public class utils
 
    public static void debugDump(PrintWriter out)
    {
+      // No point in catching exceptions here, we can't report them
+      // (no Context, so no toasts).
       for (int i = 0; i < log.length; i++)
       {
          int idx = (logNext + i);

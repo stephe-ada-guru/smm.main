@@ -4,7 +4,28 @@ src/org/stephe_leake/android/stephes_music/service.java
 (dvc-status)
 ~/Misc/android.text
 
+write xref-java.el
+    look at other Emacs java modes?
+
+Lock screen controls
+
+Time slide control
+    tracks player time
+    doesn't respond to touch
+
 button to share song via email
+
+support Upnp/dlna output stream
+    play on stereo via android tv and/or roku box
+    MediaRouter
+    WifiP2pManager.UpnpServiceResponseListener
+    http://sourceforge.net/p/droiddlnaplayer/code/HEAD/tree/
+    http://sourceforge.net/projects/cgupnpjava/
+    /Projects/android/droiddlnaplayer-code/
+    /Projects/android/clinkjavaproguide200.pdf
+
+button for 'save for later'
+    bump current song to end of playlist
 
 start over option for yoga
     on Google TV, where getmetadata works

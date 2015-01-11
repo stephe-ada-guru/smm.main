@@ -2,7 +2,7 @@
 //
 //  Provides User Interface to Stephe's Music Player.
 //
-//  Copyright (C) 2011, 2012, 2013 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2011 - 2013, 2015 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -88,30 +88,16 @@ public class preferences extends android.preference.PreferenceActivity
          utils.errorLog(this, "Can't read stored preferences: clear data in Settings | Applications");
       }
 
+      // Build list of top level directories that might contain smm playlists.
+
       ListPreference playlistPref = (ListPreference)findPreference(res.getString(R.string.playlist_directory_key));
 
-      // Build list by scanning media for top level directory containing smm playlists.
-
-      LinkedList<String> smmDirs = new LinkedList<String>();
+      LinkedList<String> playlistDirs = new LinkedList<String>();
 
       LinkedList<String> likelyRoots = new LinkedList<String>();
 
-      likelyRoots.add(Environment.getExternalStorageDirectory().getPath()); // standard Android phone (api 1)
-      likelyRoots.add("/storage/sdcard0"); // Samsung Galaxy note II internal
-      likelyRoots.add("/storage/extSdCard"); // Samsung Galaxy note II external
-
-      // On a Google TV, there is no sdcard, but there are USB ports; search for those
-      final File tvRoot = new File("/mnt/media");
-
-      final String[] likelyTvRoots = tvRoot.list(dirFilter);
-
-      if (likelyTvRoots != null)
-      {
-         for (int i = 0; i < likelyTvRoots.length; i ++)
-         {
-            likelyRoots.add(tvRoot.getPath() + "/" + likelyTvRoots[i]);
-         }
-      }
+      likelyRoots.add("/storage/sdcard0"); // Samsung Galaxy note II/III internal
+      likelyRoots.add("/storage/extSdCard"); // Samsung Galaxy note II/III external
 
       Iterator<String> likelyRootsI = likelyRoots.iterator();
 
@@ -126,21 +112,38 @@ public class preferences extends android.preference.PreferenceActivity
             {
                String dir = checkDirectory(root, likelyDirs[j]);
                if (dir != null)
-                  smmDirs.add(dir);
+                  playlistDirs.add(dir);
             };
          };
       } while (likelyRootsI.hasNext());
 
-      final String[] smmDirsArray = new String[smmDirs.size()];
-      Iterator<String> smmDirsI = smmDirs.iterator();
+      final String[] playlistDirsArray = new String[playlistDirs.size()];
+      Iterator<String> playlistDirsI = playlistDirs.iterator();
 
-      for (int i = 0; i < smmDirsArray.length; i++)
+      for (int i = 0; i < playlistDirsArray.length; i++)
       {
-         smmDirsArray[i] = smmDirsI.next();
+         playlistDirsArray[i] = playlistDirsI.next();
       }
 
-      playlistPref.setEntries(smmDirsArray);
-      playlistPref.setEntryValues(smmDirsArray);
+      playlistPref.setEntries(playlistDirsArray);
+      playlistPref.setEntryValues(playlistDirsArray);
+
+
+      // Create list of possible smm directories
+      
+      ListPreference smmPref = (ListPreference)findPreference(res.getString(R.string.smm_directory_key));
+
+      File[] extCacheDirs = this.getExternalCacheDirs();
+
+      String[] smmDirs = new String[extCacheDirs.length];
+
+      for (int i = 0; i < extCacheDirs.length; i++)
+      {
+          smmDirs[i] = extCacheDirs[i].getAbsolutePath();
+      }
+      
+      smmPref.setEntries(smmDirs);
+      smmPref.setEntryValues(smmDirs);
    }
 
    @Override protected void onResume()
@@ -162,6 +165,10 @@ public class preferences extends android.preference.PreferenceActivity
       if (key.equals(getResources().getString(R.string.text_scale_key)))
       {
          setResult(utils.RESULT_TEXT_SCALE);
+      }
+      if (key.equals(getResources().getString(R.string.smm_directory_key)))
+      {
+         setResult(utils.RESULT_SMM_DIRECTORY);
       }
       else
       {

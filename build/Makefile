@@ -32,10 +32,10 @@ install-pda-webdav :
 	cp ../bin/org.stephe_leake.android.stephes_music.4.1-release.apk /cygdrive/y/Download
 
 # assumes PDA is running sshDroid server, ssh key is active
-PDA_IP := 10.123.222.150
+PDA_IP := 10.0.0.9
 install-pda-ssh : all
 install-pda-ssh :
-	scp -P 2222 ../bin/org.stephe_leake.android.stephes_music.4.1-release.apk root@$(PDA_IP):/storage/extSdCard/Download
+	scp -P 2222 ../bin/org.stephe_leake.android.stephes_music.4.1-release.apk root@$(PDA_IP):/storage/sdcard0/Download
 
 # ethernet address can change
 connect-tv:

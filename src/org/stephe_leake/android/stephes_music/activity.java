@@ -2,7 +2,7 @@
 //
 //  Provides User Interface to Stephe's Music Player.
 //
-//  Copyright (C) 2011, 2012, 2013 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2011 - 2013, 2015 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -94,7 +94,7 @@ public class activity extends android.app.Activity
               res.getString(R.string.text_scale_default));
       try
       {
-         return  Float.valueOf(scale);
+         return Float.valueOf(scale);
       }
       catch (NumberFormatException e)
       {
@@ -535,6 +535,14 @@ public class activity extends android.app.Activity
                artistTitle.setTextSize(scale * defaultTextViewTextSize);
                albumTitle.setTextSize(scale * defaultTextViewTextSize);
                songTitle.setTextSize(scale * defaultTextViewTextSize);
+            }
+            break;
+
+         case utils.RESULT_SMM_DIRECTORY:
+            {
+               sendBroadcast
+                  (new Intent (utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_SMM_DIRECTORY));
+               // value from preferences
             }
             break;
 

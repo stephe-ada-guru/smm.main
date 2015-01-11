@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- requires Android SDK 22
+<!-- requires Android SDK 24
 
 We just use the default setup; see $ANDROID_HOME/tools/ant/build.xml imported below.
+
+This file is partially copied/modified from one created by 'android.bat create project'
 -->
 
 <!--
@@ -14,6 +16,7 @@ apk name does help in knowing which one you are installing.
 <project name="org.stephe_leake.android.stephes_music.4.1" default="help">
 
 <property file="local.properties" />
+<!-- <property file="ant.properties" /> -->
 
 <!-- get sdk.dir from ANDROID_HOME -->
 <property environment="env" />
@@ -21,8 +24,7 @@ apk name does help in knowing which one you are installing.
     <isset property="env.ANDROID_HOME" />
 </condition>
 
-<property name="target" value="android-16" />
-
+<loadproperties srcFile="project.properties" />
 
 <!-- FIXME: put this back: <property name="java.compilerargs" value="-Xlint:deprecation" /> -->
 
