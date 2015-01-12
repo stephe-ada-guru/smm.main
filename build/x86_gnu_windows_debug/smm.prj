@@ -5,3 +5,4 @@ gpr_file=smm.gpr
 gnat_stub_opts=-P smm.gpr -t -hs
 
 casing=../smm.casing
+casing=$GDS_ROOT/main_lynx_5/sal/emacs_case_exceptions

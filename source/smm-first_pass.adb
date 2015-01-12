@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2007 - 2009, 2011, 2012, 2013 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007 - 2009, 2011 - 2013, 2015 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -22,12 +22,13 @@ with Ada.Characters.Handling;
 with Ada.Directories; use Ada.Directories;
 with Ada.Text_IO;     use Ada.Text_IO;
 procedure SMM.First_Pass
-  (Category   : in     String;
-   Root_Dir   : in     String;
-   File_Count :    out Integer)
+  (Category     : in     String;
+   Playlist_Dir : in     String;
+   SMM_Dir      : in     String;
+   File_Count   :    out Integer)
 is
-   Playlist_File_Name : constant String := Category & ".m3u";
-   Last_File_Name     : constant String := Category & ".last";
+   Playlist_File_Name : constant String := Category & ".m3u";  -- in Playlist_Dir
+   Last_File_Name     : constant String := SMM_Dir & Category & ".last"; -- absolute
    Target_Dir         : constant String := Category;
 
    Mentioned_Files : String_Lists.List;
@@ -60,7 +61,7 @@ is
       when Ordinary_File =>
          declare
             Name : constant String := Ada.Characters.Handling.To_Lower
-              (Relative_Name (Root_Dir, Normalize (Full_Name (Dir_Entry))));
+              (Relative_Name (Playlist_Dir, Normalize (Full_Name (Dir_Entry))));
          begin
             if String_Lists.Contains (Mentioned_Files, Name) then
                if Verbosity > 1 then
@@ -82,7 +83,7 @@ is
    end Process_Dir_Entry;
 
 begin
-   Ada.Directories.Set_Directory (Root_Dir);
+   Ada.Directories.Set_Directory (Playlist_Dir);
 
    if Verbosity > 1 then
       Put_Line ("processing directory (phase 1) " & Target_Dir);

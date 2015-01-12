@@ -17,9 +17,11 @@
 --  MA 02111-1307, USA.
 
 with Ada.IO_Exceptions;
+with Ada.Calendar.Formatting;
 with Ada.Characters.Handling;
 with Ada.Directories;
 with Ada.Text_IO;
+with AUnit.Assertions;
 with SAL.Aux.Indefinite_Private_Items;
 with SAL.Config_Files.Integer;
 with SAL.Gen.Alg.Find_Linear.Sorted;
@@ -60,6 +62,11 @@ package body SMM is
          return Temp & '/';
       end if;
    end As_Directory;
+
+   function To_String (Time : in SAL.Time_Conversions.Time_Type) return String
+   is begin
+      return Ada.Calendar.Formatting.Image (SAL.Time_Conversions.To_Calendar_Time (Time));
+   end To_String;
 
    Last_Downloaded_Key : constant String := "Last_Downloaded";
    Prev_Downloaded_Key : constant String := "Prev_Downloaded";
@@ -296,9 +303,7 @@ package body SMM is
          Source : Song_Lists.List_Type renames Time_List_Element.Songs;
       begin
          if Verbosity > 0 then
-            Ada.Text_IO.Put_Line
-              ("adding songs from " &
-                 SAL.Time_Conversions.To_Extended_ASIST_String (Time_List_Element.Last_Downloaded));
+            Ada.Text_IO.Put_Line ("adding songs from " & To_String (Time_List_Element.Last_Downloaded));
          end if;
 
          Splice_After
@@ -600,7 +605,22 @@ package body SMM is
                   Dest   => Songs,
                   After  => Item.First_Song_Songs);
             end if;
+         exception
+         when Constraint_Error =>
+            --  FIXME: debugging list access error
+            --  This did not catch the bug!
+            Song_Lists_AUnit.Validate ("failed in place_second_song", Songs);
+            raise;
          end;
+
+         --  FIXME: debugging list access error
+         begin
+            Song_Lists_AUnit.Validate ("check after place_second_song", Songs);
+         exception
+         when AUnit.Assertions.Assertion_Error =>
+            raise SAL.Programmer_Error;
+         end;
+         --  end FIXME:
 
          Next (Item_I);
       end loop Place_Second_Song;

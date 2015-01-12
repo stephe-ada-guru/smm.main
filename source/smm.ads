@@ -2,7 +2,7 @@
 --
 --  Root of Stephe's Music Manager packages
 --
---  Copyright (C) 2008 - 2014 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2015 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -24,7 +24,7 @@ with Ada.Strings.Hash;
 with SAL.Aux.Definite_Private_Items;
 with SAL.Config_Files;
 with SAL.Gen.Alg.Count;
-with SAL.Poly.Lists.Double;
+with SAL.Poly.Lists.Double.AUnit;
 with SAL.Storage_Pools;
 with SAL.Time_Conversions;
 package SMM is
@@ -41,6 +41,9 @@ package SMM is
 
    function As_Directory (Path : in String) return String;
    --  normalize, append '/' if needed.
+
+   function To_String (Time : in SAL.Time_Conversions.Time_Type) return String;
+   --  User friendly date representation
 
    --  database keys
    Category_Key        : constant String := "Category";
@@ -80,6 +83,8 @@ package SMM is
       Free_Item         => Song_Lists_Aux.Free_Item,
       Copy              => Song_Lists_Aux.Copy_Item_Node,
       Node_Storage_Pool => SAL.Storage_Pools.Integer_Access_Type'Storage_Pool);
+
+   package Song_Lists_AUnit is new Song_Lists.AUnit;
 
    package Song_Lists_Algorithms is new SAL.Gen.Alg
      (Item_Node_Type => SAL.Config_Files.Iterator_Type,

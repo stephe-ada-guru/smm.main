@@ -2,7 +2,7 @@
 --
 --  main procedure for SMM application
 --
---  Copyright (C) 2008 - 2013 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2013, 2015 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -21,8 +21,9 @@ pragma License (GPL);
 with Ada.Command_Line; use Ada.Command_Line;
 with Ada.Directories;
 with Ada.Environment_Variables;
-with Ada.Exceptions;
+with Ada.Exceptions.Traceback;
 with Ada.Text_IO; use Ada.Text_IO;
+with GNAT.Traceback.Symbolic;
 with SAL.Command_Line_IO;
 with SAL.Config_Files;
 with SMM.Copy;
@@ -43,12 +44,12 @@ is
       Put_Line ("  about half of new-song-count will be downloaded.");
       Put_Line ("  categories: {instrumental | vocal | ...}");
       Put_Line ("  operations:");
-      Put_Line ("  download_playlist <category> <target_dir>");
+      Put_Line ("  download_playlist <category> <playlist_dir> <smm_dir>");
       Put_Line ("    manage downloaded files and playlist:");
-      Put_Line ("    1) delete files in target_dir either not in playlist target_dir/../<category>.m3u,");
-      Put_Line ("       or already played (indicated in target_dir/../<category>.last)");
-      Put_Line ("    2) download default amount of music to target_dir");
-      Put_Line ("    3) delete played files, add new files to playlist, delete target_dir/../<category>.last");
+      Put_Line ("    1) delete files in playlist_dir/category either not in playlist_dir/category.m3u,");
+      Put_Line ("       or already played (as indicated in smm_dir/category.last)");
+      Put_Line ("    2) download default amount of music to playlist_dir");
+      Put_Line ("    3) delete played files, add new files to playlist, delete smm_dir/category.last");
       New_Line;
       Put_Line ("  playlist <category> [<file>] [--replace]");
       Put_Line ("    create a playlist in <file> (same songs as 'download' would do)");
@@ -56,8 +57,8 @@ is
       Put_Line ("    --replace - overwrite file; otherwise append");
       Put_Line ("    if <file> is in database root, paths in playlist are relative");
       New_Line;
-      Put_Line ("  copy_playlist <playlist> <target_dir>");
-      Put_Line ("    copy playlist and referenced files to target_dir");
+      Put_Line ("  copy_playlist <playlist> <playlist_dir>");
+      Put_Line ("    copy playlist and referenced files to playlist_dir");
       Put_Line ("    current directory must be database root dir");
       New_Line;
       Put_Line ("  import <category> <dir>");
@@ -169,15 +170,16 @@ begin
    case Command is
    when Download_Playlist =>
       declare
-         Category   : constant String := Argument (Next_Arg);
-         Root_Dir   : constant String := As_Directory (Argument (Next_Arg + 1));
-         Song_Count : Integer;
+         Category     : constant String := Argument (Next_Arg);
+         Playlist_Dir : constant String := As_Directory (Argument (Next_Arg + 1));
+         SMM_Dir      : constant String := As_Directory (Argument (Next_Arg + 2));
+         Song_Count   : Integer;
       begin
          Verbosity := Verbosity + 1;
-         SMM.First_Pass (Category, Root_Dir, Song_Count);
+         SMM.First_Pass (Category, Playlist_Dir, SMM_Dir, Song_Count);
          if Max_Song_Count - Song_Count >= Min_Download_Count then
             Verbosity := Verbosity - 1;
-            SMM.Download (Db, Category, Root_Dir, Max_Song_Count - Song_Count, New_Song_Count);
+            SMM.Download (Db, Category, Playlist_Dir, Max_Song_Count - Song_Count, New_Song_Count);
             Verbosity := Verbosity + 1;
          end if;
       end;
@@ -215,9 +217,9 @@ begin
    when Copy_Playlist =>
       declare
          Playlist_Name : constant String := Argument (Next_Arg);
-         Target_Dir    : constant String := As_Directory (Argument (Next_Arg + 1));
+         Playlist_Dir    : constant String := As_Directory (Argument (Next_Arg + 1));
       begin
-         SMM.Copy (Playlist_Name, Target_Dir);
+         SMM.Copy (Playlist_Name, Playlist_Dir);
       end;
 
    when Import =>
@@ -243,5 +245,6 @@ when E : others =>
    Put_Line
      ("exception: " & Ada.Exceptions.Exception_Name (E) & ": " &
         Ada.Exceptions.Exception_Message (E));
+   Ada.Text_IO.Put_Line (GNAT.Traceback.Symbolic.Symbolic_Traceback (Ada.Exceptions.Traceback.Tracebacks (E)));
    Put_Usage;
 end SMM.Driver;

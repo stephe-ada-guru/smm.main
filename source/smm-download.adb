@@ -2,7 +2,7 @@
 --
 --  see spec
 --
---  Copyright (C) 2008 - 2009, 2011 - 2014 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2009, 2011 - 2015 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -89,11 +89,7 @@ begin
          if Last_Downloaded = 0.0 then
             Put_Line (Relative & " : new");
          else
-            --  FIXME: add day diff
-            Put_Line
-              (Relative & " : " &
-                 SAL.Time_Conversions.To_Extended_ASIST_String (Last_Downloaded) & ", " &
-                 SAL.Time_Conversions.To_Extended_ASIST_String (Prev_Downloaded));
+            Put_Line (Relative & " : " & To_String (Last_Downloaded) & ", " & To_String (Prev_Downloaded));
          end if;
 
          if not Exists (Target_Dir) then
