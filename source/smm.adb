@@ -16,12 +16,11 @@
 --  the Free Software Foundation, 59 Temple Place - Suite 330, Boston,
 --  MA 02111-1307, USA.
 
-with Ada.IO_Exceptions;
 with Ada.Calendar.Formatting;
 with Ada.Characters.Handling;
 with Ada.Directories;
+with Ada.IO_Exceptions;
 with Ada.Text_IO;
-with AUnit.Assertions;
 with SAL.Aux.Indefinite_Private_Items;
 with SAL.Config_Files.Integer;
 with SAL.Gen.Alg.Find_Linear.Sorted;
@@ -66,6 +65,14 @@ package body SMM is
    function To_String (Time : in SAL.Time_Conversions.Time_Type) return String
    is begin
       return Ada.Calendar.Formatting.Image (SAL.Time_Conversions.To_Calendar_Time (Time));
+   exception
+   when Constraint_Error =>
+      Ada.Text_IO.New_Line;
+      Ada.Text_IO.Put_Line
+        ("ERROR: calendar.formatting or time_conversions.to_calendar_time can't handle " &
+           SAL.Time_Conversions.Time_Type'Image (Time));
+      Ada.Text_IO.New_Line;
+      return "0.0";
    end To_String;
 
    Last_Downloaded_Key : constant String := "Last_Downloaded";
@@ -550,12 +557,25 @@ package body SMM is
          exit Fill_Have_Play_Before when Is_Done (Songs_I);
 
          if Is_Present (Db, Current (Songs_I), "Play_Before") then
-            Append
-              (Have_Play_Before,
-               (First_Song_Songs  => Songs_I,
-                First_Song_Db     => Current (Songs_I),
-                Second_Song_Id    => Read (Db, Current (Songs_I), "Play_Before"),
-                Second_Song_Songs => Song_Lists.Null_Iterator));
+            declare
+               Song_Id   : constant Integer := Integer'Value (Current (Current (Songs_I)));
+               Before_Id : constant Integer := Read (Db, Current (Songs_I), "Play_Before");
+            begin
+               if Before_Id = Song_Id then
+                  Ada.Text_IO.New_Line;
+                  Ada.Text_IO.Put_Line
+                    ("db ERROR: " & Integer'Image (Song_Id) & ".Play_Before = " & Integer'Image (Before_Id));
+                  Ada.Text_IO.New_Line;
+               else
+                  Append
+                    (Have_Play_Before,
+                     (First_Song_Songs  => Songs_I,
+                      First_Song_Db     => Current (Songs_I),
+                      Second_Song_Id    => Before_Id,
+                      Second_Song_Songs => Song_Lists.Null_Iterator));
+
+               end if;
+            end;
          end if;
 
          Next (Songs_I);
@@ -605,22 +625,7 @@ package body SMM is
                   Dest   => Songs,
                   After  => Item.First_Song_Songs);
             end if;
-         exception
-         when Constraint_Error =>
-            --  FIXME: debugging list access error
-            --  This did not catch the bug!
-            Song_Lists_AUnit.Validate ("failed in place_second_song", Songs);
-            raise;
          end;
-
-         --  FIXME: debugging list access error
-         begin
-            Song_Lists_AUnit.Validate ("check after place_second_song", Songs);
-         exception
-         when AUnit.Assertions.Assertion_Error =>
-            raise SAL.Programmer_Error;
-         end;
-         --  end FIXME:
 
          Next (Item_I);
       end loop Place_Second_Song;

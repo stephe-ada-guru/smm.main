@@ -8,8 +8,9 @@ export ADA_PROJECT_PATH = $(GDS_ROOT)/main_lynx_5/makerules;$(GDS_ROOT)/main_lyn
 # ../../test/test_one_harness.adb
 one : test_one_harness.run
 
+# don't strip, so stack traceback is useful on errors
 install : smm.exe
-	strip smm.exe -o ~/bin/smm.exe
+	cp smm.exe ~/bin/smm.exe
 
 trace :
 	addr2line -e smm.exe 0x435993 0x4374d2 0x41656b 0x403e34 0x41611b 0x4194c9 0x40170f 0x401235 0x401286 0x7c816fd5
