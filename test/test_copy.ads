@@ -2,7 +2,7 @@
 --
 --  Test SMM.Copy
 --
---  Copyright (C) 2013 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2013, 2015 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -18,7 +18,6 @@
 
 pragma License (GPL);
 
-with Ada.Strings.Unbounded;
 with AUnit.Test_Cases; use AUnit.Test_Cases;
 package Test_Copy is
 
@@ -28,7 +27,7 @@ package Test_Copy is
 
    overriding procedure Register_Tests (T : in out Test_Case);
 
-   overriding function Name (T : Test_Case) return Ada.Strings.Unbounded.String_Access;
+   overriding function Name (T : Test_Case) return AUnit.Message_String;
 
    overriding procedure Set_Up_Case (T : in out Test_Case);
 

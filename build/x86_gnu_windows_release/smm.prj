@@ -1,7 +1,4 @@
-ada_project_path=$GDS_ROOT/main_lynx_5/makerules
-ada_project_path=$GDS_ROOT/main_lynx_5/sal/build
-ada_project_path=$GDS_ROOT/main_lynx_5/sal/build/x86_gnu_windows_release
-gpr_file=smm.gpr
+gpr_file=smm_agg.gpr
 
 casing=../smm.casing
 casing=$GDS_ROOT/main_lynx_5/sal/emacs_case_exceptions

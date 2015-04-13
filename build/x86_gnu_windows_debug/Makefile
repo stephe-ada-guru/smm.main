@@ -3,12 +3,11 @@
 
 include ../common.make
 
-export ADA_PROJECT_PATH = $(GDS_ROOT)/main_lynx_5/makerules;$(GDS_ROOT)/main_lynx_5/sal/build/x86_gnu_windows_debug
-
 # ../../test/test_one_harness.adb
-t_one : test_one_harness.run
+#one : test_one_harness.run
+one : test_all_harness.diff
 
-one : smm.exe
+two : smm.exe
 	./smm.exe --max-song-count=200 download_playlist instrumental "E:/Audio/" "E:/Android/data/org.stephe_leake.android.stephes_music/cache/"
 
 trace :

@@ -1,5 +1,6 @@
 with "standard_common";
 with "aunit";
+with "aunit_sal_ext";
 with "sal";
 project Smm is
   for Source_Dirs use

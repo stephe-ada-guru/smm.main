@@ -3,10 +3,9 @@
 
 include ../common.make
 
-export ADA_PROJECT_PATH = $(GDS_ROOT)/main_lynx_5/makerules;$(GDS_ROOT)/main_lynx_5/sal/build/x86_gnu_windows_release;$(GDS_ROOT)/main_lynx_5/sal/build
-
 # ../../test/test_one_harness.adb
-one : test_one_harness.run
+#one : test_one_harness.run
+one : test_all_harness.diff
 
 # don't strip, so stack traceback is useful on errors
 install : smm.exe

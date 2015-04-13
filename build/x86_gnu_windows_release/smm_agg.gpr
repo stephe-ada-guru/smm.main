@@ -1,8 +1,8 @@
 --  Abstract :
 --
---  Test generating playlists
+--  Specify project path
 --
---  Copyright (C) 2009, 2015 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2015  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -13,18 +13,18 @@
 --  PURPOSE. See the GNU General Public License for more details. You
 --  should have received a copy of the GNU General Public License
 --  distributed with this program; see file COPYING. If not, write to
---  the Free Software Foundation, 59 Temple Place - Suite 330, Boston,
---  MA 02111-1307, USA.
+--  the Free Software Foundation, 51 Franklin Street, Suite 500, Boston,
+--  MA 02110-1335, USA.
 
-pragma License (GPL);
+aggregate
+project SMM_Agg is
 
-with AUnit.Test_Cases; use AUnit.Test_Cases;
-package Test_Least_Recent is
+   for Project_Path use
+     ("../../../org.sal.aunit_ext/build/release",
+      "../../../GDS/main_lynx_5/makerules",
+      "../../../GDS/main_lynx_5/sal/build",
+      "../../../GDS/main_lynx_5/sal/build/x86_gnu_windows_release");
 
-   type Test_Case is new Standard.AUnit.Test_Cases.Test_Case with null record;
+   for Project_Files use ("smm.gpr");
 
-   overriding procedure Register_Tests (T : in out Test_Case);
-
-   overriding function Name (T : Test_Case) return AUnit.Message_String;
-
-end Test_Least_Recent;
+end SMM_Agg;

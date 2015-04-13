@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2009, 2011, 2012, 2013 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2009, 2011, 2012, 2013, 2015 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -19,10 +19,9 @@
 pragma License (GPL);
 
 with AUnit.Assertions;
-with AUnit.Test_Cases.Registration;
 with Ada.Directories;
 with Ada.Text_IO;
-with SAL.AUnit;
+with AUnit.Checks;
 with SAL.Config_Files;
 with SAL.Time_Conversions;
 with SMM;
@@ -99,7 +98,7 @@ package body Test_Least_Recent is
       Expected : in String)
    is begin
       AUnit.Assertions.Assert (not SMM.Song_Lists.Is_Null (Computed), Label & " null iterator");
-      SAL.AUnit.Check (Label, SAL.Config_Files.Read (Db, SMM.Song_Lists.Current (Computed), "file"), Expected);
+      AUnit.Checks.Check (Label, SAL.Config_Files.Read (Db, SMM.Song_Lists.Current (Computed), "file"), Expected);
    end Check;
 
    procedure Mark_Downloaded
@@ -125,7 +124,7 @@ package body Test_Least_Recent is
    procedure Nominal (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
    is
       pragma Unreferenced (T);
-      use SAL.AUnit;
+      use AUnit.Checks;
       use SMM.Song_Lists;
       Db    : SAL.Config_Files.Configuration_Type;
       Songs : List_Type;
@@ -167,7 +166,7 @@ package body Test_Least_Recent is
    ----------
    --  Public bodies
 
-   overriding function Name (T : Test_Case) return Ada.Strings.Unbounded.String_Access
+   overriding function Name (T : Test_Case) return AUnit.Message_String
    is
       pragma Unreferenced (T);
    begin

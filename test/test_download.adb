@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2007 - 2009, 2012, 2013 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007 - 2009, 2012, 2013, 2015 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -18,10 +18,9 @@
 
 pragma License (GPL);
 
-with AUnit.Test_Cases.Registration;
 with Ada.Directories;
 with Ada.Text_IO;
-with SAL.AUnit.Text_IO;
+with AUnit.Checks.Text_IO;
 with SAL.Config_Files;
 with SMM.Download;
 with Test_Utils; use Test_Utils;
@@ -31,9 +30,11 @@ package body Test_Download is
    is
       use Ada.Directories;
       use Ada.Text_IO;
-      use SAL.AUnit.Text_IO;
+      use AUnit.Checks.Text_IO;
 
       pragma Unreferenced (T);
+
+      Start_Dir : constant String := Current_Directory;
 
       Db_File_Name : constant String := "tmp/smm.db";
 
@@ -156,7 +157,7 @@ package body Test_Download is
          New_Song_Count => 8,
          Seed           => 1);
 
-      --  FIXME: check Last_Downloaded times updated
+      Set_Directory (Start_Dir);
 
       SAL.Config_Files.Close (Db);
 
@@ -180,7 +181,7 @@ package body Test_Download is
    ----------
    --  Public bodies
 
-   overriding function Name (T : Test_Case) return Ada.Strings.Unbounded.String_Access
+   overriding function Name (T : Test_Case) return AUnit.Message_String
    is
       pragma Unreferenced (T);
    begin

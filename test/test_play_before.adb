@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2007 - 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007 - 2009, 2015 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -18,8 +18,7 @@
 
 pragma License (GPL);
 
-with AUnit.Test_Cases.Registration;
-with SAL.AUnit;
+with AUnit.Checks;
 with SAL.Config_Files;
 with SMM;
 package body Test_Play_Before is
@@ -40,7 +39,7 @@ package body Test_Play_Before is
         (I        : in out SMM.Song_Lists.Iterator_Type;
          Expected : in     String)
       is
-         use SAL.AUnit;
+         use AUnit.Checks;
       begin
          Check ("", SAL.Config_Files.Read (Db, Current (I), "File"), Expected);
          Next (I);
@@ -86,7 +85,7 @@ package body Test_Play_Before is
    ----------
    --  Public bodies
 
-   overriding function Name (T : Test_Case) return Ada.Strings.Unbounded.String_Access
+   overriding function Name (T : Test_Case) return AUnit.Message_String
    is
       pragma Unreferenced (T);
    begin

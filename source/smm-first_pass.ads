@@ -24,7 +24,8 @@ procedure SMM.First_Pass
    SMM_Dir      : in     String;
    File_Count   :    out Integer);
 --  Delete files from Playlist_Dir/Category that are not mentioned in
---  playlist file category.m3u. Return count of files remaining in
---  playlist.
+--  playlist file category.m3u. Delete lines in category.m3u that are
+--  before song in SMM_Dir/category.last. Return count of files
+--  remaining in playlist.
 --
 --  Directory names end in '/'

@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2007 - 2009, 2012 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007 - 2009, 2012, 2015 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -18,11 +18,11 @@
 
 pragma License (GPL);
 
-with AUnit.Test_Cases.Registration;
+with AUnit.Checks;
 with Ada.Directories;
 with Ada.Text_IO;
+with SAL;
 with SMM.First_Pass;
-with SAL.AUnit;
 with Test_Utils; use Test_Utils;
 package body Test_First_Pass_Version_1 is
 
@@ -30,7 +30,7 @@ package body Test_First_Pass_Version_1 is
    is
       use Ada.Directories;
       use Ada.Text_IO;
-      use SAL.AUnit;
+      use AUnit.Checks;
 
       pragma Unreferenced (T);
 
@@ -47,36 +47,41 @@ package body Test_First_Pass_Version_1 is
       Cleanup;
 
       Create_Directory ("tmp");
-      Create_Directory ("tmp/Vocal");
-      Create_Directory ("tmp/Vocal/artist_1");
-      Create_Test_File ("tmp/Vocal/artist_1/file_4.mp3");
-      Create_Test_File ("tmp/Vocal/artist_1/file_5.mp3");
-      Create_Directory ("tmp/Vocal/artist_2");
-      Create_Test_File ("tmp/Vocal/artist_2/file_6.mp3");
+      Create_Directory ("tmp/playlists");
+      Create_Directory ("tmp/playlists/Vocal");
+      Create_Directory ("tmp/playlists/Vocal/artist_1");
+      Create_Test_File ("tmp/playlists/Vocal/artist_1/file_4.mp3");
+      Create_Test_File ("tmp/playlists/Vocal/artist_1/file_5.mp3");
+      Create_Directory ("tmp/playlists/Vocal/artist_2");
+      Create_Test_File ("tmp/playlists/Vocal/artist_2/file_6.mp3");
 
-      Create (Playlist, Out_File, "tmp/Vocal.m3u");
+      Create (Playlist, Out_File, "tmp/playlists/Vocal.m3u");
       Put_Line (Playlist, "Vocal/artist_2/file_6.mp3");
       Close (Playlist);
 
+      Create_Directory ("tmp/smm");
+
       SMM.First_Pass
-        (Category   => "Vocal",
-         Root_Dir   => SMM.As_Directory (Current_Directory & "/tmp"),
-         File_Count => File_Count);
+        (Category     => "Vocal",
+         Playlist_Dir => SMM.As_Directory (Current_Directory & "/tmp/playlists/"),
+         SMM_Dir      => SMM.As_Directory (Current_Directory & "/tmp/smm/"),
+         File_Count   => File_Count);
+
+      Set_Directory (Start_Dir);
 
       Check ("File_Count", File_Count, 1);
 
       --  Check that the extra files are deleted, but the others are not.
-      Set_Directory (Start_Dir);
-      Check_Exists ("tmp/Vocal/artist_1/file_4.mp3", False);
-      Check_Exists ("tmp/Vocal/artist_1/file_5.mp3", False);
-      Check_Exists ("tmp/Vocal/artist_2/file_6.mp3", True);
+      Check_Exists ("tmp/playlists/Vocal/artist_1/file_4.mp3", False);
+      Check_Exists ("tmp/playlists/Vocal/artist_1/file_5.mp3", False);
+      Check_Exists ("tmp/playlists/Vocal/artist_2/file_6.mp3", True);
    end Nominal;
 
    procedure Empty_Playlist (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
    is
       use Ada.Directories;
       use Ada.Text_IO;
-      use SAL.AUnit;
+      use AUnit.Checks;
 
       Test : Test_Case renames Test_Case (T);
 
@@ -94,37 +99,42 @@ package body Test_First_Pass_Version_1 is
       end if;
 
       Create_Directory ("tmp");
-      Create_Directory ("tmp/Vocal");
-      Create_Test_File ("tmp/Vocal/file_4.mp3");
-      Create_Test_File ("tmp/Vocal/file_5.mp3");
-      Create_Test_File ("tmp/Vocal/file_6.mp3");
+      Create_Directory ("tmp/playlists");
+      Create_Directory ("tmp/playlists/Vocal");
+      Create_Test_File ("tmp/playlists/Vocal/file_4.mp3");
+      Create_Test_File ("tmp/playlists/Vocal/file_5.mp3");
+      Create_Test_File ("tmp/playlists/Vocal/file_6.mp3");
 
-      Create (Playlist, Out_File, "tmp/Vocal.m3u");
+      Create (Playlist, Out_File, "tmp/playlists/Vocal.m3u");
       Close (Playlist);
 
+      Create_Directory ("tmp/smm");
+
       SMM.First_Pass
-        (Category   => "Vocal",
-         Root_Dir   => SMM.As_Directory (Current_Directory & "/tmp"),
-         File_Count => File_Count);
+        (Category     => "Vocal",
+         Playlist_Dir => SMM.As_Directory (Current_Directory & "/tmp/playlists/"),
+         SMM_Dir      => SMM.As_Directory (Current_Directory & "/tmp/smm/"),
+         File_Count   => File_Count);
+
+      Set_Directory (Start_Dir);
 
       Check ("File_Count", File_Count, 0);
 
       --  Check that the extra files are deleted
-      Set_Directory (Start_Dir);
-      Check_Exists ("tmp/Vocal/file_4.mp3", False);
-      Check_Exists ("tmp/Vocal/file_5.mp3", False);
-      Check_Exists ("tmp/Vocal/file_6.mp3", False);
+      Check_Exists ("tmp/playlists/Vocal/file_4.mp3", False);
+      Check_Exists ("tmp/playlists/Vocal/file_5.mp3", False);
+      Check_Exists ("tmp/playlists/Vocal/file_6.mp3", False);
 
    end Empty_Playlist;
 
    ----------
    --  Public bodies
 
-   overriding function Name (T : Test_Case) return Ada.Strings.Unbounded.String_Access
+   overriding function Name (T : Test_Case) return AUnit.Message_String
    is
       pragma Unreferenced (T);
    begin
-      return new String'("Test_First_Pass_Version_1");
+      return new String'("../../test/test_first_pass_version_1.adb");
    end Name;
 
    overriding procedure Register_Tests (T : in out Test_Case)

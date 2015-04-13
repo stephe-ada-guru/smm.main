@@ -1,5 +1,6 @@
 with "standard_common";
 with "aunit";
+with "aunit_sal_ext";
 with "sal";
 project Smm is
   for Source_Dirs use
@@ -23,10 +24,11 @@ project Smm is
   end Binder;
 
   package Builder is
-     for Switches ("smm-driver.adb") use ("-o", "smm.exe");
-
      --  We use ".exe" extension even on non-Windows, to simplify the makefiles.
      for Executable_Suffix use ".exe";
+
+     for Executable ("smm-driver.adb") use "smm.exe";
+
   end Builder;
 
 end Smm;

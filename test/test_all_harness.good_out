@@ -1,16 +1,24 @@
-   Total Tests Run:  9
+downloading 6 songs
+artist_2/played_5.mp3 : 1958-01-01 06:00:02, 1958-01-01 06:00:00
+artist_2/played_6.mp3 : 1958-01-01 06:00:02, 1958-01-01 06:00:00
+artist_2/played_8.mp3 : 1958-01-01 06:00:02, 1958-01-01 06:00:00
+artist_1/new_1.mp3 : new
+artist_1/new_2.mp3 : new
+artist_2/new_6.mp3 : new
+deleting directory C:\Projects\smm.main\build\x86_gnu_windows_debug\tmp\playlists\Vocal\artist_1
+deleting directory C:\Projects\smm.main\build\x86_gnu_windows_debug\tmp\playlists\Vocal\artist_1
 
-   Successful Tests: 9
-../../test/test_copy.adb: Nominal
-../../test/test_download.adb: Nominal
-Test_First_Pass_Version_1: Nominal
-Test_First_Pass_Version_1: Empty_Playlist
-Test_First_Pass_Version_2: Nominal
-Test_First_Pass_Version_2: New_Playlist
-Test_First_Pass_Version_2: Finished_Playlist
-../../test/test_least_recent.adb: Nominal
-Test_Play_Before: Nominal
+OK ../../test/test_copy.adb : Nominal
+OK ../../test/test_download.adb : Nominal
+OK ../../test/test_first_pass_version_1.adb : Nominal
+OK ../../test/test_first_pass_version_1.adb : Empty_Playlist
+OK ../../test/test_first_pass_version_2.adb : Nominal
+OK ../../test/test_first_pass_version_2.adb : New_Playlist
+OK ../../test/test_first_pass_version_2.adb : Finished_Playlist
+OK ../../test/test_least_recent.adb : Nominal
+OK Test_Play_Before : Nominal
 
-   Failed Tests: 0
-
-   Unexpected Errors: 0
+Total Tests Run:   9
+Successful Tests:  9
+Failed Assertions: 0
+Unexpected Errors: 0

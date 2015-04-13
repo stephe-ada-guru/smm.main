@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2007 - 2009, 2012, 2013 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007 - 2009, 2012, 2013, 2015 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -19,10 +19,9 @@
 pragma License (GPL);
 
 with AUnit.Assertions;
-with AUnit.Test_Cases.Registration;
 with Ada.Directories;
 with Ada.Text_IO;
-with SAL.AUnit.Text_IO;
+with AUnit.Checks.Text_IO;
 with SMM.Copy;
 with Test_Utils; use Test_Utils;
 package body Test_Copy is
@@ -31,7 +30,7 @@ package body Test_Copy is
    is
       use Ada.Directories;
       use Ada.Text_IO;
-      use SAL.AUnit.Text_IO;
+      use AUnit.Checks.Text_IO;
 
       pragma Unreferenced (T);
 
@@ -90,12 +89,14 @@ package body Test_Copy is
       Check_End (Playlist);
       Close (Playlist);
 
+      Set_Directory (Build_Directory);
+
    end Nominal;
 
    ----------
    --  Public bodies
 
-   overriding function Name (T : Test_Case) return Ada.Strings.Unbounded.String_Access
+   overriding function Name (T : Test_Case) return AUnit.Message_String
    is
       pragma Unreferenced (T);
    begin
