@@ -89,7 +89,7 @@ begin
          if Last_Downloaded = 0.0 then
             Put_Line (Relative & " : new");
          else
-            Put_Line (Relative & " : " & To_String (Last_Downloaded) & ", " & To_String (Prev_Downloaded));
+            Put_Line (To_String (Last_Downloaded) & ", " & To_String (Prev_Downloaded) & " : " & Relative);
          end if;
 
          if not Exists (Target_Dir) then

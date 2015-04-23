@@ -92,7 +92,7 @@ is
 
    type Command_Type is (Download_Playlist, Playlist, Copy_Playlist, Import);
 
-   procedure Get_Command is new SAL.Command_Line_IO.Gen_Get_Discrete (Command_Type, "command", Next_Arg);
+   procedure Get_Command is new SAL.Command_Line_IO.Gen_Get_Discrete_Proc (Command_Type, "command", Next_Arg);
 
    Command : Command_Type;
 begin

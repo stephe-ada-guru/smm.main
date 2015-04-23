@@ -20,7 +20,7 @@ aggregate
 project SMM_Agg is
 
    for Project_Path use
-     ("../../../org.sal.aunit_ext/build/release",
+     ("../../../org.stephe_leake.aunit_ext/build/release",
       "../../../GDS/main_lynx_5/makerules",
       "../../../GDS/main_lynx_5/sal/build",
       "../../../GDS/main_lynx_5/sal/build/x86_gnu_windows_release");
