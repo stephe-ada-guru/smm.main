@@ -4,12 +4,9 @@ Books is compiled from source
 
 On Windows
 
-Cygwin for make, bash, subversion
+Cygwin for make, bash, monotone, sqlite3
        http://cygwin.com/setup.exe
 
-MinGW SQLite3
-      see monotone install-windows_native.text
-      
 GNAT GPL 2012 for Ada, GtkAda, Gnatcoll for SQLite3 binding
      gdb in this distrib doesn't run under Emacs 23.4.1, so we have to use another gdb, but that works
      
@@ -26,13 +23,7 @@ GNAT GPL 2012 for Ada, GtkAda, Gnatcoll for SQLite3 binding
              make install
              
 Create database
-    edit /books/src/create_user_mysql.sql to specify you
-    
-    run MySQL command line client
-    source /books/src/create_database_books_mysql.sql
-    source /books/src/create_user_mysql.sql;
-    source /books/src/create_schema_mysql.sql;
-    quit;
+    sqlite3 books.db -init /books/src/create_schema.sql quit;
     
 compile
     cd books/build/x86_gnu_windows/release

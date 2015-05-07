@@ -1,6 +1,6 @@
 all : books-main.exe
 # all : books-backup.exe not up to date
-all : books-import-main.exe
+# all : books-import-main.exe not up to date
 # all : tests not up to date
 
 install : books-main.exe
