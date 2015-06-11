@@ -7,6 +7,8 @@ src/org/stephe_leake/android/stephes_music/service.java
 write xref-java.el
     look at other Emacs java modes?
 
+bluetooth remote control for car
+
 Lock screen controls
 
 Time slide control
@@ -14,6 +16,10 @@ Time slide control
     doesn't respond to touch
 
 button to share song via email
+
+button to search for artist/song
+    on web? for lyrics?
+    in playlist?
 
 support Upnp/dlna output stream
     play on stereo via android tv and/or roku box
@@ -71,11 +77,10 @@ http://libagar.org/
  smm
 /Projects/smm.main/build/x86_gnu_windows_release/Makefile
 
-    sal.time_conversions.to_extended_asist_string wrong for 0.0?
-        /Projects/GDS/main_lynx_5/sal/build/x86_gnu_windows_release/Makefile
+ssh backend
+    ../../smm.work/notes.text
 
-copy playlist
-    for yoga
+Copy playlist don't copy existing
 
 multiple categories:
     vocal/protest/intro
@@ -84,6 +89,7 @@ multiple categories:
 
 DLNA server output; send stream to TV, avoid bluetooth/TV amp input switch
     include volume control
+    DLNA requires all kinds of libraries/protocols
 
  Kate's Mythical Music Manager (KMMM Km3)
 ../stephes_music_player.kate/build/Makefile
