@@ -1,0 +1,57 @@
+--  Abstract :
+--
+--  See spec
+--
+--  Copyright (C) 2004, 2009 Stephen Leake.  All Rights Reserved.
+--
+--  This library is free software; you can redistribute it and/or
+--  modify it under terms of the GNU General Public License as
+--  published by the Free Software Foundation; either version 3, or (at
+--  your option) any later version. This library is distributed in the
+--  hope that it will be useful, but WITHOUT ANY WARRANTY; without even
+--  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+--  PURPOSE. See the GNU General Public License for more details. You
+--  should have received a copy of the GNU General Public License
+--  distributed with this program; see file COPYING. If not, write to
+--  the Free Software Foundation, 59 Temple Place - Suite 330, Boston,
+--  MA 02111-1307, USA.
+--
+--  As a special exception, if other files instantiate generics from
+--  this unit, or you link this unit with other files to produce an
+--  executable, this  unit  does not  by itself cause  the resulting
+--  executable to be covered by the GNU General Public License. This
+--  exception does not however invalidate any other reasons why the
+--  executable file  might be covered by the  GNU Public License.
+
+with Glib.Config;
+package body Gtk.Widget.Config is
+
+   function Read
+     (Config      : in SAL.Config_Files.Configuration_Type;
+      Key         : in String;
+      Default     : in Gtk_Allocation                      := (0, 0, 0, 0);
+      Missing_Key : in SAL.Config_Files.Missing_Key_Type   := SAL.Config_Files.Ignore)
+      return Gtk_Allocation
+   is
+   begin
+      return
+        (X      => Glib.Config.Read (Config, Key & ".X", Default.X, Missing_Key),
+         Y      => Glib.Config.Read (Config, Key & ".Y", Default.Y, Missing_Key),
+         Width  => Glib.Config.Read (Config, Key & ".Width", Default.Width, Missing_Key),
+         Height => Glib.Config.Read (Config, Key & ".Height", Default.Height, Missing_Key));
+   end Read;
+
+   procedure Write
+     (Config      : in out SAL.Config_Files.Configuration_Type;
+      Key         : in     String;
+      Value       : in     Gtk_Allocation;
+      Missing_Key : in     SAL.Config_Files.Missing_Key_Type   := SAL.Config_Files.Ignore)
+   is
+   begin
+      Glib.Config.Write (Config, Key & ".X", Value.X, Missing_Key);
+      Glib.Config.Write (Config, Key & ".Y", Value.Y, Missing_Key);
+      Glib.Config.Write (Config, Key & ".Width", Value.Width, Missing_Key);
+      Glib.Config.Write (Config, Key & ".Height", Value.Height, Missing_Key);
+   end Write;
+
+end Gtk.Widget.Config;
