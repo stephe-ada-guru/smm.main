@@ -1,7 +1,7 @@
 with "gtkada";
 with "gnatcoll_sqlite";
 with "sal";
-with "sal_gtk";
+-- with "sal_gtk";
 with "standard_common";
 project Books is
    for Source_Dirs use ("../../source", "../../test");

@@ -2,7 +2,7 @@
 --
 --  See spec.
 --
---  Copyright (C) 2002 - 2005, 2009, 2010, 2012 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002 - 2005, 2009, 2010, 2012, 2015 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -39,7 +39,7 @@ with Gtk.Scrolled_Window;
 with Gtk.Widget;
 with Gtk.Window.Config;
 with Gtk.Window.Signal;
-with SAL.Config_Files.Boolean;
+with Ada_Config;
 package body Books.Table_Views is
 
    type Table_Array_Scroll_Type is array (Table_Names) of Gtk.Scrolled_Window.Gtk_Scrolled_Window;
@@ -191,7 +191,7 @@ package body Books.Table_Views is
       Gtk.Box.Add (Table_View.Private_Stuff.Button_Box, Table_View.Private_Stuff.Delete_Button);
       Gtk.Button.Signal.Connect_Clicked (Table_View.Private_Stuff.Delete_Button, On_Button_Delete'Access);
 
-      Table_View.Private_Stuff.Enable_Test_Button := SAL.Config_Files.Boolean.Read (Config.all, "Test_Button", False);
+      Table_View.Private_Stuff.Enable_Test_Button := Ada_Config.Read (Config.all, "Test_Button", False);
       if Table_View.Private_Stuff.Enable_Test_Button then
          Gtk.Button.Gtk_New_With_Mnemonic (Table_View.Private_Stuff.Test_Button, "_Test");
          Gtk.Box.Add (Table_View.Private_Stuff.Button_Box, Table_View.Private_Stuff.Test_Button);

@@ -10,7 +10,7 @@ clean_books_db :
 VPATH = ../../source
 VPATH += ../../test
 
-include $(GDS_ROOT)/main_lynx_5/makerules/gprbuild_rules.make
-include $(GDS_ROOT)/main_lynx_5/makerules/common_rules.make
+include ../../../org.stephe_leake.makerules/gprbuild_rules.make
+include ../../../org.stephe_leake.makerules/common_rules.make
 
 # end of file

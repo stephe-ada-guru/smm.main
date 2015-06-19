@@ -2,11 +2,11 @@
 --
 --  Main program for Books.
 --
---  Copyright (C) 2002, 2004, 2009, 2012 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002, 2004, 2009, 2012, 2015 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
---  published by the Free Software Foundation; either version 2, or
+--  published by the Free Software Foundation; either version 3, or
 --  (at your option) any later version. This program is distributed in
 --  the hope that it will be useful, but WITHOUT ANY WARRANTY; without
 --  even the implied warranty of MERCHANTABILITY or FITNESS FOR A
@@ -24,7 +24,7 @@ with Ada.Exceptions;
 with Ada.Text_IO;
 with Books.Main_Window;
 with Gtk.Main;
-with SAL.Traceback;
+with GNAT.Traceback.Symbolic;
 procedure Books.Main
 is
    Main_Window : Books.Main_Window.Gtk_Window;
@@ -49,5 +49,5 @@ exception
 when E : others =>
    Ada.Text_IO.Put_Line
      ("Unhandled exception " & Ada.Exceptions.Exception_Name (E) & ": " & Ada.Exceptions.Exception_Message (E));
-   Ada.Text_IO.Put_Line (SAL.Traceback.Image (E));
+   Ada.Text_IO.Put_Line (GNAT.Traceback.Symbolic.Symbolic_Traceback (E));
 end Books.Main;

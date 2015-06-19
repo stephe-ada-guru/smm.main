@@ -18,7 +18,7 @@ GNAT GPL 2012 for Ada, GtkAda, Gnatcoll for SQLite3 binding
      install gnat-gpl using GUI installer
      install gtkada to same directory as gnat
      install gnatcoll via configure, make in cygwin
-             ./configure --prefix=/apps/GNAT-gpl_2012
+             ./configure --prefix=/apps/GNAT-gpl_2012 --build=x86-cygwin
              make Gnatcoll_Build=Debug
              make install
              
