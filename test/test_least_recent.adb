@@ -94,26 +94,28 @@ package body Test_Least_Recent is
    procedure Check
      (Label    : in String;
       Db       : in SAL.Config_Files.Configuration_Type;
-      Computed : in SMM.Song_Lists.Iterator_Type;
+      Computed : in SMM.Song_Lists.Cursor;
       Expected : in String)
-   is begin
-      AUnit.Assertions.Assert (not SMM.Song_Lists.Is_Null (Computed), Label & " null iterator");
-      AUnit.Checks.Check (Label, SAL.Config_Files.Read (Db, SMM.Song_Lists.Current (Computed), "file"), Expected);
+   is
+      use type SMM.Song_Lists.Cursor;
+   begin
+      AUnit.Assertions.Assert (SMM.Song_Lists.No_Element /= Computed, Label & " null iterator");
+      AUnit.Checks.Check (Label, SAL.Config_Files.Read (Db, SMM.Song_Lists.Element (Computed), "file"), Expected);
    end Check;
 
    procedure Mark_Downloaded
      (Db    : in out SAL.Config_Files.Configuration_Type;
-      Songs : in     SMM.Song_Lists.List_Type;
+      Songs : in out SMM.Song_Lists.List;
       Time  : in     SAL.Time_Conversions.Time_Type)
    is
       use SMM.Song_Lists;
-      I : Iterator_Type := First (Songs);
-
+      I : Cursor;
    begin
       loop
-         exit when Is_Null (I);
-         SMM.Write_Last_Downloaded (Db, Current (I), Time);
-         Next (I);
+         I := First (Songs);
+         exit when I = No_Element;
+         SMM.Write_Last_Downloaded (Db, Element (I), Time);
+         Songs.Delete_First;
       end loop;
       SAL.Config_Files.Flush (Db); --  for debugging
    end Mark_Downloaded;
@@ -127,40 +129,38 @@ package body Test_Least_Recent is
       use AUnit.Checks;
       use SMM.Song_Lists;
       Db    : SAL.Config_Files.Configuration_Type;
-      Songs : List_Type;
-      I     : Iterator_Type;
+      Songs : List;
+      I     : Cursor;
    begin
 
       Create_Test_Db (Db);
 
-      --  Songs from not-yet-downloaded block mixed in with others
       SMM.Least_Recent_Songs (Db, "instrumental", Songs, Song_Count => 2, New_Song_Count => 2, Seed => 1);
 
-      Check ("song count", SMM.Count (Songs), 2);
+      Check ("song count", Integer (Songs.Length), 2);
 
       --  Results depend on random number generator, which can change
-      --  with compiler version. These are correct for GNAT 7.1.1.
+      --  with compiler version. These are correct for GNAT GPL 2014.
+      --  Possible results are any song I1 .. I7.
       I := First (Songs);
-      Check ("1 1", Db, I, "I3.mp3");
+      Check ("1 1", Db, I, "I2.mp3");
       Next (I);
 
-      Check ("1 2", Db, I, "I4.mp3");
+      Check ("1 2", Db, I, "I3.mp3");
 
       Mark_Downloaded (Db, Songs, 2.0);
 
-      Finalize (Songs);
-
-      --  Can't get any songs from previous download, but not all from one block
       SMM.Least_Recent_Songs (Db, "instrumental", Songs, Song_Count => 2, New_Song_Count => 2, Seed => 2);
 
-      Check ("song count", SMM.Count (Songs), 2);
+      Check ("song count", Integer (Songs.Length), 2);
 
+      --  Possible results are two from I1 .. I7, excluding the two
+      --  from first call; and two from first call.
       I := First (Songs);
-
       Check ("2 1", Db, I, "I2.mp3");
       Next (I);
 
-      Check ("2 2", Db, I, "I6.mp3");
+      Check ("2 2", Db, I, "I4.mp3");
 
    end Nominal;
    ----------

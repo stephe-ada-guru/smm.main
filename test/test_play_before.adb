@@ -32,16 +32,16 @@ package body Test_Play_Before is
 
       Db : Configuration_Type;
 
-      Songs  : List_Type;
-      Song_I : SMM.Song_Lists.Iterator_Type;
+      Songs  : List;
+      Song_I : SMM.Song_Lists.Cursor;
 
       procedure Check
-        (I        : in out SMM.Song_Lists.Iterator_Type;
+        (I        : in out SMM.Song_Lists.Cursor;
          Expected : in     String)
       is
          use AUnit.Checks;
       begin
-         Check ("", SAL.Config_Files.Read (Db, Current (I), "File"), Expected);
+         Check ("", SAL.Config_Files.Read (Db, Element (I), "File"), Expected);
          Next (I);
       end Check;
 

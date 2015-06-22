@@ -69,9 +69,9 @@ is
    Db           : SAL.Config_Files.Configuration_Type;
    Next_Arg     : Integer := 1;
 
-   Max_Song_Count     : Integer;
-   Min_Download_Count : Integer;
-   New_Song_Count     : Integer;
+   Max_Song_Count     : Ada.Containers.Count_Type;
+   Min_Download_Count : Ada.Containers.Count_Type;
+   New_Song_Count     : Ada.Containers.Count_Type;
 
    function Find_Home return String
    is
@@ -95,6 +95,9 @@ is
    procedure Get_Command is new SAL.Command_Line_IO.Gen_Get_Discrete_Proc (Command_Type, "command", Next_Arg);
 
    Command : Command_Type;
+
+   use type Ada.Containers.Count_Type;
+
 begin
    if Argument (Next_Arg)'Length > 5 and then
      Argument (Next_Arg)(1 .. 5) = "--db="
@@ -118,7 +121,7 @@ begin
      Argument (Next_Arg)(1 .. 17) = "--max-song-count="
 
    then
-      Max_Song_Count := Integer'Value (Argument (Next_Arg)(18 .. Argument (Next_Arg)'Last));
+      Max_Song_Count := Ada.Containers.Count_Type'Value (Argument (Next_Arg)(18 .. Argument (Next_Arg)'Last));
       Next_Arg       := Next_Arg + 1;
    else
       Max_Song_Count := 60;
@@ -128,7 +131,7 @@ begin
      Argument (Next_Arg)(1 .. 21) = "--min-download-count="
 
    then
-      Min_Download_Count := Integer'Value (Argument (Next_Arg)(22 .. Argument (Next_Arg)'Last));
+      Min_Download_Count := Ada.Containers.Count_Type'Value (Argument (Next_Arg)(22 .. Argument (Next_Arg)'Last));
       Next_Arg           := Next_Arg + 1;
    else
       Min_Download_Count := 30;
@@ -138,8 +141,8 @@ begin
      Argument (Next_Arg)(1 .. 17) = "--new-song-count="
 
    then
-      New_Song_Count := Integer'Value (Argument (Next_Arg)(22 .. Argument (Next_Arg)'Last));
-      Next_Arg           := Next_Arg + 1;
+      New_Song_Count := Ada.Containers.Count_Type'Value (Argument (Next_Arg)(22 .. Argument (Next_Arg)'Last));
+      Next_Arg       := Next_Arg + 1;
    else
       New_Song_Count := Max_Song_Count / 5;
    end if;
@@ -173,10 +176,10 @@ begin
          Category     : constant String := Argument (Next_Arg);
          Playlist_Dir : constant String := As_Directory (Argument (Next_Arg + 1));
          SMM_Dir      : constant String := As_Directory (Argument (Next_Arg + 2));
-         Song_Count   : Integer;
+         Song_Count   : Ada.Containers.Count_Type;
       begin
          Verbosity := Verbosity + 1;
-         SMM.First_Pass (Category, Playlist_Dir, SMM_Dir, Song_Count);
+         SMM.First_Pass (Category, Playlist_Dir, SMM_Dir, Integer (Song_Count));
          if Max_Song_Count - Song_Count >= Min_Download_Count then
             Verbosity := Verbosity - 1;
             SMM.Download (Db, Category, Playlist_Dir, Max_Song_Count - Song_Count, New_Song_Count);

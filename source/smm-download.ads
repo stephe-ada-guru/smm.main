@@ -2,7 +2,7 @@
 --
 --  See below
 --
---  Copyright (C) 2012 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2012, 2015 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -22,8 +22,8 @@ procedure SMM.Download
   (Db             : in out SAL.Config_Files.Configuration_Type;
    Category       : in     String;
    Destination    : in     String;
-   Song_Count     : in     Integer;
-   New_Song_Count : in     Integer;
+   Song_Count     : in     Ada.Containers.Count_Type;
+   New_Song_Count : in     Ada.Containers.Count_Type;
    Seed           : in     Integer := 0);
 
 --  Download Song_Count least-recently-played files, including about

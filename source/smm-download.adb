@@ -28,13 +28,14 @@ procedure SMM.Download
   (Db             : in out SAL.Config_Files.Configuration_Type;
    Category       : in     String;
    Destination    : in     String;
-   Song_Count     : in     Integer;
-   New_Song_Count : in     Integer;
+   Song_Count     : in     Ada.Containers.Count_Type;
+   New_Song_Count : in     Ada.Containers.Count_Type;
    Seed           : in     Integer := 0)
 is
+   use Ada.Containers;
    use Song_Lists;
-   Songs        : List_Type;
-   I            : Iterator_Type;
+   Songs        : List;
+   I            : Cursor;
    Count        : Integer         := 0;
    Source_Root  : constant String := SAL.Config_Files.Read (Db, Root_Key);
    Category_Dir : constant String := Destination & Category & '/';
@@ -71,20 +72,20 @@ begin
 
    Least_Recent_Songs (Db, Category, Songs, Song_Count, New_Song_Count, Seed => Seed);
 
-   Put_Line ("downloading" & Integer'Image (Songs.Count) & " songs");
+   Put_Line ("downloading" & Count_Type'Image (Songs.Length) & " songs");
 
    I := First (Songs);
    loop
-      exit when Is_Null (I);
+      exit when I = No_Element;
       declare
          use type SAL.Time_Conversions.Time_Type;
-         Relative   : constant String := SAL.Config_Files.Read (Db, Current (I), File_Key);
+         Relative   : constant String := SAL.Config_Files.Read (Db, Element (I), File_Key);
          Source     : constant String := Source_Root & Relative;
          Target     : constant String := Category_Dir & Relative;
          Target_Dir : constant String := Containing_Directory (Target);
 
-         Last_Downloaded : constant SAL.Time_Conversions.Time_Type := Read_Last_Downloaded (Db, Current (I));
-         Prev_Downloaded : constant SAL.Time_Conversions.Time_Type := Read_Prev_Downloaded (Db, Current (I));
+         Last_Downloaded : constant SAL.Time_Conversions.Time_Type := Read_Last_Downloaded (Db, Element (I));
+         Prev_Downloaded : constant SAL.Time_Conversions.Time_Type := Read_Prev_Downloaded (Db, Element (I));
       begin
          if Last_Downloaded = 0.0 then
             Put_Line (Relative & " : new");
@@ -115,7 +116,7 @@ begin
 
          Put_Line (Playlist_File, Relative_Name (Destination, Target));
 
-         Write_Last_Downloaded (Db, Current (I), Download_Time);
+         Write_Last_Downloaded (Db, Element (I), Download_Time);
 
          Next (I);
          Count := Count + 1;

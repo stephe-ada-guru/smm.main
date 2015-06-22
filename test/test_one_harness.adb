@@ -2,7 +2,7 @@
 --
 --  Run one test
 --
---  Copyright (C) 2007 - 2009, 2013 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007 - 2009, 2013, 2015 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -18,20 +18,29 @@
 
 pragma License (GPL);
 
-with AUnit.Test_Results.Text_Reporter;
-with AUnit.Test_Suites;
-with Test_Copy;
+with AUnit.Options;
+with AUnit.Reporter.Text;
+with AUnit.Test_Results;
+with AUnit.Test_Suites; use AUnit.Test_Suites;
+with Ada.Text_IO;
+with GNAT.Traceback.Symbolic;
+with Test_Least_Recent;
 procedure Test_One_Harness
 is
-   use AUnit.Test_Suites;
-
    Suite  : constant Access_Test_Suite := new Test_Suite;
-   Result : AUnit.Test_Results.Result;
+   Reporter : AUnit.Reporter.Text.Text_Reporter;
+   Result   : AUnit.Test_Results.Result;
+   Status   : AUnit.Status;
+
 begin
-   Add_Test (Suite, new Test_Copy.Test_Case (Verbosity => 1));
+   Add_Test (Suite, new Test_Least_Recent.Test_Case);
 
-   Run (Suite.all, Result);
+   Run (Suite, AUnit.Options.Default_Options, Result, Status);
 
-   AUnit.Test_Results.Text_Reporter.Report (Result);
+   --  Provide command line option -v to set verbose mode
+   AUnit.Reporter.Text.Report (Reporter, Result);
 
+exception
+when E : others =>
+   Ada.Text_IO.Put_Line (GNAT.Traceback.Symbolic.Symbolic_Traceback (E));
 end Test_One_Harness;

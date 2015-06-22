@@ -20,10 +20,9 @@ aggregate
 project SMM_Agg is
 
    for Project_Path use
-     ("../../../org.sal.aunit_ext/build/debug",
-      "../../../GDS/main_lynx_5/makerules",
-      "../../../GDS/main_lynx_5/sal/build",
-      "../../../GDS/main_lynx_5/sal/build/x86_gnu_windows_debug");
+     ("../../../org.stephe_leake.aunit_ext/build/debug",
+      "../../../org.stephe_leake.makerules",
+      "../../../org.stephe_leake.sal/build/debug");
 
    for Project_Files use ("smm.gpr");
 

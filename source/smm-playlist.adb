@@ -2,7 +2,7 @@
 --
 --  create a playlist of least-recenty heard songs
 --
---  Copyright (C) 2009, 2010, 2012 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2009, 2010, 2012, 2015 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -30,16 +30,16 @@ procedure SMM.Playlist
    Category       : in     String;
    Destination    : in     String;
    Replace        : in     Boolean;
-   Max_Song_Count : in     Integer;
-   New_Song_Count : in     Integer)
+   Max_Song_Count : in     Ada.Containers.Count_Type;
+   New_Song_Count : in     Ada.Containers.Count_Type)
 is
    use Song_Lists;
 
    Playlist_File : Ada.Text_IO.File_Type;
 
-   Songs : List_Type;
+   Songs : List;
 
-   I               : Iterator_Type;
+   I               : Cursor;
    Source_Root     : constant String := SAL.Config_Files.Read (Db, Root_Key);
    Relative        : Boolean;
    Relative_Prefix : Ada.Strings.Unbounded.Unbounded_String;
@@ -100,10 +100,10 @@ begin
 
    I := First (Songs);
    loop
-      exit when Is_Null (I);
+      exit when I = No_Element;
       declare
          use Ada.Strings.Unbounded;
-         Source : constant String := SAL.Config_Files.Read (Db, Current (I), File_Key);
+         Source : constant String := SAL.Config_Files.Read (Db, Element (I), File_Key);
       begin
          if Relative then
             Ada.Text_IO.Put_Line (Playlist_File, To_String (Relative_Prefix) & Source);
@@ -111,7 +111,7 @@ begin
             Ada.Text_IO.Put_Line (Playlist_File, Source_Root & Source);
          end if;
 
-         Write_Last_Downloaded (Db, Current (I), Output_Time);
+         Write_Last_Downloaded (Db, Element (I), Output_Time);
 
          Next (I);
       end;

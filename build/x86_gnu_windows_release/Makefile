@@ -4,11 +4,14 @@
 include ../common.make
 
 # ../../test/test_one_harness.adb
-#one : test_one_harness.run
-one : test_all_harness.diff
+# ../../test/test_all_harness.adb
+t_one : test_one_harness.run
+t_all : test_all_harness.diff
+
+install : ~/bin/smm.exe
 
 # don't strip, so stack traceback is useful on errors
-install : smm.exe
+~/bin/smm.exe : smm.exe
 	cp smm.exe ~/bin/smm.exe
 
 trace :

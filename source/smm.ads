@@ -18,14 +18,11 @@
 
 pragma License (GPL);
 
+with Ada.Containers.Doubly_Linked_Lists;
 with Ada.Containers.Indefinite_Doubly_Linked_Lists;
 with Ada.Containers.Indefinite_Hashed_Maps;
 with Ada.Strings.Hash;
-with SAL.Aux.Definite_Private_Items;
 with SAL.Config_Files;
-with SAL.Gen.Alg.Count;
-with SAL.Poly.Lists.Double.AUnit;
-with SAL.Storage_Pools;
 with SAL.Time_Conversions;
 package SMM is
 
@@ -74,38 +71,14 @@ package SMM is
       Root_Key : in     String;
       Time     : in     SAL.Time_Conversions.Time_Type);
 
-   package Song_Lists_Aux is new SAL.Aux.Definite_Private_Items (SAL.Config_Files.Iterator_Type);
-
-   package Song_Lists is new SAL.Poly.Lists.Double
-     (Item_Type         => SAL.Config_Files.Iterator_Type,
-      Item_Node_Type    => SAL.Config_Files.Iterator_Type,
-      To_Item_Node      => Song_Lists_Aux.To_Item_Node,
-      Free_Item         => Song_Lists_Aux.Free_Item,
-      Copy              => Song_Lists_Aux.Copy_Item_Node,
-      Node_Storage_Pool => SAL.Storage_Pools.Integer_Access_Type'Storage_Pool);
-
-   package Song_Lists_AUnit is new Song_Lists.AUnit;
-
-   package Song_Lists_Algorithms is new SAL.Gen.Alg
-     (Item_Node_Type => SAL.Config_Files.Iterator_Type,
-      Container_Type => Song_Lists.List_Type,
-      Iterator_Type  => Song_Lists.Iterator_Type,
-      Current        => Song_Lists.Current,
-      First          => Song_Lists.First,
-      Last           => Song_Lists.Last,
-      None           => Song_Lists.None,
-      Is_Null        => Song_Lists.Is_Null,
-      Next_Procedure => Song_Lists.Next,
-      Next_Function  => Song_Lists.Next);
-
-   function Count is new Song_Lists_Algorithms.Count;
+   package Song_Lists is new Ada.Containers.Doubly_Linked_Lists (SAL.Config_Files.Iterator_Type, SAL.Config_Files."=");
 
    procedure Least_Recent_Songs
      (Db             : in     SAL.Config_Files.Configuration_Type;
       Category       : in     String;
-      Songs          :    out Song_Lists.List_Type;
-      Song_Count     : in     Integer;
-      New_Song_Count : in     Integer;
+      Songs          :    out Song_Lists.List;
+      Song_Count     : in     Ada.Containers.Count_Type;
+      New_Song_Count : in     Ada.Containers.Count_Type;
       Seed           : in     Integer                             := 0);
    --  Return randomized list of Song_Count least-recently downloaded
    --  songs in Category. If any Songs have .Play_Before attribute,
@@ -137,7 +110,7 @@ package SMM is
 
    procedure Play_Before
      (Db    : in     SAL.Config_Files.Configuration_Type;
-      Songs : in out Song_Lists.List_Type);
+      Songs : in out Song_Lists.List);
    --  If any Songs have .Play_Before attribute, enforce it.
 
 end SMM;

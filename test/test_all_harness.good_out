@@ -1,12 +1,12 @@
 downloading 6 songs
-artist_2/played_5.mp3 : 1958-01-01 06:00:02, 1958-01-01 06:00:00
-artist_2/played_6.mp3 : 1958-01-01 06:00:02, 1958-01-01 06:00:00
-artist_2/played_8.mp3 : 1958-01-01 06:00:02, 1958-01-01 06:00:00
-artist_1/new_1.mp3 : new
+1958-01-01 06:00:02, 1958-01-01 06:00:00 : artist_2/played_4.mp3
+1958-01-01 06:00:02, 1958-01-01 06:00:00 : artist_2/played_8.mp3
 artist_1/new_2.mp3 : new
-artist_2/new_6.mp3 : new
-deleting directory C:\Projects\smm.main\build\x86_gnu_windows_debug\tmp\playlists\Vocal\artist_1
-deleting directory C:\Projects\smm.main\build\x86_gnu_windows_debug\tmp\playlists\Vocal\artist_1
+1958-01-01 06:00:02, 1958-01-01 06:00:00 : artist_2/played_7.mp3
+artist_1/new_1.mp3 : new
+artist_2/new_5.mp3 : new
+deleting directory Vocal/artist_1
+deleting directory Vocal/artist_1
 
 OK ../../test/test_copy.adb : Nominal
 OK ../../test/test_download.adb : Nominal

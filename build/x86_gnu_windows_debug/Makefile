@@ -4,8 +4,8 @@
 include ../common.make
 
 # ../../test/test_one_harness.adb
-#one : test_one_harness.run
-one : test_all_harness.diff
+t_one : test_one_harness.run
+t_all : test_all_harness.diff
 
 two : smm.exe
 	./smm.exe --max-song-count=200 download_playlist instrumental "E:/Audio/" "E:/Android/data/org.stephe_leake.android.stephes_music/cache/"

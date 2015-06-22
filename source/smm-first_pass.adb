@@ -50,7 +50,7 @@ is
                   Process => Process_Dir_Entry'Access);
 
                Delete_Directory (Full_Name (Dir_Entry));
-               Put_Line ("deleting directory " & Full_Name (Dir_Entry));
+               Put_Line ("deleting directory " & Relative_Name (Playlist_Dir, Normalize (Full_Name (Dir_Entry))));
             end if;
          exception
          when Ada.Text_IO.Use_Error =>

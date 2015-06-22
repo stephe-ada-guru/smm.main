@@ -62,8 +62,8 @@ package body Test_Download is
       --  download.
       --
       --  Least_Recent_Songs randomizes 2 * Song_Count songs, 12 here.
-      --  So need that many new and less recently played than songs
-      --  currently in target dir.
+      --  So we need that many new and less recently played in the db
+      --  than songs currently in target dir.
       --
       --  Category defaults to vocal
       Put_Line (Db_File, "Root = " & SMM.As_Directory (Current_Directory & "/tmp/source"));
@@ -75,9 +75,9 @@ package body Test_Download is
       Put_Line (Db_File, "Songs. 3.File = artist_1/played_2.mp3");
       Put_Line (Db_File, "Songs. 3.Last_Downloaded = 2.0");
       Put_Line (Db_File, "Songs. 4.File = artist_1/new_1.mp3");
-      Put_Line (Db_File, "Songs. 4.Last_Downloaded = 0.0");
+      Put_Line (Db_File, "Songs. 4.Last_Downloaded = 0.0"); -- new
       Put_Line (Db_File, "Songs. 5.File = artist_1/new_2.mp3");
-      Put_Line (Db_File, "Songs. 5.Last_Downloaded = 0.0");
+      Put_Line (Db_File, "Songs. 5.Last_Downloaded = 0.0"); -- new
       Put_Line (Db_File, "Songs. 6.File = artist_1/in_target_1.mp3");
       Put_Line (Db_File, "Songs. 6.Last_Downloaded = 3.0");
       Put_Line (Db_File, "Songs. 7.File = artist_1/in_target_2.mp3");
@@ -85,13 +85,13 @@ package body Test_Download is
       Put_Line (Db_File, "Songs. 8.File = artist_2/in_target_3.mp3");
       Put_Line (Db_File, "Songs. 8.Last_Downloaded = 3.0");
       Put_Line (Db_File, "Songs. 9.File = artist_2/new_3.mp3");
-      Put_Line (Db_File, "Songs. 9.Last_Downloaded = 0.0");
+      Put_Line (Db_File, "Songs. 9.Last_Downloaded = 0.0"); -- new
       Put_Line (Db_File, "Songs. 10.File = artist_2/new_4.mp3");
-      Put_Line (Db_File, "Songs. 10.Last_Downloaded = 0.0");
+      Put_Line (Db_File, "Songs. 10.Last_Downloaded = 0.0"); -- new
       Put_Line (Db_File, "Songs. 11.File = artist_2/new_5.mp3");
-      Put_Line (Db_File, "Songs. 11.Last_Downloaded = 0.0");
+      Put_Line (Db_File, "Songs. 11.Last_Downloaded = 0.0"); -- new
       Put_Line (Db_File, "Songs. 12.File = artist_2/new_6.mp3");
-      Put_Line (Db_File, "Songs. 12.Last_Downloaded = 0.0");
+      Put_Line (Db_File, "Songs. 12.Last_Downloaded = 0.0"); -- new
       Put_Line (Db_File, "Songs. 13.File = artist_2/played_3.mp3");
       Put_Line (Db_File, "Songs. 13.Last_Downloaded = 2.0");
       Put_Line (Db_File, "Songs. 14.File = artist_2/played_4.mp3");
@@ -162,17 +162,20 @@ package body Test_Download is
       SAL.Config_Files.Close (Db);
 
       Open (Playlist, In_File, "tmp/target/vocal.m3u");
-      --  previous songs
+      --  Previous songs
       Check (Playlist, "vocal/artist_1/in_target_1.mp3");
       Check (Playlist, "vocal/artist_1/in_target_2.mp3");
       Check (Playlist, "vocal/artist_2/in_target_3.mp3");
-      --  new songs (random order)
-      Check (Playlist, "vocal/artist_2/played_5.mp3");
-      Check (Playlist, "vocal/artist_2/played_6.mp3");
+      --  New songs and less recent songs in random order - choice and order can
+      --  change with compiler version. This is correct for GNAT GPL
+      --  2014. Possible songs here are all except 6, 7, 8
+      Check (Playlist, "vocal/artist_2/played_4.mp3");
       Check (Playlist, "vocal/artist_2/played_8.mp3");
-      Check (Playlist, "vocal/artist_1/new_1.mp3");
       Check (Playlist, "vocal/artist_1/new_2.mp3");
-      Check (Playlist, "vocal/artist_2/new_6.mp3");
+      Check (Playlist, "vocal/artist_2/played_7.mp3");
+      Check (Playlist, "vocal/artist_1/new_1.mp3");
+      Check (Playlist, "vocal/artist_2/new_5.mp3");
+
       Check_End (Playlist);
       Close (Playlist);
 

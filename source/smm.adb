@@ -21,10 +21,8 @@ with Ada.Characters.Handling;
 with Ada.Directories;
 with Ada.IO_Exceptions;
 with Ada.Text_IO;
-with SAL.Aux.Indefinite_Private_Items;
-with SAL.Config_Files.Integer;
-with SAL.Gen.Alg.Find_Linear.Sorted;
-with SAL.Poly.Lists.Double.Gen_Randomize;
+with Ada_Config;
+with SAL.Gen_Randomize_Doubly_Linked_Lists;
 package body SMM is
 
    function Normalize (Path : in String) return String
@@ -147,123 +145,61 @@ package body SMM is
       Write (Db, Key, SAL.Time_Conversions.To_Extended_ASIST_String (Time));
    end Write_Last_Downloaded;
 
-   procedure Randomize is new Song_Lists.Gen_Randomize;
-
    type Time_List_Element_Type is record
       Last_Downloaded : SAL.Time_Conversions.Time_Type;
-      Songs           : Song_Lists.List_Type;
+      Songs           : Song_Lists.List;
    end record;
 
-   type Time_List_Node_Type is access Time_List_Element_Type;
-
-   package Time_Lists_Aux is new SAL.Aux.Indefinite_Private_Items (Time_List_Element_Type, Time_List_Node_Type);
-   package Time_Lists is new SAL.Poly.Lists.Double
-     (Item_Type         => Time_List_Element_Type,
-      Item_Node_Type    => Time_List_Node_Type,
-      To_Item_Node      => Time_Lists_Aux.To_Item_Node,
-      Free_Item         => Time_Lists_Aux.Free_Item,
-      Copy              => Time_Lists_Aux.Copy_Item_Node,
-      Node_Storage_Pool => SAL.Storage_Pools.Integer_Access_Type'Storage_Pool);
-
-   package Time_Lists_Algorithms is new SAL.Gen.Alg
-     (Item_Node_Type => Time_List_Node_Type,
-      Container_Type => Time_Lists.List_Type,
-      Iterator_Type  => Time_Lists.Iterator_Type,
-      Current        => Time_Lists.Current,
-      First          => Time_Lists.First,
-      Last           => Time_Lists.Last,
-      None           => Time_Lists.None,
-      Is_Null        => Time_Lists.Is_Null,
-      Next_Procedure => Time_Lists.Next,
-      Next_Function  => Time_Lists.Next);
-
-   function Count is new Time_Lists_Algorithms.Count;
-
-   function Is_Equal (Left : in Time_List_Node_Type; Right : in SAL.Time_Conversions.Time_Type) return Boolean
-   is
-      use type SAL.Time_Conversions.Time_Type;
-   begin
-      return Left.Last_Downloaded = Right;
-   end Is_Equal;
-
-   package Time_Lists_Find is new Time_Lists_Algorithms.Find_Linear
-     (Item_Type         => Time_List_Element_Type,
-      Key_Type          => SAL.Time_Conversions.Time_Type,
-      Is_Equal_Node_Key => Is_Equal,
-      Delete            => Time_Lists.Delete,
-      Insert_Before     => Time_Lists.Insert_Before);
-
-   function Is_Equal (Left : in Time_List_Node_Type; Right : in Time_List_Element_Type) return Boolean
+   function Is_Equal (Left : in Time_List_Element_Type; Right : in Time_List_Element_Type) return Boolean
    is
       use type SAL.Time_Conversions.Time_Type;
    begin
       return Left.Last_Downloaded = Right.Last_Downloaded;
    end Is_Equal;
 
-   function Is_Equal (Left, Right : in Time_List_Node_Type) return Boolean
+   package Time_Lists is new Ada.Containers.Doubly_Linked_Lists (Time_List_Element_Type, Is_Equal);
+
+   function Is_Less (Left : in Time_List_Element_Type; Right : in Time_List_Element_Type) return Boolean
    is
       use type SAL.Time_Conversions.Time_Type;
    begin
-      return Left.Last_Downloaded = Right.Last_Downloaded;
-   end Is_Equal;
+      return Left.Last_Downloaded < Right.Last_Downloaded;
+   end Is_Less;
 
-   function Is_Greater_Equal (Left : in Time_List_Node_Type; Right : in Time_List_Element_Type) return Boolean
-   is
-      use type SAL.Time_Conversions.Time_Type;
-   begin
-      return Left.Last_Downloaded >= Right.Last_Downloaded;
-   end Is_Greater_Equal;
-
-   function Is_Greater_Equal (Left, Right : in Time_List_Node_Type) return Boolean
-   is
-      use type SAL.Time_Conversions.Time_Type;
-   begin
-      return Left.Last_Downloaded >= Right.Last_Downloaded;
-   end Is_Greater_Equal;
-
-   function Is_Greater_Equal (Left : in Time_List_Node_Type; Right : in SAL.Time_Conversions.Time_Type) return Boolean
-   is
-      use type SAL.Time_Conversions.Time_Type;
-   begin
-      return Left.Last_Downloaded >= Right;
-   end Is_Greater_Equal;
-
-   package Time_Lists_Find_Sorted is new Time_Lists_Find.Sorted
-     (Is_Equal_Node_Item         => Is_Equal,
-      Is_Equal_Node_Node         => Is_Equal,
-      Is_Greater_Equal_Node_Item => Is_Greater_Equal,
-      Is_Greater_Equal_Node_Key  => Is_Greater_Equal,
-      Is_Greater_Equal_Node_Node => Is_Greater_Equal,
-      Prev_Function              => Time_Lists.Prev,
-      Prev_Procedure             => Time_Lists.Prev,
-      Splice_Before              => Time_Lists.Splice_Before);
+   package Time_Lists_Sorting is new Time_Lists.Generic_Sorting (Is_Less);
 
    procedure Insert
      (Db   : in     SAL.Config_Files.Configuration_Type;
-      List : in out Time_Lists.List_Type;
+      List : in out Time_Lists.List;
       Item : in     SAL.Config_Files.Iterator_Type)
    is
-      Last_Downloaded : constant SAL.Time_Conversions.Time_Type := Read_Last_Downloaded (Db, Item);
+      use Time_Lists;
+      Last_Downloaded         : constant SAL.Time_Conversions.Time_Type := Read_Last_Downloaded (Db, Item);
+      Last_Downloaded_Element : constant Time_List_Element_Type         := (Last_Downloaded, Song_Lists.Empty_List);
 
-      I : Time_Lists.Iterator_Type := Time_Lists_Find.Find_Equal
-        (Start => Time_Lists.First (List),
-         Key   => Last_Downloaded);
+      I : Cursor := List.Find (Last_Downloaded_Element);
    begin
-      if Time_Lists.Is_Null (I) then
-         Time_Lists_Find_Sorted.Add
-           (Container     => List,
-            Item          => (Last_Downloaded => Last_Downloaded, Songs => Song_Lists.Null_List),
-            Item_Iterator => I);
+      if I = No_Element then
+         declare
+            Temp_List : Time_Lists.List;
+         begin
+            Temp_List.Prepend ((Last_Downloaded, Song_Lists.Empty_List));
+            Time_Lists_Sorting.Merge
+              (Target => List,
+               Source => Temp_List);
+         end;
+         I := List.Find (Last_Downloaded_Element);
       end if;
-      Song_Lists.Insert_Tail (Time_Lists.Current (I).Songs, Item);
+
+      List.Reference (I).Songs.Append (Item);
    end Insert;
 
    procedure Least_Recent_Songs
      (Db             : in     SAL.Config_Files.Configuration_Type;
       Category       : in     String;
-      Songs          :    out Song_Lists.List_Type;
-      Song_Count     : in     Integer;
-      New_Song_Count : in     Integer;
+      Songs          :    out Song_Lists.List;
+      Song_Count     : in     Ada.Containers.Count_Type;
+      New_Song_Count : in     Ada.Containers.Count_Type;
       Seed           : in     Integer                             := 0)
    is
       --  Requirements:
@@ -291,37 +227,38 @@ package body SMM is
       --
       --  Randomize list, return Song_Count songs from it.
 
+      procedure Randomize is new SAL.Gen_Randomize_Doubly_Linked_Lists (Song_Lists);
+
+      use Ada.Containers;
       use type SAL.Time_Conversions.Time_Type;
 
-      Min_Randomize_Count : constant Integer := 2 * Song_Count;
-      Time_List           : Time_Lists.List_Type;
+      Min_Randomize_Count : constant Count_Type := 2 * Song_Count;
+      Time_List           : Time_Lists.List;
 
       procedure Finish
       is begin
          Randomize (Songs, Seed);
-         Song_Lists.Truncate (Songs, Song_Count);
+         if Songs.Length > Song_Count then
+            Song_Lists.Delete_Last (Songs, Songs.Length - Song_Count);
+         end if;
          Play_Before (Db, Songs);
       end Finish;
 
-      procedure Add_All (Time_List_I : in Time_Lists.Iterator_Type)
+      procedure Add_All (Time_List_I : in Time_Lists.Cursor)
       is
          use Song_Lists;
-         Time_List_Element : Time_List_Element_Type renames Time_Lists.Current (Time_List_I).all;
-         Source : Song_Lists.List_Type renames Time_List_Element.Songs;
       begin
          if Verbosity > 0 then
-            Ada.Text_IO.Put_Line ("adding songs from " & To_String (Time_List_Element.Last_Downloaded));
+            Ada.Text_IO.Put_Line ("adding songs from " & To_String (Time_Lists.Element (Time_List_I).Last_Downloaded));
          end if;
 
-         Splice_After
-           (Source => Source,
-            First  => First (Source),
-            Last   => Last (Source),
-            Dest   => Songs,
-            After  => Last (Songs));
+         Splice
+           (Source => Time_List.Reference (Time_List_I).Songs,
+            Target => Songs,
+            Before => No_Element);
       end Add_All;
 
-      Time_List_I : Time_Lists.Iterator_Type;
+      Time_List_I : Time_Lists.Cursor;
 
       use Song_Lists;
       use Time_Lists;
@@ -332,7 +269,7 @@ package body SMM is
       begin
          loop
             --  Note that we can't exit on finding Count songs; there
-            --  may be more later that were downloaded least recently.
+            --  may be more later that were downloaded less recently.
             --  Db is not sorted.
             exit when Is_Null (All_Songs);
 
@@ -344,60 +281,53 @@ package body SMM is
          end loop;
       end;
 
-      Time_List_I := Time_Lists.First (Time_List);
+      Time_List_I := Time_List.First;
 
-      if Current (Time_List_I).Last_Downloaded = 0.0 then
-         if Count (Time_List) = 1 then
+      if Element (Time_List_I).Last_Downloaded = 0.0 then
+         --  New songs
+
+         if Time_List.Length = 1 then
             --  New db; all songs have zero Last_Downloaded
             Ada.Text_IO.Put_Line ("new db; all new songs");
-            Songs := Head (Time_List).Songs;
+            Songs := Element (Time_List_I).Songs;
             Finish;
             return;
 
-         elsif Count (Current (Time_List_I).Songs) > New_Song_Count then
+         elsif Element (Time_List_I).Songs.Length > New_Song_Count then
             --  Only include a few new songs
             if Verbosity > 0 then
-               Ada.Text_IO.Put_Line ("adding " & Integer'Image (New_Song_Count) & " new songs");
+               Ada.Text_IO.Put_Line ("adding " & Count_Type'Image (New_Song_Count) & " new songs");
             end if;
 
             declare
-               Source : Song_Lists.List_Type renames Current (Time_List_I).Songs;
-               Last   : Song_Lists.Iterator_Type := First (Source);
+               Source : Song_Lists.List renames Element (Time_List_I).Songs;
+               Last   : Song_Lists.Cursor := Source.First;
             begin
-               for I in 2 .. New_Song_Count loop
+               for I in 1 .. New_Song_Count loop
+                  Songs.Prepend (Element (Last));
                   Next (Last);
                end loop;
-
-               Splice_After (Source, First (Source), Last, Songs, First (Songs));
             end;
             Next (Time_List_I);
          else
             --  There are only a few new songs; include them all
             if Verbosity > 0 then
-               Ada.Text_IO.Put_Line ("adding " & Integer'Image (Count (Current (Time_List_I).Songs)) & " new songs");
+               Ada.Text_IO.Put_Line ("adding " & Count_Type'Image (Element (Time_List_I).Songs.Length) & " new songs");
             end if;
-            Songs := Current (Time_List_I).Songs;
+            Songs := Element (Time_List_I).Songs;
             Next (Time_List_I);
          end if;
       end if;
 
-      if Count (Current (Time_List_I).Songs) >= Min_Randomize_Count - Count (Songs) then
+      loop
+         exit when Songs.Length >= Min_Randomize_Count or Time_List_I = Time_Lists.No_Element;
+
          Add_All (Time_List_I);
-         Finish;
-         return;
-      else
-         loop
-            exit when Count (Songs) >= Min_Randomize_Count or
-              Time_Lists.Is_Null (Time_List_I);
 
-            Add_All (Time_List_I);
+         Next (Time_List_I);
+      end loop;
 
-            Time_Lists.Next (Time_List_I);
-         end loop;
-
-         Finish;
-         return;
-      end if;
+      Finish;
 
    end Least_Recent_Songs;
 
@@ -520,46 +450,36 @@ package body SMM is
 
    procedure Play_Before
      (Db    : in     SAL.Config_Files.Configuration_Type;
-      Songs : in out Song_Lists.List_Type)
+      Songs : in out Song_Lists.List)
    is
       type Item_Type is record
-         First_Song_Songs  : Song_Lists.Iterator_Type;
+         First_Song_Songs  : Song_Lists.Cursor;
          First_Song_Db     : SAL.Config_Files.Iterator_Type;
          Second_Song_Id    : Integer;
-         Second_Song_Songs : Song_Lists.Iterator_Type;
+         Second_Song_Songs : Song_Lists.Cursor;
       end record;
 
-      type Item_Access_Type is access Item_Type;
+      package Item_Lists is new Ada.Containers.Doubly_Linked_Lists (Item_Type);
 
-      package Item_Lists_Aux is new SAL.Aux.Indefinite_Private_Items (Item_Type, Item_Access_Type);
-
-      package Item_Lists is new SAL.Poly.Lists.Double
-        (Item_Type         => Item_Type,
-         Item_Node_Type    => Item_Access_Type,
-         To_Item_Node      => Item_Lists_Aux.To_Item_Node,
-         Free_Item         => Item_Lists_Aux.Free_Item,
-         Copy              => Item_Lists_Aux.Copy_Item_Node,
-         Node_Storage_Pool => SAL.Storage_Pools.Integer_Access_Type'Storage_Pool);
-
-      Have_Play_Before : Item_Lists.List_Type;
-      Item_I           : Item_Lists.Iterator_Type;
+      Have_Play_Before : Item_Lists.List;
+      Item_I           : Item_Lists.Cursor;
 
       use Item_Lists;
       use Song_Lists;
       use SAL.Config_Files;
-      use SAL.Config_Files.Integer;
+      use Ada_Config;
 
-      Songs_I : Song_Lists.Iterator_Type := First (Songs);
+      Songs_I : Song_Lists.Cursor := First (Songs);
 
    begin
       Fill_Have_Play_Before :
       loop
-         exit Fill_Have_Play_Before when Is_Done (Songs_I);
+         exit Fill_Have_Play_Before when Songs_I = Song_Lists.No_Element;
 
-         if Is_Present (Db, Current (Songs_I), "Play_Before") then
+         if Is_Present (Db, Element (Songs_I), "Play_Before") then
             declare
-               Song_Id   : constant Integer := Integer'Value (Current (Current (Songs_I)));
-               Before_Id : constant Integer := Read (Db, Current (Songs_I), "Play_Before");
+               Song_Id   : constant Integer := Integer'Value (Current (Element (Songs_I)));
+               Before_Id : constant Integer := Read (Db, Element (Songs_I), "Play_Before");
             begin
                if Before_Id = Song_Id then
                   Ada.Text_IO.New_Line;
@@ -570,9 +490,9 @@ package body SMM is
                   Append
                     (Have_Play_Before,
                      (First_Song_Songs  => Songs_I,
-                      First_Song_Db     => Current (Songs_I),
+                      First_Song_Db     => Element (Songs_I),
                       Second_Song_Id    => Before_Id,
-                      Second_Song_Songs => Song_Lists.Null_Iterator));
+                      Second_Song_Songs => Song_Lists.No_Element));
 
                end if;
             end;
@@ -584,16 +504,16 @@ package body SMM is
       Item_I := First (Have_Play_Before);
       Find_Second_Song :
       loop
-         exit Find_Second_Song when Is_Done (Item_I);
+         exit Find_Second_Song when Item_I = Item_Lists.No_Element;
 
          declare
-            Item : Item_Type renames Current (Item_I).all;
+            Item : Item_Type renames Have_Play_Before.Reference (Item_I);
          begin
             Songs_I := First (Songs);
             Find_Song :
             loop
-               exit Find_Song when Is_Done (Songs_I);
-               if Item.Second_Song_Id = Integer'Value (Current (Current (Songs_I))) then
+               exit Find_Song when Songs_I = Song_Lists.No_Element;
+               if Item.Second_Song_Id = Integer'Value (Current (Element (Songs_I))) then
                   Item.Second_Song_Songs := Songs_I;
                   exit Find_Song;
                end if;
@@ -609,21 +529,19 @@ package body SMM is
       Item_I := First (Have_Play_Before);
       Place_Second_Song :
       loop
-         exit Place_Second_Song when Is_Done (Item_I);
+         exit Place_Second_Song when Item_I = Item_Lists.No_Element;
 
          declare
-            Item : Item_Type renames Current (Item_I).all;
+            Item : Item_Type renames Element (Item_I);
          begin
-            if Song_Lists.Is_Null (Item.Second_Song_Songs) then
+            if Item.Second_Song_Songs = Song_Lists.No_Element then
                --  not in Songs yet
-               Insert_After (Songs, Item.First_Song_Songs, Find (Db, "Songs", Integer'Image (Item.Second_Song_Id)));
+               Insert (Songs, Next (Item.First_Song_Songs), Find (Db, "Songs", Integer'Image (Item.Second_Song_Id)));
             else
-               Splice_After
-                 (Source => Songs,
-                  First  => Item.Second_Song_Songs,
-                  Last   => Item.Second_Song_Songs,
-                  Dest   => Songs,
-                  After  => Item.First_Song_Songs);
+               Splice
+                 (Container => Songs,
+                  Position  => Item.Second_Song_Songs,
+                  Before    => Next (Item.First_Song_Songs));
             end if;
          end;
 
