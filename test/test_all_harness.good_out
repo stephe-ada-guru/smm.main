@@ -1,10 +1,10 @@
 downloading 6 songs
 1958-01-01 06:00:02, 1958-01-01 06:00:00 : artist_2/played_4.mp3
 1958-01-01 06:00:02, 1958-01-01 06:00:00 : artist_2/played_8.mp3
-artist_1/new_2.mp3 : new
+1958-01-01 06:00:00, 1958-01-01 06:00:00 : artist_1/new_2.mp3
 1958-01-01 06:00:02, 1958-01-01 06:00:00 : artist_2/played_7.mp3
-artist_1/new_1.mp3 : new
-artist_2/new_5.mp3 : new
+1958-01-01 06:00:00, 1958-01-01 06:00:00 : artist_1/new_1.mp3
+1958-01-01 06:00:00, 1958-01-01 06:00:00 : artist_2/new_5.mp3
 deleting directory Vocal/artist_1
 deleting directory Vocal/artist_1
 

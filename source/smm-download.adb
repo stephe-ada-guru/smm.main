@@ -87,11 +87,7 @@ begin
          Last_Downloaded : constant SAL.Time_Conversions.Time_Type := Read_Last_Downloaded (Db, Element (I));
          Prev_Downloaded : constant SAL.Time_Conversions.Time_Type := Read_Prev_Downloaded (Db, Element (I));
       begin
-         if Last_Downloaded = 0.0 then
-            Put_Line (Relative & " : new");
-         else
-            Put_Line (To_String (Last_Downloaded) & ", " & To_String (Prev_Downloaded) & " : " & Relative);
-         end if;
+         Put_Line (To_String (Last_Downloaded) & ", " & To_String (Prev_Downloaded) & " : " & Relative);
 
          if not Exists (Target_Dir) then
             begin
