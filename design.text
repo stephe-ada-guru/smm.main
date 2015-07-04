@@ -27,6 +27,7 @@ Android framework issues:
 
 Design:
     Don't use Android music provider databases
+        except get metadata is broken!
 
     User preference stores root directory to find playlists
 
@@ -77,6 +78,7 @@ Rationale:
     earlier version used Android music provider databases
         this proved error-prone; scanner would create new playlists instead of overwriting old ones
         there is an api to get metadata from .mp3 file; don't need the scanner for that
+            except it's broken!
 
     earlier version edited playlist directly, instead of writing out .last_played
         this proved error-prone; the app would crash while doing that, corrupting (emptying) the playlist
@@ -95,4 +97,3 @@ Rationale:
             starts the service if it is not running
             returns a component name we don't need
                 except to check that it is not null (service is running).
-

@@ -58,8 +58,8 @@ public class MetaData
       {
          // We'd like to just query on sourceFile, but that doesn't
          // work, apparently because String doesn't compare to DATA
-         // STREAM. So we query the MediaStore, which is produced by a
-         // scanner.
+         // STREAM. So we manually search the MediaStore, which is
+         // produced by a scanner.
          //
          // This would be more efficient if we first searched for the
          // playlist, then looped thru the playlist looking for
@@ -111,6 +111,7 @@ public class MetaData
                duration = cursor.getString(3);
             }
          }
+         cursor.close();
       }
       catch (Exception e)
       {

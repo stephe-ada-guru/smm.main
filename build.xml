@@ -18,7 +18,7 @@ apk name does help in knowing which one you are installing.
 <property file="local.properties" />
 <!-- <property file="ant.properties" /> -->
 
-<!-- get sdk.dir from ANDROID_HOME -->
+<!-- get Android SDK location from ANDROID_HOME -->
 <property environment="env" />
 <condition property="sdk.dir" value="${env.ANDROID_HOME}">
     <isset property="env.ANDROID_HOME" />
@@ -26,7 +26,7 @@ apk name does help in knowing which one you are installing.
 
 <loadproperties srcFile="project.properties" />
 
-<!-- FIXME: put this back: <property name="java.compilerargs" value="-Xlint:deprecation" /> -->
+<property name="java.compilerargs" value="-Xlint:deprecation" />
 
 <import file="${sdk.dir}/tools/ant/build.xml" />
 

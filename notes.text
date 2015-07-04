@@ -8,6 +8,11 @@ write xref-java.el
     look at other Emacs java modes?
 
 bluetooth remote control for car
+    http://www.crutchfield.com/S-IoSy5CYRNmo/learn/abcs-bluetooth-in-the-car.html
+    http://stackoverflow.com/questions/15527614/send-track-informations-via-a2dp-avrcp
+    http://www.androidpolice.com/2013/08/31/new-app-botifier-sends-android-notifications-to-car-stereos-and-any-other-bluetooth-avrcp-1-3-display/
+    https://android.googlesource.com/platform/packages/apps/Bluetooth/+/jb-mr2-release/src/com/android/bluetooth/a2dp/Avrcp.java
+
 
 Lock screen controls
 
@@ -70,6 +75,10 @@ Galaxy Note I
 Galaxy Note II
     SGH-T889
     Android 4.1.2
+
+Galaxy Note III
+    SM-N900T
+    Android 4.4.2
 
  port to windows
 http://libagar.org/
@@ -278,6 +287,3 @@ http://mpd.wikia.com/wiki/Clients
 
  references
 c:/Archive/android/langspec-3.0.pdf
-
- installation
-    requires Android 2.3.3 (AT&T software update available 8 Aug 2011)

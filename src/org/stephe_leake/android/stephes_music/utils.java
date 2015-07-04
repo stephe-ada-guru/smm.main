@@ -169,31 +169,33 @@ public class utils
       }
    }
 
+   // lint complains about the log name being too long, and we can't read the log anyway
+    
    public static void errorLog(Context context, String msg, Throwable e)
    {
       // programmer errors (possibly due to Android bugs :)
-      Log.e(serviceClassName, msg, e);
+      // Log.e(serviceClassName, msg, e);
       Toast.makeText(context, msg + e.toString(), Toast.LENGTH_LONG).show();
    }
 
    public static void errorLog(Context context, String msg)
    {
       // programmer errors (possibly due to Android bugs :)
-      Log.e(serviceClassName, msg);
+      // Log.e(serviceClassName, msg);
       Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
    }
 
    static void infoLog(Context context, String msg)
    {
       // helpful user messages, ie "could not play"
-      Log.i(serviceClassName, msg);
+      // Log.i(serviceClassName, msg);
       Toast.makeText(context, msg, Toast.LENGTH_SHORT).show();
    }
 
    static void verboseLog(String msg)
    {
       // for post-mortem debugging
-      Log.v(serviceClassName, msg);
+      // Log.v(serviceClassName, msg);
    }
 
 }
