@@ -203,16 +203,19 @@ public class service extends Service
          switch (playing)
          {
          case Idle:
-            remoteControlClient.setPlaybackState(remoteControlClient.PLAYSTATE_STOPPED);
+            remoteControlClient.setPlaybackState
+               (remoteControlClient.PLAYSTATE_STOPPED, mediaPlayer.getCurrentPosition(), 1.0f);
             break;
 
          case Playing:
-            remoteControlClient.setPlaybackState(remoteControlClient.PLAYSTATE_PLAYING);
+            remoteControlClient.setPlaybackState
+               (remoteControlClient.PLAYSTATE_PLAYING, mediaPlayer.getCurrentPosition(), 1.0f);
             break;
 
          case Paused:
          case Paused_Transient:
-            remoteControlClient.setPlaybackState(remoteControlClient.PLAYSTATE_PAUSED);
+            remoteControlClient.setPlaybackState
+               (remoteControlClient.PLAYSTATE_PAUSED, mediaPlayer.getCurrentPosition(), 1.0f);
             break;
          }
       }

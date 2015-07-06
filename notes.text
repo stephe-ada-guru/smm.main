@@ -7,8 +7,13 @@ src/org/stephe_leake/android/stephes_music/service.java
 write xref-java.el
     figuring out jde functions
 
+car bluetooth
+    add progress bar info
+
 Lock screen controls
     use notification for android 5.0 compatibility?
+    http://developer.android.com/guide/topics/ui/notifiers/notifications.html
+
 
 Time slide control
     tracks player time
