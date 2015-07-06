@@ -19,24 +19,29 @@
 
 package org.stephe_leake.android.stephes_music;
 
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences.Editor;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
-import android.preference.PreferenceManager;
 import android.media.AudioManager.OnAudioFocusChangeListener;
 import android.media.AudioManager;
+import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
+import android.media.RemoteControlClient;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.PowerManager.WakeLock;
 import android.os.PowerManager;
+import android.preference.PreferenceManager;
+import android.view.KeyEvent;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -127,7 +132,7 @@ public class service extends Service
 
    private void notifyChange(String what)
    {
-      // Notify the activity that something has changed.
+      // Notify the activity and the remote control that something has changed.
       //
       // 'What' must be one of the *_CHANGED constants in utils.java
 
@@ -136,6 +141,7 @@ public class service extends Service
          if (playing == PlayState.Idle)
          {
             if (playlistDirectory == null)
+            {
                sendStickyBroadcast
                   (new Intent (utils.META_CHANGED).
                    putExtra ("artist", "").
@@ -143,7 +149,10 @@ public class service extends Service
                    putExtra ("track", "").
                    putExtra ("duration", 0).
                    putExtra ("playlist", getResources().getString(R.string.null_playlist_directory)));
+
+            }
             else
+            {
                sendStickyBroadcast
                   (new Intent (utils.META_CHANGED).
                    putExtra ("artist", "").
@@ -151,6 +160,14 @@ public class service extends Service
                    putExtra ("track", "").
                    putExtra ("duration", 0).
                    putExtra ("playlist", getResources().getString(R.string.null_playlist)));
+            }
+
+            remoteControlClient.editMetadata(true)
+                  .putString(MediaMetadataRetriever.METADATA_KEY_TITLE, "")
+                  .putString(MediaMetadataRetriever.METADATA_KEY_ALBUM, "")
+                  .putString(MediaMetadataRetriever.METADATA_KEY_ARTIST, "")
+                  .putLong(MediaMetadataRetriever.METADATA_KEY_DURATION, 0)
+                  .apply();
          }
          else
          {
@@ -158,22 +175,22 @@ public class service extends Service
 
             final MetaData retriever = new MetaData(this, playlistFilename, absFile);
 
-            try
-            {
-               sendStickyBroadcast
-                  (new Intent (utils.META_CHANGED).
-                   putExtra ("artist", retriever.artist).
-                   putExtra ("album", retriever.album).
-                      putExtra ("track", retriever.title).
-                      putExtra ("duration", retriever.duration).
-                      putExtra
-                      ("playlist",
-                       playlistFilename + " " + (playlistPos + 1) + " / " + playlist.size()));
-            }
-            catch (RuntimeException e)
-            {
-               utils.debugLog("notifyChange extractMetadata (" + absFile + "): " + e);
-            };
+            sendStickyBroadcast
+               (new Intent (utils.META_CHANGED).
+                putExtra ("artist", retriever.artist).
+                putExtra ("album", retriever.album).
+                putExtra ("track", retriever.title).
+                putExtra ("duration", retriever.duration).
+                putExtra
+                ("playlist",
+                 playlistFilename + " " + (playlistPos + 1) + " / " + playlist.size()));
+
+            remoteControlClient.editMetadata(true)
+               .putString(MediaMetadataRetriever.METADATA_KEY_TITLE, retriever.title)
+               .putString(MediaMetadataRetriever.METADATA_KEY_ALBUM, retriever.album)
+               .putString(MediaMetadataRetriever.METADATA_KEY_ARTIST, retriever.artist)
+               .putLong(MediaMetadataRetriever.METADATA_KEY_DURATION, Integer.parseInt(retriever.duration))
+               .apply();
          }
       }
       else if (what.equals(utils.PLAYSTATE_CHANGED))
@@ -182,6 +199,22 @@ public class service extends Service
             (new Intent (utils.PLAYSTATE_CHANGED).
              putExtra ("playing", playing == PlayState.Playing).
              putExtra ("position", mediaPlayer.getCurrentPosition()));
+
+         switch (playing)
+         {
+         case Idle:
+            remoteControlClient.setPlaybackState(remoteControlClient.PLAYSTATE_STOPPED);
+            break;
+
+         case Playing:
+            remoteControlClient.setPlaybackState(remoteControlClient.PLAYSTATE_PLAYING);
+            break;
+
+         case Paused:
+         case Paused_Transient:
+            remoteControlClient.setPlaybackState(remoteControlClient.PLAYSTATE_PAUSED);
+            break;
+         }
       }
       else
       {
@@ -686,159 +719,194 @@ public class service extends Service
          }
       };
 
-   private BroadcastReceiver broadcastReceiverFile = new BroadcastReceiver()
+   // Need a named class for RemoteControlClient.registerMediaButtonEventReceiver
+   private class SmBroadcastReceiverButton extends BroadcastReceiver
+   {
+      @Override public void onReceive(Context context, Intent intent)
       {
-         @Override public void onReceive(Context context, Intent intent)
+         final int key = intent.getIntExtra(Intent.EXTRA_KEY_EVENT, 0);
+
+         switch (key)
          {
-            final String action = intent.getAction();
+         case KeyEvent.KEYCODE_MEDIA_NEXT:
+            next();
 
-            if (action.equals (android.content.Intent.ACTION_MEDIA_EJECT))
+         case KeyEvent.KEYCODE_MEDIA_PAUSE:
+            pause(PlayState.Paused);
+
+         case KeyEvent.KEYCODE_MEDIA_PLAY:
+            switch (service.playing)
             {
-               // External storage (USB on TV, sdcard on phone) is
-               // being unmounted, probably so smm can manage the
-               // playlists. Save state now, since restoreState has
-               // the logic for processing smm changes.
-               saveState();
+            case Idle:
+               next();
+               break;
+
+            case Playing:
+               break;
+
+            case Paused:
+               unpause();
+               break;
+
+            case Paused_Transient:
+               // user wants to override
+               unpause();
+               break;
+
+            };
+
+         case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
+            switch (service.playing)
+            {
+            case Idle:
+               break;
+
+            case Playing:
                pause(PlayState.Paused);
-            }
-            else if (action.equals (android.content.Intent.ACTION_MEDIA_MOUNTED))
-            {
-               // External storage is being mounted, probably after smm
-               // managed the playlists.
+               break;
 
-               restoreState();
-            }
-            else
-            {
-               utils.debugLog("broadcastReceiverFile.onReceive: unknown action: " + action);
-            }
-         }
-      };
+            case Paused:
+               unpause();
+               break;
+
+            case Paused_Transient:
+               // user wants to override
+               unpause();
+               break;
+
+            };
+
+         case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
+            previous();
+
+         };
+      }
+   };
+   private SmBroadcastReceiverButton broadcastReceiverButton = new SmBroadcastReceiverButton();
 
    private BroadcastReceiver broadcastReceiverCommand = new BroadcastReceiver()
       {
+         // Intent filter set for ACTION_COMMAND
          @Override public void onReceive(Context context, Intent intent)
          {
-            final String action = intent.getAction();
+            final String command = intent.getStringExtra("command");
 
-            if (action.equals (utils.ACTION_COMMAND))
+            utils.verboseLog(command);
+
+            // command alphabetical order
+            if (command.equals(utils.COMMAND_DUMP_LOG))
             {
-               final String command = intent.getStringExtra("command");
-
-               utils.verboseLog(command);
-
-               // command alphabetical order
-               if (command.equals(utils.COMMAND_DUMP_LOG))
+               dumpLog();
+            }
+            else if (command.equals (utils.COMMAND_NEXT))
+            {
+               next();
+            }
+            else if (command.equals (utils.COMMAND_NOTE))
+            {
+               writeNote(intent.getStringExtra("note"));
+            }
+            else if (command.equals (utils.COMMAND_PAUSE))
+            {
+               pause(PlayState.Paused);
+            }
+            else if (command.equals (utils.COMMAND_PLAY))
+            {
+               switch (service.playing)
                {
-                  dumpLog();
-               }
-               else if (command.equals (utils.COMMAND_NEXT))
-               {
+               case Idle:
                   next();
-               }
-               else if (command.equals (utils.COMMAND_NOTE))
-               {
-                  writeNote(intent.getStringExtra("note"));
-               }
-               else if (command.equals (utils.COMMAND_PAUSE))
-               {
-                  pause(PlayState.Paused);
-               }
-               else if (command.equals (utils.COMMAND_PLAY))
-               {
-                  switch (service.playing)
-                  {
-                  case Idle:
-                     next();
-                     break;
+                  break;
 
-                  case Playing:
-                     break;
+               case Playing:
+                  break;
 
-                  case Paused:
-                     unpause();
-                     break;
+               case Paused:
+                  unpause();
+                  break;
 
-                  case Paused_Transient:
-                     // user wants to override
-                     unpause();
-                     break;
+               case Paused_Transient:
+                  // user wants to override
+                  unpause();
+                  break;
 
-                  };
-               }
-               else if (command.equals (utils.COMMAND_PLAYLIST))
+               };
+            }
+            else if (command.equals (utils.COMMAND_PLAYLIST))
+            {
+               try
                {
-                  try
-                  {
-                     // User will want to resume the current playlist at some point.
-                     saveState();
-
-                     playList(intent.getStringExtra("playlist"), PlayState.Playing);
-                  }
-                  catch (Fail e)
-                  {
-                     // nothing to do here.
-                  }
-               }
-               else if (command.equals (utils.COMMAND_PREVIOUS))
-               {
-                  previous();
-               }
-               else if (command.equals(utils.COMMAND_SAVE_STATE))
-               {
+                  // User will want to resume the current playlist at some point.
                   saveState();
-               }
-               else if (command.equals (utils.COMMAND_SEEK))
-               {
-                  final int pos = intent.getIntExtra("position", 0);
-                  mediaPlayer.seekTo(pos);
-                  notifyChange(utils.PLAYSTATE_CHANGED);
-               }
-               else if (command.equals(utils.COMMAND_SMM_DIRECTORY))
-               {
-                  setSMMDirectory(context);
-               }
-               else if (command.equals (utils.COMMAND_TOGGLEPAUSE))
-               {
-                  switch (service.playing)
-                  {
-                  case Idle:
-                     break;
 
-                  case Playing:
-                     pause(PlayState.Paused);
-                     break;
-
-                  case Paused:
-                     unpause();
-                     break;
-
-                  case Paused_Transient:
-                     // user wants to override
-                     unpause();
-                     break;
-
-                  };
+                  playList(intent.getStringExtra("playlist"), PlayState.Playing);
                }
-               else if (command.equals (utils.COMMAND_UPDATE_DISPLAY))
+               catch (Fail e)
                {
-                  notifyChange(utils.META_CHANGED);
-                  notifyChange (utils.PLAYSTATE_CHANGED);
+                  // nothing to do here.
                }
-               else
+            }
+            else if (command.equals (utils.COMMAND_PREVIOUS))
+            {
+               previous();
+            }
+            else if (command.equals(utils.COMMAND_SAVE_STATE))
+            {
+               saveState();
+            }
+            else if (command.equals (utils.COMMAND_SEEK))
+            {
+               final int pos = intent.getIntExtra("position", 0);
+               mediaPlayer.seekTo(pos);
+               notifyChange(utils.PLAYSTATE_CHANGED);
+            }
+            else if (command.equals(utils.COMMAND_SMM_DIRECTORY))
+            {
+               setSMMDirectory(context);
+            }
+            else if (command.equals (utils.COMMAND_TOGGLEPAUSE))
+            {
+               switch (service.playing)
                {
-                  utils.debugLog("broadcastReceiverCommand.onReceive: unknown command: " + command);
-               }
+               case Idle:
+                  break;
+
+               case Playing:
+                  pause(PlayState.Paused);
+                  break;
+
+               case Paused:
+                  unpause();
+                  break;
+
+               case Paused_Transient:
+                  // user wants to override
+                  unpause();
+                  break;
+
+               };
+            }
+            else if (command.equals (utils.COMMAND_UPDATE_DISPLAY))
+            {
+               notifyChange(utils.META_CHANGED);
+               notifyChange (utils.PLAYSTATE_CHANGED);
             }
             else
             {
-               utils.debugLog("broadcastReceiverCommand.onReceive: unknown action: " + action);
+               utils.debugLog("broadcastReceiverCommand.onReceive: unknown command: " + command);
             }
          }
       };
 
-    private OnAudioFocusChangeListener audioFocusListener = new OnAudioFocusChangeListener()
-       {
+   private RemoteControlClient remoteControlClient;
+   // It's not at all clear if we are supposed to override the
+   // RemoteControlClient methods; the doc confuses the player and the
+   // control. Clearly some user actions on the control generate
+   // broadcast events that are handled by broadcastReveiverButton.
+
+
+   private OnAudioFocusChangeListener audioFocusListener = new OnAudioFocusChangeListener()
+      {
           public void onAudioFocusChange(int focusChange)
           {
              if (focusChange == AudioManager.AUDIOFOCUS_LOSS)
@@ -969,10 +1037,8 @@ public class service extends Service
       // We need two broadcast recievers because we can't wild card
       // all of the filter criteria.
       IntentFilter filter = new IntentFilter();
-      filter.addAction(Intent.ACTION_MEDIA_EJECT);
-      filter.addAction(Intent.ACTION_MEDIA_MOUNTED);
-      filter.addDataScheme("file");
-      registerReceiver(broadcastReceiverFile, filter);
+      filter.addAction(Intent.ACTION_MEDIA_BUTTON);
+      registerReceiver(broadcastReceiverButton, filter);
 
       filter = new IntentFilter();
       filter.addAction(utils.ACTION_COMMAND);
@@ -981,6 +1047,25 @@ public class service extends Service
       createMediaPlayer();
 
       audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+      {
+         ComponentName receiver = new ComponentName(getPackageName(), SmBroadcastReceiverButton.class.getName());
+
+         audioManager.registerMediaButtonEventReceiver(receiver);
+
+         Intent i = new Intent(Intent.ACTION_MEDIA_BUTTON).setComponent(receiver);
+
+         remoteControlClient = new RemoteControlClient(PendingIntent.getBroadcast(this, 0, i, 0));
+
+         audioManager.registerRemoteControlClient(remoteControlClient);
+         remoteControlClient.setTransportControlFlags
+            (
+               RemoteControlClient.FLAG_KEY_MEDIA_NEXT |
+               RemoteControlClient.FLAG_KEY_MEDIA_PAUSE |
+               RemoteControlClient.FLAG_KEY_MEDIA_PLAY |
+               RemoteControlClient.FLAG_KEY_MEDIA_PLAY_PAUSE |
+               RemoteControlClient.FLAG_KEY_MEDIA_PREVIOUS
+            );
+      }
 
       playlist           = new LinkedList<String>();
       playlistPos        = -1;
@@ -1010,10 +1095,15 @@ public class service extends Service
       mediaPlayer = null;
 
       audioManager.abandonAudioFocus(audioFocusListener);
+      {
+         ComponentName receiver = new ComponentName(getPackageName(), SmBroadcastReceiverButton.class.getName());
+         audioManager.unregisterMediaButtonEventReceiver(receiver);
+      }
+      audioManager.unregisterRemoteControlClient(remoteControlClient);
 
       handler.removeCallbacksAndMessages(null);
 
-      unregisterReceiver(broadcastReceiverFile);
+      unregisterReceiver(broadcastReceiverButton);
       unregisterReceiver(broadcastReceiverCommand);
 
       super.onDestroy();

@@ -29,13 +29,13 @@ tag :
 # assumes extSdCard is mounted via webDAV as y:
 install-pda-webdav-apk : all install-pda-webdav
 install-pda-webdav :
-	cp ../bin/org.stephe_leake.android.stephes_music.4.1-release.apk /cygdrive/y/Download
+	cp ../bin/org.stephe_leake.android.stephes_music.4.2-release.apk /cygdrive/y/Download
 
 # assumes PDA is running sshDroid server, ssh key is active
 PDA_IP := 192.168.1.66
 #install-pda-ssh : all
 install-pda-ssh :
-	scp -P 2222 ../bin/org.stephe_leake.android.stephes_music.4.1-release.apk root@$(PDA_IP):/storage/sdcard0/Download
+	scp -P 2222 ../bin/org.stephe_leake.android.stephes_music.4.2-release.apk root@$(PDA_IP):/storage/sdcard0/Download
 
 # ethernet address can change
 connect-tv:
@@ -61,7 +61,5 @@ app-intent-main :
 app-intent-view :
 	adb shell am start -n org.stephe_leake.android.stephes_music.activity -a android.intent.action.VIEW -c android.intent.category.DEFAULT  -t "audio/x-mpegurl" -d "file:///mnt/sdcard/Audio/vocal.m3u"
 
-#Local Variables:
-#eval: (c-parse-prj-file "app.prj")
-#End:
+# see jde project file ../prj.el
 # end of file

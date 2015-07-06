@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- requires Android SDK 24
-
+<!--
 We just use the default setup; see $ANDROID_HOME/tools/ant/build.xml imported below.
 
 This file is partially copied/modified from one created by 'android.bat create project'
@@ -13,7 +12,7 @@ changing these two does _not_ allow installing two copies of the app
 side by side; that requires changing all the class names. Changing the
 apk name does help in knowing which one you are installing.
 -->
-<project name="org.stephe_leake.android.stephes_music.4.1" default="help">
+<project name="org.stephe_leake.android.stephes_music.4.2" default="help">
 
 <property file="local.properties" />
 <!-- <property file="ant.properties" /> -->
