@@ -107,8 +107,6 @@ public class activity extends android.app.Activity
 
    public void onClickNote(View v)
    {
-      // FIXME: this is language dependent; need to derive new Button
-      // view, store a standard note key string.
       sendBroadcast
          (new Intent
           (utils.ACTION_COMMAND)
@@ -126,9 +124,14 @@ public class activity extends android.app.Activity
 
    private TextView.OnClickListener playlistListener = new TextView.OnClickListener()
       {
+         // showDialog is deprecated; for some reason, the compiler
+         // insists on putting the suppress here.
+         //
+         // Waiting until it actually disappears; the fix will
+         // probably be different by then.
+         @SuppressWarnings("deprecation")
          @Override public void onClick(View v)
          {
-            // FIXME: deprecated
             showDialog(DIALOG_PLAYLIST);
          }
       };
@@ -415,7 +418,11 @@ public class activity extends android.app.Activity
 
    ////////// playlist dialog
 
-   // FIXME: deprecated
+   // onCreateDialog is deprecated
+   //
+   // Waiting until it actually disappears; the fix will
+   // probably be different by then.
+   @SuppressWarnings("deprecation")
    @Override protected Dialog onCreateDialog(int id, Bundle args)
    {
       switch (id)

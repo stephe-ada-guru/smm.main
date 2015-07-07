@@ -5,11 +5,20 @@
 
     <issue id="OldTargetApi" severity="ignore" />
 
+    <!-- we only need hdpi -->
     <issue id="IconMissingDensityFolder" severity="ignore" />
 
+    <!-- src/org/stephe_leake/android/stephes_music/service.java saveState -->
     <!-- yes, we want commit not apply! -->
     <issue id="CommitPrefEdits" severity="ignore" />
 
+    <!-- src/org/stephe_leake/android/stephes_music/service.java handleMessage -->
     <!-- if handler is static, it can't call unpause! -->
     <issue id="HandlerLeak" severity="ignore" />
+
+    <!-- FIXME: notif_next unused; trying to fix -->
+    <issue id="UnusedResources" severity="ignore" />
+
+    <!-- Lint says notification icons must be white; patently false :) -->
+    <issue id="IconColors" severity="ignore" />
 </lint>

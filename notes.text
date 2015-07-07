@@ -7,22 +7,13 @@ src/org/stephe_leake/android/stephes_music/service.java
 write xref-java.el
     figuring out jde functions
 
-move lint controls into code with @SupressLint
-
 notification controls
-    lock screen controls gone for android 5
-        or notifications show on lock screen, or something
-
     http://developer.android.com/guide/topics/ui/notifiers/notifications.html
 
     need resources for v7 appcompat
         https://developer.android.com/tools/support-library/setup.html#libs-with-res
         use android studio to build gradle script, then use gradle instead of ant from Makefile
             requires 64 bit java
-
-    fix lint warning; notif_icon.png must be entirely white
-
-    fix deprecated warnings
 
 fix Time slide control
     tracks player time
