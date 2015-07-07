@@ -5,6 +5,8 @@
 # lint looks for compiled classes, to it has to run after the compiler
 all : compile lint
 
+# c:/Apps/android-*/ sdk tools requires 32 bit java
+# (java-32)
 compile : force
 	cd ..; ant release
 
@@ -18,18 +20,7 @@ source-clean :
 	find .. -name "*~" -print -delete
 
 tag :
-	mtn tag h:org.stephe_leake.music_player.java android-2.3
-
-## test targets
-
-# emulator from SDK 22.0.5 doesn't run on Windows 7
-#install-emulator: ANDROID_DEVICE := -e
-#install-emulator: install
-
-# assumes extSdCard is mounted via webDAV as y:
-install-pda-webdav-apk : all install-pda-webdav
-install-pda-webdav :
-	cp ../bin/org.stephe_leake.android.stephes_music.4.2-release.apk /cygdrive/y/Download
+	mtn tag h:org.stephe_leake.music_player.java version-4.2
 
 # assumes PDA is running sshDroid server, ssh key is active
 PDA_IP := 192.168.1.66

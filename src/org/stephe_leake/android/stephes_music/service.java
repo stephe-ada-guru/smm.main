@@ -241,7 +241,7 @@ public class service extends Service
             remoteControlClient.editMetadata(true)
                   .putString(MediaMetadataRetriever.METADATA_KEY_TITLE, "")
                   .putString(MediaMetadataRetriever.METADATA_KEY_ALBUM, "")
-                  .putString(MediaMetadataRetriever.METADATA_KEY_ARTIST, "")
+                  .putString(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST, "")
                   .putLong(MediaMetadataRetriever.METADATA_KEY_DURATION, 0)
                   .apply();
 
@@ -266,7 +266,8 @@ public class service extends Service
             remoteControlClient.editMetadata(true)
                .putString(MediaMetadataRetriever.METADATA_KEY_TITLE, retriever.title)
                .putString(MediaMetadataRetriever.METADATA_KEY_ALBUM, retriever.album)
-               .putString(MediaMetadataRetriever.METADATA_KEY_ARTIST, retriever.artist)
+               // METADATA_KEY_ARTIST is wrong here for Scion xB
+               .putString(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST, retriever.artist)
                .putLong(MediaMetadataRetriever.METADATA_KEY_DURATION, Integer.parseInt(retriever.duration))
                .apply();
 
