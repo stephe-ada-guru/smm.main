@@ -1,3 +1,6 @@
 July 2015
     version 4.2
     add RemoteControlClient for Scion xB bluetooth control.
+
+    version 4.3
+    add basic notification; text but no buttons

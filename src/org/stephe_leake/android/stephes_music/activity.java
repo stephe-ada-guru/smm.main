@@ -128,6 +128,7 @@ public class activity extends android.app.Activity
       {
          @Override public void onClick(View v)
          {
+            // FIXME: deprecated
             showDialog(DIALOG_PLAYLIST);
          }
       };
@@ -260,9 +261,6 @@ public class activity extends android.app.Activity
          setContentView(R.layout.main);
 
          startService (new Intent(this, service.class));
-
-         PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
-         wakeLock = powerManager.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK, getClass().getName());
 
          // Set up displays, top to bottom left to right
 
@@ -417,6 +415,7 @@ public class activity extends android.app.Activity
 
    ////////// playlist dialog
 
+   // FIXME: deprecated
    @Override protected Dialog onCreateDialog(int id, Bundle args)
    {
       switch (id)

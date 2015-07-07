@@ -49,6 +49,9 @@ android SDK
             need Android <version>
             don't install Google USB driver (unless want to try debugger again)
 
+    copy :/Apps/android-sdk-24.3.3/extras/android/support/v4/android-support-v4.jar to ./libs
+        to include in apk
+
 ant
     android SDK assumes this build tool (even though make is better :)
     http://ant.apache.org/ 1.9.6

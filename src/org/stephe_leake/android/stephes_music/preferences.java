@@ -77,6 +77,7 @@ public class preferences extends android.preference.PreferenceActivity
 
       try
       {
+         // FIXME: deprecated
          addPreferencesFromResource(R.xml.preferences);
       }
       catch (RuntimeException e)
@@ -90,6 +91,7 @@ public class preferences extends android.preference.PreferenceActivity
 
       // Build list of top level directories that might contain smm playlists.
 
+      // FIXME: deprecated
       ListPreference playlistPref = (ListPreference)findPreference(res.getString(R.string.playlist_directory_key));
 
       LinkedList<String> playlistDirs = new LinkedList<String>();
@@ -130,7 +132,8 @@ public class preferences extends android.preference.PreferenceActivity
 
 
       // Create list of possible smm directories
-      
+
+      // FIXME: deprecated
       ListPreference smmPref = (ListPreference)findPreference(res.getString(R.string.smm_directory_key));
 
       File[] extCacheDirs = this.getExternalCacheDirs();
@@ -141,7 +144,7 @@ public class preferences extends android.preference.PreferenceActivity
       {
           smmDirs[i] = extCacheDirs[i].getAbsolutePath();
       }
-      
+
       smmPref.setEntries(smmDirs);
       smmPref.setEntryValues(smmDirs);
    }

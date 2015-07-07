@@ -19,6 +19,8 @@
 
 package org.stephe_leake.android.stephes_music;
 
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -41,6 +43,7 @@ import android.os.Message;
 import android.os.PowerManager.WakeLock;
 import android.os.PowerManager;
 import android.preference.PreferenceManager;
+import android.support.v4.app.NotificationCompat;
 import android.view.KeyEvent;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -74,6 +77,8 @@ public class service extends Service
      //  Media_Player has song, is not playing it, at request of
      //  system (phone call, navigation announcement, etc).
    };
+
+   Context context;
 
    ////////// private methods (alphabetical)
 
@@ -130,6 +135,77 @@ public class service extends Service
       saveState();
    }
 
+   private void setNotification(String what, MetaData retriever)
+   {
+      // Default init to keep compiler happy
+      PendingIntent playPauseIntent = null;
+      int playPauseIcon = 0;
+
+      switch (playing)
+      {
+      case Idle:
+         // should not get here; keep compiler happy
+         break;
+
+      case Playing:
+         playPauseIcon = R.drawable.notif_pause;
+         playPauseIntent = PendingIntent.getBroadcast
+            (context.getApplicationContext(), 0,
+             new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PAUSE), 0);
+
+         break;
+
+      case Paused:
+      case Paused_Transient:
+         playPauseIcon = R.drawable.notif_play;
+         playPauseIntent = PendingIntent.getBroadcast
+            (context.getApplicationContext(), 0,
+             new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PLAY), 0);
+
+         break;
+      }
+
+      PendingIntent nextIntent = PendingIntent.getBroadcast
+         (context.getApplicationContext(), 0,
+          new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_NEXT), 0);
+
+      try
+      {
+         Notification notif = new NotificationCompat.Builder(context)
+            .setAutoCancel(false)
+            .setContentIntent
+            (PendingIntent.getBroadcast
+             (context.getApplicationContext(), 0, new Intent(context, activity.class), 0))
+            .setContentTitle(retriever.title) // first row; large text
+            .setContentText(retriever.album) // second row; small text
+            .setSubText(retriever.artist) // third row; small text
+            .setSmallIcon(R.drawable.notif_icon)
+            // .setStyle(new NotificationCompat.MediaStyle()) // FIXME; delete or add v7 resources
+            .setShowWhen(false)
+
+            // FIXME: these don't work; try in v7
+            // .addAction (playPauseIcon, "", playPauseIntent)
+            // .addAction (R.drawable.notif_next, "next", nextIntent)
+            .build()
+            ;
+
+         try
+         {
+            NotificationManager notifManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            notifManager.notify(1, notif);
+         }
+         catch (RuntimeException e)
+         {
+            utils.errorLog(this, "notify " + e.toString());
+         }
+      }
+      catch (RuntimeException e)
+      {
+         utils.errorLog(this, "notify build " + e.toString());
+      }
+
+   }
+
    private void notifyChange(String what)
    {
       // Notify the activity and the remote control that something has changed.
@@ -168,6 +244,8 @@ public class service extends Service
                   .putString(MediaMetadataRetriever.METADATA_KEY_ARTIST, "")
                   .putLong(MediaMetadataRetriever.METADATA_KEY_DURATION, 0)
                   .apply();
+
+            // no notification until there is something to play
          }
          else
          {
@@ -191,10 +269,18 @@ public class service extends Service
                .putString(MediaMetadataRetriever.METADATA_KEY_ARTIST, retriever.artist)
                .putLong(MediaMetadataRetriever.METADATA_KEY_DURATION, Integer.parseInt(retriever.duration))
                .apply();
+
+            setNotification(what, retriever);
          }
       }
       else if (what.equals(utils.PLAYSTATE_CHANGED))
       {
+         // FIXME: no time or progress in notification; distinguish
+         // play/pause change from position change.
+
+         final String absFile = playlistDirectory + "/" + playlist.get(playlistPos);
+         final MetaData retriever = new MetaData(this, playlistFilename, absFile);
+
          sendStickyBroadcast
             (new Intent (utils.PLAYSTATE_CHANGED).
              putExtra ("playing", playing == PlayState.Playing).
@@ -205,17 +291,23 @@ public class service extends Service
          case Idle:
             remoteControlClient.setPlaybackState
                (remoteControlClient.PLAYSTATE_STOPPED, mediaPlayer.getCurrentPosition(), 1.0f);
+
+            // no Notification
             break;
 
          case Playing:
             remoteControlClient.setPlaybackState
                (remoteControlClient.PLAYSTATE_PLAYING, mediaPlayer.getCurrentPosition(), 1.0f);
+
+            setNotification(what, retriever);
             break;
 
          case Paused:
          case Paused_Transient:
             remoteControlClient.setPlaybackState
                (remoteControlClient.PLAYSTATE_PAUSED, mediaPlayer.getCurrentPosition(), 1.0f);
+
+            setNotification(what, retriever);
             break;
          }
       }
@@ -437,7 +529,7 @@ public class service extends Service
                // can't go directly from Idle to Paused
                play(playlist.get(playlistPos), pos);
             }
-            pause (newState);
+            pause(newState);
             break;
          }
 
@@ -465,7 +557,6 @@ public class service extends Service
 
    private void previous()
    {
-      // FIXME: get in onCreate, then again only when it changes
       Resources         res   = getResources();
       SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
       final int prevThreshold = Integer.valueOf
@@ -649,7 +740,7 @@ public class service extends Service
       }
    }
 
-   private void setSMMDirectory(Context context)
+   private void setSMMDirectory()
    {
       Resources         res   = getResources();
       SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
@@ -865,7 +956,7 @@ public class service extends Service
             }
             else if (command.equals(utils.COMMAND_SMM_DIRECTORY))
             {
-               setSMMDirectory(context);
+               setSMMDirectory();
             }
             else if (command.equals (utils.COMMAND_TOGGLEPAUSE))
             {
@@ -892,7 +983,7 @@ public class service extends Service
             else if (command.equals (utils.COMMAND_UPDATE_DISPLAY))
             {
                notifyChange(utils.META_CHANGED);
-               notifyChange (utils.PLAYSTATE_CHANGED);
+               notifyChange(utils.PLAYSTATE_CHANGED);
             }
             else
             {
@@ -978,7 +1069,7 @@ public class service extends Service
                // works. This will _not_ be easy to debug!
                if (playing == PlayState.Playing)
                {
-                  play (playlist.get(playlistPos), 0);
+                  play(playlist.get(playlistPos), 0);
                };
 
                return true;
@@ -1035,7 +1126,9 @@ public class service extends Service
    {
       super.onCreate();
 
-      setSMMDirectory (this);
+      context = this;
+
+      setSMMDirectory();
 
       // We need two broadcast recievers because we can't wild card
       // all of the filter criteria.

@@ -33,33 +33,9 @@ install-pda-webdav :
 
 # assumes PDA is running sshDroid server, ssh key is active
 PDA_IP := 192.168.1.66
-#install-pda-ssh : all
+install-pda-ssh-all : all install-pda-ssh
 install-pda-ssh :
-	scp -P 2222 ../bin/org.stephe_leake.android.stephes_music.4.2-release.apk root@$(PDA_IP):/storage/sdcard0/Download
-
-# ethernet address can change
-connect-tv:
-	adb connect 192.168.0.101
-
-install: all
-	adb install -r ../bin/org.stephe_leake.android.stephes_music.sdk_20-release.apk
-
-# push music files to running android emulator
-sdcard :
-	adb shell echo "Vocal/01 - Fill Me Up.mp3" > /sdcard/Audio/vocal.m3u
-	adb shell echo "Vocal/02 - These Four Walls.mp3" >> /sdcard/Audio/vocal.m3u
-	adb push "/Projects/Music/Shawn Colvin/These Four Walls/01 - Fill Me Up.mp3" /sdcard/Audio/Vocal/
-	adb push "/Projects/Music/Shawn Colvin/These Four Walls/02 - These Four Walls.mp3" /sdcard/Audio/Vocal/
-	adb shell echo "Instrumental/Slow Circle 2.mp3" > /sdcard/Audio/instrumental.m3u
-	adb shell echo "Instrumental/Coilsfield House.mp3" >> /sdcard/Audio/instrumental.m3u
-	adb push "/Projects/Music/Alex de Grassi/Slow Circle/Slow Circle 2.mp3" /sdcard/Audio/Instrumental/
-	adb push "/Projects/Music/Joemy Wilson/Celtic Dreams/Coilsfield House.mp3" /sdcard/Audio/Instrumental/
-
-app-intent-main :
-	adb shell am start -n org.stephe_leake.android.stephes_music.activity -a android.intent.action.MAIN -c android.intent.category.LAUNCHER
-
-app-intent-view :
-	adb shell am start -n org.stephe_leake.android.stephes_music.activity -a android.intent.action.VIEW -c android.intent.category.DEFAULT  -t "audio/x-mpegurl" -d "file:///mnt/sdcard/Audio/vocal.m3u"
+	scp -P 2222 ../bin/org.stephe_leake.android.stephes_music.4.3-release.apk root@$(PDA_IP):/storage/sdcard0/Download
 
 # see jde project file ../prj.el
 # end of file

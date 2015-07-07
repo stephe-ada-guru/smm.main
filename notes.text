@@ -7,15 +7,23 @@ src/org/stephe_leake/android/stephes_music/service.java
 write xref-java.el
     figuring out jde functions
 
-car bluetooth
-    add progress bar info
+move lint controls into code with @SupressLint
 
-Lock screen controls
-    use notification for android 5.0 compatibility?
+notification controls
+    lock screen controls gone for android 5
+        or notifications show on lock screen, or something
+
     http://developer.android.com/guide/topics/ui/notifiers/notifications.html
 
+    need resources for v7 appcompat
+        create library project
+        https://developer.android.com/tools/support-library/setup.html#libs-with-res
 
-Time slide control
+    fix lint warning; notif_icon.png must be entirely white
+
+    fix deprecated warnings
+
+fix Time slide control
     tracks player time
     doesn't respond to touch
 
