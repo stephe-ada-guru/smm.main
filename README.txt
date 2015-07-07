@@ -12,13 +12,12 @@ cygwin make, bash etc
     http://www.cygwin.com
 
 java
-    to run android SDK (32 bit!), ant
-        need 32 bit, not 64 bit, for Android SDK to see it
+    to run android SDK tools (32 bit), ant, Android Studio (64 bit)
 
     http://www.oracle.com/technetwork/java/
-        java SE 8u45, JDK, Windows 32 bit
+        java SE 8u45, JDK, Windows 32 bit and 64 bit
 
-    install to default location
+    install to default location -32, -64
         don't need JavaFX
 
     add to ~/develop_settings.el exec-path:

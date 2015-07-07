@@ -78,6 +78,13 @@ public class service extends Service
      //  system (phone call, navigation announcement, etc).
    };
 
+   enum WhatChanged
+   {
+      Meta,    // song or playlist
+      State,   // play/pause
+      Position // progress
+   };
+
    Context context;
 
    ////////// private methods (alphabetical)
@@ -135,7 +142,7 @@ public class service extends Service
       saveState();
    }
 
-   private void setNotification(String what, MetaData retriever)
+   private void setNotification(MetaData retriever)
    {
       // Default init to keep compiler happy
       PendingIntent playPauseIntent = null;
@@ -174,14 +181,18 @@ public class service extends Service
          Notification notif = new NotificationCompat.Builder(context)
             .setAutoCancel(false)
             .setContentIntent
-            (PendingIntent.getBroadcast
-             (context.getApplicationContext(), 0, new Intent(context, activity.class), 0))
+            (PendingIntent.getActivity
+             (context.getApplicationContext(), 0,
+              new Intent(context, activity.class),
+              Intent.FLAG_ACTIVITY_CLEAR_TOP +
+              Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT))
             .setContentTitle(retriever.title) // first row; large text
             .setContentText(retriever.album) // second row; small text
             .setSubText(retriever.artist) // third row; small text
             .setSmallIcon(R.drawable.notif_icon)
             // .setStyle(new NotificationCompat.MediaStyle()) // FIXME; delete or add v7 resources
             .setShowWhen(false)
+            .setOngoing(true)
 
             // FIXME: these don't work; try in v7
             // .addAction (playPauseIcon, "", playPauseIntent)
@@ -206,14 +217,15 @@ public class service extends Service
 
    }
 
-   private void notifyChange(String what)
+   private void notifyChange(WhatChanged what)
    {
       // Notify the activity and the remote control that something has changed.
       //
       // 'What' must be one of the *_CHANGED constants in utils.java
 
-      if (what.equals(utils.META_CHANGED))
+      switch (what)
       {
+      case Meta:
          if (playing == PlayState.Idle)
          {
             if (playlistDirectory == null)
@@ -239,11 +251,11 @@ public class service extends Service
             }
 
             remoteControlClient.editMetadata(true)
-                  .putString(MediaMetadataRetriever.METADATA_KEY_TITLE, "")
-                  .putString(MediaMetadataRetriever.METADATA_KEY_ALBUM, "")
-                  .putString(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST, "")
-                  .putLong(MediaMetadataRetriever.METADATA_KEY_DURATION, 0)
-                  .apply();
+               .putString(MediaMetadataRetriever.METADATA_KEY_TITLE, "")
+               .putString(MediaMetadataRetriever.METADATA_KEY_ALBUM, "")
+               .putString(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST, "")
+               .putLong(MediaMetadataRetriever.METADATA_KEY_DURATION, 0)
+               .apply();
 
             // no notification until there is something to play
          }
@@ -271,51 +283,50 @@ public class service extends Service
                .putLong(MediaMetadataRetriever.METADATA_KEY_DURATION, Integer.parseInt(retriever.duration))
                .apply();
 
-            setNotification(what, retriever);
+            setNotification(retriever);
          }
-      }
-      else if (what.equals(utils.PLAYSTATE_CHANGED))
-      {
-         // FIXME: no time or progress in notification; distinguish
-         // play/pause change from position change.
+         break;
 
-         final String absFile = playlistDirectory + "/" + playlist.get(playlistPos);
-         final MetaData retriever = new MetaData(this, playlistFilename, absFile);
-
-         sendStickyBroadcast
-            (new Intent (utils.PLAYSTATE_CHANGED).
-             putExtra ("playing", playing == PlayState.Playing).
-             putExtra ("position", mediaPlayer.getCurrentPosition()));
-
-         switch (playing)
+      case State:
+      case Position:
          {
-         case Idle:
-            remoteControlClient.setPlaybackState
-               (remoteControlClient.PLAYSTATE_STOPPED, mediaPlayer.getCurrentPosition(), 1.0f);
+            final String absFile = playlistDirectory + "/" + playlist.get(playlistPos);
+            final MetaData retriever = new MetaData(this, playlistFilename, absFile);
 
-            // no Notification
-            break;
+            sendStickyBroadcast
+               (new Intent (utils.PLAYSTATE_CHANGED).
+                putExtra ("playing", playing == PlayState.Playing).
+                putExtra ("position", mediaPlayer.getCurrentPosition()));
 
-         case Playing:
-            remoteControlClient.setPlaybackState
-               (remoteControlClient.PLAYSTATE_PLAYING, mediaPlayer.getCurrentPosition(), 1.0f);
+            switch (playing)
+            {
+            case Idle:
+               remoteControlClient.setPlaybackState
+                  (remoteControlClient.PLAYSTATE_STOPPED, mediaPlayer.getCurrentPosition(), 1.0f);
 
-            setNotification(what, retriever);
-            break;
+               // no Notification
+               break;
 
-         case Paused:
-         case Paused_Transient:
-            remoteControlClient.setPlaybackState
-               (remoteControlClient.PLAYSTATE_PAUSED, mediaPlayer.getCurrentPosition(), 1.0f);
+            case Playing:
+               remoteControlClient.setPlaybackState
+                  (remoteControlClient.PLAYSTATE_PLAYING, mediaPlayer.getCurrentPosition(), 1.0f);
 
-            setNotification(what, retriever);
-            break;
+               if (what == WhatChanged.State)
+                  setNotification(retriever);
+               break;
+
+            case Paused:
+            case Paused_Transient:
+               remoteControlClient.setPlaybackState
+                  (remoteControlClient.PLAYSTATE_PAUSED, mediaPlayer.getCurrentPosition(), 1.0f);
+
+               if (what == WhatChanged.State)
+                  setNotification(retriever);
+               break;
+            }
          }
+         break;
       }
-      else
-      {
-         utils.debugLog("notifyChange: unexpected 'what'");
-      };
    }
 
    private void pause(PlayState pausedState)
@@ -332,7 +343,7 @@ public class service extends Service
 
          playing = pausedState;
 
-         notifyChange(utils.PLAYSTATE_CHANGED);
+         notifyChange(WhatChanged.State);
          handler.removeMessages(UPDATE_DISPLAY);
 
          // for some crashes, onDestroy is not called, so we don't
@@ -372,18 +383,18 @@ public class service extends Service
             // failing sdcard.
             utils.debugLog("can't play '" + path + "' :"+ e.toString());
 
-            notifyChange(utils.META_CHANGED);
+            notifyChange(WhatChanged.Meta);
             return;
          }
 
          unpause();
 
-         notifyChange(utils.META_CHANGED);
+         notifyChange(WhatChanged.Meta);
 
          if (pos != 0)
          {
             mediaPlayer.seekTo(pos);
-            notifyChange(utils.PLAYSTATE_CHANGED);
+            notifyChange(WhatChanged.State);
          }
       }
       catch (RuntimeException e)
@@ -572,7 +583,7 @@ public class service extends Service
       {
          // not near beginning of current track; move to beginning
          mediaPlayer.seekTo(0);
-         notifyChange(utils.PLAYSTATE_CHANGED);
+         notifyChange(WhatChanged.State);
       }
       else if (playlistPos > 0)
       {
@@ -627,16 +638,16 @@ public class service extends Service
          {
             setIdleNull();
 
-            notifyChange(utils.META_CHANGED);
-            notifyChange(utils.PLAYSTATE_CHANGED);
+            notifyChange(WhatChanged.Meta);
+            notifyChange(WhatChanged.State);
          }
       }
       else
       {
          setIdleNull();
 
-         notifyChange(utils.META_CHANGED);
-         notifyChange(utils.PLAYSTATE_CHANGED);
+         notifyChange(WhatChanged.Meta);
+         notifyChange(WhatChanged.State);
       }
    }
 
@@ -682,7 +693,7 @@ public class service extends Service
 
       playing = PlayState.Idle;
 
-      notifyChange(utils.PLAYSTATE_CHANGED);
+      notifyChange(WhatChanged.State);
       handler.removeMessages(UPDATE_DISPLAY);
    }
 
@@ -711,7 +722,7 @@ public class service extends Service
       mediaPlayer.start();
 
       playing = PlayState.Playing;
-      notifyChange (utils.PLAYSTATE_CHANGED);
+      notifyChange (WhatChanged.State);
 
       handler.sendEmptyMessageDelayed(UPDATE_DISPLAY, 1000);
    }
@@ -803,7 +814,7 @@ public class service extends Service
                unpause();
 
             case UPDATE_DISPLAY:
-               notifyChange(utils.PLAYSTATE_CHANGED);
+               notifyChange(WhatChanged.Position);
                utils.verboseLog("service handler: UPDATE_DISPLAY");
 
                handler.sendEmptyMessageDelayed(UPDATE_DISPLAY, 1000);
@@ -953,7 +964,7 @@ public class service extends Service
             {
                final int pos = intent.getIntExtra("position", 0);
                mediaPlayer.seekTo(pos);
-               notifyChange(utils.PLAYSTATE_CHANGED);
+               notifyChange(WhatChanged.Position);
             }
             else if (command.equals(utils.COMMAND_SMM_DIRECTORY))
             {
@@ -983,8 +994,8 @@ public class service extends Service
             }
             else if (command.equals (utils.COMMAND_UPDATE_DISPLAY))
             {
-               notifyChange(utils.META_CHANGED);
-               notifyChange(utils.PLAYSTATE_CHANGED);
+               notifyChange(WhatChanged.Meta);
+               notifyChange(WhatChanged.State);
             }
             else
             {
@@ -1154,14 +1165,21 @@ public class service extends Service
          remoteControlClient = new RemoteControlClient(PendingIntent.getBroadcast(this, 0, i, 0));
 
          audioManager.registerRemoteControlClient(remoteControlClient);
-         remoteControlClient.setTransportControlFlags
-            (
-               RemoteControlClient.FLAG_KEY_MEDIA_NEXT |
-               RemoteControlClient.FLAG_KEY_MEDIA_PAUSE |
-               RemoteControlClient.FLAG_KEY_MEDIA_PLAY |
-               RemoteControlClient.FLAG_KEY_MEDIA_PLAY_PAUSE |
-               RemoteControlClient.FLAG_KEY_MEDIA_PREVIOUS
-            );
+
+         // In Android 4.2 on my Samsung Note III, these control what
+         // buttons appear on the lock screen. They do not filter
+         // broadcast messages from the car remote control. The lock
+         // screen controls don't work (not clear why), so we leave
+         // them all disabled.
+         //
+         // remoteControlClient.setTransportControlFlags
+         //    (
+         //       RemoteControlClient.FLAG_KEY_MEDIA_NEXT |
+         //       RemoteControlClient.FLAG_KEY_MEDIA_PAUSE |
+         //       RemoteControlClient.FLAG_KEY_MEDIA_PLAY |
+         //       RemoteControlClient.FLAG_KEY_MEDIA_PLAY_PAUSE |
+         //       RemoteControlClient.FLAG_KEY_MEDIA_PREVIOUS
+         //    );
       }
 
       playlist           = new LinkedList<String>();
@@ -1223,7 +1241,7 @@ public class service extends Service
 
    private void dumpLog()
    {
-      final String logFilename = smmDirectory + "/stephes_music/" + playlistFilename + ".log";
+      final String logFilename = smmDirectory + "/debug.log";
 
       try
       {

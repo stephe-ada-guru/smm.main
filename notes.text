@@ -16,8 +16,9 @@ notification controls
     http://developer.android.com/guide/topics/ui/notifiers/notifications.html
 
     need resources for v7 appcompat
-        create library project
         https://developer.android.com/tools/support-library/setup.html#libs-with-res
+        use android studio to build gradle script, then use gradle instead of ant from Makefile
+            requires 64 bit java
 
     fix lint warning; notif_icon.png must be entirely white
 
