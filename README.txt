@@ -5,6 +5,8 @@ Copyright 2011-2015 Stephen Leake stephen_leake@stephe-leake.org
 Released under GPLv3+ (see COPYING3) or Apache version 2.0 (see
 http://www.apache.org/licenses/LICENSE-2.0)
 
+See design.text for overview of app design.
+
 Build tools:
 
 cygwin make, bash etc
@@ -24,6 +26,8 @@ java
         c:/Program Files (x86)/Java/jdk1.8.0_45/bin
 
 android SDK
+    FIXME: install via Android Studio to get 64 bit, gradle
+
     Android 4, platform 19 for Galaxy Note 3
     all SDK tools are 32 bit
 

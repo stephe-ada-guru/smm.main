@@ -1,4 +1,3 @@
-^bin$
-^gen$
-^libs$
-^proguard\.cfg$
+^\.gradle$
+^app/build$
+^build/intermediates$
