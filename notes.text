@@ -15,6 +15,14 @@ notification controls
         use android studio to build gradle script, then use gradle instead of ant from Makefile
             requires 64 bit java
 
+        imported to C:\Users\stephe\StudioProjects\org.stephe_leake.music_player.java\
+
+            gradle in "C:\Program Files\Android\Android Studio\gradle\gradle-2.2.1"
+            sdk in    Users/stephe/AppData/Local/Android/sdk
+            main build file app/build.gradle
+
+            gradle runs lint, outputs to html file (sigh)
+
 fix Time slide control
     tracks player time
     doesn't respond to touch
