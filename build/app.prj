@@ -1,5 +1,0 @@
--- javac puts relative paths in error messages
-src_dir=.
-
--- lint reports errors relative to parent dir
-src_dir=..

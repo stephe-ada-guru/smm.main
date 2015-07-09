@@ -20,12 +20,9 @@ along with GCC; see the file COPYING3.  If not see
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           package="org.stephe_leake.android.stephes_music"
-          android:versionCode="3"
-          android:versionName="3.0">
-  <!-- this is actually the Android API level, not the SDK level (sigh)-->
-  <!-- and it is overridden by project.properties "target=*" (sigh) -->
-  <uses-sdk android:minSdkVersion="19"
-            android:targetSdkVersion="19"/>
+          >
+
+  <!-- App version and Android API level set in ../../build.gradle -->
 
   <uses-permission android:name="android.permission.BROADCAST_STICKY" /> <!-- send data from service to activity -->
   <uses-permission android:name="android.permission.WAKE_LOCK" /> <!-- media player prevents screen from turning off -->
