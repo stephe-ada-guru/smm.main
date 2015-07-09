@@ -2,19 +2,17 @@
 
 .PHONY : force
 
-# lint looks for compiled classes, to it has to run after the compiler
-all : compile lint
+all : compile
 
-# c:/Apps/android-*/ sdk tools requires 32 bit java
-# (java-32)
+#  --info gives more detail
+# gradle lint output in:
+# (browse-url "../app/build/outputs/lint-results-release-fatal.html")
+# (browse-url "../app/build/outputs/lint-results.html")
 compile : force
-	cd ..; ant release
-
-lint :
-	cmd.exe /c lint ..
+	cd ..; gradle build
 
 clean :
-	rm -rf ../bin/* ../gen/*
+	rm -rf intermediates ../app/build/*
 
 source-clean :
 	find .. -name "*~" -print -delete
@@ -23,10 +21,13 @@ tag :
 	mtn tag h:org.stephe_leake.music_player.java version-4.2
 
 # assumes PDA is running sshDroid server, ssh key is active
-PDA_IP := 192.168.1.66
+# apk version is in ../app/build.gradle
 install-pda-ssh-all : all install-pda-ssh
+
+install-pda-ssh : PDA_IP := 192.168.1.66
+install-pda-ssh : VERSION := 5
 install-pda-ssh :
-	scp -P 2222 ../bin/org.stephe_leake.android.stephes_music.4.3-release.apk root@$(PDA_IP):/storage/sdcard0/Download
+	scp -P 2222 ../app/build/outputs/apk/app-release-$(VERSION).apk root@$(PDA_IP):/storage/sdcard0/Download/org.stephe_leake.android.stephes_music.$(VERSION)-release.apk
 
 # see jde project file ../prj.el
 # end of file
