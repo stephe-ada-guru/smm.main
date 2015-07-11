@@ -43,8 +43,8 @@ import android.os.Message;
 import android.os.PowerManager.WakeLock;
 import android.os.PowerManager;
 import android.preference.PreferenceManager;
-import android.support.v4.app.NotificationCompat;
 import android.view.KeyEvent;
+import android.widget.RemoteViews;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -155,7 +155,7 @@ public class service extends Service
          break;
 
       case Playing:
-         playPauseIcon = R.drawable.notif_pause;
+         playPauseIcon = R.drawable.pause;
          playPauseIntent = PendingIntent.getBroadcast
             (context.getApplicationContext(), 0,
              new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PAUSE), 0);
@@ -164,7 +164,7 @@ public class service extends Service
 
       case Paused:
       case Paused_Transient:
-         playPauseIcon = R.drawable.notif_play;
+         playPauseIcon = R.drawable.play;
          playPauseIntent = PendingIntent.getBroadcast
             (context.getApplicationContext(), 0,
              new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PLAY), 0);
@@ -172,31 +172,49 @@ public class service extends Service
          break;
       }
 
+      // We can't use the same intent twice, so we need two copies of
+      // this (for the album art and the top level contentIntent,
+      // which is used for the text fields)
+      PendingIntent activityIntent1 = PendingIntent.getActivity
+         (context.getApplicationContext(), 0,
+          new Intent(context, activity.class),
+          Intent.FLAG_ACTIVITY_CLEAR_TOP +
+          Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT);
+
+      PendingIntent activityIntent2 = PendingIntent.getActivity
+         (context.getApplicationContext(), 0,
+          new Intent(context, activity.class),
+          Intent.FLAG_ACTIVITY_CLEAR_TOP +
+          Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT);
+
+      PendingIntent prevIntent = PendingIntent.getBroadcast
+         (context.getApplicationContext(), 0,
+          new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PREVIOUS), 0);
+
       PendingIntent nextIntent = PendingIntent.getBroadcast
          (context.getApplicationContext(), 0,
           new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_NEXT), 0);
 
       try
       {
-         Notification notif = new NotificationCompat.Builder(context)
-            .setAutoCancel(false)
-            .setContentIntent
-            (PendingIntent.getActivity
-             (context.getApplicationContext(), 0,
-              new Intent(context, activity.class),
-              Intent.FLAG_ACTIVITY_CLEAR_TOP +
-              Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT))
-            .setContentTitle(retriever.title) // first row; large text
-            .setContentText(retriever.album) // second row; small text
-            .setSubText(retriever.artist) // third row; small text
-            .setSmallIcon(R.drawable.notif_icon)
-            // .setStyle(new NotificationCompat.MediaStyle()) // FIXME; delete or add v7 resources
-            .setShowWhen(false)
-            .setOngoing(true)
+         RemoteViews notifView = new RemoteViews(context.getPackageName(), R.layout.notification);
+         // FIXME: set album art image
+         notifView.setOnClickPendingIntent(R.id.notifAlbumArt, activityIntent1);
+         notifView.setTextViewText(R.id.notifArtist, retriever.artist);
+         notifView.setTextViewText(R.id.notifAlbum, retriever.album);
+         notifView.setTextViewText(R.id.notifTitle, retriever.title);
+         notifView.setOnClickPendingIntent(R.id.notifPrev, prevIntent);
+         notifView.setImageViewResource(R.id.notifPlayPause, playPauseIcon);
+         notifView.setOnClickPendingIntent(R.id.notifPlayPause, playPauseIntent);
+         notifView.setOnClickPendingIntent(R.id.notifNext, nextIntent);
 
-            // FIXME: these don't work; try in v7
-            // .addAction (playPauseIcon, "", playPauseIntent)
-            // .addAction (R.drawable.notif_next, "next", nextIntent)
+         Notification notif = new Notification.Builder(context)
+            .setAutoCancel(false)
+            .setContent(notifView)
+            .setContentIntent(activityIntent2)
+            .setOngoing(true)
+            .setSmallIcon(R.drawable.notif_icon) // shown in top of screen
+            .setShowWhen(false)
             .build()
             ;
 
@@ -235,7 +253,7 @@ public class service extends Service
                    putExtra ("artist", "").
                    putExtra ("album", "").
                    putExtra ("track", "").
-                   putExtra ("duration", 0).
+                   putExtra ("duration", "0").
                    putExtra ("playlist", getResources().getString(R.string.null_playlist_directory)));
 
             }
@@ -246,7 +264,7 @@ public class service extends Service
                    putExtra ("artist", "").
                    putExtra ("album", "").
                    putExtra ("track", "").
-                   putExtra ("duration", 0).
+                   putExtra ("duration", "0").
                    putExtra ("playlist", getResources().getString(R.string.null_playlist)));
             }
 
@@ -290,9 +308,6 @@ public class service extends Service
       case State:
       case Position:
          {
-            final String absFile = playlistDirectory + "/" + playlist.get(playlistPos);
-            final MetaData retriever = new MetaData(this, playlistFilename, absFile);
-
             sendStickyBroadcast
                (new Intent (utils.PLAYSTATE_CHANGED).
                 putExtra ("playing", playing == PlayState.Playing).
@@ -312,7 +327,12 @@ public class service extends Service
                   (remoteControlClient.PLAYSTATE_PLAYING, mediaPlayer.getCurrentPosition(), 1.0f);
 
                if (what == WhatChanged.State)
+               {
+                  final String absFile = playlistDirectory + "/" + playlist.get(playlistPos);
+                  final MetaData retriever = new MetaData(this, playlistFilename, absFile);
+
                   setNotification(retriever);
+               }
                break;
 
             case Paused:
@@ -321,7 +341,12 @@ public class service extends Service
                   (remoteControlClient.PLAYSTATE_PAUSED, mediaPlayer.getCurrentPosition(), 1.0f);
 
                if (what == WhatChanged.State)
+               {
+                  final String absFile = playlistDirectory + "/" + playlist.get(playlistPos);
+                  final MetaData retriever = new MetaData(this, playlistFilename, absFile);
+
                   setNotification(retriever);
+               }
                break;
             }
          }
@@ -962,8 +987,8 @@ public class service extends Service
             }
             else if (command.equals (utils.COMMAND_SEEK))
             {
-               final int pos = intent.getIntExtra("position", 0);
-               mediaPlayer.seekTo(pos);
+               final long pos = intent.getLongExtra("position", 0);
+               mediaPlayer.seekTo((int)pos);
                notifyChange(WhatChanged.Position);
             }
             else if (command.equals(utils.COMMAND_SMM_DIRECTORY))

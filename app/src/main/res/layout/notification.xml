@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Abstract :
+
+  UI layout for Stephe's Music Player notification
+
+  Copyright (C) 2015 Stephen Leake.  All Rights Reserved.
+
+  This program is free software; you can redistribute it and/or
+  modify it under terms of the GNU General Public License as
+  published by the Free Software Foundation; either version 3, or
+  (at your option) any later version. This program is distributed in
+  the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+  even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+  PARTICULAR PURPOSE. See the GNU General Public License for more
+  details. You should have received a copy of the GNU General Public
+  License distributed with this program; see file COPYING. If not,
+  write to the Free Software Foundation, 51 Franklin Street, Suite
+  500, Boston, MA 02110-1335, USA.
+-->
+
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:weightSum="1">
+    <!-- artist | prev/play/next buttons
+         album  |
+         title   |
+    -->
+
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/notifAlbumArt"
+        android:src="@drawable/notif_icon"/>
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:gravity="left"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        >
+      <TextView
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:gravity="center"
+          android:id="@+id/notifArtist"
+          android:text=""/>
+      <TextView
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:gravity="center"
+          android:id="@+id/notifAlbum"
+          android:text=""/>
+      <TextView
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:gravity="center"
+          android:id="@+id/notifTitle"
+          android:text=""/>
+    </LinearLayout>
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:paddingTop="1dip"
+        android:paddingBottom="4dip"
+        android:gravity="right">
+      <!-- prev/play/next buttons -->
+      <LinearLayout
+          android:orientation="horizontal"
+          android:gravity="center"
+          android:layout_width="wrap_content"
+          android:layout_height="match_parent"
+          android:background="#ff5a5a5a"> <!-- background for transparent part of buttons -->
+        <!-- prev/play/next buttons -->
+        <ImageButton
+            android:id="@+id/notifPrev"
+            android:src="@drawable/previous"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="4dip"
+            android:layout_marginRight="4dip"
+            android:background="#00000000"/> <!-- transparent -->
+        <ImageButton
+            android:id="@+id/notifPlayPause"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="4dip"
+            android:layout_marginRight="4dip"
+            android:background="#00000000"/> <!-- source set by code; transparent -->
+        <ImageButton
+            android:id="@+id/notifNext"
+            android:src="@drawable/next"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="4dip"
+            android:layout_marginRight="4dip"
+            android:background="#00000000"/> <!-- transparent -->
+      </LinearLayout>
+  </LinearLayout>
+</LinearLayout>

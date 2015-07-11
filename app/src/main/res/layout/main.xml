@@ -2,16 +2,9 @@
 <!--
   Abstract :
 
-  UI layout for Stephe's Music Player, large screen landscape
+  UI layout for Stephe's Music Player, one size fits all
 
-  Sony Google TV is large, not xlarge!
-     but it's always landscape, so this file works for that
-
-  Samsung Galaxy Note is large; this file works for that
-
-  (ediff "../layout-normal/main.xml" "../layout-large-land/main.xml")
-
-  Copyright (C) 2011 Stephen Leake.  All Rights Reserved.
+  Copyright (C) 2011, 2015 Stephen Leake.  All Rights Reserved.
 
   This program is free software; you can redistribute it and/or
   modify it under terms of the GNU General Public License as
@@ -128,7 +121,6 @@
           android:gravity="top"
           android:layout_width="match_parent"
           android:layout_height="match_parent"
-          android:layout_marginStart="8dp"
           android:weightSum="1">
         <!-- times -->
         <TextView
@@ -148,16 +140,15 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
       </LinearLayout>
-      <!-- only one match_parent allowed in one direction, and must be last in list -->
-      <SeekBar
-          android:id="@android:id/progress"
-          style="?android:attr/progressBarStyleHorizontal"
-          android:layout_width="match_parent"
-          android:layout_height="36dip"
-          android:paddingLeft="8dip"
-          android:paddingRight="8dip"
-          android:paddingBottom="4dip" />
     </LinearLayout>
+    <SeekBar
+        android:id="@android:id/progress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="36dip"
+        android:paddingLeft="8dip"
+        android:paddingRight="8dip"
+        android:paddingBottom="4dip" />
     <LinearLayout
         style="?android:attr/buttonBarButtonStyle"
         android:id="@+id/notes_buttons_1"
@@ -179,7 +170,8 @@
           android:layout_height="match_parent"
           android:layout_width="wrap_content"
           android:text="@string/note_category"
-          android:textSize="18sp"
+          android:textSize="20sp"
+          android:textStyle="bold"
           android:onClick="onClickNote"/>
       <Button
           style="?android:attr/buttonBarButtonStyle"
@@ -187,7 +179,8 @@
           android:layout_height="match_parent"
           android:layout_width="wrap_content"
           android:text="@string/note_dont_play"
-          android:textSize="18sp"
+          android:textSize="20sp"
+          android:textStyle="bold"
           android:onClick="onClickNote"/>
       <Button
           style="?android:attr/buttonBarButtonStyle"
@@ -195,15 +188,31 @@
           android:layout_height="match_parent"
           android:layout_width="wrap_content"
           android:text="@string/note_keep_before"
-          android:textSize="18sp"
+          android:textSize="20sp"
+          android:textStyle="bold"
           android:onClick="onClickNote"/>
+    </LinearLayout>
+    <LinearLayout
+        style="?android:attr/buttonBarButtonStyle"
+        android:id="@+id/notes_buttons_2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_gravity="center"
+        android:layout_marginTop="1dip"
+        android:layout_marginBottom="2dip"
+        android:gravity="center">
+
+      <!-- notes buttons, row 2
+      -->
       <Button
           style="?android:attr/buttonBarButtonStyle"
           android:id="@+id/note_want_more"
           android:layout_height="match_parent"
           android:layout_width="wrap_content"
           android:text="@string/note_want_more"
-          android:textSize="18sp"
+          android:textSize="20sp"
+          android:textStyle="bold"
           android:onClick="onClickNote"/>
       <Button
           style="?android:attr/buttonBarButtonStyle"
@@ -211,7 +220,8 @@
           android:layout_height="match_parent"
           android:layout_width="wrap_content"
           android:text="@string/note_best_list"
-          android:textSize="18sp"
+          android:textSize="20sp"
+          android:textStyle="bold"
           android:onClick="onClickNote"/>
       <Button
           style="?android:attr/buttonBarButtonStyle"
@@ -219,7 +229,8 @@
           android:layout_height="match_parent"
           android:layout_width="wrap_content"
           android:text="@string/note_other"
-          android:textSize="18sp"
+          android:textSize="20sp"
+          android:textStyle="bold"
           android:onClick="onClickNote"/>
     </LinearLayout>
     <TextView

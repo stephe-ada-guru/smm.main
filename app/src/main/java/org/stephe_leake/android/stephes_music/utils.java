@@ -170,7 +170,8 @@ public class utils
    }
 
    // lint complains about the log name being too long, and we can't read the log anyway
-    
+   // FIXME: can read log in emulator; use runtime switch to change to toast?
+
    public static void errorLog(Context context, String msg, Throwable e)
    {
       // programmer errors (possibly due to Android bugs :)

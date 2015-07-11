@@ -1,3 +1,7 @@
 ^\.gradle$
+^\.idea$
+^app/app\.iml$
 ^app/build$
 ^build/intermediates$
+^org\.stephe_leake\.music_player\.java\.iml$
+^test/Audio/vocal$

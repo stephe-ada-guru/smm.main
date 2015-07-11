@@ -2,19 +2,23 @@ apply plugin: 'com.android.application'
 
 android
 {
-  compileSdkVersion 19
+  compileSdkVersion 21
   buildToolsVersion "22.0.1"
 
   // No dots allowed in versionCode, so just use sequential integer.
   // Version shown in Application Manager info
 
+  // minSdkVersion   : Galaxy Note III runs API 19
+  // targetSdkVersion: appcompat-v7:22.2.0 requires API 21
+  // appcompat-v7 has NotificationCompat. Not using it currently, but might change
+  // testing with likely version on next phone is a good idea.
   defaultConfig
   {
     applicationId "org.stephe_leake.android.stephes_music"
     minSdkVersion 19
-    targetSdkVersion 19
-    versionName "5"
-    versionCode 5
+    targetSdkVersion 21
+    versionName "6"
+    versionCode 6
   }
 
   signingConfigs
@@ -48,7 +52,10 @@ android
   }
 }
 
-dependencies
-{
-  compile 'com.android.support:support-v4:22.2.0'
-}
+// currently not using
+// dependencies
+// {
+//   compile 'com.android.support:support-v4:22.2.0'
+// }
+
+// end of file

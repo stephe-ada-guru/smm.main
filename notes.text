@@ -1,6 +1,7 @@
  current tasks
 build/Makefile
-src/org/stephe_leake/android/stephes_music/service.java
+app/src/main/java/org/stephe_leake/android/stephes_music/service.java
+C:\Users\stephe\StudioProjects\org.stephe_leake.music_player.java\ android studio version (same source)
 (dvc-status)
 ~/Misc/android.text
 
@@ -10,18 +11,29 @@ write xref-java.el
 notification controls
     http://developer.android.com/guide/topics/ui/notifiers/notifications.html
 
-    need resources for v7 appcompat
-        https://developer.android.com/tools/support-library/setup.html#libs-with-res
-        use android studio to build gradle script, then use gradle instead of ant from Makefile
-            requires 64 bit java
+    from Android Studio "import Android sample":
+        C:\Projects\CustomNotifications\Application\src\main\res\layout\notification.xml
+        use custom layout/remoteView
+        buttons show, but don't work
+            intent is wrong, somehow
 
-        imported to C:\Users\stephe\StudioProjects\org.stephe_leake.music_player.java\
+        add remoteView.ActionException
+            not helpful if intents don't work :(
 
-            gradle in "C:\Program Files\Android\Android Studio\gradle\gradle-2.2.1"
-            sdk in    Users/stephe/AppData/Local/Android/sdk
-            main build file app/build.gradle
+        run in emulator
+            need force media rescan
+            notif pause button worked, but then not the play button!
 
-            gradle runs lint, outputs to html file (sigh)
+        try notificationcompat?
+
+
+    remove notification on quit
+
+set remote state on bluetooth connect
+
+Add Album art for car
+    and lock screen?
+
 
 fix Time slide control
     tracks player time

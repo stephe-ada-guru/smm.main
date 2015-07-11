@@ -71,7 +71,7 @@ public class preferences extends android.preference.PreferenceActivity
 
    // addPreferencesFromResource, findPreference are deprecated
    //
-   // Waiting until it actually disappears; the fix will
+   // Waiting until they actually disappear; the fix will
    // probably be different by then.
    @SuppressWarnings("deprecation")
    @Override public void onCreate(android.os.Bundle savedInstanceState)
@@ -101,6 +101,7 @@ public class preferences extends android.preference.PreferenceActivity
 
       LinkedList<String> likelyRoots = new LinkedList<String>();
 
+      likelyRoots.add("/storage/sdcard"); // Google Nexus (in emulator)
       likelyRoots.add("/storage/sdcard0"); // Samsung Galaxy note II/III internal
       likelyRoots.add("/storage/extSdCard"); // Samsung Galaxy note II/III external
 

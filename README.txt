@@ -14,28 +14,33 @@ cygwin make, bash etc
     http://www.cygwin.com
 
 java
-    to run android SDK tools (32 bit), ant, Android Studio (64 bit)
+    to run android SDK tools, ant, Android Studio (64 bit)
 
     http://www.oracle.com/technetwork/java/
-        java SE 8u45, JDK, Windows 32 bit and 64 bit
+        java SE 8u45, JDK, Windows 64 bit
 
-    install to default location -32, -64
+    install to default location
+        if change it, Android Studio can't find it!
+            more precisely, Android Studio captures the path to the JDK on first startup
+            so if you move it later, Android Studio can't find it
+            and there's no way to get back to the initial startup screen short of reinstalling Android Studio
+
+        not clear how to install both 32 and 64 bit versions.
         don't need JavaFX
 
     add to ~/develop_settings.el exec-path:
         c:/Program Files (x86)/Java/jdk1.8.0_45/bin
 
-android SDK
-    FIXME: install via Android Studio to get 64 bit, gradle
+android Studio and SDK
+    install Android Studio to create new projects, see what it does, and to get 64 bit SDK, gradle
 
     Android 4, platform 19 for Galaxy Note 3
-    all SDK tools are 32 bit
 
     http://developer.android.com/sdk/index.html
-        SDK tools only, version 24.3.3 June 2015; Android platform 19 and later
+        Android Studio, version 24.3.3 June 2015; Android platform 19 and later
 
     install java first
-    install to /Apps/android-sdk-24.3.3
+    install Android Studio to default location
 
     ~/develop_settings.el sal-standard
         ANDROID_HOME c:/Apps/android-sdk-23.3.3
