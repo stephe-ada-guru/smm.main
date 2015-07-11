@@ -110,7 +110,7 @@ public class activity extends android.app.Activity
       sendBroadcast
          (new Intent
           (utils.ACTION_COMMAND)
-          .putExtra("command", utils.COMMAND_NOTE)
+          .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_NOTE)
           .putExtra("note", ((String)((Button)v).getText()).replace('\n', ' ')));
    };
 
@@ -118,7 +118,7 @@ public class activity extends android.app.Activity
       {
          @Override public void onClick(View v)
          {
-            sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_NEXT));
+            sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_NEXT));
          }
       };
 
@@ -140,7 +140,7 @@ public class activity extends android.app.Activity
       {
          @Override public void onClick(View v)
          {
-            sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_TOGGLEPAUSE));
+            sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_TOGGLEPAUSE));
          }
       };
 
@@ -148,7 +148,7 @@ public class activity extends android.app.Activity
       {
          @Override public void onClick(View v)
          {
-            sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PREVIOUS));
+            sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PREVIOUS));
          }
       };
 
@@ -174,8 +174,8 @@ public class activity extends android.app.Activity
                lastTime = currentTime;
 
                sendBroadcast
-                  (new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_SEEK).
-                   putExtra("position", (trackDuration * progress / maxProgress)));
+                  (new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_SEEK).
+                   putExtra(utils.EXTRA_COMMAND_POSITION, (trackDuration * progress / maxProgress)));
             }
          }
 
@@ -302,7 +302,7 @@ public class activity extends android.app.Activity
              intent.getAction().equals(Intent.ACTION_MAIN)) // launched directly by user
          {
             // get current server state
-            sendBroadcast (new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_UPDATE_DISPLAY));
+            sendBroadcast (new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_UPDATE_DISPLAY));
          }
          else
          {
@@ -327,7 +327,7 @@ public class activity extends android.app.Activity
          f.addAction(utils.META_CHANGED);
          f.addAction(utils.PLAYSTATE_CHANGED);
          registerReceiver(broadcastReceiver, f);
-         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_UPDATE_DISPLAY));
+         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_UPDATE_DISPLAY));
 
          if (prefs.getBoolean (res.getString(R.string.always_on_key), false))
          {
@@ -380,33 +380,33 @@ public class activity extends android.app.Activity
       case KeyEvent.KEYCODE_MEDIA_NEXT:
       case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
          // Google TV Remote app has fast forward button but not next
-         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_NEXT));
+         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_NEXT));
          handled = true; // terminate event processing; MediaEventReceivers won't get it
          break;
 
       case KEYCODE_MEDIA_PAUSE:
-         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PAUSE));
+         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PAUSE));
          handled = true;
          break;
 
       case KEYCODE_MEDIA_PLAY:
-         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PLAY));
+         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PLAY));
          handled = true;
          break;
 
       case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
-         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_TOGGLEPAUSE));
+         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_TOGGLEPAUSE));
          handled = true;
          break;
 
       case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
       case KeyEvent.KEYCODE_MEDIA_REWIND:
-         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PREVIOUS));
+         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PREVIOUS));
          handled = true;
          break;
 
       case KeyEvent.KEYCODE_MEDIA_STOP:
-         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PAUSE));
+         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PAUSE));
          handled = true;
          break;
 
@@ -461,8 +461,8 @@ public class activity extends android.app.Activity
                             final android.widget.ListView listView = playlistDialog.getListView();
                             final String filename = (String)listView.getAdapter().getItem(which);
                             sendBroadcast
-                               (new Intent (utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PLAYLIST).
-                                putExtra("playlist", playlistDir.getAbsolutePath() + "/" + filename));
+                               (new Intent (utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PLAYLIST).
+                                putExtra(utils.EXTRA_COMMAND_PLAYLIST, playlistDir.getAbsolutePath() + "/" + filename));
                          }
                          catch (Exception e)
                          {
@@ -502,6 +502,11 @@ public class activity extends android.app.Activity
       switch (item.getItemId())
       {
       case MENU_QUIT:
+         sendBroadcast
+            (new Intent
+             (utils.ACTION_COMMAND)
+             .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_QUIT));
+
          stopService
             (new Intent().setComponent(new ComponentName (this, utils.serviceClassName)));
 
@@ -509,7 +514,7 @@ public class activity extends android.app.Activity
          break;
 
       case MENU_DUMP_LOG:
-         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_DUMP_LOG));
+         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_DUMP_LOG));
          break;
 
       case MENU_PREFERENCES:
@@ -547,7 +552,7 @@ public class activity extends android.app.Activity
          case utils.RESULT_SMM_DIRECTORY:
             {
                sendBroadcast
-                  (new Intent (utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_SMM_DIRECTORY));
+                  (new Intent (utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_SMM_DIRECTORY));
                // value from preferences
             }
             break;

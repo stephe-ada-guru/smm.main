@@ -168,7 +168,7 @@ public class service extends Service
          playPauseIcon = R.drawable.pause;
          playPauseIntent = PendingIntent.getBroadcast
             (context.getApplicationContext(), pauseIntentId,
-             new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PAUSE), 0);
+             new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PAUSE), 0);
 
          break;
 
@@ -177,7 +177,7 @@ public class service extends Service
          playPauseIcon = R.drawable.play;
          playPauseIntent = PendingIntent.getBroadcast
             (context.getApplicationContext(), playIntentId,
-             new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PLAY), 0);
+             new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PLAY), 0);
 
          break;
       }
@@ -199,11 +199,11 @@ public class service extends Service
 
       PendingIntent prevIntent = PendingIntent.getBroadcast
          (context.getApplicationContext(), prevIntentId,
-          new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PREVIOUS), 0);
+          new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PREVIOUS), 0);
 
       PendingIntent nextIntent = PendingIntent.getBroadcast
          (context.getApplicationContext(), nextIntentId,
-          new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_NEXT), 0);
+          new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_NEXT), 0);
 
       try
       {
@@ -930,29 +930,31 @@ public class service extends Service
          // Intent filter set for ACTION_COMMAND
          @Override public void onReceive(Context context, Intent intent)
          {
-            final String command = intent.getStringExtra("command");
+            final int command = intent.getIntExtra(utils.EXTRA_COMMAND, -1);
 
-            if (BuildConfig.DEBUG) utils.verboseLog(command);
+            if (BuildConfig.DEBUG) utils.verboseLog(Integer.toString (command));
 
             // command alphabetical order
-            if (command.equals(utils.COMMAND_DUMP_LOG))
+            switch (command)
             {
+            case utils.COMMAND_DUMP_LOG:
                dumpLog();
-            }
-            else if (command.equals (utils.COMMAND_NEXT))
-            {
+               break;
+
+            case utils.COMMAND_NEXT:
                next();
-            }
-            else if (command.equals (utils.COMMAND_NOTE))
-            {
+               break;
+
+            case utils.COMMAND_NOTE:
                writeNote(intent.getStringExtra("note"));
-            }
-            else if (command.equals (utils.COMMAND_PAUSE))
-            {
+               break;
+
+            case utils.COMMAND_PAUSE:
                pause(PlayState.Paused);
-            }
-            else if (command.equals (utils.COMMAND_PLAY))
-            {
+               break;
+
+            case utils.COMMAND_PLAY:
+
                switch (service.playing)
                {
                case Idle:
@@ -972,41 +974,44 @@ public class service extends Service
                   break;
 
                };
-            }
-            else if (command.equals (utils.COMMAND_PLAYLIST))
-            {
+               break;
+
+            case utils.COMMAND_PLAYLIST:
+
                try
                {
                   // User will want to resume the current playlist at some point.
                   saveState();
 
-                  playList(intent.getStringExtra("playlist"), PlayState.Playing);
+                  playList(intent.getStringExtra(utils.EXTRA_COMMAND_PLAYLIST), PlayState.Playing);
                }
                catch (Fail e)
                {
                   // nothing to do here.
                }
-            }
-            else if (command.equals (utils.COMMAND_PREVIOUS))
-            {
+               break;
+
+            case utils.COMMAND_PREVIOUS:
                previous();
-            }
-            else if (command.equals(utils.COMMAND_SAVE_STATE))
-            {
+               break;
+
+            case utils.COMMAND_SAVE_STATE:
                saveState();
-            }
-            else if (command.equals (utils.COMMAND_SEEK))
-            {
-               final long pos = intent.getLongExtra("position", 0);
-               mediaPlayer.seekTo((int)pos);
-               notifyChange(WhatChanged.Position);
-            }
-            else if (command.equals(utils.COMMAND_SMM_DIRECTORY))
-            {
+               break;
+
+            case utils.COMMAND_SEEK:
+               {
+                  final long pos = intent.getLongExtra(utils.EXTRA_COMMAND_POSITION, 0);
+                  mediaPlayer.seekTo((int)pos);
+                  notifyChange(WhatChanged.Position);
+               }
+               break;
+
+            case utils.COMMAND_SMM_DIRECTORY:
                setSMMDirectory();
-            }
-            else if (command.equals (utils.COMMAND_TOGGLEPAUSE))
-            {
+               break;
+
+            case utils.COMMAND_TOGGLEPAUSE:
                switch (service.playing)
                {
                case Idle:
@@ -1026,15 +1031,23 @@ public class service extends Service
                   break;
 
                };
-            }
-            else if (command.equals (utils.COMMAND_UPDATE_DISPLAY))
-            {
+               break;
+
+            case utils.COMMAND_UPDATE_DISPLAY:
                notifyChange(WhatChanged.Meta);
                notifyChange(WhatChanged.State);
-            }
-            else
-            {
-               utils.debugLog("broadcastReceiverCommand.onReceive: unknown command: " + command);
+               break;
+
+            case utils.COMMAND_QUIT:
+               pause(PlayState.Paused);
+
+               NotificationManager notifManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+               notifManager.cancel(null, notif_id);
+               break;
+
+            default:
+               utils.errorLog(context, "broadcastReceiverCommand.onReceive: unknown command: " + Integer.toString(command) + ", " + intent.getExtras());
+
             }
          }
       };

@@ -8,22 +8,6 @@ C:\Users\stephe\StudioProjects\org.stephe_leake.music_player.java\ android studi
 write xref-java.el
     figuring out jde functions
 
-notification controls
-    http://developer.android.com/guide/topics/ui/notifiers/notifications.html
-
-    from Android Studio "import Android sample":
-        C:\Projects\CustomNotifications\Application\src\main\res\layout\notification.xml
-        use custom layout/remoteView
-        buttons show, but don't work
-            intent is wrong, somehow
-
-        add remoteView.ActionException
-            not helpful if intents don't work :(
-
-    remove notification on quit
-        doesn't work
-        also doesn't quit!
-
 set remote state on bluetooth connect
 
 Add Album art for car

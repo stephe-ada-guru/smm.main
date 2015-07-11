@@ -51,22 +51,28 @@ public class utils
 
    //  Commands to server via Intent actions sent via broadcast. Alphabetical order
    //  Only one intent, so we can add commands without adding to the reciever filter.
-   public static final String ACTION_COMMAND         = "org.stephe_leake.android.stephes_music.action.command";
-   public static final String COMMAND_DUMP_LOG       = "dump_log";
-   public static final String COMMAND_NEXT           = "next";
-   public static final String COMMAND_NOTE           = "note";
-   public static final String COMMAND_PAUSE          = "pause";
-   public static final String COMMAND_PLAY           = "play";
-   public static final String COMMAND_PLAYLIST       = "playlist";
-   // playlist  string (abs file name)
-   public static final String COMMAND_PREVIOUS       = "org.stephe_leake.android.stephes_music.command.previous";
-   public static final String COMMAND_SAVE_STATE     = "org.stephe_leake.android.stephes_music.command.save_state";
-   public static final String COMMAND_SEEK           = "org.stephe_leake.android.stephes_music.command.seek";
-   // position  int (milliseconds)
-   public static final String COMMAND_SMM_DIRECTORY  = "org.stephe_leake.android.stephes_music.command.smm_directory";
-   // directory string (abs directory name)
-   public static final String COMMAND_TOGGLEPAUSE    = "org.stephe_leake.android.stephes_music.command.togglepause";
-   public static final String COMMAND_UPDATE_DISPLAY = "org.stephe_leake.android.stephes_music.command.update_display";
+   public static final String ACTION_COMMAND = "org.stephe_leake.android.stephes_music.action.command";
+   // according to android docs, extra field names must inlude the package prefix (no explanation of why)
+   public static final String EXTRA_COMMAND = "org.stephe_leake.android.stephes_music.extra.command";
+   public static final String EXTRA_COMMAND_POSITION =
+      "org.stephe_leake.android.stephes_music.action.command_position";
+   public static final String EXTRA_COMMAND_PLAYLIST =
+      "org.stephe_leake.android.stephes_music.action.command_playlist";
+
+   // values for extras. We'd like to use an enum here, but we can't make that parcelable for intent extras.
+   public static final int COMMAND_DUMP_LOG       =  1;
+   public static final int COMMAND_NEXT           =  2;
+   public static final int COMMAND_NOTE           =  3;
+   public static final int COMMAND_PAUSE          =  4;
+   public static final int COMMAND_PLAY           =  5;
+   public static final int COMMAND_PLAYLIST       =  6; // playlist  string (abs file name)
+   public static final int COMMAND_PREVIOUS       =  7;
+   public static final int COMMAND_SAVE_STATE     =  8;
+   public static final int COMMAND_SEEK           =  9; // position  int (milliseconds)
+   public static final int COMMAND_SMM_DIRECTORY  = 10;
+   public static final int COMMAND_TOGGLEPAUSE    = 11;
+   public static final int COMMAND_UPDATE_DISPLAY = 12;
+   public static final int COMMAND_QUIT           = 13;
 
    // sub-activity result codes
    public static final int RESULT_TEXT_SCALE    = Activity.RESULT_FIRST_USER + 1;
