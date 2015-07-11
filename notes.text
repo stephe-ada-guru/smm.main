@@ -20,14 +20,9 @@ notification controls
         add remoteView.ActionException
             not helpful if intents don't work :(
 
-        run in emulator
-            need force media rescan
-            notif pause button worked, but then not the play button!
-
-        try notificationcompat?
-
-
     remove notification on quit
+        doesn't work
+        also doesn't quit!
 
 set remote state on bluetooth connect
 

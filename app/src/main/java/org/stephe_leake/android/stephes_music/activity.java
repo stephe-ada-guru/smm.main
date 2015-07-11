@@ -363,7 +363,7 @@ public class activity extends android.app.Activity
    @Override protected void onDestroy()
    {
       super.onDestroy();
-      utils.verboseLog ("activity onDestroy");
+      if (BuildConfig.DEBUG) utils.verboseLog ("activity onDestroy");
 
       // FIXME: need stopService here?
    }

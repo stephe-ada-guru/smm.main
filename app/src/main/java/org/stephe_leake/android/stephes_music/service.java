@@ -62,6 +62,9 @@ public class service extends Service
    private static final int UNPAUSE        = 3;
    private static final int UPDATE_DISPLAY = 4;
 
+   // We only have one notification.
+   private static final int notif_id = 1;
+
    enum PlayState
    {
      Idle,
@@ -148,6 +151,13 @@ public class service extends Service
       PendingIntent playPauseIntent = null;
       int playPauseIcon = 0;
 
+      final int pauseIntentId = 1;
+      final int playIntentId  = 2;
+      final int prevIntentId  = 3;
+      final int nextIntentId  = 4;
+      final int activity1IntentId = 5;
+      final int activity2IntentId = 6;
+
       switch (playing)
       {
       case Idle:
@@ -157,7 +167,7 @@ public class service extends Service
       case Playing:
          playPauseIcon = R.drawable.pause;
          playPauseIntent = PendingIntent.getBroadcast
-            (context.getApplicationContext(), 0,
+            (context.getApplicationContext(), pauseIntentId,
              new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PAUSE), 0);
 
          break;
@@ -166,7 +176,7 @@ public class service extends Service
       case Paused_Transient:
          playPauseIcon = R.drawable.play;
          playPauseIntent = PendingIntent.getBroadcast
-            (context.getApplicationContext(), 0,
+            (context.getApplicationContext(), playIntentId,
              new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PLAY), 0);
 
          break;
@@ -176,23 +186,23 @@ public class service extends Service
       // this (for the album art and the top level contentIntent,
       // which is used for the text fields)
       PendingIntent activityIntent1 = PendingIntent.getActivity
-         (context.getApplicationContext(), 0,
+         (context.getApplicationContext(), activity1IntentId,
           new Intent(context, activity.class),
           Intent.FLAG_ACTIVITY_CLEAR_TOP +
           Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT);
 
       PendingIntent activityIntent2 = PendingIntent.getActivity
-         (context.getApplicationContext(), 0,
+         (context.getApplicationContext(), activity2IntentId,
           new Intent(context, activity.class),
           Intent.FLAG_ACTIVITY_CLEAR_TOP +
           Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT);
 
       PendingIntent prevIntent = PendingIntent.getBroadcast
-         (context.getApplicationContext(), 0,
+         (context.getApplicationContext(), prevIntentId,
           new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_PREVIOUS), 0);
 
       PendingIntent nextIntent = PendingIntent.getBroadcast
-         (context.getApplicationContext(), 0,
+         (context.getApplicationContext(), nextIntentId,
           new Intent(utils.ACTION_COMMAND).putExtra("command", utils.COMMAND_NEXT), 0);
 
       try
@@ -213,7 +223,7 @@ public class service extends Service
             .setContent(notifView)
             .setContentIntent(activityIntent2)
             .setOngoing(true)
-            .setSmallIcon(R.drawable.notif_icon) // shown in top of screen
+            .setSmallIcon(R.drawable.notif_icon) // shown in status bar
             .setShowWhen(false)
             .build()
             ;
@@ -221,7 +231,7 @@ public class service extends Service
          try
          {
             NotificationManager notifManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            notifManager.notify(1, notif);
+            notifManager.notify(null, notif_id, notif);
          }
          catch (RuntimeException e)
          {
@@ -377,7 +387,7 @@ public class service extends Service
       }
       else
       {
-         utils.verboseLog("pause while not playing");
+         if (BuildConfig.DEBUG) utils.verboseLog("pause while not playing");
       }
    }
 
@@ -385,7 +395,7 @@ public class service extends Service
    {
       // path must be relative to playlistDirectory
 
-      utils.verboseLog("play " + path + "; at " + pos);
+      if (BuildConfig.DEBUG) utils.verboseLog("play " + path + "; at " + pos);
 
       try
       {
@@ -651,7 +661,7 @@ public class service extends Service
       playlistDirectory = storage.getString(keyPlaylistDirectory, null);
       playlistFilename  = storage.getString(keyPlaylistFilename, null);
 
-      utils.verboseLog("restoreState: " + playlistDirectory + ", " + playlistFilename);
+      if (BuildConfig.DEBUG) utils.verboseLog("restoreState: " + playlistDirectory + ", " + playlistFilename);
 
       if (playlistDirectory != null && playlistFilename != null)
       {
@@ -726,7 +736,7 @@ public class service extends Service
    {
       if (!haveAudioFocus)
       {
-         utils.verboseLog("unpause requestAudioFocus");
+         if (BuildConfig.DEBUG) utils.verboseLog("unpause requestAudioFocus");
 
          final int result = audioManager.requestAudioFocus
             (audioFocusListener,
@@ -741,7 +751,7 @@ public class service extends Service
       }
       else
       {
-         utils.verboseLog("unpause haveAudioFocus");
+         if (BuildConfig.DEBUG) utils.verboseLog("unpause haveAudioFocus");
       }
 
       mediaPlayer.start();
@@ -835,12 +845,12 @@ public class service extends Service
             switch (msg.what)
             {
             case UNPAUSE:
-               utils.verboseLog("service handler: UNPAUSE");
+               if (BuildConfig.DEBUG) utils.verboseLog("service handler: UNPAUSE");
                unpause();
 
             case UPDATE_DISPLAY:
                notifyChange(WhatChanged.Position);
-               utils.verboseLog("service handler: UPDATE_DISPLAY");
+               if (BuildConfig.DEBUG) utils.verboseLog("service handler: UPDATE_DISPLAY");
 
                handler.sendEmptyMessageDelayed(UPDATE_DISPLAY, 1000);
 
@@ -922,7 +932,7 @@ public class service extends Service
          {
             final String command = intent.getStringExtra("command");
 
-            utils.verboseLog(command);
+            if (BuildConfig.DEBUG) utils.verboseLog(command);
 
             // command alphabetical order
             if (command.equals(utils.COMMAND_DUMP_LOG))
@@ -1092,12 +1102,12 @@ public class service extends Service
       {
          public boolean onError(MediaPlayer mp, int what, int extra)
          {
-            utils.verboseLog("MediaPlayer onError: " + what + "," + extra);
+            if (BuildConfig.DEBUG) utils.verboseLog("MediaPlayer onError: " + what + "," + extra);
 
             switch (what)
             {
             case MediaPlayer.MEDIA_ERROR_SERVER_DIED: // = 100
-               utils.verboseLog("recreating MediaPlayer");
+               if (BuildConfig.DEBUG) utils.verboseLog("recreating MediaPlayer");
 
                mediaPlayer.release();
                createMediaPlayer();
@@ -1112,7 +1122,7 @@ public class service extends Service
                return true;
 
             default:
-               utils.verboseLog("unknown MediaPlayer error code");
+               if (BuildConfig.DEBUG) utils.verboseLog("unknown MediaPlayer error code");
                // onCompletion will _not_ be called
                return true;
             }
@@ -1218,7 +1228,7 @@ public class service extends Service
 
    @Override public void onDestroy()
    {
-      utils.verboseLog("onDestroy");
+      if (BuildConfig.DEBUG) utils.verboseLog("onDestroy");
 
       // Android sometimes restarts this service even though we have
       // quit and the user did not request it. So if we save
@@ -1227,6 +1237,9 @@ public class service extends Service
       // force pause.
 
       pause(PlayState.Paused);
+
+      NotificationManager notifManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+      notifManager.cancel(null, notif_id);
 
       saveState();
 
@@ -1255,7 +1268,7 @@ public class service extends Service
       {
          // intent is null if the service is restarted by Android
          // after a crash.
-         utils.verboseLog("onStartCommand null intent");
+         if (BuildConfig.DEBUG) utils.verboseLog("onStartCommand null intent");
       }
       else if (intent.getAction() != null)
       {

@@ -32,8 +32,10 @@ import java.lang.RuntimeException;
 public class utils
 {
 
+   // Must be shorter than 23 chars
    public static final String serviceClassName =
-      "org.stephe_leake.android.stephes_music.service";
+      "stephes_music";
+   //  1        10        20 |
 
    //  Notification messages to user views, sent via Intent. Alphabetical order
    public static final String META_CHANGED = "org.stephe_leake.android.stephes_music.metachanged";
@@ -169,34 +171,30 @@ public class utils
       }
    }
 
-   // lint complains about the log name being too long, and we can't read the log anyway
-   // FIXME: can read log in emulator; use runtime switch to change to toast?
-
    public static void errorLog(Context context, String msg, Throwable e)
    {
       // programmer errors (possibly due to Android bugs :)
-      // Log.e(serviceClassName, msg, e);
+      Log.e(serviceClassName, msg, e);
       Toast.makeText(context, msg + e.toString(), Toast.LENGTH_LONG).show();
    }
 
    public static void errorLog(Context context, String msg)
    {
       // programmer errors (possibly due to Android bugs :)
-      // Log.e(serviceClassName, msg);
+      Log.e(serviceClassName, msg);
       Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
    }
 
    static void infoLog(Context context, String msg)
    {
       // helpful user messages, ie "could not play"
-      // Log.i(serviceClassName, msg);
+      Log.i(serviceClassName, msg);
       Toast.makeText(context, msg, Toast.LENGTH_SHORT).show();
    }
 
    static void verboseLog(String msg)
    {
-      // for post-mortem debugging
-      // Log.v(serviceClassName, msg);
+      if (BuildConfig.DEBUG) Log.v(serviceClassName, msg);
    }
 
 }
