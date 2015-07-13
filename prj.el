@@ -2,5 +2,7 @@
 (jde-set-variables
  '(jde-global-classpath
    (list
-    "/Apps/android-sdk-24.3.3/platforms/android-19/android.jar"))
+    "/Users/stephe/AppData/Local/Android/sdk/platforms/android-19/android.jar"))
  )
+
+(add-to-list 'jde-help-docsets '("Android" "http://developer.android.com/reference/" nil))

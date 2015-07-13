@@ -155,8 +155,7 @@ public class service extends Service
       final int playIntentId  = 2;
       final int prevIntentId  = 3;
       final int nextIntentId  = 4;
-      final int activity1IntentId = 5;
-      final int activity2IntentId = 6;
+      final int activityIntentId = 5;
 
       switch (playing)
       {
@@ -182,17 +181,8 @@ public class service extends Service
          break;
       }
 
-      // We can't use the same intent twice, so we need two copies of
-      // this (for the album art and the top level contentIntent,
-      // which is used for the text fields)
-      PendingIntent activityIntent1 = PendingIntent.getActivity
-         (context.getApplicationContext(), activity1IntentId,
-          new Intent(context, activity.class),
-          Intent.FLAG_ACTIVITY_CLEAR_TOP +
-          Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT);
-
-      PendingIntent activityIntent2 = PendingIntent.getActivity
-         (context.getApplicationContext(), activity2IntentId,
+      PendingIntent activityIntent = PendingIntent.getActivity
+         (context.getApplicationContext(), activityIntentId,
           new Intent(context, activity.class),
           Intent.FLAG_ACTIVITY_CLEAR_TOP +
           Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT);
@@ -208,8 +198,6 @@ public class service extends Service
       try
       {
          RemoteViews notifView = new RemoteViews(context.getPackageName(), R.layout.notification);
-         // FIXME: set album art image
-         notifView.setOnClickPendingIntent(R.id.notifAlbumArt, activityIntent1);
          notifView.setTextViewText(R.id.notifArtist, retriever.artist);
          notifView.setTextViewText(R.id.notifAlbum, retriever.album);
          notifView.setTextViewText(R.id.notifTitle, retriever.title);
@@ -221,9 +209,9 @@ public class service extends Service
          Notification notif = new Notification.Builder(context)
             .setAutoCancel(false)
             .setContent(notifView)
-            .setContentIntent(activityIntent2)
+            .setContentIntent(activityIntent)
             .setOngoing(true)
-            .setSmallIcon(R.drawable.notif_icon) // shown in status bar
+            .setSmallIcon(R.drawable.icon) // shown in status bar
             .setShowWhen(false)
             .build()
             ;
@@ -278,6 +266,7 @@ public class service extends Service
                    putExtra ("playlist", getResources().getString(R.string.null_playlist)));
             }
 
+            // FIXME: send album art image
             remoteControlClient.editMetadata(true)
                .putString(MediaMetadataRetriever.METADATA_KEY_TITLE, "")
                .putString(MediaMetadataRetriever.METADATA_KEY_ALBUM, "")
@@ -688,12 +677,6 @@ public class service extends Service
 
    private void saveState()
    {
-      if (!Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState()))
-      {
-         utils.infoLog(this, "external storage not mounted; can't save");
-         return;
-      }
-
       SharedPreferences storage = getSharedPreferences(utils.serviceClassName, MODE_PRIVATE);
       Editor            editor  = storage.edit();
 
@@ -809,29 +792,42 @@ public class service extends Service
 
       final String smmFileName = smmDirectory + "/" + playlistFilename + ".last";
 
-      try
-      {
-         BufferedWriter writer = new BufferedWriter(new FileWriter(smmFileName));
+      File file = new File(smmFileName);
 
-         if (highestPlaylistPos < 1)
+      if (!file.exists())
+         try
          {
-            // 0 or -1; none played yet; write empty file
+            file.createNewFile();
          }
-         else
+         catch (IOException e)
          {
-            writer.write(playlist.get(highestPlaylistPos - 1));
+            utils.errorLog(this, "can't create smm file: " + smmFileName, e);
          }
-         writer.newLine();
-         writer.close();
-      }
-      catch (IOException e)
-      {
-         utils.errorLog(this, "can't write smm file: ", e);
-      }
-      catch (RuntimeException e)
-      {
-         utils.errorLog(this, "writeSMMFile: ", e);
-      }
+
+      if (file.exists())
+         try
+         {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+
+            if (highestPlaylistPos < 1)
+            {
+               // 0 or -1; none played yet; write empty file
+            }
+            else
+            {
+               writer.write(playlist.get(highestPlaylistPos - 1));
+            }
+            writer.newLine();
+            writer.close();
+         }
+         catch (IOException e)
+         {
+            utils.errorLog(this, "can't write smm file: ", e);
+         }
+         catch (RuntimeException e)
+         {
+            utils.errorLog(this, "writeSMMFile: ", e);
+         }
    }
 
    public service() {}
@@ -850,7 +846,6 @@ public class service extends Service
 
             case UPDATE_DISPLAY:
                notifyChange(WhatChanged.Position);
-               if (BuildConfig.DEBUG) utils.verboseLog("service handler: UPDATE_DISPLAY");
 
                handler.sendEmptyMessageDelayed(UPDATE_DISPLAY, 1000);
 
@@ -866,6 +861,8 @@ public class service extends Service
       @Override public void onReceive(Context context, Intent intent)
       {
          final int key = intent.getIntExtra(Intent.EXTRA_KEY_EVENT, 0);
+
+         if (BuildConfig.DEBUG) utils.verboseLog("MediaButton: " + key);
 
          switch (key)
          {
@@ -932,7 +929,7 @@ public class service extends Service
          {
             final int command = intent.getIntExtra(utils.EXTRA_COMMAND, -1);
 
-            if (BuildConfig.DEBUG) utils.verboseLog(Integer.toString (command));
+            if (BuildConfig.DEBUG) utils.verboseLog("command: " + Integer.toString (command));
 
             // command alphabetical order
             switch (command)
@@ -1047,6 +1044,29 @@ public class service extends Service
 
             default:
                utils.errorLog(context, "broadcastReceiverCommand.onReceive: unknown command: " + Integer.toString(command) + ", " + intent.getExtras());
+
+            }
+         }
+      };
+
+   private BroadcastReceiver broadcastReceiverBTConnect = new BroadcastReceiver()
+      {
+         // Intent filter set for ACTION_SCO_AUDIO_STATE_UPDATED
+         @Override public void onReceive(Context context, Intent intent)
+         {
+            final String state = intent.getStringExtra(AudioManager.EXTRA_SCO_AUDIO_STATE);
+
+            if (BuildConfig.DEBUG) utils.verboseLog("bluetooth state: " + state);
+
+            if (state.equals(AudioManager.SCO_AUDIO_STATE_CONNECTED))
+            {
+               // Assume it's a smart remote control; tell it our
+               // state to start the control connection.
+               notifyChange(WhatChanged.State);
+            }
+            else
+            {
+               utils.errorLog(context, "broadcastReceiverBTConnect: unknown state: " + state + ", " + intent.getExtras());
 
             }
          }
@@ -1208,9 +1228,10 @@ public class service extends Service
 
          audioManager.registerMediaButtonEventReceiver(receiver);
 
-         Intent i = new Intent(Intent.ACTION_MEDIA_BUTTON).setComponent(receiver);
+         Intent i = new Intent(Intent.ACTION_MEDIA_BUTTON);
+         i.setComponent(receiver);
 
-         remoteControlClient = new RemoteControlClient(PendingIntent.getBroadcast(this, 0, i, 0));
+         remoteControlClient = new RemoteControlClient(PendingIntent.getBroadcast(context, 0, i, 0));
 
          audioManager.registerRemoteControlClient(remoteControlClient);
 
@@ -1219,15 +1240,20 @@ public class service extends Service
          // broadcast messages from the car remote control. The lock
          // screen controls don't work (not clear why), so we leave
          // them all disabled.
-         //
-         // remoteControlClient.setTransportControlFlags
-         //    (
-         //       RemoteControlClient.FLAG_KEY_MEDIA_NEXT |
-         //       RemoteControlClient.FLAG_KEY_MEDIA_PAUSE |
-         //       RemoteControlClient.FLAG_KEY_MEDIA_PLAY |
-         //       RemoteControlClient.FLAG_KEY_MEDIA_PLAY_PAUSE |
-         //       RemoteControlClient.FLAG_KEY_MEDIA_PREVIOUS
-         //    );
+         // FIXME: testing
+         remoteControlClient.setTransportControlFlags
+            (
+               // RemoteControlClient.FLAG_KEY_MEDIA_FAST_FORWARD |
+               RemoteControlClient.FLAG_KEY_MEDIA_NEXT |
+               RemoteControlClient.FLAG_KEY_MEDIA_PAUSE |
+               RemoteControlClient.FLAG_KEY_MEDIA_PLAY |
+               RemoteControlClient.FLAG_KEY_MEDIA_PLAY_PAUSE |
+               // RemoteControlClient.FLAG_KEY_MEDIA_POSITION_UPDATE |
+               RemoteControlClient.FLAG_KEY_MEDIA_PREVIOUS
+               // RemoteControlClient.FLAG_KEY_MEDIA_RATING |
+               // RemoteControlClient.FLAG_KEY_MEDIA_REWIND|
+               // RemoteControlClient.FLAG_KEY_MEDIA_STOP
+            );
       }
 
       playlist           = new LinkedList<String>();

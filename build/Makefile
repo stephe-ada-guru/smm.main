@@ -47,4 +47,9 @@ install-playlist :
 
 
 # see jde project file ../prj.el
+# Local Variables:
+# eval: (require 'jde)
+# eval: (jde-load-project-file)
+# End:
+
 # end of file

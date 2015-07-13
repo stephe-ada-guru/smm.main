@@ -50,12 +50,12 @@ android
       signingConfig signingConfigs.release
     }
   }
-}
 
-// currently not using
-// dependencies
-// {
-//   compile 'com.android.support:support-v4:22.2.0'
-// }
+  lintOptions
+  {
+    // Notification uses "left" for gravity
+    disable 'RtlHardcoded'
+  }
+}
 
 // end of file

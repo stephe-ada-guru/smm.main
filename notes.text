@@ -6,19 +6,51 @@ C:\Users\stephe\StudioProjects\org.stephe_leake.music_player.java\ android studi
 ~/Misc/android.text
 
 write xref-java.el
+    run jde from svn dir
     figuring out jde functions
+    jde-help-class
+        Bad URL: jde-jdurl/android/app/Notification.html
+        jde-url-parse assumes (object-name-string url) returns the url string
+            but it doesn't
 
-set remote state on bluetooth connect
+    jde-jdurl-resolver-urls builds a jde-jdurl wrong
+        "name" apparently used to mean something in eieio? not anymore.
+        not clear how to build a derived class?
+
+    see also https://github.com/pwojnowski/jdee
+        has already done some emacs 25 patching
+
+    waiting on jdee-devel for branch decision
+
+still can't create vocal.last in emulator
+    crashed VM on open preferences!
+    something wrong with the way I'm finding the smmDirectories?
+
+try lock screen buttons again
+    in emulator first
+    F7 is power button
+    lock screen buttons flash, but no debug message from MediaButton handler
+    turn on all transport flags to see if that matters; no help
+    and car integration disappeared!
+
+    vanilla music works, has lock screen control that works, has remotecontrol in source
+        it does what I do! argggggghhhhh!!!
+        build in AndroidStudio; works in emulator (modulo emulator bugs)
 
 Add Album art for car
     and lock screen?
 
+button for 'save for later'
+    bump current song to end of playlist
 
-fix Time slide control
-    tracks player time
-    doesn't respond to touch
+start over option for yoga
+    on Google TV, where getmetadata works
+        need factory method for getmetadata indirection
 
 button to share song via email
+
+speak metadata!
+    textToSpeech
 
 button to search for artist/song
     on web? for lyrics?
@@ -33,34 +65,10 @@ support Upnp/dlna output stream
     /Projects/android/droiddlnaplayer-code/
     /Projects/android/clinkjavaproguide200.pdf
 
-button for 'save for later'
-    bump current song to end of playlist
-
-start over option for yoga
-    on Google TV, where getmetadata works
-        need factory method for getmetadata indirection
-
 stop after n songs
     instead of sleep timer
 
-notification bar controller
-    copy from VanillaMusic
-
-ignore blank line in mp3
-
-On Galaxy note I:
-    restarts after system kills service, starts playing
-        don't request restart?
-        restore state should get pause, but gets play
-
-    in progressbar:
-        if storage.pos > max, change max (bad .mp3 metadata)
-
 handle back button
-
-add about dialog, with sdk version
-
-on-screen volume control
 
 webdav
     Mount network drive http://<ip>:<port>
@@ -128,160 +136,6 @@ runs on Windows and Android
     On Android:
         show play/pause/skip buttons on unlock screen
         use volume buttons for play/pause/skip
-
- later
-add to menu:
-    About
-    Help
-
-transfer files to TV
-    usb drive sneakernet for now
-
-    try webDAV
-
-    mtp (Media Transfer Protocol)
-        not reliable on Windows 7
-            PDA used to connect, now it doesn't, now it does again
-
-        windows development kit: /Archive/Android/mtppk12.exe
-            /Apps/microsoft_mtpdk
-        may need windows 7 for MTP over TCP/IP
-        in android level 12
-            not HTC
-            TV is at 'firmware version 3.1' = API level 12
-
-        TV doesn't show up
-
-    can use adb?
-        has push, need read/edit
-
-    ftp
-        there is a Microsoft ftp API
-
-    scp/sftp
-        /sdcard/Music (good default for playlist_directory)
-
-        there is an Android sftp client
-
-        look for open source sftp (runs on TCP sockets), Ada binding
-            just command line, no libraries
-            use spawn scp to transfer files
-            use spawn ssh ls > foo to get dir listing
-
-        libcurl
-
-    in-app socket protocol for metadata, sftp/ftp for music files
-
-dpad navigation
-    now active, but buttons disappear in emulator when has focus!
-        try on tv
-            slider ok
-            prev, next ok, but different highlight color
-            play/pause no change on select
-            playlist no change on select
-        try on htc
-            no dpad
-            labels on buttons almost disappear! (which is why I had changed the background)
-                tv buttons have black background, which is what I wanted.
-
-
-    need to make my own button images, or fix these somehow
-        add preference to set backgrounds as before
-            "override default button background" boolean
-            default based on platform?
-
-        override view.onfocuschanged
-            emulator appears to change background
-            TV changes foreground
-            phone don't know (could try on robin's :)
-
-    HTC has different .png than android-10!
-        workaround; set button background to transparent
-            that loses appearance change on d-pad select
-        better: see
-            /Projects/android/google/frameworks/base/core/res/res/values/styles.xml
-                style MediaButton, MediaButton.Next
-            /Apps/Android/android-sdk/platforms/android-10/data/res/drawable/media_button_background.xml;
-            replace state_pressed=false case with transparent image
-                don't see how to do that!
-
-add song count in playlist name list
-    can't modify bound list display, need to reimplement!
-
-need way to choose files without relying on file manager
-    offer to use MediaStore.Audio (like everyone else does :)
-        allows search on each list
-        when search on artist, shows songs on disk and in playlists
-    offer to use file dialog
-        steal ideas from AndLess, Music DLNA
-            file browser should be a dialog?
-        http://developer.android.com/resources/tutorials/views/hello-autocomplete.html
-        start "dialog" with startActivityForResult?
-
-playlist_directory preference
-    handle "none found"
-        need textEdit with Browse button
-        which means a custom preference widget
-
-    onCreateDialog not called for second select playlist!
-        ok for now, not ok for managing multiple smm dirs
-
-preference to run service in foreground
-
- even later
-speak metadata!
-    textToSpeech
-
-lockscreen widget
-
-replace dar.fm
-
-handle non-relative files in playlist (non-SMM playlists)
-
- open source projects
-c:/Projects/eclipse_scratch/Ghost Commander/src/com/ghostsq/commander/FileCommander.java
-    builds intent {uri => file://,  mime_type => audio/*} to invoke music player
-
-http://www.helloandroid.com/apps/musicdroid
-    c:/Projects/MusicDroid/src/com/helloandroid/android/musicdroid/
-    service supports bookmark, playlists
-    looks cleaner than andless
-    assumes mp3file to get artist etc; change that
-    doesn't start a thread
-
-http://code.google.com/p/andless/
-    c:/Projects/eclipse_scratch/Andless/trunk/src/net/avs234/AndLessSrv.java
-    has a file browser!
-        plays playlists or directories
-    and bookmarks
-    no notification control; just a note
-    nothing on lock screen
-    uses its own service
-        needed for bookmarks?
-            has get_cur_pos, seek_to
-        handles headset insert/remove
-        runs players other than MediaPlayer
-        supports wakelock
-    nice icon
-
-http://www.cuteandroid.com/open-source-android-apps-for-developers-musicqueueproject-android-music-player
-    UI sucks, but it has a service
-    c:/Projects/eclipse_scratch/svn/trunk/src/com/yannickstucki/android/musicqueue
-    service doesn't play music!
-
-https://github.com/pydave/LibListenScreen
-    claims to show app in front of lock screen
-    no service
-
-http://tango.freedesktop.org/Tango_Icon_Library
-
-http://www.doubletwist.com/
-    wireless sync
-
-http://www.getsongbird.com/
-
-http://mpd.wikia.com/wiki/Clients
-    serve laptop music to Android
 
  jdee
 see (find-file (locate-file "jde-mode-keys.el" load-path nil)) for beanshell install

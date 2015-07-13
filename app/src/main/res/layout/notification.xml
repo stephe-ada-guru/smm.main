@@ -25,49 +25,18 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:weightSum="1">
-    <!-- artist | prev/play/next buttons
-         album  |
-         title   |
-    -->
+  <!-- buttons on left so long strings are still recognizable -->
+  <!-- prev/play/next buttons | artist
+                              | album
+                              | title
+  -->
 
-    <ImageButton
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/notifAlbumArt"
-        android:src="@drawable/notif_icon"/>
-
-    <LinearLayout
-        android:orientation="vertical"
-        android:gravity="left"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        >
-      <TextView
-          android:layout_width="match_parent"
-          android:layout_height="wrap_content"
-          android:gravity="center"
-          android:id="@+id/notifArtist"
-          android:text=""/>
-      <TextView
-          android:layout_width="match_parent"
-          android:layout_height="wrap_content"
-          android:gravity="center"
-          android:id="@+id/notifAlbum"
-          android:text=""/>
-      <TextView
-          android:layout_width="match_parent"
-          android:layout_height="wrap_content"
-          android:gravity="center"
-          android:id="@+id/notifTitle"
-          android:text=""/>
-    </LinearLayout>
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:paddingTop="1dip"
         android:paddingBottom="4dip"
-        android:gravity="right"
         android:background="#ff5a5a5a"> <!-- background for transparent part of buttons -->
       <!-- prev/play/next buttons -->
       <ImageButton
@@ -94,4 +63,28 @@
           android:layout_marginRight="4dip"
           android:background="#00000000"/> <!-- transparent -->
   </LinearLayout>
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        >
+      <TextView
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:gravity="left"
+          android:id="@+id/notifArtist"
+          android:text=""/>
+      <TextView
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:gravity="left"
+          android:id="@+id/notifAlbum"
+          android:text=""/>
+      <TextView
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:gravity="left"
+          android:id="@+id/notifTitle"
+          android:text=""/>
+    </LinearLayout>
 </LinearLayout>
