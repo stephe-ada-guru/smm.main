@@ -38,6 +38,11 @@ install-pda-ssh : PDA_IP := 192.168.1.66
 install-pda-ssh :
 	scp -P 2222 ../app/build/outputs/apk/app-release-$(VERSION).apk root@$(PDA_IP):/storage/sdcard0/Download/org.stephe_leake.android.stephes_music.$(VERSION)-release.apk
 
+install-pda-ssh-debug-all : all install-pda-ssh-debug
+install-pda-ssh-debug : PDA_IP := 192.168.1.66
+install-pda-ssh-debug :
+	scp -P 2222 ../app/build/outputs/apk/app-debug-$(VERSION).apk root@$(PDA_IP):/storage/sdcard0/Download/org.stephe_leake.android.stephes_music.$(VERSION)-debug.apk
+
 # only needed once in newly created virtual device; image is persistant
 install-playlist :
 	adb -e push ../test/Audio/vocal.m3u /storage/sdcard/Audio/vocal.m3u

@@ -26,19 +26,26 @@ still can't create vocal.last in emulator
     crashed VM on open preferences!
     something wrong with the way I'm finding the smmDirectories?
 
-try lock screen buttons again
-    in emulator first
-    F7 is power button
+lock screen buttons
+    lock screen now works, but pause removes them
+        progress bar doesn't show
+
+    vanilla registers in:
+        activity.onResume
+        service.onStartCommand (not onCreate)
+        RemoteControl.registerRemote, called from service.oncreate
+
+        unregisters in service.onDestroy
+
+    emulator: F7 is power button
     lock screen buttons flash, but no debug message from MediaButton handler
-    turn on all transport flags to see if that matters; no help
-    and car integration disappeared!
+    in emulator, hitting F7 to turn screen off dismounts sdcard
+        try adb shell: mount -o remount rw /sdcard
 
-    vanilla music works, has lock screen control that works, has remotecontrol in source
-        it does what I do! argggggghhhhh!!!
-        build in AndroidStudio; works in emulator (modulo emulator bugs)
+need to unregsiter pending intents
 
-Add Album art for car
-    and lock screen?
+Add Album art for car and lock screen
+    see vanilla music
 
 button for 'save for later'
     bump current song to end of playlist

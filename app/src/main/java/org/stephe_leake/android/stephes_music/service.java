@@ -481,11 +481,12 @@ public class service extends Service
          }
          catch (IOException e)
          {
-            utils.debugLog("can't read smm file: " + e);
+            // We get here on a new install; smmDirectory preference not set.
+            utils.infoLog(context, "set smmDirectory preference");
          }
       }
 
-      utils.debugLog("start file: " + currentFile);
+      if (BuildConfig.DEBUG) utils.debugLog("start file: " + currentFile);
 
       try
       {
@@ -855,73 +856,6 @@ public class service extends Service
          }
       };
 
-   // Need a named class for RemoteControlClient.registerMediaButtonEventReceiver
-   private class SmBroadcastReceiverButton extends BroadcastReceiver
-   {
-      @Override public void onReceive(Context context, Intent intent)
-      {
-         final int key = intent.getIntExtra(Intent.EXTRA_KEY_EVENT, 0);
-
-         if (BuildConfig.DEBUG) utils.verboseLog("MediaButton: " + key);
-
-         switch (key)
-         {
-         case KeyEvent.KEYCODE_MEDIA_NEXT:
-            next();
-
-         case KeyEvent.KEYCODE_MEDIA_PAUSE:
-            pause(PlayState.Paused);
-
-         case KeyEvent.KEYCODE_MEDIA_PLAY:
-            switch (service.playing)
-            {
-            case Idle:
-               next();
-               break;
-
-            case Playing:
-               break;
-
-            case Paused:
-               unpause();
-               break;
-
-            case Paused_Transient:
-               // user wants to override
-               unpause();
-               break;
-
-            };
-
-         case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
-            switch (service.playing)
-            {
-            case Idle:
-               break;
-
-            case Playing:
-               pause(PlayState.Paused);
-               break;
-
-            case Paused:
-               unpause();
-               break;
-
-            case Paused_Transient:
-               // user wants to override
-               unpause();
-               break;
-
-            };
-
-         case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
-            previous();
-
-         };
-      }
-   };
-   private SmBroadcastReceiverButton broadcastReceiverButton = new SmBroadcastReceiverButton();
-
    private BroadcastReceiver broadcastReceiverCommand = new BroadcastReceiver()
       {
          // Intent filter set for ACTION_COMMAND
@@ -1043,7 +977,9 @@ public class service extends Service
                break;
 
             default:
-               utils.errorLog(context, "broadcastReceiverCommand.onReceive: unknown command: " + Integer.toString(command) + ", " + intent.getExtras());
+               utils.errorLog
+                  (context, "broadcastReceiverCommand.onReceive: unknown command: " + Integer.toString(command) +
+                   ", " + intent.getExtras());
 
             }
          }
@@ -1054,19 +990,19 @@ public class service extends Service
          // Intent filter set for ACTION_SCO_AUDIO_STATE_UPDATED
          @Override public void onReceive(Context context, Intent intent)
          {
-            final String state = intent.getStringExtra(AudioManager.EXTRA_SCO_AUDIO_STATE);
+            final int state = intent.getIntExtra(AudioManager.EXTRA_SCO_AUDIO_STATE, -2);
 
             if (BuildConfig.DEBUG) utils.verboseLog("bluetooth state: " + state);
 
-            if (state.equals(AudioManager.SCO_AUDIO_STATE_CONNECTED))
+            switch (state)
             {
+            case AudioManager.SCO_AUDIO_STATE_CONNECTED:
                // Assume it's a smart remote control; tell it our
                // state to start the control connection.
                notifyChange(WhatChanged.State);
-            }
-            else
-            {
-               utils.errorLog(context, "broadcastReceiverBTConnect: unknown state: " + state + ", " + intent.getExtras());
+
+            default:
+               // just ignore.
 
             }
          }
@@ -1076,8 +1012,7 @@ public class service extends Service
    // It's not at all clear if we are supposed to override the
    // RemoteControlClient methods; the doc confuses the player and the
    // control. Clearly some user actions on the control generate
-   // broadcast events that are handled by broadcastReveiverButton.
-
+   // broadcast events that are handled by MediaButtonReveiver
 
    private OnAudioFocusChangeListener audioFocusListener = new OnAudioFocusChangeListener()
       {
@@ -1210,49 +1145,37 @@ public class service extends Service
 
       setSMMDirectory();
 
-      // We need two broadcast recievers because we can't wild card
-      // all of the filter criteria.
       IntentFilter filter = new IntentFilter();
-      filter.addAction(Intent.ACTION_MEDIA_BUTTON);
-      registerReceiver(broadcastReceiverButton, filter);
-
-      filter = new IntentFilter();
       filter.addAction(utils.ACTION_COMMAND);
       registerReceiver(broadcastReceiverCommand, filter);
+
+      filter = new IntentFilter();
+      filter.addAction(AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED);
+      registerReceiver(broadcastReceiverBTConnect, filter);
 
       createMediaPlayer();
 
       audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
       {
-         ComponentName receiver = new ComponentName(getPackageName(), SmBroadcastReceiverButton.class.getName());
+         ComponentName receiver = new ComponentName
+            (context.getPackageName(), MediaButtonReceiver.class.getName());
 
          audioManager.registerMediaButtonEventReceiver(receiver);
 
-         Intent i = new Intent(Intent.ACTION_MEDIA_BUTTON);
-         i.setComponent(receiver);
+         Intent i = new Intent(Intent.ACTION_MEDIA_BUTTON).setComponent(receiver);
 
          remoteControlClient = new RemoteControlClient(PendingIntent.getBroadcast(context, 0, i, 0));
 
          audioManager.registerRemoteControlClient(remoteControlClient);
 
-         // In Android 4.2 on my Samsung Note III, these control what
-         // buttons appear on the lock screen. They do not filter
-         // broadcast messages from the car remote control. The lock
-         // screen controls don't work (not clear why), so we leave
-         // them all disabled.
-         // FIXME: testing
          remoteControlClient.setTransportControlFlags
             (
-               // RemoteControlClient.FLAG_KEY_MEDIA_FAST_FORWARD |
                RemoteControlClient.FLAG_KEY_MEDIA_NEXT |
                RemoteControlClient.FLAG_KEY_MEDIA_PAUSE |
                RemoteControlClient.FLAG_KEY_MEDIA_PLAY |
                RemoteControlClient.FLAG_KEY_MEDIA_PLAY_PAUSE |
-               // RemoteControlClient.FLAG_KEY_MEDIA_POSITION_UPDATE |
+               RemoteControlClient.FLAG_KEY_MEDIA_POSITION_UPDATE |
                RemoteControlClient.FLAG_KEY_MEDIA_PREVIOUS
-               // RemoteControlClient.FLAG_KEY_MEDIA_RATING |
-               // RemoteControlClient.FLAG_KEY_MEDIA_REWIND|
-               // RemoteControlClient.FLAG_KEY_MEDIA_STOP
             );
       }
 
@@ -1288,14 +1211,13 @@ public class service extends Service
 
       audioManager.abandonAudioFocus(audioFocusListener);
       {
-         ComponentName receiver = new ComponentName(getPackageName(), SmBroadcastReceiverButton.class.getName());
+         ComponentName receiver = new ComponentName(getPackageName(), MediaButtonReceiver.class.getName());
          audioManager.unregisterMediaButtonEventReceiver(receiver);
       }
       audioManager.unregisterRemoteControlClient(remoteControlClient);
 
       handler.removeCallbacksAndMessages(null);
 
-      unregisterReceiver(broadcastReceiverButton);
       unregisterReceiver(broadcastReceiverCommand);
 
       super.onDestroy();
