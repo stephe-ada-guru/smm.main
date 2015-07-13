@@ -1,7 +1,7 @@
 # top level Makefile to build Stephe's Music Player app
 
 # must match ../app/build.gradle versionName, versionCode
-VERSION := 6
+VERSION := 7
 
 .PHONY : force
 
@@ -21,7 +21,7 @@ source-clean :
 	find .. -name "*~" -print -delete
 
 tag :
-	mtn tag h:org.stephe_leake.music_player.java version-4.2
+	mtn tag h:org.stephe_leake.music_player.java version-$(VERSION)
 
 install-emulator-all : all install-emulator
 
@@ -32,10 +32,10 @@ install-emulator :
 
 # assumes PDA is running sshDroid server, ssh key is active
 # apk version is in ../app/build.gradle
-install-pda-ssh-all : all install-pda-ssh
+install-pda-ssh-release-all : all install-pda-ssh-release
 
-install-pda-ssh : PDA_IP := 192.168.1.66
-install-pda-ssh :
+install-pda-ssh-release : PDA_IP := 192.168.1.66
+install-pda-ssh-release :
 	scp -P 2222 ../app/build/outputs/apk/app-release-$(VERSION).apk root@$(PDA_IP):/storage/sdcard0/Download/org.stephe_leake.android.stephes_music.$(VERSION)-release.apk
 
 install-pda-ssh-debug-all : all install-pda-ssh-debug

@@ -62,7 +62,7 @@
   <string name="prev_threshold_dialog_title">previous threshold (milliseconds)</string>
 
   <string name="text_scale_key">text_scale</string>
-  <string name="text_scale_default">1.3</string>
+  <string name="text_scale_default">0.8</string>
   <string name="text_scale_title">text scale</string>
   <string name="text_scale_summary">relative size of text</string>
   <string name="text_scale_dialog_title">set text scale</string>

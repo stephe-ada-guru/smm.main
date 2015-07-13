@@ -90,6 +90,19 @@ public class service extends Service
 
    Context context;
 
+   final int pauseIntentId    = 1;
+   final int playIntentId     = 2;
+   final int prevIntentId     = 3;
+   final int nextIntentId     = 4;
+   final int activityIntentId = 5;
+
+   PendingIntent mediaButtonIntent;
+   PendingIntent activityIntent;
+   PendingIntent prevIntent;
+   PendingIntent nextIntent;
+   PendingIntent playIntent;
+   PendingIntent pauseIntent;
+
    ////////// private methods (alphabetical)
 
    private void createMediaPlayer()
@@ -151,12 +164,6 @@ public class service extends Service
       PendingIntent playPauseIntent = null;
       int playPauseIcon = 0;
 
-      final int pauseIntentId = 1;
-      final int playIntentId  = 2;
-      final int prevIntentId  = 3;
-      final int nextIntentId  = 4;
-      final int activityIntentId = 5;
-
       switch (playing)
       {
       case Idle:
@@ -165,35 +172,16 @@ public class service extends Service
 
       case Playing:
          playPauseIcon = R.drawable.pause;
-         playPauseIntent = PendingIntent.getBroadcast
-            (context.getApplicationContext(), pauseIntentId,
-             new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PAUSE), 0);
-
+         playPauseIntent = pauseIntent;
          break;
 
       case Paused:
       case Paused_Transient:
          playPauseIcon = R.drawable.play;
-         playPauseIntent = PendingIntent.getBroadcast
-            (context.getApplicationContext(), playIntentId,
-             new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PLAY), 0);
+         playPauseIntent = playIntent;
 
          break;
       }
-
-      PendingIntent activityIntent = PendingIntent.getActivity
-         (context.getApplicationContext(), activityIntentId,
-          new Intent(context, activity.class),
-          Intent.FLAG_ACTIVITY_CLEAR_TOP +
-          Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT);
-
-      PendingIntent prevIntent = PendingIntent.getBroadcast
-         (context.getApplicationContext(), prevIntentId,
-          new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PREVIOUS), 0);
-
-      PendingIntent nextIntent = PendingIntent.getBroadcast
-         (context.getApplicationContext(), nextIntentId,
-          new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_NEXT), 0);
 
       try
       {
@@ -1153,6 +1141,33 @@ public class service extends Service
       filter.addAction(AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED);
       registerReceiver(broadcastReceiverBTConnect, filter);
 
+      activityIntent = PendingIntent.getActivity
+         (context.getApplicationContext(),
+          activityIntentId,
+          new Intent(context, activity.class),
+          Intent.FLAG_ACTIVITY_CLEAR_TOP +
+          Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT);
+
+      prevIntent = PendingIntent.getBroadcast
+         (context.getApplicationContext(),
+          prevIntentId,
+          new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PREVIOUS), 0);
+
+      nextIntent = PendingIntent.getBroadcast
+         (context.getApplicationContext(),
+          nextIntentId,
+          new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_NEXT), 0);
+
+      pauseIntent = PendingIntent.getBroadcast
+         (context.getApplicationContext(),
+          pauseIntentId,
+          new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PAUSE), 0);
+
+      playIntent = PendingIntent.getBroadcast
+         (context.getApplicationContext(),
+          playIntentId,
+          new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PLAY), 0);
+
       createMediaPlayer();
 
       audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
@@ -1162,11 +1177,10 @@ public class service extends Service
 
          audioManager.registerMediaButtonEventReceiver(receiver);
 
-         Intent i = new Intent(Intent.ACTION_MEDIA_BUTTON).setComponent(receiver);
+         mediaButtonIntent = PendingIntent.getBroadcast
+            (context, 0, new Intent(Intent.ACTION_MEDIA_BUTTON).setComponent(receiver), 0);
 
-         remoteControlClient = new RemoteControlClient(PendingIntent.getBroadcast(context, 0, i, 0));
-
-         audioManager.registerRemoteControlClient(remoteControlClient);
+         remoteControlClient = new RemoteControlClient(mediaButtonIntent);
 
          remoteControlClient.setTransportControlFlags
             (
@@ -1177,6 +1191,8 @@ public class service extends Service
                RemoteControlClient.FLAG_KEY_MEDIA_POSITION_UPDATE |
                RemoteControlClient.FLAG_KEY_MEDIA_PREVIOUS
             );
+
+         audioManager.registerRemoteControlClient(remoteControlClient);
       }
 
       playlist           = new LinkedList<String>();
@@ -1202,6 +1218,13 @@ public class service extends Service
 
       NotificationManager notifManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
       notifManager.cancel(null, notif_id);
+      mediaButtonIntent.cancel();
+      activityIntent.cancel();
+      prevIntent.cancel();
+      nextIntent.cancel();
+      playIntent.cancel();
+      pauseIntent.cancel();
+
 
       saveState();
 

@@ -28,21 +28,16 @@ still can't create vocal.last in emulator
 
 lock screen buttons
     lock screen now works, but pause removes them
-        progress bar doesn't show
+        it doesn't in vanilla music or beyondpod
+        vanilla always does setPlaybackState and editor.apply; no help
 
-    vanilla registers in:
-        activity.onResume
-        service.onStartCommand (not onCreate)
-        RemoteControl.registerRemote, called from service.oncreate
+        don't send position when paused? no help
+        don't send position at all? no help
 
-        unregisters in service.onDestroy
+        delay before sending paused state?
+            let remote control display recover?
 
-    emulator: F7 is power button
-    lock screen buttons flash, but no debug message from MediaButton handler
-    in emulator, hitting F7 to turn screen off dismounts sdcard
-        try adb shell: mount -o remount rw /sdcard
-
-need to unregsiter pending intents
+    progress bar doesn't show
 
 Add Album art for car and lock screen
     see vanilla music
@@ -175,3 +170,7 @@ does nothing useful on "import android.app.Service"
 
  references
 c:/Archive/android/langspec-3.0.pdf
+
+emulator:
+    F7 is power button; turns screen off and dismounts sdcard
+        try adb shell: mount -o remount rw /sdcard
