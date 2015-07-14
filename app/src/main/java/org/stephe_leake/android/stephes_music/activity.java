@@ -2,6 +2,20 @@
 //
 //  Provides User Interface to Stephe's Music Player.
 //
+//  We don't display the albumArt here, for several reasons:
+//
+//  - The small art downloaded from the internet is not really worth
+//    displaying, and it takes effort to scan the CD covers.
+//
+//  - It's not trivial to adapt the text display to big bitmaps,
+//    especially in landscape.
+//
+//  - A naive approach gives dangling pointers to bitmaps that crash
+//    the app on transition between landscape and portrait.
+//
+//  The album art is displayed in the remote control; that shows up on
+//  the lockscreen, but not in the Scion xB.
+//
 //  Copyright (C) 2011 - 2013, 2015 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
@@ -40,7 +54,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
-// import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.ScrollView;
@@ -61,14 +74,8 @@ public class activity extends android.app.Activity
 
    private static final int RESULT_PREFERENCES = 1;
 
-   // compatibility constants; these are not defined in API level 10,
-   // but we need them for higher level devices.
-   private static final int KEYCODE_MEDIA_PAUSE = 127;
-   private static final int KEYCODE_MEDIA_PLAY  = 126;
-
    // Main UI members
 
-   //   private ImageView   albumArtView;
    private TextView    artistTitle;
    private TextView    albumTitle;
    private TextView    songTitle;
@@ -200,6 +207,8 @@ public class activity extends android.app.Activity
             {
                if (action.equals(utils.META_CHANGED))
                {
+                  if (BuildConfig.DEBUG) utils.verboseLog("activity.onReceive META");
+
                   // On first start, with no playlist selected, these
                   // are all empty strings except playlist, which
                   // contains R.string.null_playlist or null_playlist_directory.
@@ -207,17 +216,6 @@ public class activity extends android.app.Activity
                   artistTitle.setText(utils.retriever.artist);
                   albumTitle.setText(utils.retriever.album);
                   songTitle.setText(utils.retriever.title);
-
-                  // FIXME: album art crashes landscape; need landscape layout
-                  // if (!(utils.retriever.albumArt == null))
-                  // {
-                  //    albumArtView.setVisibility(View.VISIBLE);
-                  //    albumArtView.setImageBitmap(utils.retriever.albumArt);
-                  // }
-                  // else
-                  // {
-                  //    albumArtView.setVisibility(View.INVISIBLE);
-                  // }
 
                   trackDuration = Long.valueOf(utils.retriever.duration);
 
@@ -227,6 +225,8 @@ public class activity extends android.app.Activity
                {
                   final boolean playing = intent.getBooleanExtra("playing", false);
                   final int currentPos = intent.getIntExtra("position", 0);
+
+                  if (BuildConfig.DEBUG) utils.verboseLog("activity.onReceive PLAYSTATE");
 
                   if (playing)
                   {
@@ -276,7 +276,6 @@ public class activity extends android.app.Activity
 
          // Set up displays, top to bottom left to right
 
-         //         albumArtView = (ImageView)findViewById(R.id.albumArt);
          artistTitle  = utils.findTextViewById(this, R.id.artistTitle);
          albumTitle   = utils.findTextViewById(this, R.id.albumTitle);
          songTitle    = utils.findTextViewById(this, R.id.songTitle);
@@ -311,8 +310,7 @@ public class activity extends android.app.Activity
          if (intent.getAction() == null || // destroyed/restored (ie for screen rotate)
              intent.getAction().equals(Intent.ACTION_MAIN)) // launched directly by user
          {
-            // get current server state
-            sendBroadcast (new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_UPDATE_DISPLAY));
+            sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_UPDATE_DISPLAY));
          }
          else
          {
@@ -329,11 +327,14 @@ public class activity extends android.app.Activity
    @Override protected void onResume()
    {
       super.onResume();
+
+      if (BuildConfig.DEBUG) utils.verboseLog("activity.onResume");
+
       try
       {
          Resources         res   = getResources();
          SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        IntentFilter       f     = new IntentFilter();
+         IntentFilter      f     = new IntentFilter();
          f.addAction(utils.META_CHANGED);
          f.addAction(utils.PLAYSTATE_CHANGED);
          registerReceiver(broadcastReceiver, f);
@@ -354,28 +355,22 @@ public class activity extends android.app.Activity
    {
       super.onPause();
 
+      if (BuildConfig.DEBUG) utils.verboseLog("activity.onPause");
+
       try
       {
          Resources         res   = getResources();
          SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-         unregisterReceiver(broadcastReceiver);
          if (prefs.getBoolean (res.getString(R.string.always_on_key), false))
          {
             wakeLock.release();
          }
+         unregisterReceiver(broadcastReceiver);
       }
       catch (RuntimeException e)
       {
          utils.errorLog(this, "onPause: ", e);
       }
-   }
-
-   @Override protected void onDestroy()
-   {
-      super.onDestroy();
-      if (BuildConfig.DEBUG) utils.verboseLog ("activity onDestroy");
-
-      // FIXME: need stopService here?
    }
 
    ////////// key handling
@@ -394,12 +389,12 @@ public class activity extends android.app.Activity
          handled = true; // terminate event processing; MediaEventReceivers won't get it
          break;
 
-      case KEYCODE_MEDIA_PAUSE:
+      case KeyEvent.KEYCODE_MEDIA_PAUSE:
          sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PAUSE));
          handled = true;
          break;
 
-      case KEYCODE_MEDIA_PLAY:
+      case KeyEvent.KEYCODE_MEDIA_PLAY:
          sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PLAY));
          handled = true;
          break;

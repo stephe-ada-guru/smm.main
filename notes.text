@@ -5,10 +5,6 @@ C:\Users\stephe\StudioProjects\org.stephe_leake.music_player.java\ android studi
 (dvc-status)
 ~/Misc/android.text
 
-crashing on landscape
-    can't rotate image; delete for now
-    need landscape layout
-
 button for 'save for later'
     bump current song to end of playlist
 
@@ -88,9 +84,6 @@ Galaxy Note II
 Galaxy Note III
     SM-N900T
     Android 4.4.2
-
- port to windows
-http://libagar.org/
 
  smm
 /Projects/smm.main/build/x86_gnu_windows_release/Makefile
@@ -175,3 +168,5 @@ c:/Archive/android/langspec-3.0.pdf
 emulator:
     F7 is power button; turns screen off and dismounts sdcard
         try adb shell: mount -o remount rw /sdcard
+
+    Ctrl-F11 landscape/portrait
