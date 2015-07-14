@@ -1,12 +1,13 @@
 //  Abstract :
 //
-//  Provides abstract interface to retrieve metadata from audio files.
+//  Retrieve metadata from audio files and album art.
 //
-//  Android provides MediaMetadataRetriever, but that's broken for
-//  song title, album title, and artist on Samsung Galaxy Note II
-//  Android 4.1.2. So this uses the MediaStore interface.
+//  Android provides MediaMetadataRetriever, which requires
+//  READ_EXTERNAL_STORAGE permission in AndroidManifest.xml. However,
+//  it's broken my Samsung Galaxy Note II and III. So this uses the
+//  MediaStore interface.
 //
-//  Copyright (C) 2013 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2013, 2015 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -22,11 +23,16 @@
 
 package org.stephe_leake.android.stephes_music;
 
-import android.database.Cursor;
-import android.net.Uri;
-import android.provider.MediaStore;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.media.MediaMetadataRetriever;
+import android.net.Uri;
+import android.provider.MediaStore;
+import java.io.File;
+import java.io.FileInputStream;
 
 public class MetaData
 {
@@ -34,9 +40,13 @@ public class MetaData
    public String album;
    public String artist;
    public String duration; // service needs a string for sendStickyBroadcast, so don't bother with integer conversions
+   public Bitmap albumArt;
 
-   public MetaData(Context context, String playlistName, String sourceFile)
+   public MetaData(Context context, String playlistDirectory, String musicFileName)
    {
+      File musicFile = new File(playlistDirectory, musicFileName);
+      final String sourceFile = musicFile.getAbsolutePath();
+
       ContentResolver resolver = context.getContentResolver();
 
       String[] mediaFields =
@@ -76,7 +86,7 @@ public class MetaData
          if (cursor == null ||
              cursor.getCount() < 1)
          {
-            utils.debugLog("media query failed: " + playlistName);
+            utils.debugLog("media query failed");
 
             title    = "<query failed>";
             album    = "<query failed>";
@@ -120,6 +130,48 @@ public class MetaData
          album    = "<query failed>";
          artist   = "<query failed>";
          duration = "0";
+      }
+
+      try
+      {
+         File albumArtFiles[] = musicFile.getParentFile().listFiles(new FileExtFilter(".jpg"));
+         File albumArtFile = null;
+         long maxSize = 0;
+
+         if (BuildConfig.DEBUG)
+            utils.debugLog
+               (Integer.toString(albumArtFiles.length) + ".jpg files found in " +
+                musicFile.getParentFile().getAbsolutePath());
+
+         for (File file : albumArtFiles)
+         {
+            if (file.length() > maxSize)
+            {
+               albumArtFile = file;
+               maxSize = file.length();
+            }
+         }
+
+         if (albumArtFile != null)
+         {
+            if (BuildConfig.DEBUG) utils.debugLog ("using " + albumArtFile.getAbsolutePath());
+
+            albumArt = BitmapFactory.decodeStream(new FileInputStream(albumArtFile));
+         }
+         else
+         {
+            // No album art files found
+            albumArt = null;
+         }
+      }
+      catch (java.io.FileNotFoundException e)
+      {
+         if (BuildConfig.DEBUG)
+         {
+            utils.debugLog("metadata bitmap exception");
+            utils.debugLog(e);
+         }
+         albumArt = null;
       }
    }
 }

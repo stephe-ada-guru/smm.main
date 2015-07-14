@@ -5,6 +5,26 @@ C:\Users\stephe\StudioProjects\org.stephe_leake.music_player.java\ android studi
 (dvc-status)
 ~/Misc/android.text
 
+crashing on landscape
+    can't rotate image; delete for now
+    need landscape layout
+
+button for 'save for later'
+    bump current song to end of playlist
+
+start over option for yoga
+    on Google TV, where getmetadata works
+        need factory method for getmetadata indirection
+
+button to share song via email
+
+speak metadata!
+    textToSpeech
+
+button to search for artist/song
+    on web? for lyrics?
+    in playlist?
+
 write xref-java.el
     run jde from svn dir
     figuring out jde functions
@@ -38,25 +58,6 @@ lock screen buttons
             let remote control display recover?
 
     progress bar doesn't show
-
-Add Album art for car and lock screen
-    see vanilla music
-
-button for 'save for later'
-    bump current song to end of playlist
-
-start over option for yoga
-    on Google TV, where getmetadata works
-        need factory method for getmetadata indirection
-
-button to share song via email
-
-speak metadata!
-    textToSpeech
-
-button to search for artist/song
-    on web? for lyrics?
-    in playlist?
 
 support Upnp/dlna output stream
     play on stereo via android tv and/or roku box

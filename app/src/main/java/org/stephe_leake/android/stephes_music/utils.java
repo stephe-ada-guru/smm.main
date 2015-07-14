@@ -39,10 +39,9 @@ public class utils
 
    //  Notification messages to user views, sent via Intent. Alphabetical order
    public static final String META_CHANGED = "org.stephe_leake.android.stephes_music.metachanged";
-   //  artist   string
-   //  album    string
-   //  track    string
-   //  duration int (milliseconds)
+   //  get artist, album, title, albumArt from utils.retriever.
+   //  extras:
+   //  duration string (milliseconds)
    //  playlist string (name pos/count)
 
    public static final String PLAYSTATE_CHANGED = "org.stephe_leake.android.stephes_music.playstatechanged";
@@ -77,6 +76,8 @@ public class utils
    // sub-activity result codes
    public static final int RESULT_TEXT_SCALE    = Activity.RESULT_FIRST_USER + 1;
    public static final int RESULT_SMM_DIRECTORY = Activity.RESULT_FIRST_USER + 2;
+
+   public static MetaData retriever;
 
    // methods
 

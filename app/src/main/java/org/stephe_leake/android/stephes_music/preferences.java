@@ -32,8 +32,9 @@ import java.util.LinkedList;
 public class preferences extends android.preference.PreferenceActivity
    implements SharedPreferences.OnSharedPreferenceChangeListener
 {
-   // We don't implement onBuildHeaders because that's not in API 10,
-   // and we only have a few preferences anyway.
+   // We don't implement onBuildHeaders because that's not in API 10
+   // (current when this was first written), and we only have a few
+   // preferences anyway.
 
    private final FileExtFilter playlistFilter = new FileExtFilter(".m3u");
 

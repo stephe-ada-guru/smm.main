@@ -40,6 +40,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
+// import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.ScrollView;
@@ -67,6 +68,7 @@ public class activity extends android.app.Activity
 
    // Main UI members
 
+   //   private ImageView   albumArtView;
    private TextView    artistTitle;
    private TextView    albumTitle;
    private TextView    songTitle;
@@ -202,15 +204,22 @@ public class activity extends android.app.Activity
                   // are all empty strings except playlist, which
                   // contains R.string.null_playlist or null_playlist_directory.
                   playlistTitle.setText(intent.getStringExtra("playlist"));
-                  artistTitle.setText(intent.getStringExtra("artist"));
-                  albumTitle.setText(intent.getStringExtra("album"));
-                  songTitle.setText(intent.getStringExtra("track"));
+                  artistTitle.setText(utils.retriever.artist);
+                  albumTitle.setText(utils.retriever.album);
+                  songTitle.setText(utils.retriever.title);
 
-                  final String trackDurationString = intent.getStringExtra("duration");
-                  if (trackDurationString != null)
-                     trackDuration = Long.valueOf(trackDurationString);
-                  else
-                     trackDuration = 0;
+                  // FIXME: album art crashes landscape; need landscape layout
+                  // if (!(utils.retriever.albumArt == null))
+                  // {
+                  //    albumArtView.setVisibility(View.VISIBLE);
+                  //    albumArtView.setImageBitmap(utils.retriever.albumArt);
+                  // }
+                  // else
+                  // {
+                  //    albumArtView.setVisibility(View.INVISIBLE);
+                  // }
+
+                  trackDuration = Long.valueOf(utils.retriever.duration);
 
                   totalTime.setText(utils.makeTimeString(activity.this, trackDuration));
                }
@@ -267,9 +276,10 @@ public class activity extends android.app.Activity
 
          // Set up displays, top to bottom left to right
 
-         artistTitle = utils.findTextViewById(this, R.id.artistTitle);
-         albumTitle  = utils.findTextViewById(this, R.id.albumTitle);
-         songTitle   = utils.findTextViewById(this, R.id.songTitle);
+         //         albumArtView = (ImageView)findViewById(R.id.albumArt);
+         artistTitle  = utils.findTextViewById(this, R.id.artistTitle);
+         albumTitle   = utils.findTextViewById(this, R.id.albumTitle);
+         songTitle    = utils.findTextViewById(this, R.id.songTitle);
 
          defaultTextViewTextSize = artistTitle.getTextSize();
          artistTitle.setTextSize(scale * defaultTextViewTextSize);

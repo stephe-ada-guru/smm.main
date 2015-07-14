@@ -33,6 +33,7 @@ import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.media.AudioManager.OnAudioFocusChangeListener;
 import android.media.AudioManager;
+import android.media.MediaMetadataEditor;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.media.RemoteControlClient;
@@ -254,7 +255,6 @@ public class service extends Service
                    putExtra ("playlist", getResources().getString(R.string.null_playlist)));
             }
 
-            // FIXME: send album art image
             remoteControlClient.editMetadata(true)
                .putString(MediaMetadataRetriever.METADATA_KEY_TITLE, "")
                .putString(MediaMetadataRetriever.METADATA_KEY_ALBUM, "")
@@ -266,29 +266,28 @@ public class service extends Service
          }
          else
          {
-            final String absFile = playlistDirectory + "/" + playlist.get(playlistPos);
-
-            final MetaData retriever = new MetaData(this, playlistFilename, absFile);
+            utils.retriever = new MetaData(context, playlistDirectory, playlist.get(playlistPos));
 
             sendStickyBroadcast
-               (new Intent (utils.META_CHANGED).
-                putExtra ("artist", retriever.artist).
-                putExtra ("album", retriever.album).
-                putExtra ("track", retriever.title).
-                putExtra ("duration", retriever.duration).
-                putExtra
+               (new Intent (utils.META_CHANGED).putExtra
                 ("playlist",
                  playlistFilename + " " + (playlistPos + 1) + " / " + playlist.size()));
 
-            remoteControlClient.editMetadata(true)
-               .putString(MediaMetadataRetriever.METADATA_KEY_TITLE, retriever.title)
-               .putString(MediaMetadataRetriever.METADATA_KEY_ALBUM, retriever.album)
+            MediaMetadataEditor editor = remoteControlClient.editMetadata(true)
+               .putString(MediaMetadataRetriever.METADATA_KEY_TITLE, utils.retriever.title)
+               .putString(MediaMetadataRetriever.METADATA_KEY_ALBUM, utils.retriever.album)
                // METADATA_KEY_ARTIST is wrong here for Scion xB
-               .putString(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST, retriever.artist)
-               .putLong(MediaMetadataRetriever.METADATA_KEY_DURATION, Integer.parseInt(retriever.duration))
-               .apply();
+               .putString(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST, utils.retriever.artist)
+               .putLong(MediaMetadataRetriever.METADATA_KEY_DURATION, Integer.parseInt(utils.retriever.duration));
 
-            setNotification(retriever);
+            if (!(utils.retriever.albumArt == null))
+            {
+               // This works for the lock screen, but not for the Scion xB
+               editor.putBitmap(MediaMetadataEditor.BITMAP_KEY_ARTWORK, utils.retriever.albumArt);
+            }
+            editor.apply();
+
+            setNotification(utils.retriever);
          }
          break;
 
@@ -313,12 +312,10 @@ public class service extends Service
                remoteControlClient.setPlaybackState
                   (remoteControlClient.PLAYSTATE_PLAYING, mediaPlayer.getCurrentPosition(), 1.0f);
 
-               if (what == WhatChanged.State)
+               if (what == WhatChanged.State & utils.retriever != null)
                {
-                  final String absFile = playlistDirectory + "/" + playlist.get(playlistPos);
-                  final MetaData retriever = new MetaData(this, playlistFilename, absFile);
-
-                  setNotification(retriever);
+                  // normally set by previous META_CHANGED; may not be at startup
+                  setNotification(utils.retriever);
                }
                break;
 
@@ -327,12 +324,9 @@ public class service extends Service
                remoteControlClient.setPlaybackState
                   (remoteControlClient.PLAYSTATE_PAUSED, mediaPlayer.getCurrentPosition(), 1.0f);
 
-               if (what == WhatChanged.State)
+               if (what == WhatChanged.State && utils.retriever != null)
                {
-                  final String absFile = playlistDirectory + "/" + playlist.get(playlistPos);
-                  final MetaData retriever = new MetaData(this, playlistFilename, absFile);
-
-                  setNotification(retriever);
+                  setNotification(utils.retriever);
                }
                break;
             }
@@ -393,7 +387,8 @@ public class service extends Service
             // We consider this a programmer error, because it
             // probably indicates an SMM sync bug. It could also be a
             // failing sdcard.
-            utils.debugLog("can't play '" + path + "' :"+ e.toString());
+            utils.debugLog("can't play '" + path);
+            utils.debugLog(e);
 
             notifyChange(WhatChanged.Meta);
             return;
@@ -411,7 +406,7 @@ public class service extends Service
       }
       catch (RuntimeException e)
       {
-         utils.debugLog("play failed" + e.toString());
+         utils.debugLog("play failed: " + e.toString());
       }
    }
 
