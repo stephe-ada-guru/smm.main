@@ -96,6 +96,12 @@ package body SMM is
                --  Time_type'image; old db, or unit test.
                return Time_Type'Value (Temp);
             end if;
+         exception
+         when others =>
+            --  bad format in db file; report it, but keep going
+            Ada.Text_IO.Put_Line
+              (Ada.Text_IO.Standard_Error, "bad time format for " & Current (I) & "." & Key & ": " & Temp);
+            return 0.0;
          end;
       else
          return 0.0;

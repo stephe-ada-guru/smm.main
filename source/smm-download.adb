@@ -98,21 +98,27 @@ begin
             end;
          end if;
 
-         begin
-            Copy_File
-              (Source_Name => Source,
-               Target_Name => Target);
-         exception
-         when Ada.IO_Exceptions.Use_Error =>
-            --  Just stop downloading; nothing else we can do.
-            Close (Playlist_File);
-            Put_Line (Destination & " Use_Error; probably disk full");
-            return;
-         end;
+         if not Exists (Source) then
+            --  Bad file name in db file
+            Put_Line (Standard_Error, "File not found: '" & Source & "'");
+         else
 
-         Put_Line (Playlist_File, Relative_Name (Destination, Target));
+            begin
+               Copy_File
+                 (Source_Name => Source,
+                  Target_Name => Target);
+            exception
+            when Ada.IO_Exceptions.Use_Error =>
+               --  Just stop downloading; nothing else we can do.
+               Close (Playlist_File);
+               Put_Line (Standard_Error, Destination & " Use_Error; probably disk full");
+               return;
+            end;
 
-         Write_Last_Downloaded (Db, Element (I), Download_Time);
+            Put_Line (Playlist_File, Relative_Name (Destination, Target));
+
+            Write_Last_Downloaded (Db, Element (I), Download_Time);
+         end if;
 
          Next (I);
          Count := Count + 1;
