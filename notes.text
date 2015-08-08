@@ -5,6 +5,9 @@ C:\Users\stephe\StudioProjects\org.stephe_leake.music_player.java\ android studi
 (dvc-status)
 ~/Misc/android.text
 
+in notification, put title on first line, album on last
+    last line sometimes out of view
+
 button for 'save for later'
     bump current song to end of playlist
 
@@ -20,6 +23,8 @@ speak metadata!
 button to search for artist/song
     on web? for lyrics?
     in playlist?
+
+album art in o.s_l.m_p.java
 
 write xref-java.el
     run jde from svn dir
@@ -134,8 +139,6 @@ runs on Windows and Android
         use volume buttons for play/pause/skip
 
  jdee
-see (find-file (locate-file "jde-mode-keys.el" load-path nil)) for beanshell install
-
 http://jdee.sourceforge.net/
     binary distribution broken for emacs master; compile from source
         (error "eieio-oref called on a class: jde-plugin")
