@@ -1,7 +1,7 @@
 # top level Makefile to build Stephe's Music Player app
 
 # must match ../app/build.gradle versionName, versionCode
-VERSION := 7
+VERSION := 8
 
 .PHONY : force
 
@@ -52,10 +52,8 @@ install-playlist :
 	adb -e push "../test/Audio/vocal/Mary Chapin Carpenter/State of the Heart/Down in Mary's Land.mp3" "/storage/sdcard/Audio/vocal/Mary Chapin Carpenter/State of the Heart/Down in Mary's Land.mp3"
 
 
-# see jde project file ../prj.el
 # Local Variables:
-# eval: (require 'jde)
-# eval: (jde-load-project-file)
+# eval: (load (expand-file-name "../prj.el"))
 # End:
 
 # end of file

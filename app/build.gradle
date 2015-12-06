@@ -6,8 +6,10 @@ android
   buildToolsVersion "22.0.1"
 
   // No dots allowed in versionCode, so just use sequential integer.
-  // Version shown in Application Manager info
-
+  // Version shown in Samsung Application Manager info (not in Google Nexus)
+  // 
+  // versionName = versionCode = VERSION in ../build/Makefile
+  //
   // minSdkVersion   : Galaxy Note III runs API 19
   // targetSdkVersion: appcompat-v7:22.2.0 requires API 21
   // appcompat-v7 has NotificationCompat. Not using it currently, but might change
@@ -17,8 +19,8 @@ android
     applicationId "org.stephe_leake.android.stephes_music"
     minSdkVersion 19
     targetSdkVersion 21
-    versionName "7"
-    versionCode 7
+    versionName "8"
+    versionCode 8
   }
 
   signingConfigs

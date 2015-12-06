@@ -173,6 +173,10 @@
           android:textSize="20sp"
           android:textStyle="bold"
           android:onClick="onClickNote"/>
+      <View
+          android:layout_width="1dp"
+          android:layout_height="match_parent"
+          android:background="#ff7f7f7f" /> <!-- vertical separator -->
       <Button
           style="?android:attr/buttonBarButtonStyle"
           android:id="@+id/note_dont_play"
@@ -182,6 +186,10 @@
           android:textSize="20sp"
           android:textStyle="bold"
           android:onClick="onClickNote"/>
+      <View
+          android:layout_width="1dp"
+          android:layout_height="match_parent"
+          android:background="#ff7f7f7f" /> <!-- vertical separator -->
       <Button
           style="?android:attr/buttonBarButtonStyle"
           android:id="@+id/note_keep_before"
@@ -214,6 +222,10 @@
           android:textSize="20sp"
           android:textStyle="bold"
           android:onClick="onClickNote"/>
+      <View
+          android:layout_width="1dp"
+          android:layout_height="match_parent"
+          android:background="#ff7f7f7f" /> <!-- vertical separator -->
       <Button
           style="?android:attr/buttonBarButtonStyle"
           android:id="@+id/note_best_list"
@@ -223,6 +235,10 @@
           android:textSize="20sp"
           android:textStyle="bold"
           android:onClick="onClickNote"/>
+      <View
+          android:layout_width="1dp"
+          android:layout_height="match_parent"
+          android:background="#ff7f7f7f" /> <!-- vertical separator -->
       <Button
           style="?android:attr/buttonBarButtonStyle"
           android:id="@+id/note_other"

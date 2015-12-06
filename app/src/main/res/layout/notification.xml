@@ -72,6 +72,12 @@
           android:layout_width="match_parent"
           android:layout_height="wrap_content"
           android:gravity="left"
+          android:id="@+id/notifTitle"
+          android:text=""/>
+      <TextView
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:gravity="left"
           android:id="@+id/notifArtist"
           android:text=""/>
       <TextView
@@ -79,12 +85,6 @@
           android:layout_height="wrap_content"
           android:gravity="left"
           android:id="@+id/notifAlbum"
-          android:text=""/>
-      <TextView
-          android:layout_width="match_parent"
-          android:layout_height="wrap_content"
-          android:gravity="left"
-          android:id="@+id/notifTitle"
           android:text=""/>
     </LinearLayout>
 </LinearLayout>

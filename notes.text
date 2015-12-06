@@ -5,24 +5,38 @@ C:\Users\stephe\StudioProjects\org.stephe_leake.music_player.java\ android studi
 (dvc-status)
 ~/Misc/android.text
 
+prj.el
+    using EDE monotone project, ede-locate-global
+
+    project-try-ede does not find mtn project
+    - because project-try-ede uses ede-directory-get-open-project instead of ede-toplevel-project
+    - fix in ede-patches.el to verify
+    - report bug
+
 in notification, put title on first line, album on last
     last line sometimes out of view
 
-button for 'save for later'
-    bump current song to end of playlist
+    notification.xml; edited, tested
+
+vertical separator between notes buttons
+    main.xml; edited, tested
 
 start over option for yoga
-    on Google TV, where getmetadata works
-        need factory method for getmetadata indirection
+    service.java
 
 button to share song via email
 
 speak metadata!
     textToSpeech
 
+display playlist, at least last few songs
+
 button to search for artist/song
     on web? for lyrics?
     in playlist?
+
+button for 'save for later'
+    bump current song to end of playlist
 
 album art in o.s_l.m_p.java
 
