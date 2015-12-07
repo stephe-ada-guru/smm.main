@@ -5,14 +5,6 @@ C:\Users\stephe\StudioProjects\org.stephe_leake.music_player.java\ android studi
 (dvc-status)
 ~/Misc/android.text
 
-prj.el
-    using EDE monotone project, ede-locate-global
-
-    project-try-ede does not find mtn project
-    - because project-try-ede uses ede-directory-get-open-project instead of ede-toplevel-project
-    - fix in ede-patches.el to verify
-    - report bug
-
 in notification, put title on first line, album on last
     last line sometimes out of view
 
@@ -21,8 +13,7 @@ in notification, put title on first line, album on last
 vertical separator between notes buttons
     main.xml; edited, tested
 
-start over option for yoga
-    service.java
+start over option for yoga; edited, tested
 
 button to share song via email
 

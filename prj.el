@@ -1,26 +1,31 @@
 ;; random elisp project file
 
+(require 'cc-mode);; java-mode-hook
 (require 'cedet-global)
 (require 'ede-files-patches) ;; find-file-project ede, ede-find-file
 (require 'ede/generic) ;; generic-autoloader
-(require 'project-patches)   ;; project-find-file
+(require 'project-patches) ;; project-find-file
 (require 'project-menu)
-;; (require 'project-multi-lang)
-;; (require 'project-ml-global)
+(require 'symref-patches) ;; semantic-symref-xref-mode
+
+(add-hook 'java-mode-hook 'semantic-symref-xref-mode)
 
 (add-to-list 'ede-locate-setup-options 'ede-locate-global)
 
-(sal-check-ede "Generic Monotone")
-
-(unless (project-try-ede ".")
-  (error "EDE not enabled properly"))
+(sal-ensure-ede "Generic Monotone" ".")
 
 ;; Set the EDE locator object directly (not via
 ;; ede-enable-locate-on-project), to select ede-locate-global-path and
 ;; set the path.
 
-(let ((root (file-name-directory (or #$ default-directory)))
-      (prj (ede-toplevel)))
+;; When loaded from build/Makefile, #$ is "../prj.el", and `default-directory' is "build"
+;; When run interactively, `default-directory' is "."
+(let* ((root (file-name-directory (or #$ default-directory)))
+       ;; If Generic Monotone was enabled by `sal-ensure-ede', then
+       ;; this buffer was not properly initialized by
+       ;; `ede-initialize-state-current-buffer'; only
+       ;; `ede-load-project-file' will load the Monotone project.
+       (prj (ede-load-project-file root)))
 
   (oset prj locate-obj
 	(ede-locate-global-path

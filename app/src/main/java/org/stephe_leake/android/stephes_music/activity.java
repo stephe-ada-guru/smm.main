@@ -66,11 +66,12 @@ import java.lang.Integer;
 public class activity extends android.app.Activity
 {
    // constants
-   private static final int maxProgress      = 1000;
-   private static final int DIALOG_PLAYLIST  = 1;
-   private static final int MENU_QUIT        = 0;
-   private static final int MENU_PREFERENCES = 1;
-   private static final int MENU_DUMP_LOG    = 2;
+   private static final int maxProgress         = 1000;
+   private static final int DIALOG_PLAYLIST     = 1;
+   private static final int MENU_QUIT           = 0;
+   private static final int MENU_RESET_PLAYLIST = 1;
+   private static final int MENU_PREFERENCES    = 2;
+   private static final int MENU_DUMP_LOG       = 3;
 
    private static final int RESULT_PREFERENCES = 1;
 
@@ -497,6 +498,7 @@ public class activity extends android.app.Activity
    {
       super.onCreateOptionsMenu(menu);
       menu.add(0, MENU_QUIT, 0, R.string.menu_quit);
+      menu.add(0, MENU_RESET_PLAYLIST, 0, R.string.menu_reset_playlist);
       menu.add(0, MENU_PREFERENCES, 0, R.string.menu_preferences);
       menu.add(0, MENU_DUMP_LOG, 0, R.string.menu_dump_log);
       return true; // display menu
@@ -516,6 +518,10 @@ public class activity extends android.app.Activity
             (new Intent().setComponent(new ComponentName (this, utils.serviceClassName)));
 
          finish();
+         break;
+
+      case MENU_RESET_PLAYLIST:
+         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_RESET_PLAYLIST));
          break;
 
       case MENU_DUMP_LOG:

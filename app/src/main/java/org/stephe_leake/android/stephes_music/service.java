@@ -605,6 +605,12 @@ public class service extends Service
       }
    }
 
+   private void resetPlaylist()
+   {
+      playlistPos = 0;
+      play(playlist.get(playlistPos), 0);
+   }
+
    // save/restore keys; global
    private static final String keyPlaylistDirectory = "playlistDirectory";
    private static final String keyPlaylistFilename  = "playlistFilename";
@@ -907,6 +913,10 @@ public class service extends Service
 
             case utils.COMMAND_PREVIOUS:
                previous();
+               break;
+
+            case utils.COMMAND_RESET_PLAYLIST:
+               resetPlaylist();
                break;
 
             case utils.COMMAND_SAVE_STATE:
