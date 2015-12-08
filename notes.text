@@ -15,7 +15,20 @@ vertical separator between notes buttons
 
 start over option for yoga; edited, tested
 
-button to share song via email
+menu to share song via email; edited, tested
+
+lock screen buttons
+    lock screen now works, but pause removes them
+        it doesn't in vanilla music or beyondpod
+        vanilla always does setPlaybackState and editor.apply; no help
+
+        don't send position when paused? no help
+        don't send position at all? no help
+
+        delay before sending paused state?
+            let remote control display recover?
+
+    progress bar doesn't show
 
 speak metadata!
     textToSpeech
@@ -31,39 +44,9 @@ button for 'save for later'
 
 album art in o.s_l.m_p.java
 
-write xref-java.el
-    run jde from svn dir
-    figuring out jde functions
-    jde-help-class
-        Bad URL: jde-jdurl/android/app/Notification.html
-        jde-url-parse assumes (object-name-string url) returns the url string
-            but it doesn't
-
-    jde-jdurl-resolver-urls builds a jde-jdurl wrong
-        "name" apparently used to mean something in eieio? not anymore.
-        not clear how to build a derived class?
-
-    see also https://github.com/pwojnowski/jdee
-        has already done some emacs 25 patching
-
-    waiting on jdee-devel for branch decision
-
 still can't create vocal.last in emulator
     crashed VM on open preferences!
     something wrong with the way I'm finding the smmDirectories?
-
-lock screen buttons
-    lock screen now works, but pause removes them
-        it doesn't in vanilla music or beyondpod
-        vanilla always does setPlaybackState and editor.apply; no help
-
-        don't send position when paused? no help
-        don't send position at all? no help
-
-        delay before sending paused state?
-            let remote control display recover?
-
-    progress bar doesn't show
 
 support Upnp/dlna output stream
     play on stereo via android tv and/or roku box

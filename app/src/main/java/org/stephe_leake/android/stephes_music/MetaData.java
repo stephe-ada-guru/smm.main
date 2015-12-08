@@ -41,6 +41,7 @@ public class MetaData
    public String artist;
    public String duration; // service needs a string for sendStickyBroadcast, so don't bother with integer conversions
    public Bitmap albumArt;
+   public Uri uri; // for sharing
 
    public MetaData(Context context, String playlistDirectory, String musicFileName)
    {
@@ -63,6 +64,8 @@ public class MetaData
             MediaStore.Audio.Playlists._ID,
             MediaStore.Audio.Playlists.NAME
          };
+
+      uri = MediaStore.Audio.Media.getContentUriForPath(sourceFile);
 
       try
       {
