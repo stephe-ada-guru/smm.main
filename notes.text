@@ -1,26 +1,15 @@
  current tasks
+NEWS.text
 build/Makefile
-app/src/main/java/org/stephe_leake/android/stephes_music/service.java
-C:\Users\stephe\StudioProjects\org.stephe_leake.music_player.java\ android studio version (same source)
 (dvc-status)
 ~/Misc/android.text
-
-in notification, put title on first line, album on last
-    last line sometimes out of view
-
-    notification.xml; edited, tested
-
-vertical separator between notes buttons
-    main.xml; edited, tested
-
-start over option for yoga; edited, tested
-
-menu to share song via email; edited, tested
 
 lock screen buttons
     lock screen now works, but pause removes them
         it doesn't in vanilla music or beyondpod
         vanilla always does setPlaybackState and editor.apply; no help
+
+        get new copy instead of caching at startup?
 
         don't send position when paused? no help
         don't send position at all? no help
@@ -29,6 +18,10 @@ lock screen buttons
             let remote control display recover?
 
     progress bar doesn't show
+
+    use RemoteControl class from Vanilla
+        branch o.s_l.m_p.work_1
+        see if that changes behavior
 
 speak metadata!
     textToSpeech
@@ -158,6 +151,54 @@ c:/Archive/android/langspec-3.0.pdf
 
 emulator:
     F7 is power button; turns screen off and dismounts sdcard
-        try adb shell: mount -o remount rw /sdcard
 
     Ctrl-F11 landscape/portrait
+
+    telnet localhost 5554: emulator console
+        can't manage the sd card
+
+    adb -e shell
+        runs under emacs in parallel with Android Studio, gives bash shell on device
+
+        after emulator start, mount says sdcard is:
+/dev/fuse /storage/sdcard fuse rw,nosuid,nodev,relatime,user_id=1023,group_id=1023,default_permissions,allow_other 0 0
+
+        or:
+
+/dev/block/vold/179:0 /mnt/media_rw/sdcard vfat rw,dirsync,nosuid,nodev,noexec,relatime,uid=1023,gid=1023,fmask=0007,dmask=0007,allow_utime=0020,codepage=cp437,iocharset=iso8859-1,shortname=mixed,utf8,errors=remount-ro 0 0
+
+        'ls /storage/sdcard' => stuff
+        'ls /mnt/media_rw/sdcard' => same stuff
+
+        after F7: no change in output of 'mount'
+        'ls /storage/sdcard' => empty
+
+ release process
+NEWS.text
+    add version, features
+
+bump version
+    build/Makefile VERSION
+    app/build.gradle versionName, versionCode
+
+build/Makefile all
+    verify no compiler errors
+
+Android Studio run
+    verify works in emulator
+
+PDA: sshDroid
+
+build/Makefile
+    archive
+    install-pda-ssh-release
+
+PDA: Ghost Commander | /storage/emulated/0/Download/org.stephe_leake.android.stephes_music.<version>-release.apk
+    install
+
+PDA: app info verify version
+    run app, verify new features
+
+(dvc-state-one ".")
+
+end of file

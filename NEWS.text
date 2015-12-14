@@ -12,3 +12,9 @@ July 2015
     version 7
     better handling of pending intents
     show album art in remote control. but it doesn't work in the Scion xB!
+
+    version 8
+    add vertical separators between notes buttons
+    in notification, put title on top
+    add menu entry to share song file
+    add menu entry to reset playlist (start over)

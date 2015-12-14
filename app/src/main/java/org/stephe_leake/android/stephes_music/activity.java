@@ -537,6 +537,8 @@ public class activity extends android.app.Activity
 
       case MENU_SHARE:
          {
+            utils.verboseLog("sharing " + utils.retriever.uri.toString());
+
             Intent shareIntent = new Intent()
                .setAction(Intent.ACTION_SEND)
                .putExtra(Intent.EXTRA_STREAM, utils.retriever.uri)

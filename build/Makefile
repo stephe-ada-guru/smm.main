@@ -30,6 +30,9 @@ install-emulator-all : all install-emulator
 install-emulator :
 	adb -e install -r ../app/build/outputs/apk/app-release-$(VERSION).apk
 
+archive :
+	cp ../app/build/outputs/apk/app-release-$(VERSION).apk /Archive/Android
+
 # assumes PDA is running sshDroid server, ssh key is active
 # apk version is in ../app/build.gradle
 install-pda-ssh-release-all : all install-pda-ssh-release

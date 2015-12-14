@@ -30,6 +30,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
+import android.net.Uri.Builder;
 import android.provider.MediaStore;
 import java.io.File;
 import java.io.FileInputStream;
@@ -65,7 +66,10 @@ public class MetaData
             MediaStore.Audio.Playlists.NAME
          };
 
-      uri = MediaStore.Audio.Media.getContentUriForPath(sourceFile);
+      uri = new Uri.Builder()
+         .scheme("file")
+         .path(sourceFile)
+         .build();
 
       try
       {
