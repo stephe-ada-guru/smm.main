@@ -2,20 +2,6 @@
 //
 //  Provides User Interface to Stephe's Music Player.
 //
-//  We don't display the albumArt here, for several reasons:
-//
-//  - The small art downloaded from the internet is not really worth
-//    displaying, and it takes effort to scan the CD covers.
-//
-//  - It's not trivial to adapt the text display to big bitmaps,
-//    especially in landscape.
-//
-//  - A naive approach gives dangling pointers to bitmaps that crash
-//    the app on transition between landscape and portrait.
-//
-//  The album art is displayed in the remote control; that shows up on
-//  the lockscreen, but not in the Scion xB.
-//
 //  Copyright (C) 2011 - 2013, 2015 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
@@ -54,6 +40,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.ScrollView;
@@ -76,6 +63,7 @@ public class activity extends android.app.Activity
 
    // Main UI members
 
+   private ImageView   albumArt;
    private TextView    artistTitle;
    private TextView    albumTitle;
    private TextView    songTitle;
@@ -209,6 +197,9 @@ public class activity extends android.app.Activity
                {
                   if (BuildConfig.DEBUG) utils.verboseLog("activity.onReceive META");
 
+                  if (utils.retriever.getAlbumArt() != null)
+                     albumArt.setImageBitmap(utils.retriever.get);
+
                   // On first start, with no playlist selected, these
                   // are all empty strings except playlist, which
                   // contains R.string.null_playlist or null_playlist_directory.
@@ -276,9 +267,10 @@ public class activity extends android.app.Activity
 
          // Set up displays, top to bottom left to right
 
-         artistTitle  = utils.findTextViewById(this, R.id.artistTitle);
-         albumTitle   = utils.findTextViewById(this, R.id.albumTitle);
-         songTitle    = utils.findTextViewById(this, R.id.songTitle);
+         albumArt    = (ImageView)findViewById(R.id.albumArt);
+         artistTitle = utils.findTextViewById(this, R.id.artistTitle);
+         albumTitle  = utils.findTextViewById(this, R.id.albumTitle);
+         songTitle   = utils.findTextViewById(this, R.id.songTitle);
 
          defaultTextViewTextSize = artistTitle.getTextSize();
          artistTitle.setTextSize(scale * defaultTextViewTextSize);
