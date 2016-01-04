@@ -35,7 +35,46 @@ button to search for artist/song
 button for 'save for later'
     bump current song to end of playlist
 
-album art in o.s_l.m_p.java
+album art
+    on branch o.sl.mp.work
+
+    landscape:
+
+        art     | artist
+                | album
+        < o >   | title
+        buttons | playlist
+
+    portrait:
+
+        art
+
+        < o >
+        buttons
+
+        artist
+        album
+        title
+        playlist
+
+
+    Bitmap.createScaledBitmap
+        how do we compute the destination size?
+        android.view.Display.getCurrentSizeRange
+
+    "recycled bitmap" error when transition portrait/landscape
+        display code saves a C copy of bitmap pointer?
+            Java garbage collection misses that and recycles the bitmap data
+            don't ever erase a java reference to a bitmap; keep a cache
+                HashMap
+            or just check if 'new' filename is same as previous, don't recreate bitmap
+
+        report bug? https://code.google.com/p/android/issues/list?can=1&q=recycled+bitmap&cells=tiles
+
+write xref-java.el
+    run jde from git dir
+    figuring out jde functions
+    jde-help-class; see jdee notes below
 
 still can't create vocal.last in emulator
     crashed VM on open preferences!
@@ -119,38 +158,70 @@ runs on Windows and Android
         show play/pause/skip buttons on unlock screen
         use volume buttons for play/pause/skip
 
- jdee
-http://jdee.sourceforge.net/
-    binary distribution broken for emacs master; compile from source
-        (error "eieio-oref called on a class: jde-plugin")
+ jdee notes
 
-    file:///C:/Projects/jdee-2.4.1/etc/install.html#build-source
-    requires ant, ant-contrib http://ant-contrib.sourceforge.net/
-    copy ant-contrib to $ANT_HOME/lib
-    get jdee build.xml from https://svn.code.sf.net/p/jdee/code/trunk/jdee/
-        configure creates junk; skip that step
-        but then the build fails; give up, use svn source
+add lexical-binding:t
+    use Stefan's local hack to check for more 'lexical-var
+    https://debbugs.gnu.org/cgi/bugreport.cgi?bug=21185
 
-    svn co https://jdee.svn.sourceforge.net/svnroot/jdee/trunk/jdee jdee
-    cd jdee
-    ant configure
-    edit jdee/build.properties prefix.dir to /Apps/jdee
-    ant build
+jde-complete
+    needs to re-read classes after compile?
+        did not offer retriever.getAlbumArt()
+        use jde-bsh-exit
 
-    same error!
-        from jde-plugin-make-menu-spec()
-        change to use oref-default
+    add to tests
 
+jde-help-class
+    should put Android devel html in browser
 
-does nothing useful on "import android.app.Service"
-    should send html browser to Google Android page
-    need alist of root class -> root url
+    write tests
+        should work in emacs 24.3:
+
+        jdee/test/*.el
+            run by 'ant test'
+                to run just one, use ert commands interactively
+
+        github Cask project runs tests?
+
+need template/skeleton for 'if' etc
+
+http://github.com/jdee-emacs/jdee/wiki/Roadmap
+    http://jboss-javassist.github.io/javassist/ ?
+
+ jdee build
+FIXME: old?
+create C:/Users/stephe/.jdee-config.properties containing:
+    prefix.dir=/Apps/jdee
+    build.lisp.dir=${project.dir}/lisp
+
+cd c:/Projects
+git clone https://github.com/jdee-emacs/jdee
+
+in c:/Projects/jdee/lisp/jde.el :
+C-M-; (setq compilation-search-path (list "/Projects/jdee/lisp"))
+
+# ant clean doesn't do this in right directory
+M-x compile
+    rm -f *.elc jde-autoload.el
+
+# ant clean uses config/build.el, which uses byte-recompile-directory,
+# which doesn't consistently report errors/warnings.
+M-x compile
+    emacs -Q -batch --eval '(progn (let ((generated-autoload-file (expand-file-name "jde-autoload.el"))) (update-directory-autoloads ".")))'
+
+M-x compile
+    emacs -q -batch -L . --eval '(batch-byte-compile)' *.el
+
+M-x compile
+    emacs -q -batch -L . --eval '(check-declare-directory ".")'
+
 
  references
 c:/Archive/android/langspec-3.0.pdf
 
 emulator:
     F7 is power button; turns screen off and dismounts sdcard
+        try adb shell: mount -o remount rw /sdcard
 
     Ctrl-F11 landscape/portrait
 

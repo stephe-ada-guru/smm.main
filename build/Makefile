@@ -50,9 +50,11 @@ install-pda-ssh-debug :
 install-playlist :
 	adb -e push ../test/Audio/vocal.m3u /storage/sdcard/Audio/vocal.m3u
 	adb -e push "../test/Audio/vocal/David Wilcox/Into the Mystery/12 Native Tongue.mp3" "/storage/sdcard/Audio/vocal/David Wilcox/Into the Mystery/12 Native Tongue.mp3"
-	adb -e push "../test/Audio/vocal/David Wilcox/Into the Mystery/AlbumArt_{34040FCC-77F8-4958-80DF-758892F2BF8F}_Large.jpg" "/storage/sdcard/Audio/vocal/David Wilcox/Into the Mystery/AlbumArt_{34040FCC-77F8-4958-80DF-758892F2BF8F}_Large.jpg"
+	adb -e push "../test/Audio/vocal/David Wilcox/Into the Mystery/AlbumArt_Large.jpg" "/storage/sdcard/Audio/vocal/David Wilcox/Into the Mystery/AlbumArt_Large.jpg"
 	adb -e push "../test/Audio/vocal/Joni Mitchell/Don Juan's Reckless Daughter/Paprika Plains.mp3" "/storage/sdcard/Audio/vocal/Joni Mitchell/Don Juan's Reckless Daughter/Paprika Plains.mp3"
+	adb -e push "../test/Audio/vocal/Joni Mitchell/Don Juan's Reckless Daughter/AlbumArt_Huge.jpg" "/storage/sdcard/Audio/vocal/Joni Mitchell/Don Juan's Reckless Daughter/AlbumArt_Huge.jpg"
 	adb -e push "../test/Audio/vocal/Mary Chapin Carpenter/State of the Heart/Down in Mary's Land.mp3" "/storage/sdcard/Audio/vocal/Mary Chapin Carpenter/State of the Heart/Down in Mary's Land.mp3"
+	adb -e push "../test/Audio/vocal/Mary Chapin Carpenter/State of the Heart/AlbumArt_Large.jpg" "/storage/sdcard/Audio/vocal/Mary Chapin Carpenter/State of the Heart/AlbumArt_Large.jpg"
 
 
 # Local Variables:
