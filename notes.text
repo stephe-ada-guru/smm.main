@@ -38,6 +38,8 @@ button for 'save for later'
 album art
     on branch o.sl.mp.work
 
+    return a copy of bitmap, so clients can recycle it
+
     landscape:
 
         art     | artist

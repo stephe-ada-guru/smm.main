@@ -22,7 +22,7 @@
 //  it's broken my Samsung Galaxy Note II and III. So this uses the
 //  MediaStore interface.
 //
-//  Copyright (C) 2013, 2015 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2013, 2015, 2016 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -64,6 +64,7 @@ public class MetaData
 
    public Bitmap getAlbumArt()
    {
+      // FIXME: return a copy; avoid need for cache?
       return albumArt;
    }
 
