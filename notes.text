@@ -4,12 +4,31 @@ build/Makefile
 (dvc-status)
 ~/Misc/android.text
 
-lock screen buttons
+album art in o.s_l.m_p.work
+
+notify when less than 10 songs left in playlist
+
+For errors that require user action (ie writeSMMFile fails) use alert
+with Ok button, not transient toast, so have time to read error
+message
+    android.app.AlertDialog
+
+fix menu for Andriod 5
+
+back button pop app stack
+
+remote control
+    lock screen going away in Android 5 anyway; notifications show on lock screen
+    still needed for car display
+
+    test in emulator with non-sdcard music
+
     lock screen now works, but pause removes them
+
         it doesn't in vanilla music or beyondpod
         vanilla always does setPlaybackState and editor.apply; no help
 
-        get new copy instead of caching at startup?
+        get new copy instead of caching at startup? vanilla doesn't do that
 
         don't send position when paused? no help
         don't send position at all? no help
@@ -17,11 +36,11 @@ lock screen buttons
         delay before sending paused state?
             let remote control display recover?
 
-    progress bar doesn't show
-
     use RemoteControl class from Vanilla
-        branch o.s_l.m_p.work_1
         see if that changes behavior
+        yep; crashes on start :(
+
+    morph vanilla app to stephe's app, see when it breaks
 
 speak metadata!
     textToSpeech
@@ -34,8 +53,6 @@ button to search for artist/song
 
 button for 'save for later'
     bump current song to end of playlist
-
-album art in o.s_l.m_p.java
 
 still can't create vocal.last in emulator
     crashed VM on open preferences!
