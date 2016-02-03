@@ -25,7 +25,12 @@
        ;; this buffer was not properly initialized by
        ;; `ede-initialize-state-current-buffer'; only
        ;; `ede-load-project-file' will load the Monotone project.
-       (prj (ede-load-project-file root)))
+       prj)
+
+  (unless (cedet-gnu-global-root ".")
+    (cedet-gnu-global-create/update-database root))
+
+  (setq prj (ede-load-project-file root))
 
   (oset prj locate-obj
 	(ede-locate-global-path

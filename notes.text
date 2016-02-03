@@ -8,6 +8,10 @@ album art in o.s_l.m_p.work
 
 notify when less than 10 songs left in playlist
 
+titles to clipboard for web/amazon search
+
+change button "keep before" to "play before" consistent with smm.db key
+
 For errors that require user action (ie writeSMMFile fails) use alert
 with Ok button, not transient toast, so have time to read error
 message
@@ -21,11 +25,27 @@ remote control
     lock screen going away in Android 5 anyway; notifications show on lock screen
     still needed for car display
 
+    problems:
+        1) when hit pause, lock screen controls disappear
+            they come back after play, power off/on
+
+        2) when Stephe's Music is playing in car, car is power cycled;
+            lock screen control does not show, car remote display not synced
+
+            does not happen when beyondpod is playing, car is power cycled
+
+            restart phone recovers
+            - indicates remote control process has died?
+
+            some "bluetooth lost" signal that music app should handle?
+
+            quit app, restart app does not restore remote control if it is dead
+            quit app, restart app does not kill remote control if it is working.
+
     test in emulator with non-sdcard music
 
-    lock screen now works, but pause removes them
-
-        it doesn't in vanilla music or beyondpod
+    problem 1) not present for vanilla music or beyondpod
+        https://github.com/vanilla-music/vanilla
         vanilla always does setPlaybackState and editor.apply; no help
 
         get new copy instead of caching at startup? vanilla doesn't do that
@@ -36,11 +56,8 @@ remote control
         delay before sending paused state?
             let remote control display recover?
 
-    use RemoteControl class from Vanilla
-        see if that changes behavior
-        yep; crashes on start :(
-
     morph vanilla app to stephe's app, see when it breaks
+        /Projects/Android/vanilla_stephe/Makefile
 
 speak metadata!
     textToSpeech
@@ -74,19 +91,6 @@ handle back button
 
 webdav
     Mount network drive http://<ip>:<port>
-
- devices
-Galaxy Note I
-    SAMSUNG-SGH-1717
-    Android 2.3.6
-
-Galaxy Note II
-    SGH-T889
-    Android 4.1.2
-
-Galaxy Note III
-    SM-N900T
-    Android 4.4.2
 
  smm
 /Projects/smm.main/build/x86_gnu_windows_release/Makefile
