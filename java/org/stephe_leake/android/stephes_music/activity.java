@@ -141,7 +141,6 @@ public class activity extends android.app.Activity
          //
          // Waiting until it actually disappears; the fix will
          // probably be different by then.
-         // FIXME: see utils.alertDialog
          @SuppressWarnings("deprecation")
          @Override public void onClick(View v)
          {

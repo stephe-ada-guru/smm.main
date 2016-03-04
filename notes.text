@@ -4,8 +4,6 @@ build/Makefile
 (dvc-status)
 ~/Misc/android.text
 
-fix deprecated call in activity.java
-
 album art in o.s_l.m_p.work
 
 MediaSession in o.s_l.m_p.mediasession
