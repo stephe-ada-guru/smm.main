@@ -2,12 +2,27 @@
 //
 //  Retrieve metadata from audio files and album art.
 //
+//  Design:
+//
+//  An initial design always read the file and created a new bitmap,
+//  without checking to see if it was the same as the current one. But
+//  the ImageView apparently keeps a pointer that the garbage
+//  collector misses, so on a change from portrait to landscape, the
+//  bitmap is recycled, but then the ImageView attempts to display it
+//  again (before it gets the new one, apparently), causing a
+//  "recycled bitmap" error.
+//
+//  So we check, and copy the bitmap to a cache variable if the new
+//  one is different, so the garbage collector won't recycle it. That
+//  way the bitmap only gets discarded when it's no longer in the
+//  ImageView. FIXME: what causes the bitmap recycle?
+//
 //  Android provides MediaMetadataRetriever, which requires
 //  READ_EXTERNAL_STORAGE permission in AndroidManifest.xml. However,
 //  it's broken my Samsung Galaxy Note II and III. So this uses the
 //  MediaStore interface.
 //
-//  Copyright (C) 2013, 2015 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2013, 2015, 2016 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -41,14 +56,27 @@ public class MetaData
    public String album;
    public String artist;
    public String duration; // service needs a string for sendStickyBroadcast, so don't bother with integer conversions
-   public Bitmap albumArt;
    public Uri uri; // for sharing
 
-   public MetaData(Context context, String playlistDirectory, String musicFileName)
+   private String albumArtCurrentFileName;
+   private Bitmap albumArtCache; // see Design above.
+   private Bitmap albumArt;
+
+   public Bitmap getAlbumArt()
+   {
+      // FIXME: return a copy; avoid need for cache?
+      return albumArt;
+   }
+
+   public void setMetaData(Context context, String playlistDirectory, String musicFileName)
    {
       File musicFile = new File(playlistDirectory, musicFileName);
       final String sourceFile = musicFile.getAbsolutePath();
 
+      if (albumArtCurrentFileName.contentEquals(sourceFile))
+         return;
+
+      // new song file
       ContentResolver resolver = context.getContentResolver();
 
       String[] mediaFields =
@@ -75,20 +103,21 @@ public class MetaData
       {
          // We'd like to just query on sourceFile, but that doesn't
          // work, apparently because String doesn't compare to DATA
-         // STREAM. So we manually search the MediaStore, which is
-         // produced by a scanner.
+         // STREAM. So we manually search the MediaStore.
          //
-         // This would be more efficient if we first searched for the
-         // playlist, then looped thru the playlist looking for
+         // This would be more efficient if we first searched for
+         // the playlist, then looped thru the playlist looking for
          // sourceFile, comparing Strings. However, sometimes the
-         // scanner misses a playlist. So we just search the entire
-         // MediaStore.
+         // media scanner misses a playlist. So we just search the
+         // entire MediaStore.
          //
-         // FIXME: EXTERNAL_CONTENT_URI might point to the wrong
-         // volume; should use getContentUri(volumeName), but need
+         // EXTERNAL_CONTENT_URI might point to the wrong volume;
+         // should use getContentUri(volumeName), but need
          // volumeName. Which is apparently either "internal" or
-         // "external", but how do we know which?
-         Cursor cursor = resolver.query (MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, mediaFields, null, null, null);
+         // "external", but how do we know which? So far it has not
+         // been a problem.
+         Cursor cursor = resolver.query
+            (MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, mediaFields, null, null, null);
 
          if (cursor == null ||
              cursor.getCount() < 1)
@@ -161,8 +190,9 @@ public class MetaData
 
          if (albumArtFile != null)
          {
-            if (BuildConfig.DEBUG) utils.debugLog ("using " + albumArtFile.getAbsolutePath());
+            if (BuildConfig.DEBUG) utils.debugLog ("create bitmap for " + albumArtFile.getAbsolutePath());
 
+            // FIXME: scale to layout.
             albumArt = BitmapFactory.decodeStream(new FileInputStream(albumArtFile));
          }
          else

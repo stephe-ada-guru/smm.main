@@ -29,7 +29,8 @@
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
       android:weightSum="1">
-    <!-- artist
+    <!-- albumArt
+         artist
          album
          song titles
          prev/play/next buttons | time
@@ -37,6 +38,11 @@
          notes buttons
          playlist
     -->
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:id="@+id/albumArt"/>
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
