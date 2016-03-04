@@ -4,13 +4,11 @@ build/Makefile
 (dvc-status)
 ~/Misc/android.text
 
-album art in o.s_l.m_p.work
-
-MediaSession in o.s_l.m_p.mediasession
-
 notify when less than 10 songs left in playlist
 
 titles to clipboard for web/amazon search
+
+MediaSession in o.s_l.m_p.work
 
 fix menu for Android 5
     might "just work"
@@ -75,44 +73,6 @@ button to search for artist/song
 
 button for 'save for later'
     bump current song to end of playlist
-
-album art
-    on branch o.sl.mp.work
-
-    return a copy of bitmap, so clients can recycle it
-
-    landscape:
-
-        art     | artist
-                | album
-        < o >   | title
-        buttons | playlist
-
-    portrait:
-
-        art
-
-        < o >
-        buttons
-
-        artist
-        album
-        title
-        playlist
-
-
-    Bitmap.createScaledBitmap
-        how do we compute the destination size?
-        android.view.Display.getCurrentSizeRange
-
-    "recycled bitmap" error when transition portrait/landscape
-        display code saves a C copy of bitmap pointer?
-            Java garbage collection misses that and recycles the bitmap data
-            don't ever erase a java reference to a bitmap; keep a cache
-                HashMap
-            or just check if 'new' filename is same as previous, don't recreate bitmap
-
-        report bug? https://code.google.com/p/android/issues/list?can=1&q=recycled+bitmap&cells=tiles
 
 write xref-java.el
     run jde from git dir

@@ -4,18 +4,12 @@
 //
 //  Design:
 //
-//  An initial design always read the file and created a new bitmap,
-//  without checking to see if it was the same as the current one. But
-//  the ImageView apparently keeps a pointer that the garbage
-//  collector misses, so on a change from portrait to landscape, the
-//  bitmap is recycled, but then the ImageView attempts to display it
-//  again (before it gets the new one, apparently), causing a
-//  "recycled bitmap" error.
+//  An initial design always returned a pointer to a bitmap. But on a
+//  change from portrait to landscape, the bitmap is recycled, and
+//  then the ImageView attempts to display it again (before it gets
+//  the new one, apparently), causing a "recycled bitmap" error.
 //
-//  So we check, and copy the bitmap to a cache variable if the new
-//  one is different, so the garbage collector won't recycle it. That
-//  way the bitmap only gets discarded when it's no longer in the
-//  ImageView. FIXME: what causes the bitmap recycle?
+//  So we return a copy  of the bitmap.
 //
 //  Android provides MediaMetadataRetriever, which requires
 //  READ_EXTERNAL_STORAGE permission in AndroidManifest.xml. However,
@@ -59,13 +53,20 @@ public class MetaData
    public Uri uri; // for sharing
 
    private String albumArtCurrentFileName;
-   private Bitmap albumArtCache; // see Design above.
    private Bitmap albumArt;
+
+   public Boolean albumArtValid()
+   {
+      return albumArt != null;
+   }
 
    public Bitmap getAlbumArt()
    {
-      // FIXME: return a copy; avoid need for cache?
-      return albumArt;
+      // always return a copy, so the client can recycle it
+      if (albumArt == null)
+         return null;
+      else
+         return albumArt.copy(albumArt.getConfig(), false);
    }
 
    public void setMetaData(Context context, String playlistDirectory, String musicFileName)
@@ -73,7 +74,7 @@ public class MetaData
       File musicFile = new File(playlistDirectory, musicFileName);
       final String sourceFile = musicFile.getAbsolutePath();
 
-      if (albumArtCurrentFileName.contentEquals(sourceFile))
+      if (albumArtCurrentFileName != null && albumArtCurrentFileName.contentEquals(sourceFile))
          return;
 
       // new song file

@@ -200,8 +200,8 @@ public class activity extends android.app.Activity
                {
                   if (BuildConfig.DEBUG) utils.verboseLog("activity.onReceive META");
 
-                  if (utils.retriever.getAlbumArt() != null)
-                     albumArt.setImageBitmap(utils.retriever.get);
+                  if (utils.retriever.albumArtValid())
+                     albumArt.setImageBitmap(utils.retriever.getAlbumArt());
 
                   // On first start, with no playlist selected, these
                   // are all empty strings except playlist, which

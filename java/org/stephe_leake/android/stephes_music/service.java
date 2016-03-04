@@ -266,7 +266,7 @@ public class service extends Service
          }
          else
          {
-            utils.retriever = new MetaData(context, playlistDirectory, playlist.get(playlistPos));
+            utils.retriever.setMetaData(context, playlistDirectory, playlist.get(playlistPos));
 
             sendStickyBroadcast
                (new Intent (utils.META_CHANGED).putExtra
@@ -280,10 +280,10 @@ public class service extends Service
                .putString(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST, utils.retriever.artist)
                .putLong(MediaMetadataRetriever.METADATA_KEY_DURATION, Integer.parseInt(utils.retriever.duration));
 
-            if (!(utils.retriever.albumArt == null))
+            if (utils.retriever.albumArtValid())
             {
                // This works for the lock screen, but not for the Scion xB
-               editor.putBitmap(MediaMetadataEditor.BITMAP_KEY_ARTWORK, utils.retriever.albumArt);
+               editor.putBitmap(MediaMetadataEditor.BITMAP_KEY_ARTWORK, utils.retriever.getAlbumArt());
             }
             editor.apply();
 
@@ -1199,6 +1199,8 @@ public class service extends Service
          audioManager.registerRemoteControlClient(remoteControlClient);
       }
 
+      utils.retriever = new MetaData();
+      
       playlist           = new LinkedList<String>();
       playlistPos        = -1;
       highestPlaylistPos = playlistPos;
