@@ -23,12 +23,15 @@ source-clean :
 tag :
 	mtn tag h:org.stephe_leake.music_player.java version-$(VERSION)
 
-install-emulator-all : all install-emulator
+install-emulator-all : all install-emulator-debug
 
 # FIXME: fails with INSTALL_PARSE_FAILED_INCONSISTENT_CERTIFICATES
 # but works from Android Studio (which also provides log filters)
-install-emulator :
+install-emulator-release :
 	adb -e install -r ../app/build/outputs/apk/app-release-$(VERSION).apk
+
+install-emulator-debug :
+	adb -e install -r ../app/build/outputs/apk/app-debug-$(VERSION).apk
 
 archive :
 	cp ../app/build/outputs/apk/app-release-$(VERSION).apk /Archive/Android

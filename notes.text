@@ -4,20 +4,21 @@ build/Makefile
 (dvc-status)
 ~/Misc/android.text
 
+flatten directory tree
+    match vanilla
+
+fix deprecated call in activity.java
+
 album art in o.s_l.m_p.work
+
+MediaSession in o.s_l.m_p.mediasession
 
 notify when less than 10 songs left in playlist
 
 titles to clipboard for web/amazon search
 
-change button "keep before" to "play before" consistent with smm.db key
-
-For errors that require user action (ie writeSMMFile fails) use alert
-with Ok button, not transient toast, so have time to read error
-message
-    android.app.AlertDialog
-
-fix menu for Andriod 5
+fix menu for Android 5
+    might "just work"
 
 back button pop app stack
 
@@ -31,6 +32,7 @@ remote control
 
         2) when Stephe's Music is playing in car, car is power cycled;
             lock screen control does not show, car remote display not synced
+                unless phone is not used while car is powered off
 
             does not happen when beyondpod is playing, car is power cycled
 
@@ -41,6 +43,8 @@ remote control
 
             quit app, restart app does not restore remote control if it is dead
             quit app, restart app does not kill remote control if it is working.
+
+        3) also lose lock screen at other times
 
     test in emulator with non-sdcard music
 
@@ -56,8 +60,13 @@ remote control
         delay before sending paused state?
             let remote control display recover?
 
-    morph vanilla app to stephe's app, see when it breaks
-        /Projects/Android/vanilla_stephe/Makefile
+        check vanilla task type, service start mechanism
+
+
+    merge into vanilla app
+        create local git branch from /Projects/Android/vanilla
+        /Projects/Android/vanilla_stephe/notes.text
+        commit to monotone for backup
 
 speak metadata!
     textToSpeech

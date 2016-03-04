@@ -16,7 +16,7 @@
 //  The album art is displayed in the remote control; that shows up on
 //  the lockscreen, but not in the Scion xB.
 //
-//  Copyright (C) 2011 - 2013, 2015 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2011 - 2013, 2015 - 2016 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -141,6 +141,7 @@ public class activity extends android.app.Activity
          //
          // Waiting until it actually disappears; the fix will
          // probably be different by then.
+         // FIXME: see utils.alertDialog
          @SuppressWarnings("deprecation")
          @Override public void onClick(View v)
          {
@@ -452,7 +453,7 @@ public class activity extends android.app.Activity
 
                if (playlists == null || playlists.length == 0)
                {
-                  utils.infoLog(this, "no playlists found in " + playlistDir);
+                  utils.alertLog(this, "no playlists found in " + playlistDir);
                   return null;
                }
 

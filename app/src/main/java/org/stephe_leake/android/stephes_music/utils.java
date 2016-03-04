@@ -2,7 +2,7 @@
 //
 //  Provides User Interface to Stephe's Music Player.
 //
-//  Copyright (C) 2011 - 2013, 2015 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2011 - 2013, 2015 - 2016 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -19,6 +19,7 @@
 package org.stephe_leake.android.stephes_music;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.text.format.Time;
 import android.util.Log;
@@ -195,9 +196,27 @@ public class utils
 
    static void infoLog(Context context, String msg)
    {
-      // helpful user messages, ie "could not play"
+      // helpful user messages, ie "could not play"; displayed for a short time.
       Log.i(serviceClassName, msg);
       Toast.makeText(context, msg, Toast.LENGTH_SHORT).show();
+   }
+
+   public static void alertLog(Context context, String msg)
+   {
+      // Messages containing info user needs time to read; requires explicit dismissal.
+      //
+      // Cannot be called from a service
+      Log.i(serviceClassName, msg);
+      new AlertDialog.Builder(context).setMessage(msg).setPositiveButton(R.string.Ok, null).show();
+   }
+
+   public static void alertLog(Context context, String msg, Throwable e)
+   {
+      // Messages containing info user needs time to read; requires explicit dismissal.
+      //
+      // Cannot be called from a service
+      Log.e(serviceClassName, msg);
+      new AlertDialog.Builder(context).setMessage(msg + e.toString()).setPositiveButton(R.string.Ok, null).show();
    }
 
    static void verboseLog(String msg)

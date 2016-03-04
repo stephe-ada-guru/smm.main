@@ -192,10 +192,10 @@
           android:background="#ff7f7f7f" /> <!-- vertical separator -->
       <Button
           style="?android:attr/buttonBarButtonStyle"
-          android:id="@+id/note_keep_before"
+          android:id="@+id/note_play_before"
           android:layout_height="match_parent"
           android:layout_width="wrap_content"
-          android:text="@string/note_keep_before"
+          android:text="@string/note_play_before"
           android:textSize="20sp"
           android:textStyle="bold"
           android:onClick="onClickNote"/>
