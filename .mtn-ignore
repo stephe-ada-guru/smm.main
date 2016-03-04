@@ -1,10 +1,8 @@
+^.*\.iml$
 ^GPATH$
 ^GRTAGS$
 ^GTAGS$
 ^\.gradle$
 ^\.idea$
-^app/app\.iml$
-^app/build$
-^build/intermediates$
-^org\.stephe_leake\.music_player\.java\.iml$
+^build/.*$
 ^test/Audio/vocal$

@@ -4,9 +4,6 @@ build/Makefile
 (dvc-status)
 ~/Misc/android.text
 
-flatten directory tree
-    match vanilla
-
 fix deprecated call in activity.java
 
 album art in o.s_l.m_p.work

@@ -81,6 +81,6 @@
 
   <!-- Duration format for duration >= 1 hour -->
   <string translatable="false" name="durationformatlong">%H:%M:%S</string>
-  <string name="Ok">Ok</string>
+  <string name="Ok">OK</string>
 
 </resources>

@@ -1150,8 +1150,7 @@ public class service extends Service
          (context.getApplicationContext(),
           activityIntentId,
           new Intent(context, activity.class),
-          Intent.FLAG_ACTIVITY_CLEAR_TOP +
-          Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT);
+          0);
 
       prevIntent = PendingIntent.getBroadcast
          (context.getApplicationContext(),
