@@ -1,14 +1,13 @@
  current tasks
 NEWS.text
-build/Makefile
+Makefile
 (dvc-status)
 ~/Misc/android.text
 
-notify when less than 10 songs left in playlist
-
-titles to clipboard for web/amazon search
-
 MediaSession in o.s_l.m_p.work
+
+notify when less than 10 songs left in playlist
+    but only once; not clear where to save state, when to clear it
 
 fix menu for Android 5
     might "just work"
@@ -239,10 +238,10 @@ NEWS.text
     add version, features
 
 bump version
-    build/Makefile VERSION
-    app/build.gradle versionName, versionCode
+    Makefile VERSION
+    build.gradle versionName, versionCode
 
-build/Makefile all
+Makefile all
     verify no compiler errors
 
 Android Studio run
@@ -250,7 +249,7 @@ Android Studio run
 
 PDA: sshDroid
 
-build/Makefile
+Makefile
     archive
     install-pda-ssh-release
 
@@ -261,5 +260,8 @@ PDA: app info verify version
     run app, verify new features
 
 (dvc-state-one ".")
+
+Makefile
+    tag
 
 end of file

@@ -18,3 +18,9 @@ July 2015
     in notification, put title on top
     add menu entry to share song file
     add menu entry to reset playlist (start over)
+
+Jan 2016
+    version 9
+    use Alert Dialog for some messages
+    add album art
+    add text to clipboard

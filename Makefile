@@ -1,7 +1,7 @@
 # top level Makefile to build Stephe's Music Player app
 
 # must match build.gradle versionName, versionCode
-VERSION := 8
+VERSION := 9
 
 .PHONY : force
 
@@ -34,7 +34,7 @@ install-emulator-debug :
 	adb -e install -r build/outputs/apk/org.stephe_leake.music_player.java-debug-$(VERSION).apk
 
 archive :
-	cp build/outputs/apk/org.stephe_leake.music_player.java-release-$(VERSION).apk /Archive/Android
+	cp build/outputs/apk/org.stephe_leake.music_player.java-release-$(VERSION).apk /cygdrive/d/Archive/Android
 
 # assumes PDA is running sshDroid server, ssh key is active
 # apk version is in build.gradle

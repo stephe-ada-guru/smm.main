@@ -22,6 +22,8 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.BroadcastReceiver;
+import android.content.ClipboardManager;
+import android.content.ClipData;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -61,6 +63,7 @@ public class activity extends android.app.Activity
    private static final int MENU_QUIT           = 2;
    private static final int MENU_RESET_PLAYLIST = 3;
    private static final int MENU_SHARE          = 4;
+   private static final int MENU_COPY           = 5;
 
    private static final int RESULT_PREFERENCES = 1;
 
@@ -493,6 +496,7 @@ public class activity extends android.app.Activity
       super.onCreateOptionsMenu(menu);
       menu.add(0, MENU_QUIT, 0, R.string.menu_quit);
       menu.add(0, MENU_SHARE, 0, R.string.menu_share);
+      menu.add(0, MENU_COPY, 0, R.string.menu_copy);
       menu.add(0, MENU_RESET_PLAYLIST, 0, R.string.menu_reset_playlist);
       menu.add(0, MENU_PREFERENCES, 0, R.string.menu_preferences);
       menu.add(0, MENU_DUMP_LOG, 0, R.string.menu_dump_log);
@@ -536,6 +540,16 @@ public class activity extends android.app.Activity
                .putExtra(Intent.EXTRA_STREAM, utils.retriever.uri)
                .setType("audio/mp3");
             startActivity(Intent.createChooser(shareIntent, "Share song via ..."));
+         }
+         break;
+
+      case MENU_COPY:
+         {
+            ClipboardManager clipManage = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+
+            clipManage.setPrimaryClip
+               (ClipData.newPlainText
+                ("song", artistTitle.getText() + " " + albumTitle.getText() + " " + songTitle.getText()));
          }
          break;
 

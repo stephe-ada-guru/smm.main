@@ -38,6 +38,7 @@
   <!-- menu -->
   <string name="menu_quit">Quit</string>
   <string name="menu_share">Share</string>
+  <string name="menu_copy">Copy</string>
   <string name="menu_reset_playlist">Reset Playlist</string>
   <string name="menu_preferences">Preferences</string>
   <string name="menu_dump_log">Dump Log</string>
