@@ -2,7 +2,7 @@
 --
 --  Run one test
 --
---  Copyright (C) 2007 - 2009, 2013, 2015 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007 - 2009, 2013, 2015 - 2016 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -24,7 +24,7 @@ with AUnit.Test_Results;
 with AUnit.Test_Suites; use AUnit.Test_Suites;
 with Ada.Text_IO;
 with GNAT.Traceback.Symbolic;
-with Test_Least_Recent;
+with Test_Download;
 procedure Test_One_Harness
 is
    Suite  : constant Access_Test_Suite := new Test_Suite;
@@ -33,7 +33,7 @@ is
    Status   : AUnit.Status;
 
 begin
-   Add_Test (Suite, new Test_Least_Recent.Test_Case);
+   Add_Test (Suite, new Test_Download.Test_Case (Verbosity => 1));
 
    Run (Suite, AUnit.Options.Default_Options, Result, Status);
 

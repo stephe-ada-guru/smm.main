@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2007 - 2009, 2011, 2012, 2015 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007 - 2009, 2011, 2012, 2015, 2016 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -23,7 +23,7 @@ with Ada.Text_IO;
 with SMM.First_Pass;
 with AUnit.Checks.Text_IO;
 with Test_Utils; use Test_Utils;
-package body Test_First_Pass_Version_2 is
+package body Test_First_Pass_With_Last is
 
    procedure Nominal (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
    is
@@ -237,7 +237,7 @@ package body Test_First_Pass_Version_2 is
    is
       pragma Unreferenced (T);
    begin
-      return new String'("../../test/test_first_pass_version_2.adb");
+      return new String'("../../test/test_first_pass_with_last.adb");
    end Name;
 
    overriding procedure Register_Tests (T : in out Test_Case)
@@ -260,4 +260,4 @@ package body Test_First_Pass_Version_2 is
       SMM.Verbosity := T.Verbosity;
    end Set_Up_Case;
 
-end Test_First_Pass_Version_2;
+end Test_First_Pass_With_Last;

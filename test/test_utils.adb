@@ -2,7 +2,7 @@
 --
 --  see spec
 --
---  Copyright (C) 2007 - 2009, 2015 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007 - 2009, 2015 - 2016 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -20,7 +20,6 @@ pragma License (GPL);
 
 with AUnit.Assertions;
 with Ada.Directories;
-with Ada.Exceptions;
 with Ada.Text_IO;
 package body Test_Utils is
 
@@ -28,11 +27,9 @@ package body Test_Utils is
    is begin
       Ada.Directories.Delete_Tree ("tmp");
    exception
-   when E : Ada.Text_IO.Name_Error =>
+   when Ada.Text_IO.Name_Error =>
       --  already deleted
-      --  FIXME: debugging
-      --  null;
-      Ada.Text_IO.Put_Line ("cleanup: name_error: " & Ada.Exceptions.Exception_Message (E));
+      null;
    end Cleanup;
 
    procedure Create_Test_File (Path : in String)

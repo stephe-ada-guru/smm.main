@@ -2,3 +2,5 @@ gpr_file=smm_agg.gpr
 
 casing=../smm.casing
 casing=../../../org.stephe_leake.sal/build/sal.casing
+
+el_file=../smm_prj.el

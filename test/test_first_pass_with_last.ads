@@ -2,7 +2,7 @@
 --
 --  Test playlists.first_pass, with .last file
 --
---  Copyright (C) 2007 - 2009, 2011, 2015 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007 - 2009, 2011, 2015, 2016 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -19,7 +19,7 @@
 pragma License (GPL);
 
 with AUnit.Test_Cases; use AUnit.Test_Cases;
-package Test_First_Pass_Version_2 is
+package Test_First_Pass_With_Last is
 
    type Test_Case
      (Verbosity : Integer;
@@ -32,4 +32,4 @@ package Test_First_Pass_Version_2 is
 
    overriding procedure Set_Up_Case (T : in out Test_Case);
 
-end Test_First_Pass_Version_2;
+end Test_First_Pass_With_Last;

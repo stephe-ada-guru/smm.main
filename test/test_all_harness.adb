@@ -26,8 +26,8 @@ with AUnit.Test_Suites; use AUnit.Test_Suites;
 with GNAT.Traceback.Symbolic;
 with Test_Copy;
 with Test_Download;
-with Test_First_Pass_Version_1;
-with Test_First_Pass_Version_2;
+with Test_First_Pass_No_Last;
+with Test_First_Pass_With_Last;
 with Test_Least_Recent;
 with Test_Play_Before;
 procedure Test_All_Harness
@@ -40,8 +40,8 @@ is
 begin
    Add_Test (Suite, new Test_Copy.Test_Case (Verbosity => 0));
    Add_Test (Suite, new Test_Download.Test_Case (Verbosity => 0));
-   Add_Test (Suite, new Test_First_Pass_Version_1.Test_Case (Verbosity => 0, Debug => 0));
-   Add_Test (Suite, new Test_First_Pass_Version_2.Test_Case (Verbosity => 0, Debug => False));
+   Add_Test (Suite, new Test_First_Pass_No_Last.Test_Case (Verbosity => 0, Debug => 0));
+   Add_Test (Suite, new Test_First_Pass_With_Last.Test_Case (Verbosity => 0, Debug => False));
    Add_Test (Suite, new Test_Least_Recent.Test_Case);
    Add_Test (Suite, new Test_Play_Before.Test_Case);
 

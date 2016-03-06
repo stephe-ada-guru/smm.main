@@ -1,1 +1,4 @@
+build/x86_gnu_windows_debug/Makefile
+build/x86_gnu_windows_release/Makefile
+
 see ../android/stephes_music_player.java/notes.text

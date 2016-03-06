@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2007 - 2009, 2012, 2013, 2015 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007 - 2009, 2012 - 2013, 2015 - 2016 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -88,26 +88,28 @@ package body Test_Download is
       Put_Line (Db_File, "Songs. 9.Last_Downloaded = 0.0"); -- new
       Put_Line (Db_File, "Songs. 10.File = artist_2/new_4.mp3");
       Put_Line (Db_File, "Songs. 10.Last_Downloaded = 0.0"); -- new
-      Put_Line (Db_File, "Songs. 11.File = artist_2/new_5.mp3");
-      Put_Line (Db_File, "Songs. 11.Last_Downloaded = 0.0"); -- new
-      Put_Line (Db_File, "Songs. 12.File = artist_2/new_6.mp3");
-      Put_Line (Db_File, "Songs. 12.Last_Downloaded = 0.0"); -- new
-      Put_Line (Db_File, "Songs. 13.File = artist_2/played_3.mp3");
-      Put_Line (Db_File, "Songs. 13.Last_Downloaded = 2.0");
-      Put_Line (Db_File, "Songs. 14.File = artist_2/played_4.mp3");
-      Put_Line (Db_File, "Songs. 14.Last_Downloaded = 2.0");
-      Put_Line (Db_File, "Songs. 15.File = artist_2/played_5.mp3");
+      Put_Line (Db_File, "Songs. 11.File = artist_2/played_3.mp3");
+      Put_Line (Db_File, "Songs. 11.Last_Downloaded = 2.0");
+      Put_Line (Db_File, "Songs. 12.File = artist_2/played_4.mp3");
+      Put_Line (Db_File, "Songs. 12.Last_Downloaded = 2.0");
+      Put_Line (Db_File, "Songs. 13.File = artist_2/played_5.mp3");
+      Put_Line (Db_File, "Songs. 13.Last_Downloaded = 2.5");
+      Put_Line (Db_File, "Songs. 14.File = artist_2/played_6.mp3");
+      Put_Line (Db_File, "Songs. 14.Last_Downloaded = 2.5");
+      Put_Line (Db_File, "Songs. 15.File = artist_2/played_7.mp3");
       Put_Line (Db_File, "Songs. 15.Last_Downloaded = 2.5");
-      Put_Line (Db_File, "Songs. 16.File = artist_2/played_6.mp3");
+      Put_Line (Db_File, "Songs. 16.File = artist_2/played_8.mp3");
       Put_Line (Db_File, "Songs. 16.Last_Downloaded = 2.5");
-      Put_Line (Db_File, "Songs. 17.File = artist_2/played_7.mp3");
-      Put_Line (Db_File, "Songs. 17.Last_Downloaded = 2.5");
-      Put_Line (Db_File, "Songs. 18.File = artist_2/played_8.mp3");
-      Put_Line (Db_File, "Songs. 18.Last_Downloaded = 2.5");
+      Put_Line (Db_File, "Songs. 17.File = artist_3/new_5.mp3");
+      Put_Line (Db_File, "Songs. 17.Last_Downloaded = 0.0"); -- new
+      Put_Line (Db_File, "Songs. 18.File = artist_3/new_6.mp3");
+      Put_Line (Db_File, "Songs. 18.Last_Downloaded = 0.0"); -- new
       Close (Db_File);
+
 
       Create_Directory ("tmp/source");
       Create_Directory ("tmp/source/artist_1");
+      Create_Test_File ("tmp/source/artist_1/artist_1.jpg");
       Create_Test_File ("tmp/source/artist_1/excluded_1.mp3");
       Create_Test_File ("tmp/source/artist_1/played_1.mp3");
       Create_Test_File ("tmp/source/artist_1/played_2.mp3");
@@ -116,17 +118,22 @@ package body Test_Download is
       Create_Test_File ("tmp/source/artist_1/in_target_1.mp3");
       Create_Test_File ("tmp/source/artist_1/in_target_2.mp3");
       Create_Directory ("tmp/source/artist_2");
+      Create_Test_File ("tmp/source/artist_2/artist_2.jpg");
       Create_Test_File ("tmp/source/artist_2/in_target_3.mp3");
       Create_Test_File ("tmp/source/artist_2/new_3.mp3");
       Create_Test_File ("tmp/source/artist_2/new_4.mp3");
-      Create_Test_File ("tmp/source/artist_2/new_5.mp3");
-      Create_Test_File ("tmp/source/artist_2/new_6.mp3");
       Create_Test_File ("tmp/source/artist_2/played_3.mp3");
       Create_Test_File ("tmp/source/artist_2/played_4.mp3");
       Create_Test_File ("tmp/source/artist_2/played_5.mp3");
       Create_Test_File ("tmp/source/artist_2/played_6.mp3");
       Create_Test_File ("tmp/source/artist_2/played_7.mp3");
       Create_Test_File ("tmp/source/artist_2/played_8.mp3");
+
+      --  Album art is downloaded when a new target directory is created.
+      Create_Directory ("tmp/source/artist_3");
+      Create_Test_File ("tmp/source/artist_3/artist_3.jpg");
+      Create_Test_File ("tmp/source/artist_3/new_5.mp3");
+      Create_Test_File ("tmp/source/artist_3/new_6.mp3");
 
       Create_Directory ("tmp/target");
       Create_Directory ("tmp/target/vocal");
@@ -174,11 +181,26 @@ package body Test_Download is
       Check (Playlist, "vocal/artist_1/new_2.mp3");
       Check (Playlist, "vocal/artist_2/played_7.mp3");
       Check (Playlist, "vocal/artist_1/new_1.mp3");
-      Check (Playlist, "vocal/artist_2/new_5.mp3");
+      Check (Playlist, "vocal/artist_3/new_5.mp3");
 
       Check_End (Playlist);
       Close (Playlist);
 
+      Check_File_Count ("tmp/target/vocal/artist_1/", 4);
+      Check_File_Exists ("tmp/target/vocal/artist_1/in_target_1.mp3");
+      Check_File_Exists ("tmp/target/vocal/artist_1/in_target_2.mp3");
+      Check_File_Exists ("tmp/target/vocal/artist_1/new_1.mp3");
+      Check_File_Exists ("tmp/target/vocal/artist_1/new_2.mp3");
+
+      Check_File_Count ("tmp/target/vocal/artist_2/", 4);
+      Check_File_Exists ("tmp/target/vocal/artist_2/in_target_3.mp3");
+      Check_File_Exists ("tmp/target/vocal/artist_2/played_4.mp3");
+      Check_File_Exists ("tmp/target/vocal/artist_2/played_7.mp3");
+      Check_File_Exists ("tmp/target/vocal/artist_2/played_8.mp3");
+
+      Check_File_Count ("tmp/target/vocal/artist_3/", 2);
+      Check_File_Exists ("tmp/target/vocal/artist_3/artist_3.jpg");
+      Check_File_Exists ("tmp/target/vocal/artist_3/new_5.mp3");
    end Nominal;
 
    ----------
