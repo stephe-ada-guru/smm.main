@@ -62,7 +62,7 @@ is
    begin
       Search
         (Directory => Source_Dir,
-         Pattern   => "*.jpg",
+         Pattern   => "AlbumArt*.jpg",
          Filter    => (Ordinary_File => True, others => False),
          Process   => Copy_Art'Access);
    end Download_Album_Art;

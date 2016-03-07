@@ -109,7 +109,7 @@ package body Test_Download is
 
       Create_Directory ("tmp/source");
       Create_Directory ("tmp/source/artist_1");
-      Create_Test_File ("tmp/source/artist_1/artist_1.jpg");
+      Create_Test_File ("tmp/source/artist_1/AlbumArt_artist_1.jpg");
       Create_Test_File ("tmp/source/artist_1/excluded_1.mp3");
       Create_Test_File ("tmp/source/artist_1/played_1.mp3");
       Create_Test_File ("tmp/source/artist_1/played_2.mp3");
@@ -118,7 +118,7 @@ package body Test_Download is
       Create_Test_File ("tmp/source/artist_1/in_target_1.mp3");
       Create_Test_File ("tmp/source/artist_1/in_target_2.mp3");
       Create_Directory ("tmp/source/artist_2");
-      Create_Test_File ("tmp/source/artist_2/artist_2.jpg");
+      Create_Test_File ("tmp/source/artist_2/AlbumArt_artist_2.jpg");
       Create_Test_File ("tmp/source/artist_2/in_target_3.mp3");
       Create_Test_File ("tmp/source/artist_2/new_3.mp3");
       Create_Test_File ("tmp/source/artist_2/new_4.mp3");
@@ -131,7 +131,8 @@ package body Test_Download is
 
       --  Album art is downloaded when a new target directory is created.
       Create_Directory ("tmp/source/artist_3");
-      Create_Test_File ("tmp/source/artist_3/artist_3.jpg");
+      Create_Test_File ("tmp/source/artist_3/AlbumArt_artist_3.jpg");
+      Create_Test_File ("tmp/source/artist_3/liner_notes_artist_3.jpg");
       Create_Test_File ("tmp/source/artist_3/new_5.mp3");
       Create_Test_File ("tmp/source/artist_3/new_6.mp3");
 
@@ -199,7 +200,7 @@ package body Test_Download is
       Check_File_Exists ("tmp/target/vocal/artist_2/played_8.mp3");
 
       Check_File_Count ("tmp/target/vocal/artist_3/", 2);
-      Check_File_Exists ("tmp/target/vocal/artist_3/artist_3.jpg");
+      Check_File_Exists ("tmp/target/vocal/artist_3/AlbumArt_artist_3.jpg");
       Check_File_Exists ("tmp/target/vocal/artist_3/new_5.mp3");
    end Nominal;
 
