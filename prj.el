@@ -28,7 +28,8 @@
        ;; this buffer was not properly initialized by
        ;; `ede-initialize-state-current-buffer'; only
        ;; `ede-load-project-file' will load the Monotone project.
-       prj)
+       prj
+       (prj-name "Stephe's Music Android main"))
 
   (unless (cedet-gnu-global-root ".")
     (cedet-gnu-global-create/update-database root))
@@ -51,9 +52,9 @@
   (add-to-list 'project-find-functions 'project-menu-prj)
   (add-to-list 'project-find-functions 'project-try-ede)
 
-  (add-to-list 'project-menu-list (cons "Stephe's Music main" prj))
+  (add-to-list 'project-menu-list (cons prj-name prj))
 
-  (project-menu-select "Stephe's Music main")
+  (project-menu-select prj-name)
 )
 
 ;; end of file
