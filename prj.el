@@ -18,7 +18,7 @@
 ;; ede-enable-locate-on-project), to select ede-locate-global-path and
 ;; set the path.
 
-(defun stephe-music-main-ignore (dir)
+(defun stephe-music-work-ignore (dir)
   (match-string dir "build"))
 
 ;; When loaded from build/Makefile, #$ is "../prj.el", and `default-directory' is "build"
@@ -29,7 +29,7 @@
        ;; `ede-initialize-state-current-buffer'; only
        ;; `ede-load-project-file' will load the Monotone project.
        prj
-       (prj-name "Stephe's Music Android main"))
+       (prj-name "Stephe's Music Android work"))
 
   (unless (cedet-gnu-global-root ".")
     (cedet-gnu-global-create/update-database root))
@@ -46,7 +46,7 @@
 	  ;; "java/*" accessed via Gnu global
 	 :user-path-recursive
 	 (list (concat root "res"))
-	 :ignore-function #'stephe-music-main-ignore
+	 :ignore-function #'stephe-music-work-ignore
 	 )))
 
   (add-to-list 'project-find-functions 'project-menu-prj)

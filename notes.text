@@ -5,6 +5,8 @@ Makefile
 ~/Misc/android.text
 
 MediaSession in o.s_l.m_p.work
+    service.java edited, compiles
+    need callback? test on phone with lock screen, car
 
 notify when less than 10 songs left in playlist
     but only once; not clear where to save state, when to clear it
