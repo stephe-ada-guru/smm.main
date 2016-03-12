@@ -25,6 +25,7 @@ remote control
         2) when Stephe's Music is playing in car, car is power cycled;
             lock screen control does not show, car remote display not synced
                 unless phone is not used while car is powered off
+                or if music app is Quit before power off
 
             does not happen when beyondpod is playing, car is power cycled
 
@@ -38,8 +39,6 @@ remote control
 
         3) also lose lock screen at other times
 
-    test in emulator with non-sdcard music
-
     problem 1) not present for vanilla music or beyondpod
         https://github.com/vanilla-music/vanilla
         vanilla always does setPlaybackState and editor.apply; no help
@@ -49,17 +48,8 @@ remote control
         don't send position when paused? no help
         don't send position at all? no help
 
-        delay before sending paused state?
-            let remote control display recover?
+    handle SCO_AUDIO_STATE_DISCONNECTED in same handler as SCO_AUDIO_STATE_CONNECTED; version 10, testing
 
-        check vanilla task type, service start mechanism; same
-
-
-    merge into vanilla app
-        create local git branch from /Projects/Android/vanilla
-        /Projects/Android/vanilla_stephe/notes.text
-        commit to monotone for backup
-        too hard
 
 speak metadata!
     textToSpeech

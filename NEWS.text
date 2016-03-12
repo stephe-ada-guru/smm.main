@@ -19,8 +19,11 @@ July 2015
     add menu entry to share song file
     add menu entry to reset playlist (start over)
 
-Jan 2016
+Mar 2016
     version 9
     use Alert Dialog for some messages
     add album art
     add text to clipboard
+
+    version 10
+    handle SCO_AUDIO_STATE_DISCONNECTED

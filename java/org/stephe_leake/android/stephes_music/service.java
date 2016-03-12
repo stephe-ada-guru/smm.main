@@ -3,7 +3,7 @@
 //  Provides background audio playback capabilities, allowing the
 //  user to switch between activities without stopping playback.
 //
-//  Copyright (C) 2011 - 2013, 2015 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2011 - 2013, 2015 - 2016 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -994,6 +994,15 @@ public class service extends Service
                // state to start the control connection.
                notifyChange(WhatChanged.State);
 
+            case AudioManager.SCO_AUDIO_STATE_DISCONNECTED:
+               // Car turned off | bluetooth disabled | moved out of range.
+               //
+               // Assume we will get another CONNECTED event when PDA
+               // connects to internal speaker.
+               //
+               // For car turned off we want to pause.
+               pause(PlayState.Paused);
+
             default:
                // just ignore.
 
@@ -1200,7 +1209,7 @@ public class service extends Service
       }
 
       utils.retriever = new MetaData();
-      
+
       playlist           = new LinkedList<String>();
       playlistPos        = -1;
       highestPlaylistPos = playlistPos;
