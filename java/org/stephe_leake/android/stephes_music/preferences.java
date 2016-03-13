@@ -2,7 +2,7 @@
 //
 //  Provides User Interface to Stephe's Music Player.
 //
-//  Copyright (C) 2011 - 2013, 2015 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2011 - 2013, 2015 - 2016 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -26,6 +26,7 @@ import android.preference.PreferenceManager;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 
@@ -102,9 +103,15 @@ public class preferences extends android.preference.PreferenceActivity
 
       LinkedList<String> likelyRoots = new LinkedList<String>();
 
-      likelyRoots.add("/storage/sdcard"); // Google Nexus (in emulator)
-      likelyRoots.add("/storage/sdcard0"); // Samsung Galaxy note II/III internal
-      likelyRoots.add("/storage/extSdCard"); // Samsung Galaxy note II/III external
+      // There are several names for internal storage, due to
+      // symlinks. We need the one used by the media scanner, since we
+      // search for file names in the scanned db. That is _not_ the
+      // canonical (symlinks resolved) name.
+
+      likelyRoots.add("/storage/sdcard");     // emulator external; can't see any emulator internal
+      likelyRoots.add("/storage/sdcard0");    // Samsung Galaxy note II/III internal
+      likelyRoots.add("/storage/emulated/0"); // Samsung Galaxy note Tab S2 internal (as used by media scanner)
+      likelyRoots.add("/storage/extSdCard");  // Samsung Galaxy note II/III/Tab S2 external
 
       Iterator<String> likelyRootsI = likelyRoots.iterator();
 
@@ -138,16 +145,25 @@ public class preferences extends android.preference.PreferenceActivity
 
       // Create list of possible smm directories
 
-         ListPreference smmPref = (ListPreference)findPreference(res.getString(R.string.smm_directory_key));
+      ListPreference smmPref = (ListPreference)findPreference(res.getString(R.string.smm_directory_key));
 
       File[] extCacheDirs = this.getExternalCacheDirs();
 
-      String[] smmDirs = new String[extCacheDirs.length];
+      String[] smmDirs = new String[extCacheDirs.length + 1];
+      int last = 0;
+
+      smmDirs[0] = this.getCacheDir().getAbsolutePath();
 
       for (int i = 0; i < extCacheDirs.length; i++)
       {
-          smmDirs[i] = extCacheDirs[i].getAbsolutePath();
+         if (extCacheDirs[i] != null)
+         {
+            smmDirs[i + 1] = extCacheDirs[i].getAbsolutePath();
+            last = last + 1;
+         }
       }
+
+      smmDirs = Arrays.copyOfRange(smmDirs, 0, last);
 
       smmPref.setEntries(smmDirs);
       smmPref.setEntryValues(smmDirs);

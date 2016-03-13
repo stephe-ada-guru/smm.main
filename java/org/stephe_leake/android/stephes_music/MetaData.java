@@ -137,7 +137,10 @@ public class MetaData
 
             while (!cursor.isAfterLast())
             {
-               if (0 == sourceFile.compareTo(cursor.getString(4)))
+               // temp string for debugging
+               String temp = cursor.getString(4);
+
+               if (0 == sourceFile.compareTo(temp))
                   break;
                cursor.moveToNext();
             };

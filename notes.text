@@ -5,8 +5,13 @@ Makefile
 ~/Misc/android.text
 
 MediaSession in o.s_l.m_p.work
-    service.java edited, compiles
-    need callback? test on phone with lock screen, car
+    works on tablet
+        no lock screen controls, but notification controls work from lock screen (no picture)
+
+    test on tablet with lock screen, car
+        menu shows as MORE instead of ...
+
+use small album art in notification? lots of room on tablet :)
 
 notify when less than 10 songs left in playlist
     but only once; not clear where to save state, when to clear it
