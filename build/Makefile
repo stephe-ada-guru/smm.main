@@ -1,10 +1,9 @@
 # gnu make file
-# (dvc-status "../..")
 
-include ../common.make
+include common.make
 
-# ../../test/test_one_harness.adb
-# ../../test/test_all_harness.adb
+# ../test/test_one_harness.adb
+# ../test/test_all_harness.adb
 t_one : test_one_harness.run
 t_all : test_all_harness.diff
 

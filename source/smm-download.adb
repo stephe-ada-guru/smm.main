@@ -45,9 +45,9 @@ is
    Playlist_File_Name : constant String := Destination & Category & ".m3u";
    Playlist_File      : File_Type;
 
-   procedure Download_Album_Art (Source_Dir, Target_Dir : in String)
+   procedure Download_Album_Aux (Source_Dir, Target_Dir : in String)
    is
-      procedure Copy_Art (Dir_Ent : in Directory_Entry_Type)
+      procedure Copy_Aux (Dir_Ent : in Directory_Entry_Type)
       is begin
          Copy_File
            (Source_Name => Full_Name (Dir_Ent),
@@ -55,17 +55,23 @@ is
       exception
       when Ada.IO_Exceptions.Use_Error =>
          --  nothing else we can do.
-         Put_Line (Standard_Error, Destination & " Copy_Art Use_Error; probably disk full");
+         Put_Line (Standard_Error, Destination & " Copy_Aux Use_Error; probably disk full");
          return;
-      end Copy_Art;
+      end Copy_Aux;
 
    begin
       Search
         (Directory => Source_Dir,
-         Pattern   => "AlbumArt*.jpg",
+         Pattern   => "AlbumAux*.jpg",
          Filter    => (Ordinary_File => True, others => False),
-         Process   => Copy_Art'Access);
-   end Download_Album_Art;
+         Process   => Copy_Aux'Access);
+
+      Search
+        (Directory => Source_Dir,
+         Pattern   => "liner_notes.pdf",
+         Filter    => (Ordinary_File => True, others => False),
+         Process   => Copy_Aux'Access);
+   end Download_Album_Aux;
 
 begin
    if not Exists (Destination) then
@@ -110,22 +116,22 @@ begin
          Last_Downloaded : constant SAL.Time_Conversions.Time_Type := Read_Last_Downloaded (Db, Element (I));
          Prev_Downloaded : constant SAL.Time_Conversions.Time_Type := Read_Prev_Downloaded (Db, Element (I));
       begin
-         Put_Line (To_String (Last_Downloaded) & ", " & To_String (Prev_Downloaded) & " : " & Relative);
-
-         if not Exists (Target_Dir) then
-            begin
-               Create_Path (Target_Dir);
-               Download_Album_Art (Containing_Directory (Source), Target_Dir);
-            exception
-            when Ada.IO_Exceptions.Use_Error =>
-               Put_Line ("can't create directory " & Target_Dir);
-            end;
-         end if;
-
          if not Exists (Source) then
             --  Bad file name in db file
             Put_Line (Standard_Error, "File not found: '" & Source & "'");
+
          else
+            Put_Line (To_String (Last_Downloaded) & ", " & To_String (Prev_Downloaded) & " : " & Relative);
+
+            if not Exists (Target_Dir) then
+               begin
+                  Create_Path (Target_Dir);
+                  Download_Album_Aux (Containing_Directory (Source), Target_Dir);
+               exception
+               when Ada.IO_Exceptions.Use_Error =>
+                  Put_Line ("can't create directory " & Target_Dir);
+               end;
+            end if;
 
             begin
                Copy_File

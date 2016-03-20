@@ -2,13 +2,6 @@
 \.diff$
 \.exe$
 \.out$
-^build/x86_gnu_linux_debug/tmp$
-^build/x86_gnu_linux_release/tmp$
-^build/x86_gnu_windows_debug/\.gdbinit$
-^build/x86_gnu_windows_debug/objects$
-^build/x86_gnu_windows_debug/smm\.html$
-^build/x86_gnu_windows_debug/tmp$
-^build/x86_gnu_windows_release/gnatinspect\.db$
-^build/x86_gnu_windows_release/objects$
-^build/x86_gnu_windows_release/smm\.html$
-^build/x86_gnu_windows_release/tmp$
+^build/objects$
+^build/tmp$
+^build/smm\.html$

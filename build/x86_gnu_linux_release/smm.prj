@@ -1,5 +1,0 @@
-ada_project_path=$GDS_ROOT/main_lynx_5/makerules
-ada_project_path=$GDS_ROOT/main_lynx_5/sal/Build/x86_gnu_linux_release
-gpr_file=smm.gpr
-
-casing=../smm.casing

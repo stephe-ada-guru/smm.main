@@ -2,7 +2,7 @@
 --
 --  See below
 --
---  Copyright (C) 2012, 2015 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2012, 2015 - 2016 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -29,6 +29,8 @@ procedure SMM.Download
 --  Download Song_Count least-recently-played files, including about
 --  New_Song_Count / 2 new songs (if any) to Destination directory,
 --  add to playlist.
+--
+--  Also download AlbumArt*.jpg, liner_notes.pdf
 --
 --  Destination is an absolute path to the download directory (ends in
 --  '/'). Playlist is in Destination with name <Category>.m3u; songs
