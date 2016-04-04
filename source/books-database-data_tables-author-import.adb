@@ -2,7 +2,7 @@
 --
 --  see spec
 --
---  Copyright (C) 2002, 2009, 2012 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002, 2009, 2012, 2016 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -59,7 +59,7 @@ package body Books.Database.Data_Tables.Author.Import is
 
       if Author_Table.Valid then
          --  At this point, either the newly inserted, or another matching, record is current
-         ID_Maps (Books.Author).Add ((Old_ID, Author_Table.ID));
+         ID_Maps (Books.Author).Insert (Old_ID, Author_Table.ID);
       else
          --  Some other error occurred; one of the above statements
          --  should have raised an exception that was not handled.

@@ -2,7 +2,7 @@
 --
 --  Base package; import CSV data into Stephe's books database.
 --
---  Copyright (C) 2009, 2012 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2009, 2012, 2016 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -18,13 +18,12 @@
 
 pragma License (GPL);
 
+with Ada.Containers.Ordered_Maps;
 with Books.Database.Data_Tables.Author;
 with Books.Database.Data_Tables.Collection;
 with Books.Database.Data_Tables.Series;
 with Books.Database.Data_Tables.Title;
-with SAL.Aux.Definite_Private_Items;
 with SAL.CSV;
-with SAL.Poly.Binary_Trees.Sorted;
 package Books.Import is
 
    Warm_Fuzzy_Count : Integer := 0;
@@ -45,26 +44,13 @@ package Books.Import is
    --  Raises SAL.Initialization_Error if Column does not hold a valid
    --  integer.
 
-   type ID_Map_Item is record
-      Old_ID : Database.ID_Type;
-      New_ID : Database.ID_Type;
-   end record;
+   package ID_Map_Pkg is new Ada.Containers.Ordered_Maps
+     (Key_Type     => Database.ID_Type, -- old id
+      Element_Type => Database.ID_Type, -- new id
+      "<"          => Standard."<",
+      "="          => Standard."=");
 
-   function To_Key (Item : in ID_Map_Item) return Database.ID_Type is (Item.Old_ID);
-
-   package ID_Map_Aux is new SAL.Aux.Definite_Private_Items (ID_Map_Item);
-   package ID_Trees is new SAL.Poly.Binary_Trees.sorted
-     (Item_Type         => ID_Map_Item,
-      Item_Node_Type    => ID_Map_Item,
-      To_Item_Node      => ID_Map_Aux.To_Item_Node,
-      Free_Item         => ID_Map_Aux.Free_Item,
-      Key_Type          => Database.ID_Type,
-      To_Key            => To_Key,
-      Is_Greater        => ">",
-      Is_Equal          => "=",
-      Node_Storage_Pool => Database.Database_Access'Storage_Pool);
-
-   type Map_Arrays is array (Table_Names) of ID_Trees.Tree_Type;
+   type Map_Arrays is array (Table_Names) of ID_Map_Pkg.Map;
    ID_Maps : Map_Arrays;
 
    Author_Table     : Books.Database.Data_Tables.Author.Table_Access;

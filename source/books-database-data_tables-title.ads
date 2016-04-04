@@ -2,7 +2,7 @@
 --
 --  Operations on the Title table
 --
---  Copyright (C) 2002, 2004, 2009, 2012 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002, 2004, 2009, 2012, 2016 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -28,29 +28,27 @@ package Books.Database.Data_Tables.Title is
 
    overriding procedure Initialize (T : in out Table);
 
-   Title_Index   : constant GNATCOLL.SQL.Exec.Field_Index := ID_Index + 1;
-   Year_Index    : constant GNATCOLL.SQL.Exec.Field_Index := ID_Index + 2;
-   Comment_Index : constant GNATCOLL.SQL.Exec.Field_Index := ID_Index + 3;
-   Rating_Index  : constant GNATCOLL.SQL.Exec.Field_Index := ID_Index + 4;
+   Title_Index    : constant GNATCOLL.SQL.Exec.Field_Index := ID_Index + 1;
+   Year_Index     : constant GNATCOLL.SQL.Exec.Field_Index := ID_Index + 2;
+   Comment_Index  : constant GNATCOLL.SQL.Exec.Field_Index := ID_Index + 3;
+   Location_Index : constant GNATCOLL.SQL.Exec.Field_Index := ID_Index + 4;
 
    procedure Insert
-     (T            : in out Table;
-      Title        : in     String;
-      Year         : in     Integer;
-      Year_Valid   : in     Boolean;
-      Comment      : in     String;
-      Rating       : in     Integer;
-      Rating_Valid : in     Boolean);
+     (T          : in out Table;
+      Title      : in     String;
+      Year       : in     Integer;
+      Year_Valid : in     Boolean;
+      Comment    : in     String;
+      Location   : in     String);
    --  Insert a new record, fetch it using Find.
 
    procedure Update
-     (T            : in out Table;
-      Title        : in     String;
-      Year         : in     Integer;
-      Year_Valid   : in     Boolean;
-      Comment      : in     String;
-      Rating       : in     Integer;
-      Rating_Valid : in     Boolean);
+     (T          : in out Table;
+      Title      : in     String;
+      Year       : in     Integer;
+      Year_Valid : in     Boolean;
+      Comment    : in     String;
+      Location   : in     String);
    --  Update the data in the current record.
 
 end Books.Database.Data_Tables.Title;

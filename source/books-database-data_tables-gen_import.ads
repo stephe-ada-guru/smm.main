@@ -2,7 +2,7 @@
 --
 --  Generic table import
 --
---  Copyright (C) 2012 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2012, 2016 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -22,6 +22,7 @@ with SAL.CSV;
 generic
    Table_Name   : in String;
    Column_Count : in Integer;
+   Delimiter    : in Character;
 
    with procedure Read_Insert_Find (File : in out SAL.CSV.File_Type);
    --  Read a line from Input, insert into appropriate table. Ignore insert error (assume duplicate).

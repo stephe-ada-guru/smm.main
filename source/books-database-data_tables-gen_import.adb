@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2012 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2012, 2016 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -31,7 +31,7 @@ is
 begin
    Put_Line ("Importing " & Table_Name & " table from " & File_Name);
 
-   Open (File, File_Name, Max_Row_Size => 1024);
+   Open (File, File_Name, Max_Row_Size => 1024, Delimiter => Delimiter);
 
    if Columns (File) /= Column_Count then
       raise SAL.Initialization_Error with "expected" & Integer'Image (Column_Count) &

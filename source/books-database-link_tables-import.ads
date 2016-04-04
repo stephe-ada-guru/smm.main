@@ -19,5 +19,6 @@
 pragma License (GPL);
 
 procedure Books.Database.Link_Tables.Import
-  (Root_File_Name : in String;
-   T              : in out Table);
+  (Root_File_Name : in     String;
+   T              : in out Table;
+   Delimiter      : in     Character);

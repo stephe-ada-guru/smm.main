@@ -2,7 +2,7 @@
 --
 --  main procedure to import CSV data into Books database
 --
---  Copyright (C) 2009, 2012 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2009, 2012, 2016 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -30,24 +30,30 @@ with Books.Database.Link_Tables.Import;
 with SAL.Config_Files;
 procedure Books.Import.Main
 is
+   CSV_Delimiter : constant Character := '|'; --  from sqlite3 select
+
    procedure Import_Author is new Books.Database.Data_Tables.Gen_Import
      (Table_Name       => "Author",
-      Column_Count     => 4, --  ID, first, middle, last
+      Column_Count     => 4,   --  ID, first, middle, last
+      Delimiter        => CSV_Delimiter,
       Read_Insert_Find => Books.Database.Data_Tables.Author.Import.Read_Insert_Find);
 
    procedure Import_Collection is new Books.Database.Data_Tables.Gen_Import
      (Table_Name       => "Collection",
-      Column_Count     => 4, --  ID, Title, Year, editor_id
+      Column_Count     => 3, --  ID, Title, Year
+      Delimiter        => CSV_Delimiter,
       Read_Insert_Find => Books.Database.Data_Tables.Collection.Import.Read_Insert_Find);
 
    procedure Import_Series is new Books.Database.Data_Tables.Gen_Import
      (Table_Name       => "Series",
-      Column_Count     => 3, --  ID, Title, Author_id
+      Column_Count     => 2, --  ID, Title
+      Delimiter        => CSV_Delimiter,
       Read_Insert_Find => Books.Database.Data_Tables.Series.Import.Read_Insert_Find);
 
    procedure Import_Title is new Books.Database.Data_Tables.Gen_Import
      (Table_Name       => "Title",
-      Column_Count     => 5, --  ID, Title, Year, Comment, Rating
+      Column_Count     => 5, --  ID, Title, Year, Comment, Location
+      Delimiter        => CSV_Delimiter,
       Read_Insert_Find => Books.Database.Data_Tables.Title.Import.Read_Insert_Find);
 
 begin
@@ -62,7 +68,8 @@ begin
    declare
       use Books.Database;
 
-      Config : constant SAL.Config_Files.Configuration_Access_Type := SAL.Config_Files.Open (Argument (1));
+      Config : constant SAL.Config_Files.Configuration_Access_Type :=
+        SAL.Config_Files.Open (Argument (1), Missing_File => SAL.Config_Files.Raise_Exception);
 
       Root_File_Name : constant String := Ada.Command_Line.Argument (2);
 
@@ -85,9 +92,12 @@ begin
       Import_Series (Root_File_Name);
       Import_Title (Root_File_Name);
 
-      Link_Tables.Import (Root_File_Name, Links (Author, Title).all);
-      Link_Tables.Import (Root_File_Name, Links (Collection, Title).all);
-      Link_Tables.Import (Root_File_Name, Links (Series, Title).all);
+      Link_Tables.Import (Root_File_Name, Links (Author, Collection).all, Delimiter => CSV_Delimiter);
+      Link_Tables.Import (Root_File_Name, Links (Author, Series).all, Delimiter     => CSV_Delimiter);
+      Link_Tables.Import (Root_File_Name, Links (Author, Title).all, Delimiter      => CSV_Delimiter);
+      Link_Tables.Import (Root_File_Name, Links (Collection, Title).all, Delimiter  => CSV_Delimiter);
+      Link_Tables.Import (Root_File_Name, Links (Series, Title).all, Delimiter      => CSV_Delimiter);
+
    exception
    when E : others =>
       Set_Exit_Status (Ada.Command_Line.Failure);

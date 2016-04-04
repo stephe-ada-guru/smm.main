@@ -2,7 +2,7 @@
 --
 --  Title view widget for Books application.
 --
---  Copyright (C) 2002, 2004, 2009, 2012 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002, 2004, 2009, 2012, 2016 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -57,8 +57,8 @@ private
       Comment_Text  : Gtk.GEntry.Gtk_Entry;
 
       --  Row 3:
-      Rating_Label : Gtk.Label.Gtk_Label;
-      Rating_Text  : Gtk.GEntry.Gtk_Entry;
+      Location_Label : Gtk.Label.Gtk_Label;
+      Location_Text  : Gtk.GEntry.Gtk_Entry;
       --  End of Data_Table
 
       Default_Year : Ada.Strings.Unbounded.Unbounded_String;

@@ -2,7 +2,7 @@
 --
 --  see spec.
 --
---  Copyright (C) 2009, 2012 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2009, 2012, 2016 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -23,9 +23,12 @@ package body Books.Import is
 
    procedure Warm_Fuzzy
    is begin
-      Ada.Text_IO.Put ('.');
       Warm_Fuzzy_Count := Warm_Fuzzy_Count + 1;
-      if Warm_Fuzzy_Count mod 100 = 0 then
+      if Warm_Fuzzy_Count mod 10 = 0 then
+         Ada.Text_IO.Put ('.');
+      end if;
+
+      if Warm_Fuzzy_Count mod 1000 = 0 then
          Ada.Text_IO.New_Line;
       end if;
    end Warm_Fuzzy;

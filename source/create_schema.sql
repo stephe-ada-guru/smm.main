@@ -23,11 +23,11 @@ CREATE TABLE Series
 CREATE UNIQUE INDEX Series_Title on Series (Title);
 
 CREATE TABLE Title
-(ID     INTEGER PRIMARY KEY,
- Title  TEXT,
- Year   SMALLINT UNSIGNED,
- Comment TEXT,
- Rating TINYINT UNSIGNED);
+(ID       INTEGER PRIMARY KEY,
+ Title    TEXT,
+ Year     SMALLINT UNSIGNED,
+ Comment  TEXT,
+ Location TEXT);
 
 CREATE UNIQUE INDEX Title_Title_Year on Title (Title, Year);
 

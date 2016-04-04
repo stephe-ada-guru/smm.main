@@ -3,32 +3,8 @@ build/x86_gnu_windows_release/Makefile
 doc/C/books.texinfo
 file://c:/Gnu/GtkAda-2.2.0/share/gtk-doc/html/gtk/index.html
 
- Android implementation
-
-read-only if that's easier, but it would be convenient to enter things
-
-sync to sql db on hostmonster
-
-http://www.devx.com/wireless/Article/40842
-
-http://www.java2s.com/Open-Source/Android_Free_Code/Database/database/index.htm
-
-https://github.com/selesse/WineDB/
-
-http://satyan.github.io/sugar/
-    maps objects to db, like gnat*
-
  general
-
-try aggregate project to set ADA_PROJECT_PATH
-    done in release
-
-can't delete a year from a title
-    not a problem?
-
 last button does nothing in collection
-
-author edit view should have collection link checkbox
 
 can't shrink window below config geometry
 
@@ -38,15 +14,7 @@ don't declare all radio buttons; only those needed (don't just hide)
 
 consider gnatcoll orm, gtk
 
-sqlite command line insert ignores uniqueness!?
-
-need delete links with table item
-    delete Bookshelf, paperback collections
-    add binding to title?
-
-fix mote in god's eye series
-
-add rating search, allow for 'unrated'
+When delete item, delete associated links
 
 review fixme
 
@@ -67,19 +35,8 @@ replace obsolescent gtk packages with new ones
 
 (books.exe:4016): GLib-WARNING **: Passing a non-NULL package to g_win32_get_package_installation_directory() is deprecated and will not work in GLib after 2.18.
 
-add alternate indexes
-
-rating shows as 0
-    should be blank
-
-get one top level window?
-
 add main menu
     add import, export
-
-port to Android!
-    try app inventor; generic db browser?
-    read-only db avail via crashplan
 
 clean up private stuff
     only keep things that are referenced after creation

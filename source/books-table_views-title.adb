@@ -2,7 +2,7 @@
 --
 --  See spec.
 --
---  Copyright (C) 2002 - 2004, 2009, 2012 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002 - 2004, 2009, 2012, 2016 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -66,12 +66,12 @@ package body Books.Table_Views.Title is
       Gtk.Table.Attach (Title_View.Data_Table, Title_View.Comment_Text, 1, 3, 2, 3);
 
       --  Row 3
-      Gtk.Label.Gtk_New (Title_View.Rating_Label, "Rating");
-      Gtk.Label.Set_Justify (Title_View.Rating_Label, Gtk.Enums.Justify_Right);
-      Gtk.GEntry.Gtk_New (Title_View.Rating_Text);
+      Gtk.Label.Gtk_New (Title_View.Location_Label, "Location");
+      Gtk.Label.Set_Justify (Title_View.Location_Label, Gtk.Enums.Justify_Right);
+      Gtk.GEntry.Gtk_New (Title_View.Location_Text);
 
-      Gtk.Table.Attach (Title_View.Data_Table, Title_View.Rating_Label, 0, 1, 3, 4);
-      Gtk.Table.Attach (Title_View.Data_Table, Title_View.Rating_Text, 1, 3, 3, 4);
+      Gtk.Table.Attach (Title_View.Data_Table, Title_View.Location_Label, 0, 1, 3, 4);
+      Gtk.Table.Attach (Title_View.Data_Table, Title_View.Location_Text, 1, 3, 3, 4);
 
       Gtk.Table.Show_All (Title_View.Data_Table);
 
@@ -111,7 +111,7 @@ package body Books.Table_Views.Title is
    is begin
       Gtk.GEntry.Set_Text (Title_View.Title_Text, Gtk.GEntry.Get_Text (Title_View.Find_Text));
       Gtk.GEntry.Set_Text (Title_View.Year_Text, Ada.Strings.Unbounded.To_String (Title_View.Default_Year));
-      Gtk.GEntry.Set_Text (Title_View.Rating_Text, "");
+      Gtk.GEntry.Set_Text (Title_View.Location_Text, "");
       Gtk.GEntry.Set_Text (Title_View.Comment_Text, "");
       Gtk.GEntry.Grab_Focus (Title_View.Title_Text);
    end Default_Add;
@@ -153,33 +153,24 @@ package body Books.Table_Views.Title is
    is
       use Ada.Strings.Unbounded;
 
-      Year         : Integer;
-      Year_Valid   : Boolean := True;
-      Rating       : Integer;
-      Rating_Valid : Boolean := True;
+      Year       : Integer;
+      Year_Valid : Boolean := True;
    begin
       begin
          Year                    := Integer'Value (Gtk.GEntry.Get_Text (Title_View.Year_Text));
          Title_View.Default_Year := To_Unbounded_String (Gtk.GEntry.Get_Text (Title_View.Year_Text));
       exception
       when others =>
+         --  Assume Year text box is empty. FIXME: report typos!
          Year_Valid := False;
       end;
 
-      begin
-         Rating := Integer'Value (Gtk.GEntry.Get_Text (Title_View.Rating_Text));
-      exception
-      when others =>
-         Rating_Valid := False;
-      end;
-
       Database.Data_Tables.Title.Table (Title_View.Primary_Table.all).Insert
-        (Title        => Gtk.GEntry.Get_Text (Title_View.Title_Text),
-         Year         => Year,
-         Year_Valid   => Year_Valid,
-         Comment      => Gtk.GEntry.Get_Text (Title_View.Comment_Text),
-         Rating       => Rating,
-         Rating_Valid => Rating_Valid);
+        (Title      => Gtk.GEntry.Get_Text (Title_View.Title_Text),
+         Year       => Year,
+         Year_Valid => Year_Valid,
+         Comment    => Gtk.GEntry.Get_Text (Title_View.Comment_Text),
+         Location   => Gtk.GEntry.Get_Text (Title_View.Location_Text));
 
    end Insert_Database;
 
@@ -192,10 +183,8 @@ package body Books.Table_Views.Title is
 
    overriding procedure Update_Database (Title_View : access Gtk_Title_View_Record)
    is
-      Year         : Integer;
-      Year_Valid   : Boolean := True;
-      Rating       : Integer;
-      Rating_Valid : Boolean := True;
+      Year       : Integer;
+      Year_Valid : Boolean := True;
    begin
       begin
          Year := Integer'Value (Gtk.GEntry.Get_Text (Title_View.Year_Text));
@@ -204,20 +193,12 @@ package body Books.Table_Views.Title is
          Year_Valid := False;
       end;
 
-      begin
-         Rating := Integer'Value (Gtk.GEntry.Get_Text (Title_View.Rating_Text));
-      exception
-      when others =>
-         Rating_Valid := False;
-      end;
-
       Database.Data_Tables.Title.Table (Title_View.Primary_Table.all).Update
-        (Title        => Gtk.GEntry.Get_Text (Title_View.Title_Text),
-         Year         => Year,
-         Year_Valid   => Year_Valid,
-         Comment      => Gtk.GEntry.Get_Text (Title_View.Comment_Text),
-         Rating       => Rating,
-         Rating_Valid => Rating_Valid);
+        (Title      => Gtk.GEntry.Get_Text (Title_View.Title_Text),
+         Year       => Year,
+         Year_Valid => Year_Valid,
+         Comment    => Gtk.GEntry.Get_Text (Title_View.Comment_Text),
+         Location   => Gtk.GEntry.Get_Text (Title_View.Location_Text));
    end Update_Database;
 
    overriding procedure Update_Primary_Display (Title_View : access Gtk_Title_View_Record)
@@ -227,7 +208,7 @@ package body Books.Table_Views.Title is
       Set_Text (Title_View.Title_Text,   Title_View.Primary_Table, Title_Index);
       Set_Text (Title_View.Year_Text,    Title_View.Primary_Table, Year_Index);
       Set_Text (Title_View.Comment_Text, Title_View.Primary_Table, Comment_Index);
-      Set_Text (Title_View.Rating_Text,  Title_View.Primary_Table, Rating_Index);
+      Set_Text (Title_View.Location_Text,  Title_View.Primary_Table, Location_Index);
    end Update_Primary_Display;
 
    overriding procedure Clear_Primary_Display (Title_View : access Gtk_Title_View_Record)
@@ -235,7 +216,7 @@ package body Books.Table_Views.Title is
       Title_View.Title_Text.Set_Text ("");
       Title_View.Year_Text.Set_Text ("");
       Title_View.Comment_Text.Set_Text ("");
-      Title_View.Rating_Text.Set_Text ("");
+      Title_View.Location_Text.Set_Text ("");
    end Clear_Primary_Display;
 
 end Books.Table_Views.Title;

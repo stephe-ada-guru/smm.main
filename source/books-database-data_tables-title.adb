@@ -2,7 +2,7 @@
 --
 --  See spec.
 --
---  Copyright (C) 2002, 2004, 2009, 2012 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2002, 2004, 2009, 2012, 2016 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -28,27 +28,27 @@ package body Books.Database.Data_Tables.Title is
    is
       use type GNATCOLL.SQL.Exec.SQL_Parameter;
    begin
-      T.Find_By_ID_Statement := new String'("SELECT ID, Title, Year, Comment, Rating FROM Title WHERE ID = ?");
+      T.Find_By_ID_Statement := new String'("SELECT ID, Title, Year, Comment, Location FROM Title WHERE ID = ?");
 
       T.Find_By_Name_Statement := new String'
-        ("SELECT ID, Title, Year, Comment, Rating FROM Title WHERE Title LIKE ? ORDER BY Title");
+        ("SELECT ID, Title, Year, Comment, Location FROM Title WHERE Title LIKE ? ORDER BY Title");
 
    end Initialize;
 
    procedure Insert
-     (T            : in out Table;
-      Title        : in     String;
-      Year         : in     Integer;
-      Year_Valid   : in     Boolean;
-      Comment      : in     String;
-      Rating       : in     Integer;
-      Rating_Valid : in     Boolean)
+     (T          : in out Table;
+      Title      : in     String;
+      Year       : in     Integer;
+      Year_Valid : in     Boolean;
+      Comment    : in     String;
+      Location   : in     String)
    is
       use Ada.Strings.Unbounded;
       use GNATCOLL.SQL.Exec;
 
-      Title_1   : aliased constant String := Title;
-      Comment_1 : aliased constant String := Comment;
+      Title_1    : aliased constant String := Title;
+      Comment_1  : aliased constant String := Comment;
+      Location_1 : aliased constant String := Location;
 
       Statement  : Unbounded_String := To_Unbounded_String ("INSERT INTO Title (Title, Comment");
       Values     : Unbounded_String := To_Unbounded_String (" VALUES (?,?");
@@ -69,10 +69,10 @@ package body Books.Database.Data_Tables.Title is
          Values := Values & ",?";
       end if;
 
-      if Rating_Valid then
-         Statement           := Statement & ", Rating";
+      if Location'Length > 0 then
+         Statement           := Statement & ", Location";
          Last_Param          := Last_Param + 1;
-         Params (Last_Param) := +Rating;
+         Params (Last_Param) := +Location_1'Unchecked_Access;
 
          Values := Values & ",?";
       end if;
@@ -82,7 +82,7 @@ package body Books.Database.Data_Tables.Title is
          To_String (Statement) & ")" & To_String (Values) & ")",
          Params (1 .. Last_Param));
 
-      Statement  := To_Unbounded_String ("SELECT ID, Title, Year, Comment, Rating from Title WHERE Title = ?");
+      Statement  := To_Unbounded_String ("SELECT ID, Title, Year, Comment, Location from Title WHERE Title = ?");
       Last_Param := 1;
 
       if Year_Valid then
@@ -97,20 +97,20 @@ package body Books.Database.Data_Tables.Title is
    end Insert;
 
    procedure Update
-     (T            : in out Table;
-      Title        : in     String;
-      Year         : in     Integer;
-      Year_Valid   : in     Boolean;
-      Comment      : in     String;
-      Rating       : in     Integer;
-      Rating_Valid : in     Boolean)
+     (T          : in out Table;
+      Title      : in     String;
+      Year       : in     Integer;
+      Year_Valid : in     Boolean;
+      Comment    : in     String;
+      Location   : in     String)
    is
       use GNATCOLL.SQL.Exec;
 
-      Title_1   : aliased constant String := Title;
-      Comment_1 : aliased constant String := Comment;
+      Title_1    : aliased constant String := Title;
+      Comment_1  : aliased constant String := Comment;
+      Location_1 : aliased constant String := Location;
 
-      Statement : constant String := "UPDATE Title SET Title = ?, Year = ?, Comment = ?, Rating = ? WHERE ID = ?";
+      Statement : constant String := "UPDATE Title SET Title = ?, Year = ?, Comment = ?, Location = ? WHERE ID = ?";
    begin
       --  Unchecked_Access ok here, because value not needed after subprogram return.
       Checked_Execute
@@ -120,7 +120,7 @@ package body Books.Database.Data_Tables.Title is
            (1 => +Title_1'Unchecked_Access,
             2 => Param (Year_Valid, Year),
             3 => +Comment_1'Unchecked_Access,
-            4 => Param (Rating_Valid, Rating),
+            4 => +Location_1'Unchecked_Access,
             5 => +T.ID));
 
       T.Fetch (T.ID);
