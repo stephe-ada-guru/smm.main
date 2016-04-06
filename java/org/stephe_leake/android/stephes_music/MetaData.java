@@ -50,9 +50,10 @@ public class MetaData
    public String album;
    public String artist;
    public String duration; // service needs a string for sendStickyBroadcast, so don't bother with integer conversions
-   public Uri uri; // for sharing
+   public Uri musicUri; // for sharing
+   public Uri linerUri;
 
-   private String albumArtCurrentFileName;
+   private String currentMusicFileName; // absolute
    private Bitmap albumArt;
 
    public Boolean albumArtValid()
@@ -74,8 +75,10 @@ public class MetaData
       File musicFile = new File(playlistDirectory, musicFileName);
       final String sourceFile = musicFile.getAbsolutePath();
 
-      if (albumArtCurrentFileName != null && albumArtCurrentFileName.contentEquals(sourceFile))
+      if (currentMusicFileName != null && currentMusicFileName.contentEquals(sourceFile))
          return;
+
+      currentMusicFileName = sourceFile;
 
       // new song file
       ContentResolver resolver = context.getContentResolver();
@@ -95,9 +98,14 @@ public class MetaData
             MediaStore.Audio.Playlists.NAME
          };
 
-      uri = new Uri.Builder()
+      musicUri = new Uri.Builder()
          .scheme("file")
          .path(sourceFile)
+         .build();
+
+      linerUri = new Uri.Builder()
+         .scheme("file")
+         .path(musicFile.getParentFile().getAbsolutePath() + "/liner_notes.pdf")
          .build();
 
       try

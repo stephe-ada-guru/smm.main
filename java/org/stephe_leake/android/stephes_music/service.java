@@ -37,6 +37,8 @@ import android.media.MediaMetadataEditor;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.media.RemoteControlClient;
+import android.net.Uri;
+import android.net.Uri.Builder;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
@@ -255,12 +257,13 @@ public class service extends Service
                    putExtra ("playlist", getResources().getString(R.string.null_playlist)));
             }
 
-            remoteControlClient.editMetadata(true)
-               .putString(MediaMetadataRetriever.METADATA_KEY_TITLE, "")
-               .putString(MediaMetadataRetriever.METADATA_KEY_ALBUM, "")
-               .putString(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST, "")
-               .putLong(MediaMetadataRetriever.METADATA_KEY_DURATION, 0)
-               .apply();
+            if (remoteControlClient != null)
+               remoteControlClient.editMetadata(true)
+                  .putString(MediaMetadataRetriever.METADATA_KEY_TITLE, "")
+                  .putString(MediaMetadataRetriever.METADATA_KEY_ALBUM, "")
+                  .putString(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST, "")
+                  .putLong(MediaMetadataRetriever.METADATA_KEY_DURATION, 0)
+                  .apply();
 
             // no notification until there is something to play
          }
@@ -273,19 +276,22 @@ public class service extends Service
                 ("playlist",
                  playlistFilename + " " + (playlistPos + 1) + " / " + playlist.size()));
 
-            MediaMetadataEditor editor = remoteControlClient.editMetadata(true)
-               .putString(MediaMetadataRetriever.METADATA_KEY_TITLE, utils.retriever.title)
-               .putString(MediaMetadataRetriever.METADATA_KEY_ALBUM, utils.retriever.album)
-               // METADATA_KEY_ARTIST is wrong here for Scion xB
-               .putString(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST, utils.retriever.artist)
-               .putLong(MediaMetadataRetriever.METADATA_KEY_DURATION, Integer.parseInt(utils.retriever.duration));
-
-            if (utils.retriever.albumArtValid())
+            if (remoteControlClient != null)
             {
-               // This works for the lock screen, but not for the Scion xB
-               editor.putBitmap(MediaMetadataEditor.BITMAP_KEY_ARTWORK, utils.retriever.getAlbumArt());
+               MediaMetadataEditor editor = remoteControlClient.editMetadata(true)
+                  .putString(MediaMetadataRetriever.METADATA_KEY_TITLE, utils.retriever.title)
+                  .putString(MediaMetadataRetriever.METADATA_KEY_ALBUM, utils.retriever.album)
+                  // METADATA_KEY_ARTIST is wrong here for Scion xB
+                  .putString(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST, utils.retriever.artist)
+                  .putLong(MediaMetadataRetriever.METADATA_KEY_DURATION, Integer.parseInt(utils.retriever.duration));
+
+               if (utils.retriever.albumArtValid())
+               {
+                  // This works for the lock screen, but not for the Scion xB
+                  editor.putBitmap(MediaMetadataEditor.BITMAP_KEY_ARTWORK, utils.retriever.getAlbumArt());
+               }
+               editor.apply();
             }
-            editor.apply();
 
             setNotification(utils.retriever);
          }
@@ -302,15 +308,17 @@ public class service extends Service
             switch (playing)
             {
             case Idle:
-               remoteControlClient.setPlaybackState
-                  (remoteControlClient.PLAYSTATE_STOPPED, mediaPlayer.getCurrentPosition(), 1.0f);
+               if (remoteControlClient != null)
+                  remoteControlClient.setPlaybackState
+                     (remoteControlClient.PLAYSTATE_STOPPED, mediaPlayer.getCurrentPosition(), 1.0f);
 
                // no Notification
                break;
 
             case Playing:
-               remoteControlClient.setPlaybackState
-                  (remoteControlClient.PLAYSTATE_PLAYING, mediaPlayer.getCurrentPosition(), 1.0f);
+               if (remoteControlClient != null)
+                  remoteControlClient.setPlaybackState
+                     (remoteControlClient.PLAYSTATE_PLAYING, mediaPlayer.getCurrentPosition(), 1.0f);
 
                if (what == WhatChanged.State & utils.retriever != null)
                {
@@ -321,8 +329,9 @@ public class service extends Service
 
             case Paused:
             case Paused_Transient:
-               remoteControlClient.setPlaybackState
-                  (remoteControlClient.PLAYSTATE_PAUSED, mediaPlayer.getCurrentPosition(), 1.0f);
+               if (remoteControlClient != null)
+                  remoteControlClient.setPlaybackState
+                     (remoteControlClient.PLAYSTATE_PAUSED, mediaPlayer.getCurrentPosition(), 1.0f);
 
                if (what == WhatChanged.State && utils.retriever != null)
                {
@@ -360,6 +369,10 @@ public class service extends Service
       {
          if (BuildConfig.DEBUG) utils.verboseLog("pause while not playing");
       }
+
+      // Do this now to avoid it crashing. Pause control doesn't show anyway (not clear why).
+      audioManager.unregisterRemoteControlClient(remoteControlClient);
+      remoteControlClient = null;
    }
 
    private void play (final String path, final int pos)
@@ -367,6 +380,21 @@ public class service extends Service
       // path must be relative to playlistDirectory
 
       if (BuildConfig.DEBUG) utils.verboseLog("play " + path + "; at " + pos);
+
+      // recover remote control from pause
+      remoteControlClient = new RemoteControlClient(mediaButtonIntent);
+
+      remoteControlClient.setTransportControlFlags
+         (
+          RemoteControlClient.FLAG_KEY_MEDIA_NEXT |
+          RemoteControlClient.FLAG_KEY_MEDIA_PAUSE |
+          RemoteControlClient.FLAG_KEY_MEDIA_PLAY |
+          RemoteControlClient.FLAG_KEY_MEDIA_PLAY_PAUSE |
+          RemoteControlClient.FLAG_KEY_MEDIA_POSITION_UPDATE |
+          RemoteControlClient.FLAG_KEY_MEDIA_PREVIOUS
+          );
+
+      audioManager.registerRemoteControlClient(remoteControlClient);
 
       try
       {
@@ -1193,19 +1221,6 @@ public class service extends Service
          mediaButtonIntent = PendingIntent.getBroadcast
             (context, 0, new Intent(Intent.ACTION_MEDIA_BUTTON).setComponent(receiver), 0);
 
-         remoteControlClient = new RemoteControlClient(mediaButtonIntent);
-
-         remoteControlClient.setTransportControlFlags
-            (
-               RemoteControlClient.FLAG_KEY_MEDIA_NEXT |
-               RemoteControlClient.FLAG_KEY_MEDIA_PAUSE |
-               RemoteControlClient.FLAG_KEY_MEDIA_PLAY |
-               RemoteControlClient.FLAG_KEY_MEDIA_PLAY_PAUSE |
-               RemoteControlClient.FLAG_KEY_MEDIA_POSITION_UPDATE |
-               RemoteControlClient.FLAG_KEY_MEDIA_PREVIOUS
-            );
-
-         audioManager.registerRemoteControlClient(remoteControlClient);
       }
 
       utils.retriever = new MetaData();
@@ -1252,7 +1267,6 @@ public class service extends Service
          ComponentName receiver = new ComponentName(getPackageName(), MediaButtonReceiver.class.getName());
          audioManager.unregisterMediaButtonEventReceiver(receiver);
       }
-      audioManager.unregisterRemoteControlClient(remoteControlClient);
 
       handler.removeCallbacksAndMessages(null);
 

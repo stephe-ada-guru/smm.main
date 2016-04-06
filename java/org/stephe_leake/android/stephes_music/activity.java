@@ -64,6 +64,7 @@ public class activity extends android.app.Activity
    private static final int MENU_RESET_PLAYLIST = 3;
    private static final int MENU_SHARE          = 4;
    private static final int MENU_COPY           = 5;
+   private static final int MENU_LINER          = 6;
 
    private static final int RESULT_PREFERENCES = 1;
 
@@ -496,6 +497,7 @@ public class activity extends android.app.Activity
       super.onCreateOptionsMenu(menu);
       menu.add(0, MENU_QUIT, 0, R.string.menu_quit);
       menu.add(0, MENU_SHARE, 0, R.string.menu_share);
+      menu.add(0, MENU_LINER, 0, R.string.menu_liner);
       menu.add(0, MENU_COPY, 0, R.string.menu_copy);
       menu.add(0, MENU_RESET_PLAYLIST, 0, R.string.menu_reset_playlist);
       menu.add(0, MENU_PREFERENCES, 0, R.string.menu_preferences);
@@ -533,12 +535,13 @@ public class activity extends android.app.Activity
 
       case MENU_SHARE:
          {
-            utils.verboseLog("sharing " + utils.retriever.uri.toString());
+            utils.verboseLog("sharing " + utils.retriever.musicUri.toString());
 
             Intent shareIntent = new Intent()
                .setAction(Intent.ACTION_SEND)
-               .putExtra(Intent.EXTRA_STREAM, utils.retriever.uri)
+               .putExtra(Intent.EXTRA_STREAM, utils.retriever.musicUri)
                .setType("audio/mp3");
+
             startActivity(Intent.createChooser(shareIntent, "Share song via ..."));
          }
          break;
@@ -550,6 +553,19 @@ public class activity extends android.app.Activity
             clipManage.setPrimaryClip
                (ClipData.newPlainText
                 ("song", artistTitle.getText() + " " + albumTitle.getText() + " " + songTitle.getText()));
+         }
+         break;
+
+      case MENU_LINER:
+         {
+            // not clear what type to provide:
+            // "application/pdf" : offers Mantano and Polaris, which both say "can't open file"
+            //  none             : offers GhostCommander; click on file, get chooser with Drive, Mantano, etc;
+            //      Drive says pdf file is invalid format.
+            //      kindle can show it
+            Intent shareIntent = new Intent(Intent.ACTION_VIEW, utils.retriever.linerUri);
+
+            startActivity(Intent.createChooser(shareIntent, "Show liner notes via ..."));
          }
          break;
 

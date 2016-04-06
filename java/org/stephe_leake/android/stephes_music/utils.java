@@ -1,6 +1,6 @@
 //  Abstract :
 //
-//  Provides User Interface to Stephe's Music Player.
+//  misc stuff
 //
 //  Copyright (C) 2011 - 2013, 2015 - 2016 Stephen Leake.  All Rights Reserved.
 //
@@ -59,7 +59,8 @@ public class utils
    public static final String EXTRA_COMMAND_PLAYLIST =
       "org.stephe_leake.android.stephes_music.action.command_playlist";
 
-   // values for extras. We'd like to use an enum here, but we can't make that parcelable for intent extras.
+   // values for extras; alphabetical. We'd like to use an enum here,
+   // but we can't make that parcelable for intent extras.
    public static final int COMMAND_DUMP_LOG       = 1;
    public static final int COMMAND_NEXT           = 2;
    public static final int COMMAND_NOTE           = 3;

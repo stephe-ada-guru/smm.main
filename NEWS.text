@@ -26,4 +26,10 @@ Mar 2016
     add text to clipboard
 
     version 10
-    handle SCO_AUDIO_STATE_DISCONNECTED
+    handle SCO_AUDIO_STATE_DISCONNECTED; does not fix car power cycle issue
+
+    version 11
+    add "Show liner notes" menu item
+
+    another attempt to fix car and screen remote control: disconnect
+    from remote control in pause.

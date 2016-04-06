@@ -4,51 +4,31 @@ Makefile
 (dvc-status)
 ~/Misc/android.text
 
-MediaSession in o.s_l.m_p.work
+branches:
+    org.stephe_leake.music_player.java - main, currently on phone
+    o.s_l.m_p.work                     - MediaSession instead of RemoteControl; save for Android 5 phone.
+
+add small album art to notification?
+
 
 notify when less than 10 songs left in playlist
     but only once; not clear where to save state, when to clear it
 
-fix menu for Android 5
-    might "just work"
-
 back button pop app stack
 
-remote control
+lock screen control
     lock screen going away in Android 5 anyway; notifications show on lock screen
-    still needed for car display
+        works with MediaSessionCompat in Android 5
+        no lock screen control with MediaSessionCompat in Android 4
 
-    problems:
-        1) when hit pause, lock screen controls disappear
+        quiting music instead of pausing helps some
+            on pause, quit remote control
+
+    when hit pause on lock screen, lock screen controls disappear
             they come back after play, power off/on
 
-        2) when Stephe's Music is playing in car, car is power cycled;
-            lock screen control does not show, car remote display not synced
-                unless phone is not used while car is powered off
-                or if music app is Quit before power off
+            does not happen when beyondpod or vanilla is playing
 
-            does not happen when beyondpod is playing, car is power cycled
-
-            restart phone recovers
-            - indicates remote control process has died?
-
-            some "bluetooth lost" signal that music app should handle?
-
-            quit app, restart app does not restore remote control if it is dead
-            quit app, restart app does not kill remote control if it is working.
-
-        3) also lose lock screen at other times
-
-    problem 1) not present for vanilla music or beyondpod
-        https://github.com/vanilla-music/vanilla
-        vanilla always does setPlaybackState and editor.apply; no help
-
-        get new copy instead of caching at startup? vanilla doesn't do that
-
-        don't send position when paused? no help
-        don't send position at all? no help
-
-    handle SCO_AUDIO_STATE_DISCONNECTED in same handler as SCO_AUDIO_STATE_CONNECTED; version 10, testing
 
 
 speak metadata!
@@ -73,7 +53,7 @@ still can't create vocal.last in emulator
     something wrong with the way I'm finding the smmDirectories?
 
 support Upnp/dlna output stream
-    play on stereo via android tv and/or roku box
+    play on stereo via android tv and/or roku box, avoid bluetooth/TV amp input switch
     MediaRouter
     WifiP2pManager.UpnpServiceResponseListener
     http://sourceforge.net/p/droiddlnaplayer/code/HEAD/tree/
@@ -81,13 +61,19 @@ support Upnp/dlna output stream
     /Projects/android/droiddlnaplayer-code/
     /Projects/android/clinkjavaproguide200.pdf
 
+    include volume control
+    DLNA requires all kinds of libraries/protocols
+
 stop after n songs
     instead of sleep timer
 
-handle back button
+ Android 5
+    fix menu
+        currently works, but displayes as "MORE" instead of vertical "..."
 
-webdav
-    Mount network drive http://<ip>:<port>
+    replace MediaSessionCompat with MediaSession
+        delete MediaButtonReceiver?
+
 
  smm
 /Projects/smm.main/build/x86_gnu_windows_release/Makefile
@@ -101,10 +87,6 @@ multiple categories:
     vocal/protest/intro
     instrumental/yoga
         store in genre field(s)?
-
-DLNA server output; send stream to TV, avoid bluetooth/TV amp input switch
-    include volume control
-    DLNA requires all kinds of libraries/protocols
 
  Kate's Mythical Music Manager (KMMM Km3)
 ../stephes_music_player.kate/build/Makefile
@@ -193,35 +175,6 @@ M-x compile
 
 M-x compile
     emacs -q -batch -L . --eval '(check-declare-directory ".")'
-
-
- references
-c:/Archive/android/langspec-3.0.pdf
-
-emulator:
-    F7 is power button; turns screen off and dismounts sdcard
-        try adb shell: mount -o remount rw /sdcard
-
-    Ctrl-F11 landscape/portrait
-
-    telnet localhost 5554: emulator console
-        can't manage the sd card
-
-    adb -e shell
-        runs under emacs in parallel with Android Studio, gives bash shell on device
-
-        after emulator start, mount says sdcard is:
-/dev/fuse /storage/sdcard fuse rw,nosuid,nodev,relatime,user_id=1023,group_id=1023,default_permissions,allow_other 0 0
-
-        or:
-
-/dev/block/vold/179:0 /mnt/media_rw/sdcard vfat rw,dirsync,nosuid,nodev,noexec,relatime,uid=1023,gid=1023,fmask=0007,dmask=0007,allow_utime=0020,codepage=cp437,iocharset=iso8859-1,shortname=mixed,utf8,errors=remount-ro 0 0
-
-        'ls /storage/sdcard' => stuff
-        'ls /mnt/media_rw/sdcard' => same stuff
-
-        after F7: no change in output of 'mount'
-        'ls /storage/sdcard' => empty
 
  release process
 NEWS.text
