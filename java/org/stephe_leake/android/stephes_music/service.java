@@ -227,8 +227,6 @@ public class service extends Service
    private void notifyChange(WhatChanged what)
    {
       // Notify the activity and the remote control that something has changed.
-      //
-      // 'What' must be one of the *_CHANGED constants in utils.java
 
       switch (what)
       {

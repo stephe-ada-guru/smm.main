@@ -1,34 +1,34 @@
 July 2015
-    version 4.2
+- version 4.2
     add RemoteControlClient for Scion xB bluetooth control (no lock screen controls).
 
-    version 4.3
+- version 4.3
     add basic notification; text but no buttons
 
-    version 6
+- version 6
     notification buttons for prev, play/pause, next
     better startup for car bluetooth control.
 
-    version 7
+- version 7
     better handling of pending intents
     show album art in remote control. but it doesn't work in the Scion xB!
 
-    version 8
+- version 8
     add vertical separators between notes buttons
     in notification, put title on top
     add menu entry to share song file
     add menu entry to reset playlist (start over)
 
 Mar 2016
-    version 9
+- version 9
     use Alert Dialog for some messages
     add album art
     add text to clipboard
 
-    version 10
+- version 10
     handle SCO_AUDIO_STATE_DISCONNECTED; does not fix car power cycle issue
 
-    version 11
+- version 11
     add "Show liner notes" menu item
 
     another attempt to fix car and screen remote control: disconnect
