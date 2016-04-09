@@ -10,6 +10,13 @@ MediaSession in o.s_l.m_p.work
 
     test on tablet with lock screen, car
         menu shows as MORE instead of ...
+        works
+            lock screen shows notification controls that work
+            car metadata sync survives car power cycle
+
+    test on phone with car
+        no lock screen controls
+        car metadata sync does not survive car power cycle
 
 use small album art in notification? lots of room on tablet :)
 
@@ -45,28 +52,14 @@ remote control
 
         3) also lose lock screen at other times
 
-    test in emulator with non-sdcard music
+    can't test in emulator
 
     problem 1) not present for vanilla music or beyondpod
         https://github.com/vanilla-music/vanilla
         vanilla always does setPlaybackState and editor.apply; no help
 
-        get new copy instead of caching at startup? vanilla doesn't do that
 
-        don't send position when paused? no help
-        don't send position at all? no help
-
-        delay before sending paused state?
-            let remote control display recover?
-
-        check vanilla task type, service start mechanism; same
-
-
-    merge into vanilla app
-        create local git branch from /Projects/Android/vanilla
-        /Projects/Android/vanilla_stephe/notes.text
-        commit to monotone for backup
-        too hard
+    fully quit remote control on pause.
 
 speak metadata!
     textToSpeech

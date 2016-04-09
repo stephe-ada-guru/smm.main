@@ -12,14 +12,14 @@
 
 (add-to-list 'ede-locate-setup-options 'ede-locate-global)
 
-(sal-ensure-ede "Generic Monotone" ".")
+(ede-ensure-class-dir "Generic Monotone" ".")
 
 ;; Set the EDE locator object directly (not via
 ;; ede-enable-locate-on-project), to select ede-locate-global-path and
 ;; set the path.
 
 (defun stephe-music-work-ignore (dir)
-  (match-string dir "build"))
+  (string-match "build" dir))
 
 ;; When loaded from build/Makefile, #$ is "../prj.el", and `default-directory' is "build"
 ;; When run interactively, `default-directory' is "."
