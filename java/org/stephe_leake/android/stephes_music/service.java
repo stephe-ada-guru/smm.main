@@ -33,12 +33,11 @@ import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.media.AudioManager.OnAudioFocusChangeListener;
 import android.media.AudioManager;
-import android.media.MediaMetadataEditor;
-import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
-import android.media.RemoteControlClient;
-import android.net.Uri;
-import android.net.Uri.Builder;
+import android.media.session.MediaSession;
+import android.media.session.PlaybackState;
+import android.media.MediaMetadata;
+import android.media.MediaMetadata.Builder;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
@@ -170,7 +169,7 @@ public class service extends Service
       switch (playing)
       {
       case Idle:
-         // should not get here; keep compiler happy
+         // We get here when reinstantiated after onDestroy
          break;
 
       case Playing:
@@ -227,6 +226,8 @@ public class service extends Service
    private void notifyChange(WhatChanged what)
    {
       // Notify the activity and the remote control that something has changed.
+      //
+      // 'What' must be one of the *_CHANGED constants in utils.java
 
       switch (what)
       {
@@ -255,13 +256,16 @@ public class service extends Service
                    putExtra ("playlist", getResources().getString(R.string.null_playlist)));
             }
 
-            if (remoteControlClient != null)
-               remoteControlClient.editMetadata(true)
-                  .putString(MediaMetadataRetriever.METADATA_KEY_TITLE, "")
-                  .putString(MediaMetadataRetriever.METADATA_KEY_ALBUM, "")
-                  .putString(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST, "")
-                  .putLong(MediaMetadataRetriever.METADATA_KEY_DURATION, 0)
-                  .apply();
+            MediaMetadata metadata = new MediaMetadata.Builder()
+               .putString(MediaMetadata.METADATA_KEY_TITLE, "")
+               .putString(MediaMetadata.METADATA_KEY_ALBUM, "")
+               .putString(MediaMetadata.METADATA_KEY_ARTIST, "")
+               .putString(MediaMetadata.METADATA_KEY_ALBUM_ARTIST, "")
+               .putLong(MediaMetadata.METADATA_KEY_DURATION, 0)
+               .putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, null)
+               .build();
+
+            mediaSession.setMetadata(metadata);
 
             // no notification until there is something to play
          }
@@ -274,22 +278,18 @@ public class service extends Service
                 ("playlist",
                  playlistFilename + " " + (playlistPos + 1) + " / " + playlist.size()));
 
-            if (remoteControlClient != null)
-            {
-               MediaMetadataEditor editor = remoteControlClient.editMetadata(true)
-                  .putString(MediaMetadataRetriever.METADATA_KEY_TITLE, utils.retriever.title)
-                  .putString(MediaMetadataRetriever.METADATA_KEY_ALBUM, utils.retriever.album)
-                  // METADATA_KEY_ARTIST is wrong here for Scion xB
-                  .putString(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST, utils.retriever.artist)
-                  .putLong(MediaMetadataRetriever.METADATA_KEY_DURATION, Integer.parseInt(utils.retriever.duration));
+            MediaMetadata metadata = new MediaMetadata.Builder()
+               .putString(MediaMetadata.METADATA_KEY_TITLE, utils.retriever.title)
+               .putString(MediaMetadata.METADATA_KEY_ALBUM, utils.retriever.album)
+               .putString(MediaMetadata.METADATA_KEY_ARTIST, utils.retriever.artist)
+               .putString(MediaMetadata.METADATA_KEY_ALBUM_ARTIST, utils.retriever.artist)
+               .putLong(MediaMetadata.METADATA_KEY_DURATION, Integer.parseInt(utils.retriever.duration))
+               // This works for the lock screen, but not for the Scion xB
+               // ok if albumart is null
+               .putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, utils.retriever.getAlbumArt())
+               .build();
 
-               if (utils.retriever.albumArtValid())
-               {
-                  // This works for the lock screen, but not for the Scion xB
-                  editor.putBitmap(MediaMetadataEditor.BITMAP_KEY_ARTWORK, utils.retriever.getAlbumArt());
-               }
-               editor.apply();
-            }
+            mediaSession.setMetadata(metadata);
 
             setNotification(utils.retriever);
          }
@@ -306,17 +306,19 @@ public class service extends Service
             switch (playing)
             {
             case Idle:
-               if (remoteControlClient != null)
-                  remoteControlClient.setPlaybackState
-                     (remoteControlClient.PLAYSTATE_STOPPED, mediaPlayer.getCurrentPosition(), 1.0f);
+               mediaSession.setPlaybackState
+                  (new PlaybackState.Builder()
+                   .setState(PlaybackState.STATE_STOPPED, mediaPlayer.getCurrentPosition(), 1.0f, 0)
+                   .build());
 
                // no Notification
                break;
 
             case Playing:
-               if (remoteControlClient != null)
-                  remoteControlClient.setPlaybackState
-                     (remoteControlClient.PLAYSTATE_PLAYING, mediaPlayer.getCurrentPosition(), 1.0f);
+               mediaSession.setPlaybackState
+                  (new PlaybackState.Builder()
+                   .setState(PlaybackState.STATE_PLAYING, mediaPlayer.getCurrentPosition(), 1.0f, 0)
+                   .build());
 
                if (what == WhatChanged.State & utils.retriever != null)
                {
@@ -327,9 +329,10 @@ public class service extends Service
 
             case Paused:
             case Paused_Transient:
-               if (remoteControlClient != null)
-                  remoteControlClient.setPlaybackState
-                     (remoteControlClient.PLAYSTATE_PAUSED, mediaPlayer.getCurrentPosition(), 1.0f);
+               mediaSession.setPlaybackState
+                  (new PlaybackState.Builder()
+                   .setState(PlaybackState.STATE_PAUSED, mediaPlayer.getCurrentPosition(), 1.0f, 0)
+                   .build());
 
                if (what == WhatChanged.State && utils.retriever != null)
                {
@@ -367,10 +370,6 @@ public class service extends Service
       {
          if (BuildConfig.DEBUG) utils.verboseLog("pause while not playing");
       }
-
-      // Do this now to avoid it crashing. Pause control doesn't show anyway (not clear why).
-      audioManager.unregisterRemoteControlClient(remoteControlClient);
-      remoteControlClient = null;
    }
 
    private void play (final String path, final int pos)
@@ -378,21 +377,6 @@ public class service extends Service
       // path must be relative to playlistDirectory
 
       if (BuildConfig.DEBUG) utils.verboseLog("play " + path + "; at " + pos);
-
-      // recover remote control from pause
-      remoteControlClient = new RemoteControlClient(mediaButtonIntent);
-
-      remoteControlClient.setTransportControlFlags
-         (
-          RemoteControlClient.FLAG_KEY_MEDIA_NEXT |
-          RemoteControlClient.FLAG_KEY_MEDIA_PAUSE |
-          RemoteControlClient.FLAG_KEY_MEDIA_PLAY |
-          RemoteControlClient.FLAG_KEY_MEDIA_PLAY_PAUSE |
-          RemoteControlClient.FLAG_KEY_MEDIA_POSITION_UPDATE |
-          RemoteControlClient.FLAG_KEY_MEDIA_PREVIOUS
-          );
-
-      audioManager.registerRemoteControlClient(remoteControlClient);
 
       try
       {
@@ -420,7 +404,7 @@ public class service extends Service
             return;
          }
 
-         unpause();
+         unpause(); // Does notifyChange(State)
 
          notifyChange(WhatChanged.Meta);
 
@@ -479,7 +463,7 @@ public class service extends Service
 
       if (currentFile == null)
       {
-         final String smmFileName = playlistFile.getParent() + "/" + tmpPlaylistFilename + ".last";
+         final String smmFileName = smmDirectory + "/" + tmpPlaylistFilename + ".last";
 
          try
          {
@@ -490,7 +474,7 @@ public class service extends Service
          }
          catch (IOException e)
          {
-            // We get here on a new install; smmDirectory preference not set.
+            // We get here on a new install; smmDirectory preference not set correctly.
             utils.infoLog(context, "set smmDirectory preference");
          }
       }
@@ -572,7 +556,7 @@ public class service extends Service
          case Paused_Transient:
             if (playing == PlayState.Idle)
             {
-               // can't go directly from Idle to Paused
+               // FIXME: can't go directly from Idle to Paused
                play(playlist.get(playlistPos), pos);
             }
             pause(newState);
@@ -1020,15 +1004,6 @@ public class service extends Service
                // state to start the control connection.
                notifyChange(WhatChanged.State);
 
-            case AudioManager.SCO_AUDIO_STATE_DISCONNECTED:
-               // Car turned off | bluetooth disabled | moved out of range.
-               //
-               // Assume we will get another CONNECTED event when PDA
-               // connects to internal speaker.
-               //
-               // For car turned off we want to pause.
-               pause(PlayState.Paused);
-
             default:
                // just ignore.
 
@@ -1036,11 +1011,8 @@ public class service extends Service
          }
       };
 
-   private RemoteControlClient remoteControlClient;
-   // It's not at all clear if we are supposed to override the
-   // RemoteControlClient methods; the doc confuses the player and the
-   // control. Clearly some user actions on the control generate
-   // broadcast events that are handled by MediaButtonReveiver
+   private MediaSession mediaSession;
+   // receive commands via setCallback, _not_ MediaButtonReceiver.
 
    private OnAudioFocusChangeListener audioFocusListener = new OnAudioFocusChangeListener()
       {
@@ -1210,16 +1182,13 @@ public class service extends Service
       createMediaPlayer();
 
       audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-      {
-         ComponentName receiver = new ComponentName
-            (context.getPackageName(), MediaButtonReceiver.class.getName());
 
-         audioManager.registerMediaButtonEventReceiver(receiver);
+      mediaSession = new MediaSession(context, "stephes media session");
 
-         mediaButtonIntent = PendingIntent.getBroadcast
-            (context, 0, new Intent(Intent.ACTION_MEDIA_BUTTON).setComponent(receiver), 0);
+      mediaSession.setFlags
+         (MediaSession.FLAG_HANDLES_MEDIA_BUTTONS | MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS);
 
-      }
+      mediaSession.setActive(true);
 
       utils.retriever = new MetaData();
 
@@ -1240,9 +1209,9 @@ public class service extends Service
       // quit and the user did not request it. So if we save
       // PlayState.playing, we will start playing when the user did
       // not request it, and without an activity to control us! So
-      // force pause.
+      // force idle.
 
-      pause(PlayState.Paused);
+      pause(PlayState.Idle); // does saveState()
 
       NotificationManager notifManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
       notifManager.cancel(null, notif_id);
@@ -1253,22 +1222,19 @@ public class service extends Service
       playIntent.cancel();
       pauseIntent.cancel();
 
-
-      saveState();
-
       mediaPlayer.reset();
       mediaPlayer.release();
       mediaPlayer = null;
 
       audioManager.abandonAudioFocus(audioFocusListener);
-      {
-         ComponentName receiver = new ComponentName(getPackageName(), MediaButtonReceiver.class.getName());
-         audioManager.unregisterMediaButtonEventReceiver(receiver);
-      }
+
+      mediaSession.release();
 
       handler.removeCallbacksAndMessages(null);
 
       unregisterReceiver(broadcastReceiverCommand);
+
+      unregisterReceiver(broadcastReceiverBTConnect);
 
       super.onDestroy();
    }

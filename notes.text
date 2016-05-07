@@ -6,30 +6,27 @@ Makefile
 
 branches:
     org.stephe_leake.music_player.java - main, currently on phone
-    o.s_l.m_p.work                     - MediaSession instead of RemoteControl; save for Android 5 phone.
-
-add small album art to notification?
-
+    o.s_l.m_p.work                     - available
 
 notify when less than 10 songs left in playlist
     but only once; not clear where to save state, when to clear it
 
 back button pop app stack
 
-lock screen control
-    lock screen going away in Android 5 anyway; notifications show on lock screen
-        works with MediaSessionCompat in Android 5
-        no lock screen control with MediaSessionCompat in Android 4
+MediaSession
+    needed for car display, album art on lock screen
 
-        quiting music instead of pausing helps some
-            on pause, quit remote control
+    problems:
+        2) when Stephe's Music is playing in car, car is power cycled;
+            car remote display not synced
+                unless phone is not used while car is powered off
+                ie service is not destroyed?
 
-    when hit pause on lock screen, lock screen controls disappear
-            they come back after play, power off/on
+            does not happen when beyondpod is playing, car is power cycled
 
-            does not happen when beyondpod or vanilla is playing
+    can't test in emulator
 
-
+    can't test in old phone; old android
 
 speak metadata!
     textToSpeech

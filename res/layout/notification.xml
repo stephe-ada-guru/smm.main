@@ -68,23 +68,27 @@
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         >
+      <!-- text color broken in Galaxy Note 3 Android 5.0 upgrade -->
       <TextView
           android:layout_width="match_parent"
           android:layout_height="wrap_content"
           android:gravity="left"
           android:id="@+id/notifTitle"
+          android:textColor="#ff000000"
           android:text=""/>
       <TextView
           android:layout_width="match_parent"
           android:layout_height="wrap_content"
           android:gravity="left"
           android:id="@+id/notifArtist"
+          android:textColor="#ff000000"
           android:text=""/>
       <TextView
           android:layout_width="match_parent"
           android:layout_height="wrap_content"
           android:gravity="left"
           android:id="@+id/notifAlbum"
+          android:textColor="#ff000000"
           android:text=""/>
     </LinearLayout>
 </LinearLayout>

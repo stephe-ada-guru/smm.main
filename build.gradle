@@ -26,14 +26,13 @@ android
   // 
   // versionName = versionCode = VERSION in ../build/Makefile
   //
-  // minSdkVersion   : Galaxy Note III runs API 19
-  // targetSdkVersion: appcompat-v7:22.2.0 requires API 21
-  // appcompat-v7 has NotificationCompat. Not using it currently, but might change
+  // minSdkVersion   : Galaxy Note III runs API 21
+  // targetSdkVersion: 
   // testing with likely version on next phone is a good idea.
   defaultConfig
   {
     applicationId "org.stephe_leake.android.stephes_music"
-    minSdkVersion 19
+    minSdkVersion 21
     targetSdkVersion 21
     versionName "11"
     versionCode 11
@@ -50,6 +49,12 @@ android
       res.srcDirs = ['res']
       assets.srcDirs = ['assets']
     }
+  }
+
+  dependencies
+  {
+    // MediaSessionCompat, PlaybackStateCompat, MediaMetaDataCompat for API 19
+    // compile "com.android.support:support-v4:23.2.1"
   }
   
   signingConfigs
