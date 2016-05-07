@@ -33,8 +33,6 @@ import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.media.AudioManager.OnAudioFocusChangeListener;
 import android.media.AudioManager;
-import android.media.MediaMetadataEditor;
-import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.media.session.MediaSession;
 import android.media.session.PlaybackState;
@@ -261,6 +259,7 @@ public class service extends Service
             MediaMetadata metadata = new MediaMetadata.Builder()
                .putString(MediaMetadata.METADATA_KEY_TITLE, "")
                .putString(MediaMetadata.METADATA_KEY_ALBUM, "")
+               .putString(MediaMetadata.METADATA_KEY_ARTIST, "")
                .putString(MediaMetadata.METADATA_KEY_ALBUM_ARTIST, "")
                .putLong(MediaMetadata.METADATA_KEY_DURATION, 0)
                .putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, null)
@@ -282,7 +281,7 @@ public class service extends Service
             MediaMetadata metadata = new MediaMetadata.Builder()
                .putString(MediaMetadata.METADATA_KEY_TITLE, utils.retriever.title)
                .putString(MediaMetadata.METADATA_KEY_ALBUM, utils.retriever.album)
-               // METADATA_KEY_ARTIST is wrong here for Scion xB
+               .putString(MediaMetadata.METADATA_KEY_ARTIST, utils.retriever.artist)
                .putString(MediaMetadata.METADATA_KEY_ALBUM_ARTIST, utils.retriever.artist)
                .putLong(MediaMetadata.METADATA_KEY_DURATION, Integer.parseInt(utils.retriever.duration))
                // This works for the lock screen, but not for the Scion xB
@@ -405,7 +404,7 @@ public class service extends Service
             return;
          }
 
-         unpause();
+         unpause(); // Does notifyChange(State)
 
          notifyChange(WhatChanged.Meta);
 

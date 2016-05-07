@@ -176,8 +176,8 @@
           android:layout_height="match_parent"
           android:layout_width="wrap_content"
           android:text="@string/note_category"
-          android:textSize="20sp"
-          android:textStyle="bold"
+          android:textSize="15sp"
+          android:textColor="#ffefefef"
           android:onClick="onClickNote"/>
       <View
           android:layout_width="1dp"
@@ -189,8 +189,8 @@
           android:layout_height="match_parent"
           android:layout_width="wrap_content"
           android:text="@string/note_dont_play"
-          android:textSize="20sp"
-          android:textStyle="bold"
+          android:textSize="15sp"
+          android:textColor="#ffefefef"
           android:onClick="onClickNote"/>
       <View
           android:layout_width="1dp"
@@ -202,8 +202,8 @@
           android:layout_height="match_parent"
           android:layout_width="wrap_content"
           android:text="@string/note_play_before"
-          android:textSize="20sp"
-          android:textStyle="bold"
+          android:textSize="15sp"
+          android:textColor="#ffefefef"
           android:onClick="onClickNote"/>
     </LinearLayout>
     <LinearLayout
@@ -218,6 +218,7 @@
         android:gravity="center">
 
       <!-- notes buttons, row 2
+           text color broken on Galaxy Note 3 Android 5.0 upgrade
       -->
       <Button
           style="?android:attr/buttonBarButtonStyle"
@@ -225,8 +226,8 @@
           android:layout_height="match_parent"
           android:layout_width="wrap_content"
           android:text="@string/note_want_more"
-          android:textSize="20sp"
-          android:textStyle="bold"
+          android:textSize="15sp"
+          android:textColor="#ffefefef"
           android:onClick="onClickNote"/>
       <View
           android:layout_width="1dp"
@@ -238,8 +239,8 @@
           android:layout_height="match_parent"
           android:layout_width="wrap_content"
           android:text="@string/note_best_list"
-          android:textSize="20sp"
-          android:textStyle="bold"
+          android:textSize="15sp"
+          android:textColor="#ffefefef"
           android:onClick="onClickNote"/>
       <View
           android:layout_width="1dp"
@@ -251,8 +252,8 @@
           android:layout_height="match_parent"
           android:layout_width="wrap_content"
           android:text="@string/note_other"
-          android:textSize="20sp"
-          android:textStyle="bold"
+          android:textSize="15sp"
+          android:textColor="#ffefefef"
           android:onClick="onClickNote"/>
     </LinearLayout>
     <TextView

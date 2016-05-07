@@ -4,18 +4,6 @@ Makefile
 (dvc-status)
 ~/Misc/android.text
 
-hide albumart when not available
-    can't set image bitmap to null?
-    setting invisible leaves size wrong
-
-phone android 5.0.1: text color on buttons is black!
-
-MediaSession in o.s_l.m_p.work
-    test on phone with car
-        no lock screen controls
-        car metadata sync does not survive car power cycle
-        test again with mediasession (was mediasessioncompat)
-
 notify when less than 10 songs left in playlist
     but only once; not clear where to save state, when to clear it
 
