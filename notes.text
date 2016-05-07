@@ -4,68 +4,37 @@ Makefile
 (dvc-status)
 ~/Misc/android.text
 
+hide albumart when not available
+    can't set image bitmap to null?
+    setting invisible leaves size wrong
+
+phone android 5.0.1: text color on buttons is black!
+
 MediaSession in o.s_l.m_p.work
-    works on tablet
-        no lock screen controls, but notification controls work from lock screen (no picture)
-
-    test on tablet with lock screen, car
-        menu shows as MORE instead of ...
-        works
-            lock screen shows notification controls that work
-            car metadata sync survives car power cycle
-
     test on phone with car
         no lock screen controls
         car metadata sync does not survive car power cycle
-
-use small album art in notification? lots of room on tablet :)
+        test again with mediasession (was mediasessioncompat)
 
 notify when less than 10 songs left in playlist
     but only once; not clear where to save state, when to clear it
 
-fix menu for Android 5
-    might "just work"
-
 back button pop app stack
 
-remote control
-    lock screen going away in Android 5 anyway; notifications show on lock screen
-    still needed for car display
+MediaSession
+    needed for car display, album art on lock screen
 
     problems:
-        1) when hit pause, lock screen controls disappear
-            they come back after play, power off/on
-
         2) when Stephe's Music is playing in car, car is power cycled;
-            lock screen control does not show, car remote display not synced
+            car remote display not synced
                 unless phone is not used while car is powered off
+                ie service is not destroyed?
 
             does not happen when beyondpod is playing, car is power cycled
 
-            restart phone recovers
-            - indicates remote control process has died?
-
-            some "bluetooth lost" signal that music app should handle?
-
-            quit app, restart app does not restore remote control if it is dead
-            quit app, restart app does not kill remote control if it is working.
-
-        3) also lose lock screen at other times
-
-        4) as of version 11, lock screen controls don't show until after "a while"
-           - first position update?
-           - connect in unpause?
-
     can't test in emulator
 
-    test in old phone
-
-    problem 1) not present for vanilla music or beyondpod
-        https://github.com/vanilla-music/vanilla
-        vanilla always does setPlaybackState and editor.apply; no help
-
-
-    fully quit remote control on pause.
+    can't test in old phone; old android
 
 speak metadata!
     textToSpeech

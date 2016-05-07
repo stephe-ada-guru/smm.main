@@ -22,7 +22,7 @@ along with GCC; see the file COPYING3.  If not see
           package="org.stephe_leake.android.stephes_music"
           >
 
-  <!-- App version and Android API level set in ../../build.gradle -->
+  <!-- App version and Android API level set in build.gradle -->
 
   <uses-permission android:name="android.permission.BROADCAST_STICKY" /> <!-- send data from service to activity -->
   <uses-permission android:name="android.permission.WAKE_LOCK" /> <!-- media player prevents screen from turning off -->
@@ -63,12 +63,6 @@ along with GCC; see the file COPYING3.  If not see
     <service
         android:name="org.stephe_leake.android.stephes_music.service"
         android:exported="false" />
-
-    <receiver android:name="MediaButtonReceiver" >
-      <intent-filter android:priority="999">
-	<action android:name="android.intent.action.MEDIA_BUTTON" />
-      </intent-filter>
-    </receiver>
 
     <activity
         android:name=".preferences"

@@ -36,10 +36,10 @@ import android.media.AudioManager;
 import android.media.MediaMetadataEditor;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
-import android.support.v4.media.session.MediaSessionCompat;
-import android.support.v4.media.session.PlaybackStateCompat;
-import android.support.v4.media.MediaMetadataCompat;
-import android.support.v4.media.MediaMetadataCompat.Builder;
+import android.media.session.MediaSession;
+import android.media.session.PlaybackState;
+import android.media.MediaMetadata;
+import android.media.MediaMetadata.Builder;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
@@ -258,12 +258,12 @@ public class service extends Service
                    putExtra ("playlist", getResources().getString(R.string.null_playlist)));
             }
 
-            MediaMetadataCompat metadata = new MediaMetadataCompat.Builder()
-               .putString(MediaMetadataCompat.METADATA_KEY_TITLE, "")
-               .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, "")
-               .putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ARTIST, "")
-               .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, 0)
-               .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, null)
+            MediaMetadata metadata = new MediaMetadata.Builder()
+               .putString(MediaMetadata.METADATA_KEY_TITLE, "")
+               .putString(MediaMetadata.METADATA_KEY_ALBUM, "")
+               .putString(MediaMetadata.METADATA_KEY_ALBUM_ARTIST, "")
+               .putLong(MediaMetadata.METADATA_KEY_DURATION, 0)
+               .putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, null)
                .build();
 
             mediaSession.setMetadata(metadata);
@@ -279,15 +279,15 @@ public class service extends Service
                 ("playlist",
                  playlistFilename + " " + (playlistPos + 1) + " / " + playlist.size()));
 
-            MediaMetadataCompat metadata = new MediaMetadataCompat.Builder()
-               .putString(MediaMetadataCompat.METADATA_KEY_TITLE, utils.retriever.title)
-               .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, utils.retriever.album)
+            MediaMetadata metadata = new MediaMetadata.Builder()
+               .putString(MediaMetadata.METADATA_KEY_TITLE, utils.retriever.title)
+               .putString(MediaMetadata.METADATA_KEY_ALBUM, utils.retriever.album)
                // METADATA_KEY_ARTIST is wrong here for Scion xB
-               .putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ARTIST, utils.retriever.artist)
-               .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, Integer.parseInt(utils.retriever.duration))
+               .putString(MediaMetadata.METADATA_KEY_ALBUM_ARTIST, utils.retriever.artist)
+               .putLong(MediaMetadata.METADATA_KEY_DURATION, Integer.parseInt(utils.retriever.duration))
                // This works for the lock screen, but not for the Scion xB
                // ok if albumart is null
-               .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, utils.retriever.getAlbumArt())
+               .putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, utils.retriever.getAlbumArt())
                .build();
 
             mediaSession.setMetadata(metadata);
@@ -308,8 +308,8 @@ public class service extends Service
             {
             case Idle:
                mediaSession.setPlaybackState
-                  (new PlaybackStateCompat.Builder()
-                   .setState(PlaybackStateCompat.STATE_STOPPED, mediaPlayer.getCurrentPosition(), 1.0f, 0)
+                  (new PlaybackState.Builder()
+                   .setState(PlaybackState.STATE_STOPPED, mediaPlayer.getCurrentPosition(), 1.0f, 0)
                    .build());
 
                // no Notification
@@ -317,8 +317,8 @@ public class service extends Service
 
             case Playing:
                mediaSession.setPlaybackState
-                  (new PlaybackStateCompat.Builder()
-                   .setState(PlaybackStateCompat.STATE_PLAYING, mediaPlayer.getCurrentPosition(), 1.0f, 0)
+                  (new PlaybackState.Builder()
+                   .setState(PlaybackState.STATE_PLAYING, mediaPlayer.getCurrentPosition(), 1.0f, 0)
                    .build());
 
                if (what == WhatChanged.State & utils.retriever != null)
@@ -331,8 +331,8 @@ public class service extends Service
             case Paused:
             case Paused_Transient:
                mediaSession.setPlaybackState
-                  (new PlaybackStateCompat.Builder()
-                   .setState(PlaybackStateCompat.STATE_PAUSED, mediaPlayer.getCurrentPosition(), 1.0f, 0)
+                  (new PlaybackState.Builder()
+                   .setState(PlaybackState.STATE_PAUSED, mediaPlayer.getCurrentPosition(), 1.0f, 0)
                    .build());
 
                if (what == WhatChanged.State && utils.retriever != null)
@@ -557,7 +557,7 @@ public class service extends Service
          case Paused_Transient:
             if (playing == PlayState.Idle)
             {
-               // can't go directly from Idle to Paused
+               // FIXME: can't go directly from Idle to Paused
                play(playlist.get(playlistPos), pos);
             }
             pause(newState);
@@ -1012,9 +1012,8 @@ public class service extends Service
          }
       };
 
-   private MediaSessionCompat mediaSession;
-   // receive commands via setCallback, _not_ MediaButtonReveiver. But
-   // compat version uses MediaButtonReciever?
+   private MediaSession mediaSession;
+   // receive commands via setCallback, _not_ MediaButtonReceiver.
 
    private OnAudioFocusChangeListener audioFocusListener = new OnAudioFocusChangeListener()
       {
@@ -1184,25 +1183,13 @@ public class service extends Service
       createMediaPlayer();
 
       audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-      {
-         ComponentName receiver = new ComponentName
-            (context.getPackageName(), MediaButtonReceiver.class.getName());
 
-         audioManager.registerMediaButtonEventReceiver(receiver);
+      mediaSession = new MediaSession(context, "stephes media session");
 
-         mediaButtonIntent = PendingIntent.getBroadcast
-            (context, 0, new Intent(Intent.ACTION_MEDIA_BUTTON).setComponent(receiver), 0);
+      mediaSession.setFlags
+         (MediaSession.FLAG_HANDLES_MEDIA_BUTTONS | MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS);
 
-         mediaSession = new MediaSessionCompat(context, "stephes media session", receiver, mediaButtonIntent);
-
-         // mediaSession.addOnActiveChangeListener(mediaSessionChangeListener);
-         // FIXME: not clear what this would do for us
-
-         mediaSession.setFlags
-            (MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS | MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
-
-         mediaSession.setActive(true);
-      }
+      mediaSession.setActive(true);
 
       utils.retriever = new MetaData();
 
@@ -1241,12 +1228,6 @@ public class service extends Service
       mediaPlayer = null;
 
       audioManager.abandonAudioFocus(audioFocusListener);
-      {
-         ComponentName receiver = new ComponentName(getPackageName(), MediaButtonReceiver.class.getName());
-         audioManager.unregisterMediaButtonEventReceiver(receiver);
-      }
-
-      // FIXME: mediaSession.removeOnActiveChangeListener(mediaSessionChangeListener);
 
       mediaSession.release();
 
