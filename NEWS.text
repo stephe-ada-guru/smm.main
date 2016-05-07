@@ -33,3 +33,8 @@ Mar 2016
 
     another attempt to fix car and screen remote control: disconnect
     from remote control in pause.
+
+May 2016
+
+- version 12
+    require Android 5.0, use MediaSession; Galaxy Note III phone upgraded.
