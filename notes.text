@@ -52,7 +52,13 @@ remote control
 
         3) also lose lock screen at other times
 
+        4) as of version 11, lock screen controls don't show until after "a while"
+           - first position update?
+           - connect in unpause?
+
     can't test in emulator
+
+    test in old phone
 
     problem 1) not present for vanilla music or beyondpod
         https://github.com/vanilla-music/vanilla

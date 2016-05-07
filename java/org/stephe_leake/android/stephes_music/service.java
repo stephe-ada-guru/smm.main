@@ -171,7 +171,7 @@ public class service extends Service
       switch (playing)
       {
       case Idle:
-         // should not get here; keep compiler happy
+         // We get here when reinstantiated after onDestroy
          break;
 
       case Playing:
@@ -286,6 +286,7 @@ public class service extends Service
                .putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ARTIST, utils.retriever.artist)
                .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, Integer.parseInt(utils.retriever.duration))
                // This works for the lock screen, but not for the Scion xB
+               // ok if albumart is null
                .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, utils.retriever.getAlbumArt())
                .build();
 
@@ -463,7 +464,7 @@ public class service extends Service
 
       if (currentFile == null)
       {
-         final String smmFileName = playlistFile.getParent() + "/" + tmpPlaylistFilename + ".last";
+         final String smmFileName = smmDirectory + "/" + tmpPlaylistFilename + ".last";
 
          try
          {
@@ -474,7 +475,7 @@ public class service extends Service
          }
          catch (IOException e)
          {
-            // We get here on a new install; smmDirectory preference not set.
+            // We get here on a new install; smmDirectory preference not set correctly.
             utils.infoLog(context, "set smmDirectory preference");
          }
       }
@@ -1222,9 +1223,9 @@ public class service extends Service
       // quit and the user did not request it. So if we save
       // PlayState.playing, we will start playing when the user did
       // not request it, and without an activity to control us! So
-      // force pause.
+      // force idle.
 
-      pause(PlayState.Paused); // does saveState()
+      pause(PlayState.Idle); // does saveState()
 
       NotificationManager notifManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
       notifManager.cancel(null, notif_id);
@@ -1252,6 +1253,8 @@ public class service extends Service
       handler.removeCallbacksAndMessages(null);
 
       unregisterReceiver(broadcastReceiverCommand);
+
+      unregisterReceiver(broadcastReceiverBTConnect);
 
       super.onDestroy();
    }
