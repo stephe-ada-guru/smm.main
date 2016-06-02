@@ -536,12 +536,12 @@ public class activity extends android.app.Activity
          {
             utils.verboseLog("sharing " + utils.retriever.musicUri.toString());
 
-            Intent shareIntent = new Intent()
+            Intent intent = new Intent()
                .setAction(Intent.ACTION_SEND)
                .putExtra(Intent.EXTRA_STREAM, utils.retriever.musicUri)
                .setType("audio/mp3");
 
-            startActivity(Intent.createChooser(shareIntent, "Share song via ..."));
+            startActivity(Intent.createChooser(intent, "Share song via ..."));
          }
          break;
 
@@ -562,9 +562,10 @@ public class activity extends android.app.Activity
             //  none             : offers GhostCommander; click on file, get chooser with Drive, Mantano, etc;
             //      Drive says pdf file is invalid format.
             //      kindle can show it
-            Intent shareIntent = new Intent(Intent.ACTION_VIEW, utils.retriever.linerUri);
+            Intent intent = new Intent(Intent.ACTION_VIEW, utils.retriever.linerUri)
+               .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
-            startActivity(Intent.createChooser(shareIntent, "Show liner notes via ..."));
+            startActivity(Intent.createChooser(intent, "Show liner notes via ..."));
          }
          break;
 

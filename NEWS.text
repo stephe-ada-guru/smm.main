@@ -38,3 +38,6 @@ May 2016
 
 - version 12
     require Android 5.0, use MediaSession; Galaxy Note III phone upgraded.
+
+- version 13
+    fix car remote control/metadata, back on liner_notes, blink buttons

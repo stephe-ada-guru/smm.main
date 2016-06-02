@@ -142,6 +142,10 @@ public class service extends Service
             {
                highestPlaylistPos = playlistPos;
             }
+
+            // WORKAROUND for car display; it requires pause/play to process metadata.
+            pause(PlayState.Paused_Transient);
+
             play(playlist.get(playlistPos), 0);
          }
          else
@@ -372,7 +376,7 @@ public class service extends Service
       }
    }
 
-   private void play (final String path, final int pos)
+   private void play(final String path, final int pos)
    {
       // path must be relative to playlistDirectory
 
@@ -1012,7 +1016,42 @@ public class service extends Service
       };
 
    private MediaSession mediaSession;
-   // receive commands via setCallback, _not_ MediaButtonReceiver.
+   // Sends data to car remote, and cover art to lock screen.
+   //
+   // Receive commands via setCallback, _not_ MediaButtonReceiver.
+
+   private MediaSession.Callback mediaCallback = new MediaSession.Callback()
+      {
+         @Override public void onPause() { pause(PlayState.Paused);}
+
+         @Override
+         public void onPlay()
+         {
+            switch (service.playing)
+            {
+            case Idle:
+               next();
+               break;
+
+            case Playing:
+               break;
+
+            case Paused:
+               unpause();
+               break;
+
+            case Paused_Transient:
+               // user wants to override
+               unpause();
+               break;
+
+            };
+         }
+
+         @Override public void onSkipToNext() { next();}
+
+         @Override public void onSkipToPrevious() { previous();}
+      };
 
    private OnAudioFocusChangeListener audioFocusListener = new OnAudioFocusChangeListener()
       {
@@ -1187,6 +1226,8 @@ public class service extends Service
 
       mediaSession.setFlags
          (MediaSession.FLAG_HANDLES_MEDIA_BUTTONS | MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS);
+
+      mediaSession.setCallback(mediaCallback);
 
       mediaSession.setActive(true);
 

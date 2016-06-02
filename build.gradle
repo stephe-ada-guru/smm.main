@@ -34,8 +34,8 @@ android
     applicationId "org.stephe_leake.android.stephes_music"
     minSdkVersion 21
     targetSdkVersion 21
-    versionName "12"
-    versionCode 12
+    versionName "13"
+    versionCode 13
   }
 
   sourceSets

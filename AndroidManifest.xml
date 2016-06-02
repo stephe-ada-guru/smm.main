@@ -34,6 +34,7 @@ along with GCC; see the file COPYING3.  If not see
       android:icon="@drawable/icon"
       android:label="@string/app_name"
       android:allowBackup="false"
+      android:theme="@android:style/Theme.Holo"
   >
 
     <!--
