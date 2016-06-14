@@ -557,13 +557,9 @@ public class activity extends android.app.Activity
 
       case MENU_LINER:
          {
-            // not clear what type to provide:
-            // "application/pdf" : offers Mantano and Polaris, which both say "can't open file"
-            //  none             : offers GhostCommander; click on file, get chooser with Drive, Mantano, etc;
-            //      Drive says pdf file is invalid format.
-            //      kindle can show it
-            Intent intent = new Intent(Intent.ACTION_VIEW, utils.retriever.linerUri)
-               .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            Intent intent = new Intent(Intent.ACTION_VIEW)
+               .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+               .setDataAndType(utils.retriever.linerUri, "application/pdf");
 
             startActivity(Intent.createChooser(intent, "Show liner notes via ..."));
          }

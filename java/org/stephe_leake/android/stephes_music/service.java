@@ -98,7 +98,6 @@ public class service extends Service
    final int nextIntentId     = 4;
    final int activityIntentId = 5;
 
-   PendingIntent mediaButtonIntent;
    PendingIntent activityIntent;
    PendingIntent prevIntent;
    PendingIntent nextIntent;
@@ -746,6 +745,7 @@ public class service extends Service
       playing = PlayState.Playing;
       notifyChange (WhatChanged.State);
 
+      // FIXME: should only do this if not already running. or remove any current
       handler.sendEmptyMessageDelayed(UPDATE_DISPLAY, 1000);
    }
 
@@ -1018,7 +1018,7 @@ public class service extends Service
    private MediaSession mediaSession;
    // Sends data to car remote, and cover art to lock screen.
    //
-   // Receive commands via setCallback, _not_ MediaButtonReceiver.
+   // Receive commands via setCallback.
 
    private MediaSession.Callback mediaCallback = new MediaSession.Callback()
       {
@@ -1256,7 +1256,6 @@ public class service extends Service
 
       NotificationManager notifManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
       notifManager.cancel(null, notif_id);
-      mediaButtonIntent.cancel();
       activityIntent.cancel();
       prevIntent.cancel();
       nextIntent.cancel();

@@ -8,12 +8,11 @@ branches:
     org.stephe_leake.music_player.java - main, currently on phone
     o.s_l.m_p.work                     - available
 
-liner_notes menu show pdf more directly
-    works better in android 5.2
+car play/pause/next/prev controls work
+    14 June 2016: tested after fresh install of pre 14 (13 + liner_notes patch)
 
 notify when less than 10 songs left in playlist
     but only once; not clear where to save state, when to clear it
-
 
 back button pop app stack
 
@@ -62,6 +61,13 @@ fix menu
 
 ssh backend
     ../../smm.work/notes.text
+
+how do podcast manager transfer their .mp3 files?
+    http://gpodder.org/
+        has android version, but nothing about that in the source
+        podcastparser probably has the windows/linux download code
+
+    https://github.com/antennapod/AntennaPod
 
 Copy playlist don't copy existing
 

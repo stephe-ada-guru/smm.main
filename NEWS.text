@@ -41,3 +41,6 @@ May 2016
 
 - version 13
     fix car remote control/metadata, back on liner_notes, blink buttons
+
+- version 14
+    show liner_notes.pdf directly, rather than via GhostCommander
