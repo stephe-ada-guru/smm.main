@@ -1018,40 +1018,10 @@ public class service extends Service
    private MediaSession mediaSession;
    // Sends data to car remote, and cover art to lock screen.
    //
-   // Receive commands via setCallback.
-
-   private MediaSession.Callback mediaCallback = new MediaSession.Callback()
-      {
-         @Override public void onPause() { pause(PlayState.Paused);}
-
-         @Override
-         public void onPlay()
-         {
-            switch (service.playing)
-            {
-            case Idle:
-               next();
-               break;
-
-            case Playing:
-               break;
-
-            case Paused:
-               unpause();
-               break;
-
-            case Paused_Transient:
-               // user wants to override
-               unpause();
-               break;
-
-            };
-         }
-
-         @Override public void onSkipToNext() { next();}
-
-         @Override public void onSkipToPrevious() { previous();}
-      };
+   // MediaSession.Callback does _not_ work (at least with my phone
+   // and car), so we receive commands via MediaButtonReciever, but do
+   // _not_ register that with the audio manager (that breaks metadata
+   // in the car); only register it in AndroidManifest.
 
    private OnAudioFocusChangeListener audioFocusListener = new OnAudioFocusChangeListener()
       {
@@ -1226,8 +1196,6 @@ public class service extends Service
 
       mediaSession.setFlags
          (MediaSession.FLAG_HANDLES_MEDIA_BUTTONS | MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS);
-
-      mediaSession.setCallback(mediaCallback);
 
       mediaSession.setActive(true);
 

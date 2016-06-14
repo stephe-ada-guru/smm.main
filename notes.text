@@ -9,7 +9,29 @@ branches:
     o.s_l.m_p.work                     - available
 
 car play/pause/next/prev controls work
-    14 June 2016: tested after fresh install of pre 14 (13 + liner_notes patch)
+    14 June 2016:
+        tested pre-14-1: works
+            13 +:
+            liner_notes patch
+            mediaSession callback registered
+            mediaButtonReciever.java
+            MediaButtonReciever in AndroidManifest
+            mediaButtonReciever _not_ registered in service
+
+        tested pre-14-2: fails
+            13 +:
+            liner_notes patch
+            mediaSession callback registered
+
+        tested pre-14-3:
+            13 +:
+            liner_notes patch
+            mediaSession callback deleted
+            mediaButtonReciever.java
+            MediaButtonReciever in AndroidManifest
+            mediaButtonReciever _not_ registered in service
+
+        installed pre-14-3 as 14
 
 notify when less than 10 songs left in playlist
     but only once; not clear where to save state, when to clear it

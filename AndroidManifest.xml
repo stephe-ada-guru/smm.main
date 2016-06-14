@@ -65,6 +65,13 @@ along with GCC; see the file COPYING3.  If not see
         android:name="org.stephe_leake.android.stephes_music.service"
         android:exported="false" />
 
+    <!-- see comment in service.java at mediaSession object -->
+    <receiver android:name="MediaButtonReceiver" >
+      <intent-filter android:priority="999">
+	<action android:name="android.intent.action.MEDIA_BUTTON" />
+      </intent-filter>
+    </receiver>
+
     <activity
         android:name=".preferences"
         android:label="@string/preferences_activity_name">
