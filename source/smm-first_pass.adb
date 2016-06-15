@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2007 - 2009, 2011 - 2013, 2015 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007 - 2009, 2011 - 2013, 2015, 2016 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -32,6 +32,27 @@ is
    Target_Dir         : constant String := Category;
 
    Mentioned_Files : String_Lists.List;
+   Entry_Count     : Integer;
+
+   procedure Count_Dir_Entry (Dir_Entry : in Directory_Entry_Type)
+   is begin
+      case Kind (Dir_Entry) is
+      when Directory =>
+         declare
+            Name : constant String := Simple_Name (Dir_Entry);
+         begin
+            if Name = "." or Name = ".." then
+               null;
+            else
+               Entry_Count := Entry_Count + 1;
+            end if;
+         end;
+      when Ordinary_File =>
+         Entry_Count := Entry_Count + 1;
+      when Special_File =>
+         raise SAL.Programmer_Error;
+      end case;
+   end Count_Dir_Entry;
 
    procedure Process_Dir_Entry (Dir_Entry : in Directory_Entry_Type)
    is begin
@@ -43,19 +64,45 @@ is
             if Name = "." or Name = ".." then
                null;
             else
+               --  Delete music files not in playlist
+               Search
+                 (Full_Name (Dir_Entry),
+                  Pattern => "*.mp3", -- Don't delete albumart.jpg, liner_notes.pdf
+                  Filter  => (Directory => False, Ordinary_File => True, others => False),
+                  Process => Process_Dir_Entry'Access);
+
+               --  Recurse into directories
                Search
                  (Full_Name (Dir_Entry),
                   Pattern => "*",
-                  Filter  => (Directory => True, Ordinary_File => True, others => False),
+                  Filter  => (Directory => True, Ordinary_File => False, others => False),
                   Process => Process_Dir_Entry'Access);
 
-               Delete_Directory (Full_Name (Dir_Entry));
-               Put_Line ("deleting directory " & Relative_Name (Playlist_Dir, Normalize (Full_Name (Dir_Entry))));
+               --  Delete if there's no music or directories left
+               Entry_Count := 0;
+
+               Search
+                 (Full_Name (Dir_Entry),
+                  Pattern => "*",
+                  Filter  => (Directory => True, Ordinary_File => False, others => False),
+                  Process => Count_Dir_Entry'Access);
+
+               if Entry_Count > 0 then
+                  return;
+               end if;
+
+               Search
+                 (Full_Name (Dir_Entry),
+                  Pattern => "*.mp3",
+                  Filter  => (Directory => False, Ordinary_File => True, others => False),
+                  Process => Count_Dir_Entry'Access);
+
+               if Entry_Count = 0 then
+                  --  Delete album art, liner_notes, directory
+                  Delete_Tree (Full_Name (Dir_Entry));
+                  Put_Line ("deleting directory " & Relative_Name (Playlist_Dir, Normalize (Full_Name (Dir_Entry))));
+               end if;
             end if;
-         exception
-         when Ada.Text_IO.Use_Error =>
-            --  From Delete_Directory; not empty, so just ignore
-            null;
          end;
 
       when Ordinary_File =>

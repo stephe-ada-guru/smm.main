@@ -50,12 +50,19 @@ package body Test_First_Pass_No_Last is
       Create_Directory ("tmp/playlists");
       Create_Directory ("tmp/playlists/Vocal");
       Create_Directory ("tmp/playlists/Vocal/artist_1");
+      Create_Test_File ("tmp/playlists/Vocal/artist_1/AlbumArt_huge.jpg");
+      Create_Test_File ("tmp/playlists/Vocal/artist_1/liner_notes.pdf");
       Create_Test_File ("tmp/playlists/Vocal/artist_1/file_4.mp3");
       Create_Test_File ("tmp/playlists/Vocal/artist_1/file_5.mp3");
       Create_Directory ("tmp/playlists/Vocal/artist_2");
       Create_Test_File ("tmp/playlists/Vocal/artist_2/file_6.mp3");
+      Create_Directory ("tmp/playlists/Vocal/artist_3");
+      Create_Test_File ("tmp/playlists/Vocal/artist_3/AlbumArt_huge.jpg");
+      Create_Test_File ("tmp/playlists/Vocal/artist_3/liner_notes.pdf");
+      Create_Test_File ("tmp/playlists/Vocal/artist_3/file_7.mp3");
 
       Create (Playlist, Out_File, "tmp/playlists/Vocal.m3u");
+      Put_Line (Playlist, "Vocal/artist_1/file_4.mp3");
       Put_Line (Playlist, "Vocal/artist_2/file_6.mp3");
       Close (Playlist);
 
@@ -69,12 +76,17 @@ package body Test_First_Pass_No_Last is
 
       Set_Directory (Start_Dir);
 
-      Check ("File_Count", File_Count, 1);
+      Check ("File_Count", File_Count, 2);
 
       --  Check that the extra files are deleted, but the others are not.
-      Check_Exists ("tmp/playlists/Vocal/artist_1/file_4.mp3", False);
+      Check_Exists ("tmp/playlists/Vocal/artist_1/AlbumArt_huge.jpg", True);
+      Check_Exists ("tmp/playlists/Vocal/artist_1/liner_notes.pdf", True);
+      Check_Exists ("tmp/playlists/Vocal/artist_1/file_4.mp3", True);
       Check_Exists ("tmp/playlists/Vocal/artist_1/file_5.mp3", False);
       Check_Exists ("tmp/playlists/Vocal/artist_2/file_6.mp3", True);
+      Check_Exists ("tmp/playlists/Vocal/artist_3/file_7.mp3", False);
+      Check_Exists ("tmp/playlists/Vocal/artist_3/AlbumArt_huge.jpg", False);
+      Check_Exists ("tmp/playlists/Vocal/artist_3/liner_notes.pdf", False);
    end Nominal;
 
    procedure Empty_Playlist (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
