@@ -19,7 +19,6 @@ trace :
 
 #
 #Local Variables:
-#eval: (ada-parse-prj-file "smm.prj")
-#eval: (ada-select-prj-file "smm.prj")
+#eval: (load-file "prj.el")
 #End:
 # end of file

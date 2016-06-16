@@ -2,6 +2,9 @@
 \.diff$
 \.exe$
 \.out$
+^build/gpr_query\.db$
+^build/gpr_query\.db-shm$
+^build/gpr_query\.db-wal$
 ^build/objects$
-^build/tmp$
 ^build/smm\.html$
+^build/tmp$

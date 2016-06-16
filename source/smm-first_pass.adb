@@ -139,6 +139,8 @@ begin
    if Ada.Directories.Exists (Playlist_File_Name) then
       if Ada.Directories.Exists (Last_File_Name) then
          Edit_Playlist (Playlist_File_Name, Last_File_Name);
+      else
+         Put_Line ("no .last file found; not editing playlist");
       end if;
 
       Read_Playlist (Playlist_File_Name, Mentioned_Files);

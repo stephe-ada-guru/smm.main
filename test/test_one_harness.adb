@@ -24,7 +24,7 @@ with AUnit.Test_Results;
 with AUnit.Test_Suites; use AUnit.Test_Suites;
 with Ada.Text_IO;
 with GNAT.Traceback.Symbolic;
-with Test_Download;
+with Test_First_Pass_No_Last;
 procedure Test_One_Harness
 is
    Suite  : constant Access_Test_Suite := new Test_Suite;
@@ -33,7 +33,7 @@ is
    Status   : AUnit.Status;
 
 begin
-   Add_Test (Suite, new Test_Download.Test_Case (Verbosity => 1));
+   Add_Test (Suite, new Test_First_Pass_No_Last.Test_Case (Verbosity => 1, Debug => 0));
 
    Run (Suite, AUnit.Options.Default_Options, Result, Status);
 

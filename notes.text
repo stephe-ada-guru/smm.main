@@ -1,4 +1,3 @@
-build/x86_gnu_windows_debug/Makefile
-build/x86_gnu_windows_release/Makefile
+build/Makefile
 
-see ../android/stephes_music_player.java/notes.text
+see ../Android/org.stephe_leake.music_player.java/notes.text
