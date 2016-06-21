@@ -147,9 +147,11 @@ public class preferences extends android.preference.PreferenceActivity
 
       ListPreference smmPref = (ListPreference)findPreference(res.getString(R.string.smm_directory_key));
 
+      // WORKAROUND: getExternalCacheDirs is wrong for the sdcard on
+      // my Galaxy Note III with Android 5.2, so hardcod that.
       File[] extCacheDirs = this.getExternalCacheDirs();
 
-      String[] smmDirs = new String[extCacheDirs.length + 1];
+      String[] smmDirs = new String[extCacheDirs.length + 2];
       int last = 0;
 
       smmDirs[0] = this.getCacheDir().getAbsolutePath();
@@ -162,6 +164,9 @@ public class preferences extends android.preference.PreferenceActivity
             last = last + 1;
          }
       }
+
+      smmDirs[last] = "/storage/extSdCard/Android/data/org.stephe_leake.android.stephes_music/cache";
+      last = last + 1;
 
       smmDirs = Arrays.copyOfRange(smmDirs, 0, last);
 

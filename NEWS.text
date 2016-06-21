@@ -42,6 +42,12 @@ May 2016
 - version 13
     fix car remote control/metadata, back on liner_notes, blink buttons
 
+June 2016
+
 - version 14
     show liner_notes.pdf directly, rather than via GhostCommander
     car commands actually work.
+
+- version 15
+    fix smmdir (hardcode sdcard)
+    one more time on the car commands (put back mediaSession callback).
