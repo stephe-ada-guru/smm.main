@@ -2,7 +2,7 @@
 --
 --  main procedure for SMM application
 --
---  Copyright (C) 2008 - 2013, 2015 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2013, 2015, 2016 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -26,6 +26,7 @@ with Ada.Text_IO; use Ada.Text_IO;
 with GNAT.Traceback.Symbolic;
 with SAL.Command_Line_IO;
 with SAL.Config_Files;
+with SMM.Check;
 with SMM.Copy;
 with SMM.Download;
 with SMM.First_Pass;
@@ -63,6 +64,9 @@ is
       New_Line;
       Put_Line ("  import <category> <dir>");
       Put_Line ("    scan <dir> for new music; dir must be relative to database root dir");
+      New_Line;
+      Put_Line ("  check");
+      Put_Line ("    compare music files to db, report any missing.");
    end Put_Usage;
 
    Db_File_Name : access String;
@@ -90,7 +94,7 @@ is
 
    Home : constant String := Find_Home;
 
-   type Command_Type is (Download_Playlist, Playlist, Copy_Playlist, Import);
+   type Command_Type is (Download_Playlist, Playlist, Copy_Playlist, Import, Check);
 
    procedure Get_Command is new SAL.Command_Line_IO.Gen_Get_Discrete_Proc (Command_Type, "command", Next_Arg);
 
@@ -237,6 +241,9 @@ begin
             SMM.Import (Db, Category, Root);
          end if;
       end;
+
+   when Check =>
+      SMM.Check (Db);
 
    end case;
 
