@@ -30,6 +30,7 @@ with SMM.Check;
 with SMM.Copy;
 with SMM.Download;
 with SMM.First_Pass;
+with SMM.History;
 with SMM.Import;
 with SMM.Playlist;
 procedure SMM.Driver
@@ -43,7 +44,9 @@ is
       Put_Line ("  max-song-count defaults to 60, min-download-count to 30, new-song-count to max-song/5");
       Put_Line ("  2 * max-songs are selected and randomized, half are downloaded;");
       Put_Line ("  about half of new-song-count will be downloaded.");
+      New_Line;
       Put_Line ("  categories: {instrumental | vocal | ...}");
+      New_Line;
       Put_Line ("  operations:");
       Put_Line ("  download_playlist <category> <playlist_dir> <smm_dir>");
       Put_Line ("    manage downloaded files and playlist:");
@@ -67,6 +70,9 @@ is
       New_Line;
       Put_Line ("  check");
       Put_Line ("    compare music files to db, report any missing.");
+      New_Line;
+      Put_Line ("  history");
+      Put_Line ("    report average and standard deviation of download interval (last to previous).");
    end Put_Usage;
 
    Db_File_Name : access String;
@@ -94,7 +100,7 @@ is
 
    Home : constant String := Find_Home;
 
-   type Command_Type is (Download_Playlist, Playlist, Copy_Playlist, Import, Check);
+   type Command_Type is (Download_Playlist, Playlist, Copy_Playlist, Import, Check, History);
 
    procedure Get_Command is new SAL.Command_Line_IO.Gen_Get_Discrete_Proc (Command_Type, "command", Next_Arg);
 
@@ -244,6 +250,9 @@ begin
 
    when Check =>
       SMM.Check (Db);
+
+   when History =>
+      SMM.History (Db);
 
    end case;
 
