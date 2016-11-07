@@ -4,25 +4,62 @@ Makefile
 (dvc-status)
 ~/Misc/android.text
 
+branches:
+    org.stephe_leake.music_player.java - main, currently on phone
+    o.s_l.m_p.work                     - download via http
+
+swipe notification to dismiss
+    also disable lock screen art
+    -> quit
+
+cycle thru all avail albumart*.jpg
+
+don't need priority notification
+
+car play/pause/next/prev controls
+    14 June 2016:
+        tested pre-14-1: works
+            13 +:
+            liner_notes patch
+            mediaSession callback registered
+            mediaButtonReciever.java
+            MediaButtonReciever in AndroidManifest
+            mediaButtonReciever _not_ registered in service
+
+        tested pre-14-2: fails
+            13 +:
+            liner_notes patch
+            mediaSession callback registered
+
+        tested pre-14-3: works
+            13 +:
+            liner_notes patch
+            mediaSession callback deleted
+            mediaButtonReciever.java
+            MediaButtonReciever in AndroidManifest
+            mediaButtonReciever _not_ registered in service
+
+        installed pre-14-3 as 14
+
+    16 June: controls stopped working in car
+        did not reboot phone
+        metadata still works
+
+    20 June: controls stopped working in car, even after phone reboot!
+
+        put back mediaSession callback: works
+            mediaSession callback deleted
+            mediaButtonReciever.java
+            MediaButtonReciever in AndroidManifest
+            mediaButtonReciever _not_ registered in service
+            mediaSession callback registered
+
+        give up
+
 notify when less than 10 songs left in playlist
     but only once; not clear where to save state, when to clear it
 
 back button pop app stack
-
-MediaSession
-    needed for car display, album art on lock screen
-
-    problems:
-        2) when Stephe's Music is playing in car, car is power cycled;
-            car remote display not synced
-                unless phone is not used while car is powered off
-                ie service is not destroyed?
-
-            does not happen when beyondpod is playing, car is power cycled
-
-    can't test in emulator
-
-    can't test in old phone; old android
 
 speak metadata!
     textToSpeech
@@ -46,7 +83,7 @@ still can't create vocal.last in emulator
     something wrong with the way I'm finding the smmDirectories?
 
 support Upnp/dlna output stream
-    play on stereo via android tv and/or roku box
+    play on stereo via android tv and/or roku box, avoid bluetooth/TV amp input switch
     MediaRouter
     WifiP2pManager.UpnpServiceResponseListener
     http://sourceforge.net/p/droiddlnaplayer/code/HEAD/tree/
@@ -54,13 +91,15 @@ support Upnp/dlna output stream
     /Projects/android/droiddlnaplayer-code/
     /Projects/android/clinkjavaproguide200.pdf
 
+    include volume control
+    DLNA requires all kinds of libraries/protocols
+
 stop after n songs
     instead of sleep timer
 
-handle back button
-
-webdav
-    Mount network drive http://<ip>:<port>
+fix menu
+    on tablet, currently works, but displayes as "MORE" instead of vertical "..."
+    on phone, menu button works, nothing on screen
 
  smm
 /Projects/smm.main/build/x86_gnu_windows_release/Makefile
@@ -68,16 +107,25 @@ webdav
 ssh backend
     ../../smm.work/notes.text
 
+how do podcast manager transfer their .mp3 files?
+    http://gpodder.org/
+        has android version, but nothing about that in the source
+        podcastparser probably has the windows/linux download code
+
+    https://github.com/antennapod/AntennaPod
+        http request via OkHttp http://square.github.io/okhttp/
+
+
+    https://github.com/stcarrez/ada-util/wiki better supported, xml, base64, lots of other stuff
+        git clone https://github.com/stcarrez/ada-util.wiki.git
+
+
 Copy playlist don't copy existing
 
 multiple categories:
     vocal/protest/intro
     instrumental/yoga
         store in genre field(s)?
-
-DLNA server output; send stream to TV, avoid bluetooth/TV amp input switch
-    include volume control
-    DLNA requires all kinds of libraries/protocols
 
  Kate's Mythical Music Manager (KMMM Km3)
 ../stephes_music_player.kate/build/Makefile
@@ -167,34 +215,12 @@ M-x compile
 M-x compile
     emacs -q -batch -L . --eval '(check-declare-directory ".")'
 
+ install debug version on phone
+- first save current state (last song)
+  - vocal:
+  - instrumental:
 
- references
-c:/Archive/android/langspec-3.0.pdf
-
-emulator:
-    F7 is power button; turns screen off and dismounts sdcard
-        try adb shell: mount -o remount rw /sdcard
-
-    Ctrl-F11 landscape/portrait
-
-    telnet localhost 5554: emulator console
-        can't manage the sd card
-
-    adb -e shell
-        runs under emacs in parallel with Android Studio, gives bash shell on device
-
-        after emulator start, mount says sdcard is:
-/dev/fuse /storage/sdcard fuse rw,nosuid,nodev,relatime,user_id=1023,group_id=1023,default_permissions,allow_other 0 0
-
-        or:
-
-/dev/block/vold/179:0 /mnt/media_rw/sdcard vfat rw,dirsync,nosuid,nodev,noexec,relatime,uid=1023,gid=1023,fmask=0007,dmask=0007,allow_utime=0020,codepage=cp437,iocharset=iso8859-1,shortname=mixed,utf8,errors=remount-ro 0 0
-
-        'ls /storage/sdcard' => stuff
-        'ls /mnt/media_rw/sdcard' => same stuff
-
-        after F7: no change in output of 'mount'
-        'ls /storage/sdcard' => empty
+- uninstall current
 
  release process
 NEWS.text
@@ -213,7 +239,6 @@ Android Studio run
 PDA: sshDroid
 
 Makefile
-    archive
     install-pda-ssh-release
 
 PDA: Ghost Commander | /storage/emulated/0/Download/org.stephe_leake.android.stephes_music.<version>-release.apk
@@ -225,6 +250,7 @@ PDA: app info verify version
 (dvc-state-one ".")
 
 Makefile
+    archive
     tag
 
 end of file
