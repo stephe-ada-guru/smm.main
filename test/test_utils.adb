@@ -38,7 +38,7 @@ package body Test_Utils is
       Temp : File_Type;
    begin
       Create (Temp, Out_File, Path);
-      Put_Line (Temp, "dummy");
+      Put_Line (Temp, "body: " & Path);
       Close (Temp);
    exception
    when Name_Error =>

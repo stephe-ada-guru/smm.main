@@ -1,8 +1,8 @@
 --  Abstract :
 --
---  Utilities for unit tests
+--  Driver for smm-server
 --
---  Copyright (C) 2007, 2009, 2016 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2016 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -13,23 +13,15 @@
 --  PURPOSE. See the GNU General Public License for more details. You
 --  should have received a copy of the GNU General Public License
 --  distributed with this program; see file COPYING. If not, write to
---  the Free Software Foundation, 59 Temple Place - Suite 330, Boston,
---  MA 02111-1307, USA.
+--  the Free Software Foundation, 51 Franklin Street, Suite 500, Boston,
+--  MA 02110-1335, USA.
 
 pragma License (GPL);
 
-package Test_Utils is
-   pragma Elaborate_Body; -- Ada.Text_IO
-
-   procedure Cleanup;
-   --  Delete tmp/
-
-   procedure Create_Test_File (Path : in String);
-   --  File contains one line, containing "body: " & Path.
-   --  Path is relative to current process directory.
-
-   procedure Check_Exists (Path : in String; Expected_Exists : in Boolean);
-   --  Assertion.
-   --  Path is relative to current process directory.
-
-end Test_Utils;
+with SMM.Server;
+procedure SMM.Server_Driver
+is
+   --  see smm-sever.adb Server Usage
+begin
+   SMM.Server.Server;
+end SMM.Server_Driver;

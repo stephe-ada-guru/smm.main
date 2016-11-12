@@ -2,7 +2,7 @@
 --
 --  Root of Stephe's Music Manager packages
 --
---  Copyright (C) 2008 - 2015 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2016 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -31,6 +31,8 @@ package SMM is
 
    Playlist_Error : exception;
 
+   function Find_Home return String;
+
    function Normalize (Path : in String) return String;
    --  convert '\' to '/'
 
@@ -38,6 +40,9 @@ package SMM is
 
    function As_Directory (Path : in String) return String;
    --  normalize, append '/' if needed.
+
+   function As_File (Path : in String) return String;
+   --  delete trailing '/' if needed.
 
    function To_String (Time : in SAL.Time_Conversions.Time_Type) return String;
    --  User friendly date representation

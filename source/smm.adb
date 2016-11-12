@@ -2,7 +2,7 @@
 --
 --  see spec
 --
---  Copyright (C) 2008, 2009, 2011 - 2015 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008, 2009, 2011 - 2016 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -19,11 +19,27 @@
 with Ada.Calendar.Formatting;
 with Ada.Characters.Handling;
 with Ada.Directories;
+with Ada.Environment_Variables;
 with Ada.IO_Exceptions;
 with Ada.Text_IO;
 with Ada_Config;
 with SAL.Gen_Randomize_Doubly_Linked_Lists;
 package body SMM is
+
+   function Find_Home return String
+   is
+      use Ada.Environment_Variables;
+   begin
+      if Exists ("SMM_HOME") then
+         return Value ("SMM_HOME");
+      elsif Exists ("HOME") then
+         return Value ("HOME") & "/smm";
+      elsif Exists ("APPDATA") then
+         return Value ("APPDATA") & "/smm";
+      else
+         raise Playlist_Error with "must define either APPDATA or HOME environment variable";
+      end if;
+   end Find_Home;
 
    function Normalize (Path : in String) return String
    is
@@ -59,6 +75,21 @@ package body SMM is
          return Temp & '/';
       end if;
    end As_Directory;
+
+   function As_File (Path : in String) return String
+   is
+      Temp : constant String := Normalize (Path);
+   begin
+      if Path'Length = 0 then
+         return Path;
+      end if;
+
+      if Temp (Temp'Last) = '/' then
+         return Temp (Temp'First .. Temp'Last - 1);
+      else
+         return Temp;
+      end if;
+   end As_File;
 
    function To_String (Time : in SAL.Time_Conversions.Time_Type) return String
    is begin

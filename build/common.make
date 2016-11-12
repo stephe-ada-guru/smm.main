@@ -14,6 +14,9 @@ smm.exe : force
 
 test_all_harness.out : test_all_harness.exe smm.exe
 
+clean ::
+	rm -fr tmp
+
 VPATH := ../source
 VPATH += ../test
 

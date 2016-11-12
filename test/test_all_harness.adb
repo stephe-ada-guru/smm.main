@@ -2,7 +2,7 @@
 --
 --  Run all AUnit tests.
 --
---  Copyright (C) 2009, 2011 - 2013, 2015 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2009, 2011 - 2013, 2015, 2016 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -18,6 +18,7 @@
 
 pragma License (GPL);
 
+with Ada.Exceptions;
 with Ada.Text_IO;
 with AUnit.Options;
 with AUnit.Reporter.Text;
@@ -30,6 +31,7 @@ with Test_First_Pass_No_Last;
 with Test_First_Pass_With_Last;
 with Test_Least_Recent;
 with Test_Play_Before;
+with Test_Server;
 procedure Test_All_Harness
 is
    Suite    : constant Access_Test_Suite := new Test_Suite;
@@ -44,6 +46,7 @@ begin
    Add_Test (Suite, new Test_First_Pass_With_Last.Test_Case (Verbosity => 0, Debug => False));
    Add_Test (Suite, new Test_Least_Recent.Test_Case);
    Add_Test (Suite, new Test_Play_Before.Test_Case);
+   Add_Test (Suite, new Test_Server.Test_Case (Server_Ip => new String'("192.168.1.83"), Debug => 0));
 
    Run (Suite, AUnit.Options.Default_Options, Result, Status);
 
@@ -52,5 +55,6 @@ begin
 
 exception
 when E : others =>
+   Ada.Text_IO.Put_Line (Ada.Exceptions.Exception_Name (E) & ": " & Ada.Exceptions.Exception_Message (E));
    Ada.Text_IO.Put_Line (GNAT.Traceback.Symbolic.Symbolic_Traceback (E));
 end Test_All_Harness;

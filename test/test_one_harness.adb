@@ -18,13 +18,15 @@
 
 pragma License (GPL);
 
+with Ada.Command_Line; use Ada.Command_Line;
 with AUnit.Options;
 with AUnit.Reporter.Text;
 with AUnit.Test_Results;
 with AUnit.Test_Suites; use AUnit.Test_Suites;
+with Ada.Exceptions;
 with Ada.Text_IO;
 with GNAT.Traceback.Symbolic;
-with Test_First_Pass_No_Last;
+with Test_Server;
 procedure Test_One_Harness
 is
    Suite  : constant Access_Test_Suite := new Test_Suite;
@@ -32,8 +34,13 @@ is
    Result   : AUnit.Test_Results.Result;
    Status   : AUnit.Status;
 
+   Debug : Integer := 0;
 begin
-   Add_Test (Suite, new Test_First_Pass_No_Last.Test_Case (Verbosity => 1, Debug => 0));
+   if Argument_Count > 0 then
+      Debug := Integer'Value (Argument (1));
+   end if;
+
+   Add_Test (Suite, new Test_Server.Test_Case (Server_IP => new String'("192.168.1.83"), Debug => Debug));
 
    Run (Suite, AUnit.Options.Default_Options, Result, Status);
 
@@ -42,5 +49,6 @@ begin
 
 exception
 when E : others =>
+   Ada.Text_IO.Put_Line (Ada.Exceptions.Exception_Name (E) & ": " & Ada.Exceptions.Exception_Message (E));
    Ada.Text_IO.Put_Line (GNAT.Traceback.Symbolic.Symbolic_Traceback (E));
 end Test_One_Harness;
