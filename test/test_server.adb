@@ -33,23 +33,39 @@ package body Test_Server is
    Server : GNAT.OS_Lib.Process_Id;
 
    Verbose : Boolean := False;
-   pragma Unreferenced (Verbose);
 
    ----------
    --  Test procedures
 
-   --  procedure Test_Playlist (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
-   --  is
-   --     use AUnit.Checks;
-   --     use Books.Database.Diff; -- To_Insert etc
-   --     use GNATCOLL.JSON.AUnit;
+   procedure Test_Playlist (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
+   is
+      use AUnit.Checks;
+      use AWS.Response;
 
-   --     Test : Test_Case renames Test_Case (T);
+      Test : Test_Case renames Test_Case (T);
 
-   --     Remote_DB : aliased Books.Database_Remote.IP.Database (Open_Stream (Test.Server_IP.all), 0);
+      URL : constant String := "http://" & Test.Server_IP.all & ":8080/download?category=vocal&count=5&seed=0";
+      Response : constant Data   :=  AWS.Client.Get (URL);
+      Msg      : constant String := Message_Body (Response);
 
-   --  begin
-   --  end Test_Playlist;
+      --  Song order depends on random engine
+      Expected : constant String :=
+        "artist_2/album_1/1 - song_1.mp3" & ASCII.CR & ASCII.LF &
+          "artist_1/album_1/1 - song_1.mp3" & ASCII.CR & ASCII.LF &
+          "artist_2/album_1/2 - song_2.mp3" & ASCII.CR & ASCII.LF &
+          "artist_1/album_1/2 - song_2.mp3" & ASCII.CR & ASCII.LF &
+          "artist_2/album_1/3 - song_3.mp3" & ASCII.CR & ASCII.LF;
+
+      --  FIXME: add these:
+      --    "artist_1/album_1/AlbumArg_1.jpg" & ASCII.CR &
+      --    "artist_1/album_1/liner_notes.pdf" & ASCII.CR &
+      --    "artist_2/album_1/AlbumArg_1.jpg" & ASCII.CR;
+   begin
+      if Verbose then
+         Ada.Text_IO.Put (Msg);
+      end if;
+      Check ("playlist", Msg, Expected);
+   end Test_Playlist;
 
    procedure Test_Get_File (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
    is
@@ -61,7 +77,8 @@ package body Test_Server is
 
       procedure Check_File
         (Directory : in String;
-         Filename : in String)
+         Filename  : in String;
+         Mime      : in String)
       is
          URL : constant String := "http://" & Test.Server_IP.all & ":8080/" & Directory &
            AWS.URL.Encode (Filename);
@@ -70,12 +87,14 @@ package body Test_Server is
          Msg      : constant String := Message_Body (Response);
       begin
          Check ("mode", Mode (Response), Message); --  Not clear why this is "message", not "file"
+         Check ("mime", Content_Type (Response), Mime);
          Check ("file content", Msg, "body: tmp/source/" & Directory & Filename & ASCII.CR & ASCII.LF);
       end Check_File;
 
    begin
-      Check_File ("artist_1/album_1/", "AlbumArt_1.jpg");
-      Check_File ("artist_1/album_1/", "1 - song_1.mp3");
+      Check_File ("artist_1/album_1/", "AlbumArt_1.jpg", "image/jpeg");
+      Check_File ("artist_1/album_1/", "1 - song_1.mp3", "audio/mpeg");
+      Check_File ("artist_1/album_1/", "liner_notes.pdf", "application/pdf");
    end Test_Get_File;
 
    ----------
@@ -92,7 +111,7 @@ package body Test_Server is
    is
       use Standard.AUnit.Test_Cases.Registration;
    begin
---      Register_Routine (T, test_playlist'Access, "test_playlist");
+      Register_Routine (T, Test_Playlist'Access, "Test_Playlist");
       Register_Routine (T, Test_Get_File'Access, "Test_Get_File");
    end Register_Tests;
 
@@ -115,14 +134,36 @@ package body Test_Server is
          Create (Db_File, Out_File, Db_File_Name);
 
          Put_Line (Db_File, "Root = " & SMM.As_Directory (Current_Directory & "/tmp/source"));
+         Put_Line (Db_File, "Songs. 1.File = artist_1/album_1/1 - song_1.mp3");
+         Put_Line (Db_File, "Songs. 1.Category = vocal");
+         Put_Line (Db_File, "Songs. 2.File = artist_1/album_1/2 - song_2.mp3");
+         Put_Line (Db_File, "Songs. 2.Category = vocal");
+         Put_Line (Db_File, "Songs. 3.File = artist_1/album_1/3 - song_3.mp3");
+         Put_Line (Db_File, "Songs. 3.Category = instrumental");
+         Put_Line (Db_File, "Songs. 4.File = artist_2/album_1/1 - song_1.mp3");
+         Put_Line (Db_File, "Songs. 4.Category = vocal");
+         Put_Line (Db_File, "Songs. 5.File = artist_2/album_1/2 - song_2.mp3");
+         Put_Line (Db_File, "Songs. 5.Category = vocal");
+         Put_Line (Db_File, "Songs. 6.File = artist_2/album_1/3 - song_3.mp3");
+         Put_Line (Db_File, "Songs. 6.Category = vocal");
 
          Close (Db_File);
 
          Create_Directory ("tmp/source");
          Create_Directory ("tmp/source/artist_1");
          Create_Directory ("tmp/source/artist_1/album_1");
+         Create_Test_File ("tmp/source/artist_1/album_1/liner_notes.pdf");
          Create_Test_File ("tmp/source/artist_1/album_1/AlbumArt_1.jpg");
          Create_Test_File ("tmp/source/artist_1/album_1/1 - song_1.mp3");
+         Create_Test_File ("tmp/source/artist_1/album_1/2 - song_2.mp3");
+
+         Create_Directory ("tmp/source/artist_2");
+         Create_Directory ("tmp/source/artist_2/album_1");
+         Create_Test_File ("tmp/source/artist_2/album_1/liner_notes.pdf");
+         Create_Test_File ("tmp/source/artist_2/album_1/AlbumArt_1.jpg");
+         Create_Test_File ("tmp/source/artist_2/album_1/1 - song_1.mp3");
+         Create_Test_File ("tmp/source/artist_2/album_1/2 - song_2.mp3");
+         Create_Test_File ("tmp/source/artist_2/album_1/3 - song_3.mp3");
 
       end if;
 

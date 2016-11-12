@@ -13,6 +13,7 @@ no .last file found; not editing playlist
 no .last file found; not editing playlist
 listening on 192.168.1.83: 8080
 not logging
+new db; all new songs
 
 OK ../../test/test_copy.adb : Nominal
 OK ../../test/test_download.adb : Nominal
@@ -23,9 +24,10 @@ OK ../../test/test_first_pass_with_last.adb : New_Playlist
 OK ../../test/test_first_pass_with_last.adb : Finished_Playlist
 OK ../../test/test_least_recent.adb : Nominal
 OK Test_Play_Before : Nominal
+OK test_server.adb : Test_Playlist
 OK test_server.adb : Test_Get_File
 
-Total Tests Run:   10
-Successful Tests:  10
+Total Tests Run:   11
+Successful Tests:  11
 Failed Assertions: 0
 Unexpected Errors: 0

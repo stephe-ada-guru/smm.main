@@ -6,13 +6,14 @@ weekly refill via http
 
 test_server.adb
     get_download_list (count)
+        add pdf, jpg
 
 protocol:
     app delete played, trim playlist
     app connect to smm_server
-    post number of new songs to download
+    request list of songs to download, arg count
     response is list of songs (path relative to music root)
-    for each song:
+    app for each song:
         request file, store in <playlist_name>/...
         add file to end of playlist
 

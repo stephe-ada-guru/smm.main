@@ -26,49 +26,84 @@ with AWS.Status;
 with AWS.URL;
 with Ada.Command_Line;
 with Ada.Directories;
+with Ada.Strings.Unbounded;
 with Ada.Text_IO;
 with SAL.Config_Files;
 package body SMM.Server is
 
    Source_Root : access String;
 
+   Db : SAL.Config_Files.Configuration_Type;
+
    function Handle_Request (Request : AWS.Status.Data) return AWS.Response.Data
    is
       use AWS.Response;
+      use AWS.URL;
       URI : constant AWS.URL.Object := AWS.Status.URI (Request);
    begin
-      --  For now, assume it's a file to download
-      declare
-         use Ada.Directories;
-         use AWS.URL;
-         Filename  : constant String := Source_Root.all & Path (URI) & File (URI);
-         Ext       : constant String := Extension (Filename);
-         Mime_Type : constant String :=
-         --  MIME types from https://www.iana.org/assignments/media-types/media-types.xhtml
-           (if    Ext = "jpg" then "image/jpeg"
-            elsif Ext = "mp3" then "audio/mpeg"
-            elsif Ext = "pdf" then "application/pdf"
-            else "");
+      if File (URI) = "download" then
+         declare
+            use Ada.Containers;
+            use Ada.Strings.Unbounded;
+            use SAL.Config_Files;
+            use Song_Lists;
 
-      begin
-         if Mime_Type'Length = 0 then
-            return Acknowledge
-              (Status_Code  => AWS.Messages.S500,
-               Message_Body => "<p>file extension '" & Ext & "' not supported.");
-         end if;
+            Category   : constant String     := Parameter (URI, "category");
+            Count      : constant Count_Type := Count_Type'Value (Parameter (URI, "count"));
+            Seed_Param : constant String     := Parameter (URI, "seed"); -- only used in unit tests
+            Seed       : constant Integer    :=
+              (if Seed_Param'Length > 0 then Integer'Value (Seed_Param) else 0);
+            Songs      : List;
+            Response   : Unbounded_String;
+         begin
+            Least_Recent_Songs
+              (Db, Category, Songs,
+               Song_Count     => Count,
+               New_Song_Count => Count_Type'Min (1, Count / 10),
+               Seed           => Seed);
 
-         if Exists (Filename) then
-            return File (Mime_Type, Filename);
-         else
-            return Acknowledge
-              (Status_Code  => AWS.Messages.S404,
-               Message_Body => "<p>file '" & Filename & "' not found.");
-         end if;
-      end;
+            for I of Songs loop
+               Response :=  Response & Read (Db, I, File_Key) & ASCII.CR & ASCII.LF;
+            end loop;
+            --  FIXME: add liner_notes.pdf, AlbumArt*.jpg
 
-      --  return Acknowledge
-      --    (Status_Code  => AWS.Messages.S500,
-      --     Message_Body => "not implemented");
+            return Build ("text/plain", Response);
+         end;
+      else
+         --  It's a file request.
+         declare
+            use Ada.Directories;
+            Filename  : constant String := Source_Root.all & Path (URI) & File (URI);
+            Ext       : constant String := Extension (Filename);
+            Mime_Type : constant String :=
+              --  MIME types from https://www.iana.org/assignments/media-types/media-types.xhtml
+              --  also GNAT/share/examples/aws/web_elements/mime.types
+              (if    Ext = "jpg" then "image/jpeg"
+               elsif Ext = "mp3" then "audio/mpeg"
+               elsif Ext = "pdf" then "application/pdf"
+               else "");
+
+         begin
+            if Mime_Type'Length = 0 then
+               return Acknowledge
+                 (Status_Code  => AWS.Messages.S500,
+                  Message_Body => "<p>file extension '" & Ext & "' not supported.");
+            end if;
+
+            if Exists (Filename) then
+               return File (Mime_Type, Filename);
+            else
+               return Acknowledge
+                 (Status_Code  => AWS.Messages.S404,
+                  Message_Body => "<p>file '" & Filename & "' not found.");
+            end if;
+         end;
+      end if;
+   exception
+   when others =>
+      return Acknowledge
+        (Status_Code  => AWS.Messages.S500,
+         Message_Body => "bad request");
    end Handle_Request;
 
    procedure Server
@@ -84,7 +119,6 @@ package body SMM.Server is
       end Usage;
 
       Config     : SAL.Config_Files.Configuration_Type;
-      Db         : SAL.Config_Files.Configuration_Type;
       Ws         : AWS.Server.HTTP;
       Enable_Log : Boolean := False;
 
