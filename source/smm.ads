@@ -37,6 +37,7 @@ package SMM is
    --  convert '\' to '/'
 
    function Relative_Name (Root : in String; Full_Name : in String) return String;
+   --  Ensure Root is As_Directory.
 
    function As_Directory (Path : in String) return String;
    --  normalize, append '/' if needed.

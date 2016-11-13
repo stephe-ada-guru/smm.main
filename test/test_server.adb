@@ -44,8 +44,8 @@ package body Test_Server is
 
       Test : Test_Case renames Test_Case (T);
 
-      URL : constant String := "http://" & Test.Server_IP.all & ":8080/download?category=vocal&count=5&seed=0";
-      Response : constant Data   :=  AWS.Client.Get (URL);
+      URL      : constant String := "http://" & Test.Server_IP.all & ":8080/download?category=vocal&count=5&seed=0";
+      Response : constant Data   := AWS.Client.Get (URL);
       Msg      : constant String := Message_Body (Response);
 
       --  Song order depends on random engine
@@ -55,17 +55,34 @@ package body Test_Server is
           "artist_2/album_1/2 - song_2.mp3" & ASCII.CR & ASCII.LF &
           "artist_1/album_1/2 - song_2.mp3" & ASCII.CR & ASCII.LF &
           "artist_2/album_1/3 - song_3.mp3" & ASCII.CR & ASCII.LF;
-
-      --  FIXME: add these:
-      --    "artist_1/album_1/AlbumArg_1.jpg" & ASCII.CR &
-      --    "artist_1/album_1/liner_notes.pdf" & ASCII.CR &
-      --    "artist_2/album_1/AlbumArg_1.jpg" & ASCII.CR;
    begin
       if Verbose then
          Ada.Text_IO.Put (Msg);
       end if;
       Check ("playlist", Msg, Expected);
    end Test_Playlist;
+
+   procedure Test_Meta (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
+   is
+      use AUnit.Checks;
+      use AWS.Response;
+
+      Test : Test_Case renames Test_Case (T);
+
+      URL      : constant String := "http://" & Test.Server_IP.all & ":8080/artist_1/album_1/meta";
+      Response : constant Data   := AWS.Client.Get (URL);
+      Msg      : constant String := Message_Body (Response);
+
+      --  Song order depends on random engine
+      Expected : constant String :=
+        "artist_1/album_1/AlbumArt_1.jpg" & ASCII.CR & ASCII.LF &
+        "artist_1/album_1/liner_notes.pdf" & ASCII.CR & ASCII.LF;
+   begin
+      if Verbose then
+         Ada.Text_IO.Put (Msg);
+      end if;
+      Check ("meta", Msg, Expected);
+   end Test_Meta;
 
    procedure Test_Get_File (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
    is
@@ -112,6 +129,7 @@ package body Test_Server is
       use Standard.AUnit.Test_Cases.Registration;
    begin
       Register_Routine (T, Test_Playlist'Access, "Test_Playlist");
+      Register_Routine (T, Test_Meta'Access, "Test_Meta");
       Register_Routine (T, Test_Get_File'Access, "Test_Get_File");
    end Register_Tests;
 
@@ -123,7 +141,12 @@ package body Test_Server is
 
       Db_File_Name : constant String := "tmp/smm.db";
       Db_File      : File_Type;
+      Dir          : constant String := Current_Directory;
    begin
+      if Dir (Dir'Last - 5 .. Dir'Last) /= "\build" then
+         raise SAL.Programmer_Error with "current_directory = " & Current_Directory;
+      end if;
+
       Verbose := T.Debug > 0;
 
       if T.Debug /= 1 then

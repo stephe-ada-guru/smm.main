@@ -91,6 +91,13 @@ package body Test_Copy is
 
       Set_Directory (Build_Directory);
 
+   exception
+   when others =>
+      if Is_Open (Playlist) then
+         Close (Playlist);
+      end if;
+      Set_Directory (Build_Directory);
+      raise;
    end Nominal;
 
    ----------

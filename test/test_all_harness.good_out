@@ -25,9 +25,10 @@ OK ../../test/test_first_pass_with_last.adb : Finished_Playlist
 OK ../../test/test_least_recent.adb : Nominal
 OK Test_Play_Before : Nominal
 OK test_server.adb : Test_Playlist
+OK test_server.adb : Test_Meta
 OK test_server.adb : Test_Get_File
 
-Total Tests Run:   11
-Successful Tests:  11
+Total Tests Run:   12
+Successful Tests:  12
 Failed Assertions: 0
 Unexpected Errors: 0

@@ -26,12 +26,13 @@ with AWS.Status;
 with AWS.URL;
 with Ada.Command_Line;
 with Ada.Directories;
+with Ada.Exceptions;
 with Ada.Strings.Unbounded;
 with Ada.Text_IO;
 with SAL.Config_Files;
 package body SMM.Server is
 
-   Source_Root : access String;
+   Source_Root : access String; -- does not end in /
 
    Db : SAL.Config_Files.Configuration_Type;
 
@@ -69,6 +70,33 @@ package body SMM.Server is
 
             return Build ("text/plain", Response);
          end;
+      elsif File (URI) = "meta" then
+         declare
+            use Ada.Directories;
+            use Ada.Strings.Unbounded;
+            Source_Dir : constant String := Source_Root.all & Path (URI);
+            Response   : Unbounded_String;
+
+            procedure Copy_Aux (Dir_Ent : in Directory_Entry_Type)
+            is begin
+               Response := Response &
+                 Relative_Name (Source_Root.all, Normalize (Full_Name (Dir_Ent))) & ASCII.CR & ASCII.LF;
+            end Copy_Aux;
+         begin
+            Search
+              (Directory => Source_Dir,
+               Pattern   => "AlbumArt*.jpg",
+               Filter    => (Ordinary_File => True, others => False),
+               Process   => Copy_Aux'Access);
+
+            Search
+              (Directory => Source_Dir,
+               Pattern   => "liner_notes.pdf",
+               Filter    => (Ordinary_File => True, others => False),
+               Process   => Copy_Aux'Access);
+
+            return Build ("text/plain", Response);
+         end;
       else
          --  It's a file request.
          declare
@@ -100,10 +128,14 @@ package body SMM.Server is
          end;
       end if;
    exception
-   when others =>
-      return Acknowledge
-        (Status_Code  => AWS.Messages.S500,
-         Message_Body => "bad request");
+   when E : others =>
+      declare
+         use Ada.Exceptions;
+      begin
+         return Acknowledge
+           (Status_Code  => AWS.Messages.S500,
+            Message_Body => "exception " & Exception_Name (E) & ": " & Exception_Message (E));
+      end;
    end Handle_Request;
 
    procedure Server

@@ -57,11 +57,13 @@ package body SMM is
      (Root      : in String;
       Full_Name : in String)
       return String
-   is begin
-      if Root = Full_Name (Full_Name'First .. Full_Name'First + Root'Length - 1) then
-         return Full_Name (Full_Name'First + Root'Length .. Full_Name'Last);
+   is
+      Dir_Root : constant String := As_Directory (Root);
+   begin
+      if Dir_Root = Full_Name (Full_Name'First .. Full_Name'First + Dir_Root'Length - 1) then
+         return Full_Name (Full_Name'First + Dir_Root'Length .. Full_Name'Last);
       else
-         raise SAL.Programmer_Error with Full_Name & " not relative to root " & Root;
+         raise SAL.Programmer_Error with Full_Name & " not relative to root " & Dir_Root;
       end if;
    end Relative_Name;
 

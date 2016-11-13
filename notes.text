@@ -4,9 +4,7 @@ see ../Android/org.stephe_leake.music_player.java/notes.text
 
 weekly refill via http
 
-test_server.adb
-    get_download_list (count)
-        add pdf, jpg
+Ada done; do java
 
 protocol:
     app delete played, trim playlist
@@ -16,6 +14,7 @@ protocol:
     app for each song:
         request file, store in <playlist_name>/...
         add file to end of playlist
+        if new dir, request meta (liner_notes, albumart)
 
 
 http://docs.adacore.com/aws-docs/aws/
