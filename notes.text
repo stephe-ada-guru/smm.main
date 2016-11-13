@@ -6,7 +6,15 @@ Makefile
 
 branches:
     org.stephe_leake.music_player.java - main, currently on phone
-    o.s_l.m_p.work                     - available
+    o.s_l.m_p.work                     - download via http
+
+swipe notification to dismiss
+    also disable lock screen art
+    -> quit
+
+cycle thru all avail albumart*.jpg
+
+don't need priority notification
 
 car play/pause/next/prev controls
     14 June 2016:
@@ -46,6 +54,7 @@ car play/pause/next/prev controls
             mediaButtonReciever _not_ registered in service
             mediaSession callback registered
 
+        give up
 
 notify when less than 10 songs left in playlist
     but only once; not clear where to save state, when to clear it
@@ -104,6 +113,11 @@ how do podcast manager transfer their .mp3 files?
         podcastparser probably has the windows/linux download code
 
     https://github.com/antennapod/AntennaPod
+        http request via OkHttp http://square.github.io/okhttp/
+
+    https://github.com/stcarrez/ada-util/wiki better supported, xml, base64, lots of other stuff
+        git clone https://github.com/stcarrez/ada-util.wiki.git
+
 
 Copy playlist don't copy existing
 
