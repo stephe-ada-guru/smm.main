@@ -18,17 +18,22 @@
 
 pragma License (GPL);
 
+with AUnit.Assertions;
 with AUnit.Checks;
 with AWS.Client;
 with AWS.Response.AUnit;
 with AWS.URL;
+with Ada.Calendar;
 with Ada.Directories;
 with Ada.Text_IO;
 with GNAT.OS_Lib;
-with SAL;
+with SAL.Config_Files;
+with SAL.Time_Conversions.AUnit;
 with SMM;
 with Test_Utils;
 package body Test_Server is
+
+   Db_File_Name : constant String := "tmp/smm.db";
 
    Server : GNAT.OS_Lib.Process_Id;
 
@@ -93,24 +98,45 @@ package body Test_Server is
       Test : Test_Case renames Test_Case (T);
 
       procedure Check_File
-        (Directory : in String;
-         Filename  : in String;
-         Mime      : in String)
+        (Directory  : in String;
+         Filename   : in String;
+         Mime       : in String;
+         Song_Index : in Integer := 0)
       is
+         use SAL.Config_Files;
+         use SAL.Time_Conversions;
+         use SAL.Time_Conversions.AUnit;
+
          URL : constant String := "http://" & Test.Server_IP.all & ":8080/" & Directory &
            AWS.URL.Encode (Filename);
 
          Response : constant Data   :=  AWS.Client.Get (URL);
          Msg      : constant String := Message_Body (Response);
+         Db_File  : Configuration_Type;
+         I        : Iterator_Type;
       begin
          Check ("mode", Mode (Response), Message); --  Not clear why this is "message", not "file"
          Check ("mime", Content_Type (Response), Mime);
          Check ("file content", Msg, "body: tmp/source/" & Directory & Filename & ASCII.CR & ASCII.LF);
+
+         if Song_Index > 0 then
+            Open (Db_File, Db_File_Name, Missing_File => Raise_Exception, Read_Only => True);
+            I := Find (Db_File, SMM.Songs_Key, Integer'Image (Song_Index));
+            Check
+              ("last_downloaded",
+               SMM.Read_Last_Downloaded (Db_File, I),
+               To_TAI_Time (Ada.Calendar.Clock),
+               Tolerance => 60.0);
+         end if;
+      exception
+      when AUnit.Assertions.Assertion_Error =>
+         Ada.Text_IO.Put_Line (Msg);
+         raise;
       end Check_File;
 
    begin
       Check_File ("artist_1/album_1/", "AlbumArt_1.jpg", "image/jpeg");
-      Check_File ("artist_1/album_1/", "1 - song_1.mp3", "audio/mpeg");
+      Check_File ("artist_1/album_1/", "1 - song_1.mp3", "audio/mpeg", Song_Index => 1);
       Check_File ("artist_1/album_1/", "liner_notes.pdf", "application/pdf");
    end Test_Get_File;
 
@@ -139,7 +165,6 @@ package body Test_Server is
       use Ada.Text_IO;
       use Test_Utils;
 
-      Db_File_Name : constant String := "tmp/smm.db";
       Db_File      : File_Type;
       Dir          : constant String := Current_Directory;
    begin

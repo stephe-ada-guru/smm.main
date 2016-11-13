@@ -184,6 +184,26 @@ package body SMM is
       Write (Db, Key, SAL.Time_Conversions.To_Extended_ASIST_String (Time));
    end Write_Last_Downloaded;
 
+   function Find
+     (Db       : in SAL.Config_Files.Configuration_Type;
+      Filename : in String)
+     return SAL.Config_Files.Iterator_Type
+   is
+      use SAL.Config_Files;
+      I : Iterator_Type := First (Db, Songs_Key);
+   begin
+      loop
+         exit when Is_Done (I) or else Read (Db, I, File_Key) = Filename;
+         Next (I);
+      end loop;
+
+      if Is_Done (I) then
+         raise SAL.Not_Found with "'" & Filename & "'";
+      else
+         return I;
+      end if;
+   end Find;
+
    type Time_List_Element_Type is record
       Last_Downloaded : SAL.Time_Conversions.Time_Type;
       Songs           : Song_Lists.List;

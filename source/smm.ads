@@ -77,6 +77,12 @@ package SMM is
       Root_Key : in     String;
       Time     : in     SAL.Time_Conversions.Time_Type);
 
+   function Find
+     (Db       : in SAL.Config_Files.Configuration_Type;
+      Filename : in String)
+     return SAL.Config_Files.Iterator_Type;
+   --  Filename is Artist/Album/title.mp3; file name relative to music root.
+
    package Song_Lists is new Ada.Containers.Doubly_Linked_Lists (SAL.Config_Files.Iterator_Type, SAL.Config_Files."=");
 
    procedure Least_Recent_Songs

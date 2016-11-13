@@ -24,6 +24,7 @@ with AWS.Response;
 with AWS.Server.Log;
 with AWS.Status;
 with AWS.URL;
+with Ada.Calendar;
 with Ada.Command_Line;
 with Ada.Directories;
 with Ada.Exceptions;
@@ -119,6 +120,14 @@ package body SMM.Server is
             end if;
 
             if Exists (Filename) then
+               if Ext = "mp3" then
+                  --  Find does not want leading / on filename
+                  Write_Last_Downloaded
+                    (Db,
+                     Find (Db, Filename (Source_Root.all'Length + 2 .. Filename'Last)),
+                     SAL.Time_Conversions.To_TAI_Time (Ada.Calendar.Clock));
+                  SAL.Config_Files.Flush (Db);
+               end if;
                return File (Mime_Type, Filename);
             else
                return Acknowledge
