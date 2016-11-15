@@ -8,6 +8,20 @@ branches:
     org.stephe_leake.music_player.java - main, currently on phone
     o.s_l.m_p.work                     - download via http
 
+download via http protocol:
+    app delete played, trim playlist
+        translate smm.first_pass to Java
+        SyncUtils.java
+            editPlaylist compiles; write test
+
+    app connect to smm_server
+        request list of songs to download, arg count
+        response is list of songs (path relative to music root)
+    app for each song:
+        request file, store in <playlist_name>/...
+        add file to end of playlist
+        if new dir, request meta (liner_notes, albumart)
+
 swipe notification to dismiss
     also disable lock screen art
     -> quit
