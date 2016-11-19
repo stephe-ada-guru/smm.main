@@ -1,46 +1,27 @@
- apply plugin: 'com.android.application'
+apply plugin: 'com.android.application'
 
 android
 {
-  compileSdkVersion 21
-  buildToolsVersion "22.0.1"
+  compileSdkVersion 23
+  buildToolsVersion "23.0.2"
 
-  // No dots allowed in versionCode, so just use sequential integer.
-  // Version shown in Samsung Application Manager info (not in Google Nexus)
-  // 
-  // versionName = versionCode = VERSION in ../build/Makefile
-  //
-  // minSdkVersion   : Galaxy Note III runs API 21
-  // targetSdkVersion: 
-  // testing with likely version on next phone is a good idea.
   defaultConfig
   {
+    // No dots allowed in versionCode, so just use sequential integer.
+    // Version shown in Samsung Application Manager info (not in Google Nexus)
+    // 
+    // versionName = versionCode = VERSION in ../build/Makefile
+    //
+    // minSdkVersion   : Galaxy Note III runs API 21
+    // targetSdkVersion: lint complains if not latest
+
     applicationId "org.stephe_leake.android.stephes_music"
     minSdkVersion 21
-    targetSdkVersion 21
+    targetSdkVersion 23
     versionName "15"
     versionCode 15
   }
 
-  sourceSets
-  {
-    main {
-      manifest.srcFile 'AndroidManifest.xml'
-      java.srcDirs = ['java']
-      resources.srcDirs = ['src']
-      aidl.srcDirs = ['src']
-      renderscript.srcDirs = ['src']
-      res.srcDirs = ['res']
-      assets.srcDirs = ['assets']
-    }
-  }
-
-  dependencies
-  {
-    // MediaSessionCompat, PlaybackStateCompat, MediaMetaDataCompat for API 19
-    // compile "com.android.support:support-v4:23.2.1"
-  }
-  
   signingConfigs
   {
     release
@@ -54,6 +35,7 @@ android
      
   applicationVariants.all
   {
+    // FIXME: this doesn't work any more (sigh).
     variant ->
       variant.outputs.each { output ->
         output.outputFile = new File(
@@ -73,11 +55,18 @@ android
 
   lintOptions
   {
-    // FIXME: see also lint.xml
+    // see also lint.xml
     
     // Notification uses "left" for gravity
     disable 'RtlHardcoded'
   }
 }
 
+dependencies
+{
+  testCompile files('d:/Archive/Android/libs/commons-io-2.5.jar')
+  testCompile 'junit:junit:4.12'
+  testCompile 'org.mockito:mockito-core:1.10.19'
+}
+  
 // end of file

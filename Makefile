@@ -7,6 +7,23 @@ VERSION := 15
 
 all : compile
 
+vpath %.java   app/src/test/java/
+
+CLASS_PATH := app/build/intermediates/classes/release/
+CLASS_PATH := $(CLASS_PATH);app/build/intermediates/classes/test/
+CLASS_PATH := $(CLASS_PATH);d:/Archive/Android/libs/junit-4.12.jar
+CLASS_PATH := $(CLASS_PATH);d:/Archive/Android/libs/hamcrest-core-1.3.jar
+CLASS_PATH := $(CLASS_PATH);d:/Archive/Android/libs/commons-io-2.5.jar
+
+TEST_CLASSES := $(CLASS_DIR)org/stephe_leake/android/stephes_music/TestSyncUtils.class
+
+$(CLASS_DIR)%.class : %.java
+	javac -cp "$(CLASS_PATH)" -d app/build/intermediates/classes/test/ $^
+
+test-host : $(TEST_CLASSES)
+	java -cp "$(CLASS_PATH)" org.junit.runner.JUnitCore org.stephe_leake.android.stephes_music.TestSyncUtils
+
+
 #  --info gives more detail, --stacktrace gives error stack trace
 # gradle lint output in:
 # (browse-url "build/outputs/lint-results-release-fatal.html")
@@ -14,8 +31,13 @@ all : compile
 compile : force
 	gradle build
 
-clean :
+clean : test-clean
 	rm -rf build/*
+	rm -rf app/build/*
+
+# when run from AndroidStudio, process dir is ./app; when run from Makefile, it's .
+test-clean :
+	rm -rf app/tmp tmp
 
 source-clean :
 	find .. -name "*~" -print -delete

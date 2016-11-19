@@ -22,6 +22,9 @@ download via http protocol:
         add file to end of playlist
         if new dir, request meta (liner_notes, albumart)
 
+
+    using http://commons.apache.org/proper/commons-io/download_io.cgi
+
 swipe notification to dismiss
     also disable lock screen art
     -> quit

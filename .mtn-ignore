@@ -4,5 +4,7 @@
 ^GTAGS$
 ^\.gradle$
 ^\.idea$
-^build/.*$
+^app/build$
+^build$
 ^test/Audio/vocal$
+^tmp$
