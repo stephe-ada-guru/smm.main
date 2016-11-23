@@ -19,27 +19,59 @@
 package org.stephe_leake.android.stephes_music;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.LineNumberReader;
-import java.nio.CharBuffer;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.LineIterator;
+import org.apache.commons.io.filefilter.FalseFileFilter;
+import org.apache.commons.io.filefilter.SuffixFileFilter;
+import org.apache.commons.io.filefilter.TrueFileFilter;
 
 public class SyncUtils
 {
-   static void editPlaylist(String playlistFilename, String lastFilename)
+   private static String       playlistDir;
+   private static List<String> mentionedFiles;
+
+   private static List<String> readPlaylist(String playlistFilename, boolean lowercase)
+      throws IOException
+   {
+      // Read playlist file, return list of files (lowercase) in it.
+      File         playlistFile = new File(playlistFilename);
+      LineIterator i;
+
+      LinkedList<String> result = new LinkedList<>();
+
+      for (i = FileUtils.lineIterator(playlistFile); i.hasNext();)
+      {
+         String line = i.next();
+         result.addLast(lowercase ? line.toLowerCase() : line);
+      }
+      i.close();
+      return result;
+   }
+
+   public static void editPlaylist(String playlistFilename, String lastFilename)
+      throws IOException
    // Delete lines from start of playlist file up to and including
    // line in last file. Delete last file.
    {
+      List<String> lines = readPlaylist(playlistFilename, false);
+
       try
       {
-         String           outputFilename = playlistFilename + ".tmp";
-         LineNumberReader input          = new LineNumberReader(new FileReader(lastFilename));
-         FileWriter       output         = new FileWriter(outputFilename);
-         String           lastPlayed     = input.readLine();
-         boolean          found          = false;
-         boolean          done           = false;
+         FileWriter       output     = new FileWriter(playlistFilename);
+         LineNumberReader input      = new LineNumberReader(new FileReader(lastFilename));
+         String           lastPlayed = input.readLine();
+         boolean          found      = false;
 
          input.close();
 
@@ -51,39 +83,116 @@ public class SyncUtils
             return;
          }
 
-         input = new LineNumberReader(new FileReader(playlistFilename));
-
-         while (!done)
+         for (String line : lines)
          {
-            String line = input.readLine();
-
-            if (line == null)
-               done = true;
+            if (found)
+               output.write(line + "\n");
             else
-            {
-               if (found)
-                  output.write(line + "\n");
-               else
-                  found = line.equals(lastPlayed);
-            }
+               found = line.equals(lastPlayed);
          }
-         input.close();
          output.close();
 
-         {
-            File playlistFile = new File(playlistFilename);
-            File outputFile   = new File(outputFilename);
-
-            playlistFile.delete();
-            new File(lastFilename).delete();
-            outputFile.renameTo(playlistFile);
-         }
+         new File(lastFilename).delete();
       }
       catch (FileNotFoundException e)
       { // last file not found; same as empty; do nothing
       }
-      catch (IOException e)
-      { // something really screwed up
+   }
+
+   private static String normalize(String item)
+   {
+      char[] temp = item.toCharArray();
+
+      for (int i = 0; i < temp.length; i++)
+         if (temp[i] == '\\')
+            temp[i] = '/';
+
+      return new String(temp);
+   }
+
+   private static String relativeName(String root, String full)
+   {
+      if (full.startsWith(root))
+         return normalize(full.substring(root.length() + 1, full.length()));
+      else
+         return "";
+   }
+
+   private static void processDirEntry(File entry)
+      throws IOException
+   {
+      int entryCount = 0;
+
+      if (entry.isDirectory())
+      {
+         // listFiles returns "." as the dir name; does not return ".."; cannot filter it!
+
+         // Delete music files not in playlist
+         for (File subDir : FileUtils.listFiles(entry, new SuffixFileFilter(".mp3"), FalseFileFilter.FALSE))
+            processDirEntry(subDir);
+
+         // Recurse into directories
+        for (File subDir : FileUtils.listFilesAndDirs(entry, FalseFileFilter.FALSE, TrueFileFilter.TRUE))
+           if (subDir != entry)
+              processDirEntry(subDir);
+
+         // Delete dir if there's no music or subdirectories left
+         //
+         // Count directories
+         for (File subDir : FileUtils.listFilesAndDirs(entry, FalseFileFilter.FALSE, TrueFileFilter.TRUE))
+            if (subDir != entry)
+               entryCount++;
+
+         if (entryCount > 0) return;
+
+         // Count music files
+         for (File subDir : FileUtils.listFiles(entry, new SuffixFileFilter(".mp3"), FalseFileFilter.FALSE))
+            entryCount++;
+
+         if (0 == entryCount)
+            FileUtils.deleteDirectory(entry);
+      }
+      else if (entry.isFile())
+      {
+         final String name = relativeName(playlistDir, entry.getAbsolutePath()).toLowerCase();
+
+         if (!mentionedFiles.contains(name))
+            entry.delete();
+      }
+      // else special file; ignored
+   }
+
+   public static void firstPass(String category, String playlistDir, String smmDir)
+      throws IOException
+   {
+      //  Delete lines in category.m3u that are before song in
+      //  SMM_Dir/category.last. Delete files from Playlist_Dir/Category
+      //  that are not mentioned in playlist file category.m3u. Return count
+      //  of files remaining in playlist.
+      //
+      //  Directory names end in '/'
+
+      // We can't declare a File object for playlistFile or lastFile;
+      // that prevents rename, delete in editPlaylist.
+      final String playlistFilename = FilenameUtils.concat(playlistDir, category + ".m3u");
+      final String lastFilename     = FilenameUtils.concat(smmDir, category + ".last");
+
+      SyncUtils.playlistDir = playlistDir;
+
+      // getPath() returns empty string if file does not exist
+      if ("" != FilenameUtils.getPath(playlistFilename))
+         if ("" != FilenameUtils.getPath(lastFilename))
+            editPlaylist(playlistFilename, lastFilename);
+
+      mentionedFiles = readPlaylist(playlistFilename, true);
+
+      //  Search playlist directory, delete files not in playlist
+      {
+         File targetDir = new File(playlistDir, category);
+
+         for (File subDir : FileUtils.listFilesAndDirs(targetDir, FalseFileFilter.FALSE, TrueFileFilter.TRUE))
+            if (subDir != targetDir)
+                processDirEntry(subDir);
       }
    }
 }

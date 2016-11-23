@@ -5,30 +5,11 @@ VERSION := 15
 
 .PHONY : force
 
-all : compile
-
-vpath %.java   app/src/test/java/
-
-CLASS_PATH := app/build/intermediates/classes/release/
-CLASS_PATH := $(CLASS_PATH);app/build/intermediates/classes/test/
-CLASS_PATH := $(CLASS_PATH);d:/Archive/Android/libs/junit-4.12.jar
-CLASS_PATH := $(CLASS_PATH);d:/Archive/Android/libs/hamcrest-core-1.3.jar
-CLASS_PATH := $(CLASS_PATH);d:/Archive/Android/libs/commons-io-2.5.jar
-
-TEST_CLASSES := $(CLASS_DIR)org/stephe_leake/android/stephes_music/TestSyncUtils.class
-
-$(CLASS_DIR)%.class : %.java
-	javac -cp "$(CLASS_PATH)" -d app/build/intermediates/classes/test/ $^
-
-test-host : $(TEST_CLASSES)
-	java -cp "$(CLASS_PATH)" org.junit.runner.JUnitCore org.stephe_leake.android.stephes_music.TestSyncUtils
-
+# compiles app and runs unit tests
+all : build
 
 #  --info gives more detail, --stacktrace gives error stack trace
-# gradle lint output in:
-# (browse-url "build/outputs/lint-results-release-fatal.html")
-# (browse-url "build/outputs/lint-results.html")
-compile : force
+build : force
 	gradle build
 
 clean : test-clean

@@ -3,6 +3,7 @@ NEWS.text
 Makefile
 (dvc-status)
 ~/Misc/android.text
+d:/Archive/Android/libs/commons-io-2.5/docs/index.html
 
 branches:
     org.stephe_leake.music_player.java - main, currently on phone
@@ -10,9 +11,10 @@ branches:
 
 download via http protocol:
     app delete played, trim playlist
-        translate smm.first_pass to Java
+        translate smm.first_pass and tests to Java
+        c:/Projects/smm.work_1/test/test_first_pass_with_last.adb
         SyncUtils.java
-            editPlaylist compiles; write test
+            tests pass
 
     app connect to smm_server
         request list of songs to download, arg count
