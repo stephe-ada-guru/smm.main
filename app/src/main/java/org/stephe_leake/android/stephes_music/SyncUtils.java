@@ -36,6 +36,10 @@ import org.apache.commons.io.filefilter.FalseFileFilter;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
 public class SyncUtils
 {
    private static String       playlistDir;
@@ -195,4 +199,23 @@ public class SyncUtils
                 processDirEntry(subDir);
       }
    }
+
+   public static String[] getNewSongsList(String serverIP, String category, int count, int randomSeed)
+      throws IOException
+   // randomSeed = -1 means randomize; other values used in unit tests.
+   {
+      // FIXME: move to class, share with getSongs
+      OkHttpClient client = new OkHttpClient();
+
+      final String url = "http://" + serverIP + ":8080/download?category=" + category +
+         "&count=" + Integer.toString(count) + (-1 == randomSeed ? "" : "&seed=" + Integer.toString(randomSeed) + "");
+
+      Request request = new Request.Builder().url(url).build();
+
+      try (Response response = client.newCall(request).execute())
+      {
+         return response.body().string().split("\r\n");
+      }
+   }
+
 }

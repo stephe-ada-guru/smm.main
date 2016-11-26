@@ -4,28 +4,22 @@ Makefile
 (dvc-status)
 ~/Misc/android.text
 d:/Archive/Android/libs/commons-io-2.5/docs/index.html
+https://github.com/square/okhttp/wiki
+http://square.github.io/okhttp/3.x/okhttp/ javadoc
 
 branches:
     org.stephe_leake.music_player.java - main, currently on phone
     o.s_l.m_p.work                     - download via http
 
 download via http protocol:
-    app delete played, trim playlist
-        translate smm.first_pass and tests to Java
-        c:/Projects/smm.work_1/test/test_first_pass_with_last.adb
-        SyncUtils.java
-            tests pass
+    SyncUtils.java
+    TestSyncUtils.java
 
-    app connect to smm_server
-        request list of songs to download, arg count
-        response is list of songs (path relative to music root)
-    app for each song:
+    getSongs
+        c:/Projects/Android/AntennaPod/core/src/main/java/de/danoeh/antennapod/core/service/download/HttpDownloader.java
         request file, store in <playlist_name>/...
         add file to end of playlist
         if new dir, request meta (liner_notes, albumart)
-
-
-    using http://commons.apache.org/proper/commons-io/download_io.cgi
 
 swipe notification to dismiss
     also disable lock screen art
@@ -125,18 +119,6 @@ fix menu
 
 ssh backend
     ../../smm.work/notes.text
-
-how do podcast manager transfer their .mp3 files?
-    http://gpodder.org/
-        has android version, but nothing about that in the source
-        podcastparser probably has the windows/linux download code
-
-    https://github.com/antennapod/AntennaPod
-        http request via OkHttp http://square.github.io/okhttp/
-
-    https://github.com/stcarrez/ada-util/wiki better supported, xml, base64, lots of other stuff
-        git clone https://github.com/stcarrez/ada-util.wiki.git
-
 
 Copy playlist don't copy existing
 

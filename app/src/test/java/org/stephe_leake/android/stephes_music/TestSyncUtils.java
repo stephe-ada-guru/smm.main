@@ -23,6 +23,9 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.LineNumberReader;
+import java.lang.Process;
+import java.lang.ProcessBuilder;
+import java.util.List;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 
@@ -68,12 +71,20 @@ public class TestSyncUtils
       assertTrue(filename + " exists = " + expected.toString(), expected == new File(filename).exists());
    }
 
+   private void check(String[] computed, String[] expected)
+   {
+      assertTrue("computed.length " + computed.length + "; expected.length " + expected.length,
+                 computed.length == expected.length);
+      for(int i = 0; i < computed.length; i++)
+         assertTrue(Integer.toString(i), computed[i].equals(expected[i]));
+   }
+
    @Test
    public void editPlaylistNominal()
    {
       //  Create the test environment; a playlist, a .last
-      String     playlistFilename = "tmp/playlists/Vocal.m3u";
-      String     lastFilename     = "tmp/smm/Vocal.last";
+      String     playlistFilename = "tmp/playlists/vocal.m3u";
+      String     lastFilename     = "tmp/smm/vocal.last";
       FileWriter output;
 
       cleanup(false);
@@ -84,14 +95,14 @@ public class TestSyncUtils
          assertTrue("mkdir playlists", new File("tmp/playlists/").mkdir());
          output = new FileWriter(playlistFilename);
 
-         output.write("Vocal/artist_1/file_4.mp3" + "\n");
-         output.write("Vocal/artist_1/file_5.mp3" + "\n");
-         output.write("Vocal/artist_2/file_6.mp3" + "\n");
+         output.write("vocal/artist_1/file_4.mp3" + "\n");
+         output.write("vocal/artist_1/file_5.mp3" + "\n");
+         output.write("vocal/artist_2/file_6.mp3" + "\n");
          output.close();
 
          assertTrue("mkdir smm", new File("tmp/smm/").mkdir());
          output = new FileWriter(lastFilename);
-         output.write("Vocal/artist_1/file_5.mp3" + "\n");
+         output.write("vocal/artist_1/file_5.mp3" + "\n");
          output.close();
 
          SyncUtils.editPlaylist(playlistFilename, lastFilename);
@@ -99,7 +110,7 @@ public class TestSyncUtils
          {
             LineNumberReader input = new LineNumberReader(new FileReader(playlistFilename));
 
-            assertTrue(input.readLine().equals("Vocal/artist_2/file_6.mp3"));
+            assertTrue(input.readLine().equals("vocal/artist_2/file_6.mp3"));
             assertTrue(input.readLine() == null);
          }
       }
@@ -112,56 +123,140 @@ public class TestSyncUtils
       // Translated from smm test_first_pass_with_last.adb Nominal
 
       //  Create the test environment; a playlist, a .last, *.mp3, *.jpg, *.pdf files
-      String     playlistFilename = "tmp/playlists/Vocal.m3u";
-      String     lastFilename     = "tmp/smm/Vocal.last";
+      String     playlistFilename = "tmp/playlists/vocal.m3u";
+      String     lastFilename     = "tmp/smm/vocal.last";
       FileWriter output;
 
-      // Can't delete Vocal.m3u; not clear why it's locked.
+      // Can't delete vocal.m3u; not clear why it's locked.
       cleanup(true);
 
       try
       {
-         FileUtils.forceMkdir(new File("tmp/playlists/Vocal/artist_1"));
-         createTestFile("tmp/playlists/Vocal/artist_1/file_4.mp3");
-         createTestFile("tmp/playlists/Vocal/artist_1/file_5.mp3");
+         FileUtils.forceMkdir(new File("tmp/playlists/vocal/artist_1"));
+         createTestFile("tmp/playlists/vocal/artist_1/file_4.mp3");
+         createTestFile("tmp/playlists/vocal/artist_1/file_5.mp3");
 
-         FileUtils.forceMkdir(new File("tmp/playlists/Vocal/artist_2"));
-         createTestFile("tmp/playlists/Vocal/artist_2/file_6.mp3");
+         FileUtils.forceMkdir(new File("tmp/playlists/vocal/artist_2"));
+         createTestFile("tmp/playlists/vocal/artist_2/file_6.mp3");
 
          output = new FileWriter(playlistFilename);
 
-         output.write("Vocal/artist_1/file_4.mp3" + "\n");
-         output.write("Vocal/artist_1/file_5.mp3" + "\n");
-         output.write("Vocal/artist_2/file_6.mp3" + "\n");
+         output.write("vocal/artist_1/file_4.mp3" + "\n");
+         output.write("vocal/artist_1/file_5.mp3" + "\n");
+         output.write("vocal/artist_2/file_6.mp3" + "\n");
          output.close();
 
          assertTrue("mkdir smm", new File("tmp/smm/").mkdir());
          output = new FileWriter(lastFilename);
-         output.write("Vocal/artist_1/file_5.mp3" + "\n");
+         output.write("vocal/artist_1/file_5.mp3" + "\n");
          output.close();
 
-         SyncUtils.firstPass("Vocal", (new File("tmp\\playlists\\")).getAbsolutePath(), (new File("tmp\\smm\\")).getAbsolutePath());
+         SyncUtils.firstPass("vocal", (new File("tmp/playlists/")).getAbsolutePath(), (new File("tmp/smm/")).getAbsolutePath());
 
          // Check that the played files are deleted, but the others are not.
-         checkExists("tmp/playlists/Vocal/artist_1/file_4.mp3", false);
-         checkExists("tmp/playlists/Vocal/artist_1/file_5.mp3", false);
-         checkExists("tmp/playlists/Vocal/artist_1/", false);
-         checkExists("tmp/playlists/Vocal/artist_2/file_6.mp3", true);
+         checkExists("tmp/playlists/vocal/artist_1/file_4.mp3", false);
+         checkExists("tmp/playlists/vocal/artist_1/file_5.mp3", false);
+         checkExists("tmp/playlists/vocal/artist_1/", false);
+         checkExists("tmp/playlists/vocal/artist_2/file_6.mp3", true);
 
          // Check that the playlist is updated
          {
             LineNumberReader input = new LineNumberReader(new FileReader(playlistFilename));
 
-            assertTrue(input.readLine().equals("Vocal/artist_2/file_6.mp3"));
+            assertTrue(input.readLine().equals("vocal/artist_2/file_6.mp3"));
             assertTrue(input.readLine() == null);
          }
 
          // Check that .last file is deleted
-         checkExists("tmp/playlists/Vocal.last", false);
+         checkExists("tmp/playlists/vocal.last", false);
 
       }
       catch (java.io.IOException e){assertTrue(e.toString(), false);}
    }
-}
 
+   @Test
+   public void getNewSongsNominal()
+   {
+      // Translated from smm test_server.adb Set_Up_Case, Test_Playlist, Test_Meta, Test_Get_File
+      final String serverIP         = "192.168.1.83"; // must match smm-server.config
+      final String dbFilename       = "tmp/smm.db";
+      final String playlistFilename = "tmp/playlists/vocal.m3u";
+      FileWriter   output;
+      Process      server           = null;
+      String[]     newSongs;
+      String[]     expectedSongs    =
+         {"artist_2/album_1/1 - song_1.mp3",
+          "artist_1/album_1/1 - song_1.mp3",
+          "artist_2/album_1/2 - song_2.mp3",
+          "artist_1/album_1/2 - song_2.mp3",
+          "artist_2/album_1/3 - song_3.mp3"};
+
+      // Can't delete vocal.m3u; not clear why it's locked.
+      cleanup(true);
+
+      try
+      {
+         FileUtils.forceMkdir(new File("tmp"));
+         output = new FileWriter(dbFilename);
+         output.write("Root = " + new File("tmp/source").getAbsolutePath() + "\n");
+         output.write("Songs. 1.File = artist_1/album_1/1 - song_1.mp3" + "\n");
+         output.write("Songs. 1.Category = vocal" + "\n");
+         output.write("Songs. 2.File = artist_1/album_1/2 - song_2.mp3" + "\n");
+         output.write("Songs. 2.Category = vocal" + "\n");
+         output.write("Songs. 3.File = artist_1/album_1/3 - song_3.mp3" + "\n");
+         output.write("Songs. 3.Category = instrumental" + "\n");
+         output.write("Songs. 4.File = artist_2/album_1/1 - song_1.mp3" + "\n");
+         output.write("Songs. 4.Category = vocal" + "\n");
+         output.write("Songs. 5.File = artist_2/album_1/2 - song_2.mp3" + "\n");
+         output.write("Songs. 5.Category = vocal" + "\n");
+         output.write("Songs. 6.File = artist_2/album_1/3 - song_3.mp3" + "\n");
+         output.write("Songs. 6.Category = vocal" + "\n");
+         output.close();
+
+         FileUtils.forceMkdir(new File("tmp/playlists/vocal/artist_3"));
+         createTestFile("tmp/playlists/vocal/artist_3/file_4.mp3");
+
+         output = new FileWriter(playlistFilename);
+         output.write("vocal/artist_3/file_4.mp3" + "\n");
+         output.close();
+
+         // Spawn smm server
+         server = new ProcessBuilder("smm-server_driver", "smm-server.config").start();
+
+         newSongs = SyncUtils.getNewSongsList(serverIP, "vocal", 5, 0);
+
+         check(newSongs, expectedSongs);
+
+         // FIXME: later
+         // SyncUtils.getSongs(newSongs, playlistFilename);
+
+         // // Check that the new song files and meta files are present
+         // checkExists("tmp/playlists/vocal/artist_1/album_1/1 - song_1.mp3", true);
+         // checkExists("tmp/playlists/vocal/artist_1/album_1/2 - song_2.mp3", true);
+         // checkExists("tmp/playlists/vocal/artist_1/album_1/Album_Art_1.jpg", true);
+         // checkExists("tmp/playlists/vocal/artist_1/album_1/liner_notes.pdf", true);
+         // checkExists("tmp/playlists/vocal/artist_2/album_1/1 - song_1.mp3", true);
+         // checkExists("tmp/playlists/vocal/artist_2/album_1/2 - song_2.mp3", true);
+         // checkExists("tmp/playlists/vocal/artist_2/album_1/3 - song_3.mp3", true);
+
+         // // Check that new songs are added to playlist
+         // {
+         //    LineNumberReader input = new LineNumberReader(new FileReader(playlistFilename));
+
+         //    assertTrue(input.readLine().equals("vocal/artist_3/file_4.mp3")); // previously there
+         //    assertTrue(input.readLine().equals("vocal/artist_2/album_1/1 - song_1.mp3"));
+         //    assertTrue(input.readLine().equals("vocal/artist_1/album_1/1 - song_1.mp3"));
+         //    assertTrue(input.readLine().equals("vocal/artist_2/album_1/2 - song_2.mp3"));
+         //    assertTrue(input.readLine().equals("vocal/artist_1/album_1/2 - song_2.mp3"));
+         //    assertTrue(input.readLine().equals("vocal/artist_2/album_1/3 - song_3.mp3"));
+         //    assertTrue(input.readLine() == null);
+         // }
+      }
+      catch (IOException e) {assertTrue(e.getMessage(), false);}
+      finally
+      {
+         if (null != server) server.destroy();
+      }
+   }
+}
 // end of file
