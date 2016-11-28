@@ -18,13 +18,17 @@
 
 package org.stephe_leake.android.stephes_music;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.LineNumberReader;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -36,14 +40,18 @@ import org.apache.commons.io.filefilter.FalseFileFilter;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 
+import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
 public class SyncUtils
 {
+   private static final int BUFFER_SIZE = 8 * 1024;
+
    private static String       playlistDir;
    private static List<String> mentionedFiles;
+   private static OkHttpClient httpClient = null;
 
    private static List<String> readPlaylist(String playlistFilename, boolean lowercase)
       throws IOException
@@ -204,18 +212,117 @@ public class SyncUtils
       throws IOException
    // randomSeed = -1 means randomize; other values used in unit tests.
    {
-      // FIXME: move to class, share with getSongs
-      OkHttpClient client = new OkHttpClient();
-
       final String url = "http://" + serverIP + ":8080/download?category=" + category +
-         "&count=" + Integer.toString(count) + (-1 == randomSeed ? "" : "&seed=" + Integer.toString(randomSeed) + "");
+         "&count=" + Integer.toString(count) + (-1 == randomSeed ? "" : "&seed=" + Integer.toString(randomSeed));
 
       Request request = new Request.Builder().url(url).build();
 
-      try (Response response = client.newCall(request).execute())
+      if (null == httpClient) httpClient = new OkHttpClient();
+
+      try (Response response = httpClient.newCall(request).execute())
       {
          return response.body().string().split("\r\n");
       }
    }
 
+   private static void getFile(String serverIP, String resource, File fileName)
+      throws IOException, URISyntaxException
+   {
+      // Get 'resource' from 'serverIP', store in 'fileName'.
+      // 'resource' may have only path and file name.
+      //
+      // We need to encode spaces but not path separators.
+      // addPathSegment encodes both, so we split out the path
+      // segments first.
+      final String[] pathSegments = resource.split("/");
+
+      HttpUrl.Builder url = new HttpUrl.Builder()
+         .scheme("http")
+         .host(serverIP)
+         .port(8080);
+
+      for (String segment : pathSegments)
+         url.addPathSegment(segment);
+
+      fileName.createNewFile();
+
+      try (Response response = httpClient.newCall(new Request.Builder().url(url.build()).build()).execute())
+      {
+         if (!response.isSuccessful())
+            throw new IOException(response.code() + " " + response.message() + " " + url.toString());
+
+         BufferedInputStream in            = new BufferedInputStream(response.body().byteStream());
+         FileOutputStream    out           = new FileOutputStream(fileName);
+         byte[] buffer                     = new byte[BUFFER_SIZE];
+         final String        contentLen    = response.header("Content-Length");
+         int                 contentLength = Integer.parseInt(contentLen);
+         int                 downloaded    = 0;
+         int                 count         = 0;
+
+         while ((count = in.read(buffer)) != -1)
+         {
+            downloaded += count;
+            out.write(buffer, 0, count);
+         }
+         out.close();
+         in.close();
+
+         if (downloaded != contentLength)
+            throw new IOException("downloaded " + downloaded + ", expecting " + count);
+      }
+      catch (NumberFormatException e) {} // from parseInt
+   }
+
+   public static String[] getMetaList(String serverIP, String resourcePath)
+      throws IOException
+   {
+      final String  url     = "http://" + serverIP + ":8080/" + resourcePath + "meta";
+      final Request request = new Request.Builder().url(url).build();
+
+      try (Response response = httpClient.newCall(request).execute())
+      {
+         return response.body().string().split("\r\n");
+      }
+   }
+
+   private static void getMeta(String serverIP, String resourcePath, File destDir)
+      throws IOException, URISyntaxException
+   {
+      String[] files = getMetaList(serverIP, resourcePath);
+
+      if (files.length == 1 && files[0].length() == 0)
+         // no meta files for this directory
+         return;
+
+      for (String file : files)
+         getFile(serverIP, file, new File(destDir, FilenameUtils.getName(file)));
+   }
+
+   public static void getSongs(String serverIP, String[] songs, String category, File root)
+      throws IOException, URISyntaxException
+   {
+      // Get 'songs' from 'serverIP', store in 'root/<category>', add
+      // to playlist 'root/<category>.m3u'. Also get album art, liner
+      // notes for new directories.
+      final File songRoot       = new File(root, category);
+      File       playlistFile   = new File(root, category + ".m3u");
+      FileWriter playlistWriter = new FileWriter(playlistFile, true); // append
+
+      for (String song : songs)
+      {
+         File destDir     = new File(songRoot, FilenameUtils.getPath(song));
+         File destination = new File(songRoot, song);
+
+         if (!destDir.exists())
+         {
+            destDir.mkdirs();
+            getMeta(serverIP, FilenameUtils.getPath(song), destDir);
+         }
+
+         getFile(serverIP, song, new File(destDir, FilenameUtils.getName(song)));
+
+         playlistWriter.write(category + "/" + song + "\n");
+      }
+      playlistWriter.close();
+   }
 }
