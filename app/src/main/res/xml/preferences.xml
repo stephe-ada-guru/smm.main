@@ -40,6 +40,30 @@ write to the Free Software Foundation, 51 Franklin Street, Suite
     <!-- list entries filled at runtime -->
 
     <EditTextPreference
+        android:key="@string/song_count_max_key"
+        android:defaultValue="@string/song_count_max_default"
+        android:numeric="integer"
+        android:title="@string/song_count_max_title"
+        android:summary="@string/song_count_max_summary"
+        android:dialogTitle="@string/song_count_max_dialog_title" />
+
+    <EditTextPreference
+        android:key="@string/song_count_threshold_key"
+        android:defaultValue="@string/song_count_threshold_default"
+        android:numeric="integer"
+        android:title="@string/song_count_threshold_title"
+        android:summary="@string/song_count_threshold_summary"
+        android:dialogTitle="@string/song_count_threshold_dialog_title" />
+
+    <EditTextPreference
+        android:key="@string/server_IP_key"
+        android:defaultValue="@string/server_IP_default"
+        android:numeric="integer"
+        android:title="@string/server_IP_title"
+        android:summary="@string/server_IP_summary"
+        android:dialogTitle="@string/server_IP_dialog_title" />
+
+    <EditTextPreference
         android:key="@string/prev_threshold_key"
         android:defaultValue="@string/prev_threshold_default"
         android:numeric="integer"

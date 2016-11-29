@@ -1,6 +1,6 @@
 //  Abstract :
 //
-//  Utilities for syncing with smm_server
+//  Utilities for downloading from smm_server
 //
 //  Copyright (C) 2016 Stephen Leake. All Rights Reserved.
 //
@@ -45,7 +45,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
-public class SyncUtils
+public class DownloadUtils
 {
    private static final int BUFFER_SIZE = 8 * 1024;
 
@@ -189,7 +189,7 @@ public class SyncUtils
       final String playlistFilename = FilenameUtils.concat(playlistDir, category + ".m3u");
       final String lastFilename     = FilenameUtils.concat(smmDir, category + ".last");
 
-      SyncUtils.playlistDir = playlistDir;
+      DownloadUtils.playlistDir = playlistDir;
 
       // getPath() returns empty string if file does not exist
       if ("" != FilenameUtils.getPath(playlistFilename))
@@ -298,14 +298,14 @@ public class SyncUtils
          getFile(serverIP, file, new File(destDir, FilenameUtils.getName(file)));
    }
 
-   public static void getSongs(String serverIP, String[] songs, String category, File root)
+   public static void getSongs(String serverIP, String[] songs, String category, String root)
       throws IOException, URISyntaxException
    {
       // Get 'songs' from 'serverIP', store in 'root/<category>', add
       // to playlist 'root/<category>.m3u'. Also get album art, liner
       // notes for new directories.
-      final File songRoot       = new File(root, category);
-      File       playlistFile   = new File(root, category + ".m3u");
+      final File songRoot       = new File(new File(root), category);
+      File       playlistFile   = new File(new File(root), category + ".m3u");
       FileWriter playlistWriter = new FileWriter(playlistFile, true); // append
 
       for (String song : songs)

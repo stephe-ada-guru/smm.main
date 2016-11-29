@@ -65,6 +65,24 @@
   <string name="prev_threshold_summary">threshold for previous song vs beginning of current song (milliseconds)</string>
   <string name="prev_threshold_dialog_title">previous threshold (milliseconds)</string>
 
+  <string name="song_count_max_key">song_count_max</string>
+  <string name="song_count_max_default">100</string>
+  <string name="song_count_max_title">Song count max</string>
+  <string name="song_count_max_summary">Maximum count of songs in playlist after download</string>
+  <string name="song_count_max_dialog_title">Song count max</string>
+
+  <string name="song_count_threshold_key">song_count_threshold</string>
+  <string name="song_count_threshold_default">10</string>
+  <string name="song_count_threshold_title">Song count threshold</string>
+  <string name="song_count_threshold_summary">Count of songs played before next download</string>
+  <string name="song_count_threshold_dialog_title">Song count threshold</string>
+
+  <string name="server_IP_key">server_IP</string>
+  <string name="server_IP_default"></string>
+  <string name="server_IP_title">Server IP</string>
+  <string name="server_IP_summary">Server for download</string>
+  <string name="server_IP_dialog_title">Server IP</string>
+
   <string name="text_scale_key">text_scale</string>
   <string name="text_scale_default">0.8</string>
   <string name="text_scale_title">text scale</string>

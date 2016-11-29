@@ -12,14 +12,21 @@ branches:
     o.s_l.m_p.work                     - download via http
 
 download via http protocol:
-    SyncUtils.java
-    TestSyncUtils.java
+    DownloadUtils.java
+    TestDownloadUtils.java
+        need key/menu entry to refresh gnu-global db/cross reference cache
+        on PrjSelect menu
 
-    getSongs
-        c:/Projects/Android/AntennaPod/core/src/main/java/de/danoeh/antennapod/core/service/download/HttpDownloader.java
-        request file, store in <playlist_name>/...
-        add file to end of playlist
-        if new dir, request meta (liner_notes, albumart)
+    new prefs:
+        auto-downloadable playlist
+
+    in server, on timer event (ie 2:30AM)
+        for all autodownload playlists:
+            if current song_count < song_count_max - song_count_threshold
+                download song_count_max - song_count
+
+    in activity: menu download
+        with progress display
 
 swipe notification to dismiss
     also disable lock screen art

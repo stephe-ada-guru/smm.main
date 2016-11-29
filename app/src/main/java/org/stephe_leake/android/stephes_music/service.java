@@ -57,6 +57,11 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.Integer;
 import java.util.LinkedList;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.net.URISyntaxException;
+import java.util.GregorianCalendar;
+import java.util.Calendar;
 
 public class service extends Service
 {
@@ -66,6 +71,8 @@ public class service extends Service
 
    // We only have one notification.
    private static final int notif_id = 1;
+
+   private static final long millisPerDay = 24 * 60 * 60 * 1000;
 
    enum PlayState
    {
@@ -99,12 +106,12 @@ public class service extends Service
    final int activityIntentId = 5;
 
    PendingIntent activityIntent;
-   PendingIntent prevIntent;
    PendingIntent nextIntent;
-   PendingIntent playIntent;
    PendingIntent pauseIntent;
+   PendingIntent playIntent;
+   PendingIntent prevIntent;
 
-   ////////// private methods (alphabetical)
+   ////////// private methods (random order)
 
    private void createMediaPlayer()
    {
@@ -834,6 +841,53 @@ public class service extends Service
          }
    }
 
+   private void download()
+   {
+      Resources         res     = getResources();
+      SharedPreferences prefs   = getSharedPreferences(utils.serviceClassName, MODE_PRIVATE);
+      String songCountMaxStr    = prefs.getString
+         (res.getString(R.string.song_count_max_key),
+          res.getString(R.string.song_count_max_default));
+      String songCountThreshStr = prefs.getString
+         (res.getString(R.string.song_count_threshold_key),
+          res.getString(R.string.song_count_threshold_default));
+      String serverIP = prefs.getString (res.getString(R.string.server_IP_key), null);
+
+      // FIXME: enforce integer in preferences editor
+
+      // FIXME: do other playlists as well! but not meditation; set auto-download playlists in prefs
+      try
+      {
+         int songCountMax = Integer.valueOf(songCountMaxStr);
+         int songCountThresh = Integer.valueOf(songCountThreshStr);
+
+         if ((playing == PlayState.Idle ||
+             playing == PlayState.Paused) &&
+             serverIP != null &&
+             (playlist.size() - playlistPos < songCountMax - songCountThresh))
+         {
+            String[] newSongs;
+
+            // playlistFilename = category
+            DownloadUtils.firstPass(playlistFilename, playlistDirectory, smmDirectory);
+            playlistPos = 1;
+
+            newSongs = DownloadUtils.getNewSongsList(serverIP, playlistFilename, songCountMax - playlist.size(), -1);
+            DownloadUtils.getSongs(serverIP, newSongs, playlistFilename, playlistDirectory);
+         }
+      }
+      catch (IOException e)
+      {
+         // something is screwed up
+         utils.errorLog(this, "download: ", e);
+      }
+      catch (URISyntaxException e)
+      {
+         // song resource can't be encoded in a URI; not likely!
+         utils.errorLog(this, "download: ", e);
+      }
+   }
+
    public service() {}
 
    ////////// nested classes
@@ -871,6 +925,10 @@ public class service extends Service
             // command alphabetical order
             switch (command)
             {
+            case utils.COMMAND_DOWNLOAD:
+               download();
+               break;
+
             case utils.COMMAND_DUMP_LOG:
                dumpLog();
                break;
@@ -1138,6 +1196,15 @@ public class service extends Service
          }
       };
 
+   private TimerTask downloadTimerTask = new TimerTask()
+      {
+         public void run()
+         {
+            sendStickyBroadcast
+               (new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_DOWNLOAD));
+         }
+      };
+
    private AudioManager audioManager;
 
    private MediaPlayer mediaPlayer;
@@ -1171,6 +1238,8 @@ public class service extends Service
    // handle wrap and prev.
 
    boolean haveAudioFocus;
+
+   Timer downloadTimer;
 
    ////////// service lifetime methods
    @Override public IBinder onBind(Intent intent)
@@ -1241,6 +1310,16 @@ public class service extends Service
       haveAudioFocus     = false;
 
       restoreState();
+
+      {
+         GregorianCalendar time = new GregorianCalendar(); // holds current time
+         time.add(Calendar.DAY_OF_MONTH, 1); // tomorrow
+         time.set(Calendar.HOUR_OF_DAY, 2);
+         time.set(Calendar.MINUTE, 30); // 2:30 AM
+
+         downloadTimer = new Timer();
+         downloadTimer.scheduleAtFixedRate(downloadTimerTask, time.getTime(), millisPerDay);
+      }
    }
 
    @Override public void onDestroy()

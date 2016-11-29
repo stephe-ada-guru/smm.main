@@ -1,6 +1,6 @@
 //  Abstract :
 //
-//  Test functions in SyncUtils
+//  Test functions in DownloadUtils
 //
 //  Copyright (C) 2016 Stephen Leake. All Rights Reserved.
 //
@@ -32,7 +32,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
 
-public class TestSyncUtils
+public class TestDownloadUtils
 {
    private void cleanup(boolean ignoreError)
    {
@@ -107,7 +107,7 @@ public class TestSyncUtils
          output.write("vocal/artist_1/file_5.mp3" + "\n");
          output.close();
 
-         SyncUtils.editPlaylist(playlistFilename, lastFilename);
+         DownloadUtils.editPlaylist(playlistFilename, lastFilename);
 
          {
             LineNumberReader input = new LineNumberReader(new FileReader(playlistFilename));
@@ -153,7 +153,7 @@ public class TestSyncUtils
          output.write("vocal/artist_1/file_5.mp3" + "\n");
          output.close();
 
-         SyncUtils.firstPass
+         DownloadUtils.firstPass
             ("vocal", (new File("tmp/playlists/")).getAbsolutePath(), (new File("tmp/smm/")).getAbsolutePath());
 
          // Check that the played files are deleted, but the others are not.
@@ -239,11 +239,11 @@ public class TestSyncUtils
          // Spawn smm server
          server = new ProcessBuilder("smm-server_driver", "smm-server.config").start();
 
-         newSongs = SyncUtils.getNewSongsList(serverIP, category, 5, 0);
+         newSongs = DownloadUtils.getNewSongsList(serverIP, category, 5, 0);
 
          check(newSongs, expectedSongs);
 
-         SyncUtils.getSongs(serverIP, newSongs, category, new File("tmp/playlists"));
+         DownloadUtils.getSongs(serverIP, newSongs, category, "tmp/playlists");
 
          // Check that the new song files and meta files are present
          checkExists("tmp/playlists/vocal/artist_1/album_1/1 - song_1.mp3", true);
