@@ -324,5 +324,8 @@ public class DownloadUtils
          playlistWriter.write(category + "/" + song + "\n");
       }
       playlistWriter.close();
+
+      // File objects hold the corresponding disk file locked; later
+      // unit test cannot delete them.
    }
 }

@@ -51,3 +51,8 @@ June 2016
 - version 15
     fix smmdir (hardcode sdcard)
     one more time on the car commands (put back mediaSession callback).
+
+Nov 2016
+
+- version 16
+    download from smm-server

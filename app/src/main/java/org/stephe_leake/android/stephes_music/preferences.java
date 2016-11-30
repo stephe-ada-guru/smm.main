@@ -23,6 +23,7 @@ import android.content.res.Resources;
 import android.os.Environment;
 import android.preference.ListPreference;
 import android.preference.PreferenceManager;
+import android.preference.MultiSelectListPreference;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -48,7 +49,7 @@ public class preferences extends android.preference.PreferenceActivity
    }
    private final DirFilter dirFilter = new DirFilter();
 
-   // Return true if 'dir' contains smm playlists
+   // Return path to 'dir' if 'dir' contains smm playlists
    private String checkDirectory (File root, String dir)
    {
       final File playlistDir   = new File(root, dir);
@@ -95,13 +96,13 @@ public class preferences extends android.preference.PreferenceActivity
          utils.errorLog(this, "Can't read stored preferences: clear data in Settings | Applications");
       }
 
-      // Build list of top level directories that might contain smm playlists.
+      // Build list of top level directories that might contain smm
+      // playlists.
 
       ListPreference playlistPref = (ListPreference)findPreference(res.getString(R.string.playlist_directory_key));
 
       LinkedList<String> playlistDirs = new LinkedList<String>();
-
-      LinkedList<String> likelyRoots = new LinkedList<String>();
+      LinkedList<String> likelyRoots  = new LinkedList<String>();
 
       // There are several names for internal storage, due to
       // symlinks. We need the one used by the media scanner, since we
@@ -148,7 +149,7 @@ public class preferences extends android.preference.PreferenceActivity
       ListPreference smmPref = (ListPreference)findPreference(res.getString(R.string.smm_directory_key));
 
       // WORKAROUND: getExternalCacheDirs is wrong for the sdcard on
-      // my Galaxy Note III with Android 5.2, so hardcod that.
+      // my Galaxy Note III with Android 5.2, so hardcode that.
       File[] extCacheDirs = this.getExternalCacheDirs();
 
       String[] smmDirs = new String[extCacheDirs.length + 2];
@@ -190,13 +191,31 @@ public class preferences extends android.preference.PreferenceActivity
 
    @Override public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key)
    {
-      if (key.equals(getResources().getString(R.string.text_scale_key)))
+      Resources res = getResources();
+
+      if (key.equals(res.getString(R.string.text_scale_key)))
       {
          setResult(utils.RESULT_TEXT_SCALE);
       }
-      if (key.equals(getResources().getString(R.string.smm_directory_key)))
+      else if (key.equals(res.getString(R.string.smm_directory_key)))
       {
          setResult(utils.RESULT_SMM_DIRECTORY);
+      }
+      else if (key.equals(res.getString(R.string.playlist_directory_key)))
+      {
+         // Set list of playlists in auto-download pref
+         ListPreference playlistPref = (ListPreference)findPreference(res.getString(R.string.playlist_directory_key));
+         File           playlistDir  = new File(playlistPref.getValue());
+
+         MultiSelectListPreference autodownloadPref = (MultiSelectListPreference)
+            findPreference(res.getString(R.string.auto_download_playlists_key));
+
+         final String[] playlists = playlistDir.list(playlistFilter);
+
+         autodownloadPref.setEntries(playlists);
+         autodownloadPref.setEntryValues(playlists);
+
+         setResult(RESULT_OK);
       }
       else
       {

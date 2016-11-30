@@ -1,16 +1,31 @@
 # top level Makefile to build Stephe's Music Player app
 
-# must match build.gradle versionName, versionCode
-VERSION := 15
+# must match app/build.gradle versionName, versionCode
+VERSION := 16
 
 .PHONY : force
 
-# compiles app and runs unit tests
 all : build
 
+# compiles app and runs unit tests
+#
 #  --info gives more detail, --stacktrace gives error stack trace
+# 'gradle tasks' shows available tasks
 build : force
-	gradle build
+	gradle --daemon build
+
+# just compile tasks:
+# compileDebugAndroidTestSources
+# compileDebugSources
+# compileDebugUnitTestSources
+# compileReleaseSources
+# compileReleaseUnitTestSources
+compile-debug : force
+	gradle --daemon compileDebugSources
+
+# We don't have any AndroidTests (yet)
+test : force
+	gradle --daemon compileDebugSources compileDebugUnitTestSources
 
 clean : test-clean
 	rm -rf build/*
@@ -29,7 +44,7 @@ tag :
 archive :
 	cp build/outputs/apk/org.stephe_leake.music_player.java-release-$(VERSION).apk /cygdrive/d/Archive/Android
 
-install-emulator-all : all install-emulator-debug
+install-emulator-all : compile install-emulator-debug
 
 # FIXME: fails with INSTALL_PARSE_FAILED_INCONSISTENT_CERTIFICATES
 # but works from Android Studio (which also provides log filters). and debug works.
@@ -41,6 +56,10 @@ install-emulator-debug :
 
 install-pda-usb-release :
 	adb -d install -r build/outputs/apk/org.stephe_leake.music_player.java-release-$(VERSION).apk
+
+install-pda-usb-debug-all : compile-debug install-pda-usb-debug
+install-pda-usb-debug :
+	adb -d install -r app/build/outputs/apk/app-debug-$(VERSION).apk
 
 # assumes PDA is running sshDroid server, ssh key is active
 # apk version is in build.gradle

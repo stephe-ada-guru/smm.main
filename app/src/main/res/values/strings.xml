@@ -59,6 +59,12 @@
   <string name="smm_directory_summary">absolute path where smm interface files are stored</string>
   <string name="smm_directory_dialog_title">smm directory</string>
 
+  <string name="auto_download_playlists_key">auto_download_playlists</string>
+  <string name="auto_download_playlists_default"></string>
+  <string name="auto_download_playlists_title">Auto-download playlists</string>
+  <string name="auto_download_playlists_summary">List of playlists that are downloaded every night</string>
+  <string name="auto_download_playlists_dialog_title">Auto-download playlists</string>
+
   <string name="prev_threshold_key">prev_threshold</string>
   <string name="prev_threshold_default">5000</string>
   <string name="prev_threshold_title">previous threshold</string>

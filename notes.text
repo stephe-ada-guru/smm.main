@@ -11,6 +11,10 @@ branches:
     org.stephe_leake.music_player.java - main, currently on phone
     o.s_l.m_p.work                     - download via http
 
+current songs:
+    instrumental: Like Someone in Love
+    vocal       : Evermore
+
 download via http protocol:
     DownloadUtils.java
     TestDownloadUtils.java
@@ -26,6 +30,13 @@ download via http protocol:
                 download song_count_max - song_count
 
     in activity: menu download
+        update existing playlist
+            add param to intent to specify playlist
+            add new ACTION_DOWNLOAD?
+
+        download new playlist
+            create empty playlist file in activity?
+
         with progress display
 
 swipe notification to dismiss

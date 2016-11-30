@@ -39,6 +39,14 @@ write to the Free Software Foundation, 51 Franklin Street, Suite
         android:dialogTitle="@string/smm_directory_dialog_title" />
     <!-- list entries filled at runtime -->
 
+    <MultiSelectListPreference
+        android:key="@string/auto_download_playlists_key"
+        android:defaultValue="@string/auto_download_playlists_default"
+        android:title="@string/auto_download_playlists_title"
+        android:summary="@string/auto_download_playlists_summary"
+        android:dialogTitle="@string/auto_download_playlists_dialog_title" />
+    <!-- list entries filled at runtime -->
+
     <EditTextPreference
         android:key="@string/song_count_max_key"
         android:defaultValue="@string/song_count_max_default"
@@ -58,7 +66,6 @@ write to the Free Software Foundation, 51 Franklin Street, Suite
     <EditTextPreference
         android:key="@string/server_IP_key"
         android:defaultValue="@string/server_IP_default"
-        android:numeric="integer"
         android:title="@string/server_IP_title"
         android:summary="@string/server_IP_summary"
         android:dialogTitle="@string/server_IP_dialog_title" />

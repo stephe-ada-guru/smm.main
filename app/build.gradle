@@ -18,8 +18,8 @@ android
     applicationId "org.stephe_leake.android.stephes_music"
     minSdkVersion 21
     targetSdkVersion 23
-    versionName "15"
-    versionCode 15
+    versionName "16"
+    versionCode 16
   }
 
   signingConfigs
@@ -35,7 +35,7 @@ android
      
   applicationVariants.all
   {
-    // FIXME: this doesn't work any more (sigh).
+    // FIXME: replace 'app' with 'org.stephe-leake.music_player'
     variant ->
       variant.outputs.each { output ->
         output.outputFile = new File(

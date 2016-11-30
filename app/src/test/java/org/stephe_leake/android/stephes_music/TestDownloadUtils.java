@@ -28,10 +28,16 @@ import java.lang.Process;
 import java.lang.ProcessBuilder;
 import java.util.List;
 import org.apache.commons.io.FileUtils;
+import org.junit.FixMethodOrder;
+import org.junit.runners.MethodSorters;
 import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
 
+// We need to fix the order of running unit tests, since the last
+// one leaves some files locked that prevents the first one from
+// running. Test names are prefixed with a sort letter.
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class TestDownloadUtils
 {
    private void cleanup(boolean ignoreError)
@@ -80,16 +86,19 @@ public class TestDownloadUtils
          assertTrue(Integer.toString(i), computed[i].equals(expected[i]));
    }
 
+   ////////// Tests
+
    @Test
-   public void editPlaylistNominal()
+   public void a_editPlaylistNominal()
    {
       //  Create the test environment; a playlist, a .last
       String     playlistFilename = "tmp/playlists/vocal.m3u";
       String     lastFilename     = "tmp/smm/vocal.last";
       FileWriter output;
 
-      // Tests are run in some order; some file is locked.
-      cleanup(true);
+      System.out.println("editPlaylistNominal");
+
+      cleanup(false);
 
       try
       {
@@ -120,7 +129,7 @@ public class TestDownloadUtils
    }
 
    @Test
-   public void firstPassNominal()
+   public void b_firstPassNominal()
    {
       // Translated from smm test_first_pass_with_last.adb Nominal
 
@@ -128,6 +137,8 @@ public class TestDownloadUtils
       String     playlistFilename = "tmp/playlists/vocal.m3u";
       String     lastFilename     = "tmp/smm/vocal.last";
       FileWriter output;
+
+      System.out.println("firstPassNominal");
 
       // Can't delete vocal.m3u; not clear why it's locked.
       cleanup(true);
@@ -178,7 +189,7 @@ public class TestDownloadUtils
    }
 
    @Test
-   public void getNewSongsNominal()
+   public void c_getNewSongsNominal()
    {
       // Translated from smm test_server.adb Set_Up_Case, Test_Playlist, Test_Meta, Test_Get_File
       final String serverIP         = "192.168.1.83"; // must match smm-server.config
@@ -194,6 +205,8 @@ public class TestDownloadUtils
           "artist_2/album_1/2 - song_2.mp3",
           "artist_1/album_1/2 - song_2.mp3",
           "artist_2/album_1/3 - song_3.mp3"};
+
+      System.out.println("getNewSongsNominal");
 
       // Can't delete vocal.m3u; not clear why it's locked.
       cleanup(true);

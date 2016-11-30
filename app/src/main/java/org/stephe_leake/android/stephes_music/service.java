@@ -33,17 +33,18 @@ import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.media.AudioManager.OnAudioFocusChangeListener;
 import android.media.AudioManager;
+import android.media.MediaMetadata.Builder;
+import android.media.MediaMetadata;
 import android.media.MediaPlayer;
 import android.media.session.MediaSession;
 import android.media.session.PlaybackState;
-import android.media.MediaMetadata;
-import android.media.MediaMetadata.Builder;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.PowerManager.WakeLock;
 import android.os.PowerManager;
+import android.preference.MultiSelectListPreference;
 import android.preference.PreferenceManager;
 import android.view.KeyEvent;
 import android.widget.RemoteViews;
@@ -51,17 +52,20 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileDescriptor;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.Integer;
+import java.net.URISyntaxException;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.net.URISyntaxException;
-import java.util.GregorianCalendar;
-import java.util.Calendar;
 
 public class service extends Service
 {
@@ -467,14 +471,12 @@ public class service extends Service
 
       SharedPreferences storage = getSharedPreferences(utils.serviceClassName, MODE_PRIVATE);
 
-      // This fails in case 2); use the .last smm file
-      String currentFile = storage.getString(tmpPlaylistFilename + keyCurrentFile, null);
-      int          pos         = 0;
+      String currentFile = null;
+      int    pos = 0;
 
-      if (currentFile == null)
-      {
-         final String smmFileName = smmDirectory + "/" + tmpPlaylistFilename + ".last";
+      final String smmFileName = smmDirectory + "/" + tmpPlaylistFilename + ".last";
 
+      if (new File(smmFileName).exists())
          try
          {
             BufferedReader reader = new BufferedReader(new FileReader(smmFileName));
@@ -482,11 +484,12 @@ public class service extends Service
             currentFile = reader.readLine();
             reader.close();
          }
-         catch (IOException e)
-         {
-            // We get here on a new install; smmDirectory preference not set correctly.
-            utils.infoLog(context, "set smmDirectory preference");
-         }
+         catch (IOException e) {}
+      else
+      {
+         // We get here on a new install; smmDirectory preference not
+         // set correctly, or no songs played yet.
+         utils.infoLog(context, "set smmDirectory preference");
       }
 
       if (BuildConfig.DEBUG) utils.debugLog("start file: " + currentFile);
@@ -636,8 +639,7 @@ public class service extends Service
    private static final String keyPlaylistFilename  = "playlistFilename";
 
    // per-playlist: actual key is prefixed by the playlist filename
-   // (sans directory, sans extension)
-   private static final String keyCurrentFile = "_currentFile";
+   // (sans directory, sans extension). Last played song is in <playlist>.last.
    private static final String keyCurrentPos  = "_currentPos";
 
    private void restoreState()
@@ -692,10 +694,6 @@ public class service extends Service
 
       editor.putString(keyPlaylistDirectory, playlistDirectory);
       editor.putString(keyPlaylistFilename, playlistFilename);
-
-      editor.putString
-         (playlistFilename + keyCurrentFile,
-          (playlistPos == -1) ? null : playlist.get(playlistPos));
 
       editor.putInt
          (playlistFilename + keyCurrentPos,
@@ -841,7 +839,53 @@ public class service extends Service
          }
    }
 
-   private void download()
+   private int countSongsRemaining(String category)
+      throws FileNotFoundException, IOException
+   {
+      if (category.equals(playlistFilename))
+         return playlist.size() - playlistPos;
+      else
+      {
+         // Duplicate the part of restoreState that gets playlistPos
+         final File   playlistFile = new File(playlistDirectory + "/" + category + ".m3u");
+         final String smmFileName  = smmDirectory + "/" + category + ".last";
+
+         BufferedReader in        = new BufferedReader (new FileReader (playlistFile));
+         String         line      = in.readLine();
+         int            lineCount = 0;
+         int            startAt   = -1;
+
+         String currentFile = null;
+
+         if (new File(smmFileName).exists())
+            try
+            {
+               BufferedReader reader = new BufferedReader(new FileReader(smmFileName));
+
+               currentFile = reader.readLine();
+               reader.close();
+            }
+            catch (IOException e) {}
+
+         while (line != null)
+         {
+            if (currentFile != null && line.equals(currentFile))
+               startAt = lineCount;
+
+            line = in.readLine();
+            lineCount++;
+         }
+
+         in.close();
+
+         if (-1 == startAt)
+            startAt = 0;
+
+         return lineCount - startAt;
+      }
+   }
+
+   private void download(String category)
    {
       Resources         res     = getResources();
       SharedPreferences prefs   = getSharedPreferences(utils.serviceClassName, MODE_PRIVATE);
@@ -853,23 +897,19 @@ public class service extends Service
           res.getString(R.string.song_count_threshold_default));
       String serverIP = prefs.getString (res.getString(R.string.server_IP_key), null);
 
-      // FIXME: enforce integer in preferences editor
-
-      // FIXME: do other playlists as well! but not meditation; set auto-download playlists in prefs
       try
       {
-         int songCountMax = Integer.valueOf(songCountMaxStr);
+         int songCountMax    = Integer.valueOf(songCountMaxStr);
          int songCountThresh = Integer.valueOf(songCountThreshStr);
 
          if ((playing == PlayState.Idle ||
-             playing == PlayState.Paused) &&
+              playing == PlayState.Paused) &&
              serverIP != null &&
-             (playlist.size() - playlistPos < songCountMax - songCountThresh))
+             (countSongsRemaining(category) < songCountMax - songCountThresh))
          {
             String[] newSongs;
 
-            // playlistFilename = category
-            DownloadUtils.firstPass(playlistFilename, playlistDirectory, smmDirectory);
+            DownloadUtils.firstPass(category, playlistDirectory, smmDirectory);
             playlistPos = 1;
 
             newSongs = DownloadUtils.getNewSongsList(serverIP, playlistFilename, songCountMax - playlist.size(), -1);
@@ -926,7 +966,16 @@ public class service extends Service
             switch (command)
             {
             case utils.COMMAND_DOWNLOAD:
-               download();
+               {
+                  Resources         res       = getResources();
+                  SharedPreferences prefs     = getSharedPreferences(utils.serviceClassName, MODE_PRIVATE);
+                  Set<String>       playlists = prefs.getStringSet
+                     (res.getString(R.string.auto_download_playlists_key),
+                      new LinkedHashSet<String>());
+
+                  for (String playlist : playlists)
+                     download(playlist);
+               }
                break;
 
             case utils.COMMAND_DUMP_LOG:
@@ -1407,15 +1456,6 @@ public class service extends Service
 
       writer.println("storage." + keyPlaylistDirectory + ": " + storage.getString(keyPlaylistDirectory, ""));
       writer.println("storage." + keyPlaylistFilename + ": " + storage.getString(keyPlaylistFilename, ""));
-
-      writer.println("storage.vocal" + keyCurrentFile + ": " +
-                     storage.getString("vocal" + keyCurrentFile, ""));
-      writer.println("storage.vocal" + keyCurrentPos + ": " +
-                     storage.getInt("vocal" + keyCurrentPos, 0));
-      writer.println("storage.instrumental" + keyCurrentFile + ": " +
-                     storage.getString("instrumental" + keyCurrentFile, ""));
-      writer.println("storage.instrumental" + keyCurrentPos + ": " +
-                     storage.getInt("instrumental" + keyCurrentPos, 0));
 
       utils.debugDump(writer);
 
