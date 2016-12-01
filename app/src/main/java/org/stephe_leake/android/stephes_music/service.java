@@ -967,14 +967,21 @@ public class service extends Service
             {
             case utils.COMMAND_DOWNLOAD:
                {
-                  Resources         res       = getResources();
-                  SharedPreferences prefs     = getSharedPreferences(utils.serviceClassName, MODE_PRIVATE);
-                  Set<String>       playlists = prefs.getStringSet
-                     (res.getString(R.string.auto_download_playlists_key),
-                      new LinkedHashSet<String>());
+                  final String intentPlaylist = intent.getStringExtra(utils.EXTRA_COMMAND_PLAYLIST);
 
-                  for (String playlist : playlists)
-                     download(playlist);
+                  if (null == intentPlaylist)
+                  {
+                     Resources         res       = getResources();
+                     SharedPreferences prefs     = getSharedPreferences(utils.serviceClassName, MODE_PRIVATE);
+                     Set<String>       playlists = prefs.getStringSet
+                        (res.getString(R.string.auto_download_playlists_key),
+                         new LinkedHashSet<String>());
+
+                     for (String playlist : playlists)
+                        download(playlist);
+                  }
+                  else
+                     download(intentPlaylist);
                }
                break;
 

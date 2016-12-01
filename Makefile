@@ -20,8 +20,11 @@ build : force
 # compileDebugUnitTestSources
 # compileReleaseSources
 # compileReleaseUnitTestSources
+#
+# create apks:
+# assembleDebug
 compile-debug : force
-	gradle --daemon compileDebugSources
+	gradle --daemon compileDebugSources assembleDebug
 
 # We don't have any AndroidTests (yet)
 test : force

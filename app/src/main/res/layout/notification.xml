@@ -62,7 +62,7 @@
           android:layout_marginLeft="4dip"
           android:layout_marginRight="4dip"
           android:background="#00000000"/> <!-- transparent -->
-  </LinearLayout>
+    </LinearLayout>
     <LinearLayout
         android:orientation="vertical"
         android:layout_width="wrap_content"

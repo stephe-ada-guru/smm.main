@@ -22,8 +22,8 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.BroadcastReceiver;
-import android.content.ClipboardManager;
 import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -31,21 +31,23 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
-import android.preference.PreferenceManager;
 import android.os.Bundle;
-import android.os.SystemClock;
-import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
+import android.os.PowerManager;
+import android.os.SystemClock;
+import android.preference.PreferenceManager;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.SeekBar;
-import android.widget.SeekBar.OnSeekBarChangeListener;
+import android.widget.ListView;
 import android.widget.ScrollView;
+import android.widget.SeekBar.OnSeekBarChangeListener;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import java.io.File;
 import java.lang.Class;
@@ -55,16 +57,19 @@ import java.lang.Integer;
 public class activity extends android.app.Activity
 {
    // constants
-   private static final int maxProgress         = 1000;
-   private static final int DIALOG_PLAYLIST     = 1;
+   private static final int maxProgress = 1000;
 
-   private static final int MENU_DUMP_LOG       = 0;
-   private static final int MENU_PREFERENCES    = 1;
-   private static final int MENU_QUIT           = 2;
-   private static final int MENU_RESET_PLAYLIST = 3;
-   private static final int MENU_SHARE          = 4;
-   private static final int MENU_COPY           = 5;
-   private static final int MENU_LINER          = 6;
+   private static final int DIALOG_PLAY_PLAYLIST     = 1;
+   private static final int DIALOG_DOWNLOAD_PLAYLIST = 2;
+
+   private static final int MENU_DUMP_LOG          = 0;
+   private static final int MENU_PREFERENCES       = 1;
+   private static final int MENU_QUIT              = 2;
+   private static final int MENU_RESET_PLAYLIST    = 3;
+   private static final int MENU_SHARE             = 4;
+   private static final int MENU_COPY              = 5;
+   private static final int MENU_LINER             = 6;
+   private static final int MENU_DOWNLOAD_PLAYLIST = 7;
 
    private static final int RESULT_PREFERENCES = 1;
 
@@ -84,8 +89,6 @@ public class activity extends android.app.Activity
    // Cached values
    private long trackDuration = 0; // track duration in milliseconds
    private float defaultTextViewTextSize; // set in onCreate
-
-   private AlertDialog playlistDialog;
 
    ////////// local utils
 
@@ -136,7 +139,7 @@ public class activity extends android.app.Activity
          @SuppressWarnings("deprecation")
          @Override public void onClick(View v)
          {
-            showDialog(DIALOG_PLAYLIST);
+            showDialog(DIALOG_PLAY_PLAYLIST);
          }
       };
 
@@ -419,7 +422,11 @@ public class activity extends android.app.Activity
    };
 
 
-   ////////// playlist dialog
+   ////////// playlist dialogs
+
+   // Need an external reference
+   AlertDialog dialogPlayPlaylist;
+
 
    // onCreateDialog is deprecated
    //
@@ -430,7 +437,7 @@ public class activity extends android.app.Activity
    {
       switch (id)
       {
-      case DIALOG_PLAYLIST:
+      case DIALOG_PLAY_PLAYLIST:
          {
             try
             {
@@ -451,17 +458,17 @@ public class activity extends android.app.Activity
                   return null;
                }
 
-               playlistDialog = new AlertDialog.Builder(this)
-                  .setTitle(R.string.dialog_playlist)
+               dialogPlayPlaylist = new AlertDialog.Builder(this)
+                  .setTitle(R.string.dialog_play_playlist)
                   .setItems
                   (playlists,
                    new DialogInterface.OnClickListener()
                    {
-                      public void onClick(DialogInterface dialog, int which)
+                      public void onClick(DialogInterface dialogInt, int which)
                       {
                          try
                          {
-                            final android.widget.ListView listView = playlistDialog.getListView();
+                            final android.widget.ListView listView = dialogPlayPlaylist.getListView();
                             final String filename = (String)listView.getAdapter().getItem(which);
                             sendBroadcast
                                (new Intent (utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PLAYLIST).
@@ -469,20 +476,78 @@ public class activity extends android.app.Activity
                          }
                          catch (Exception e)
                          {
-                            utils.errorLog(activity.this, "playlist dialog onClick: ", e);
+                            utils.alertLog(activity.this, "play playlist dialog onClick: ", e);
                          }
                       };
                    }
                    ).create();
 
-               return playlistDialog;
+               return dialogPlayPlaylist;
             }
             catch (Exception e)
             {
-               utils.errorLog(this, "create playlist dialog failed ", e);
+               utils.alertLog(this, "create play playlist dialog failed ", e);
                return null;
             }
          }
+
+      case DIALOG_DOWNLOAD_PLAYLIST:
+         {
+            try
+            {
+               Resources res = getResources();
+               SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+
+               final File playlistDir = new File
+                  (prefs.getString
+                   (res.getString(R.string.playlist_directory_key),
+                    res.getString(R.string.playlist_directory_default)));
+
+               final FileExtFilter playlistFilter = new FileExtFilter(".m3u");
+               final String[] playlists           = playlistDir.list(playlistFilter);
+
+               View view = getLayoutInflater().inflate(R.layout.dialog_download, null);
+               final ListView listView = (ListView)view.findViewById(R.id.list_view);
+               final EditText textView = (EditText)view.findViewById(R.id.text_view);
+
+               if (null != playlists)
+                  // playlists is null before user has downloaded any.
+                  listView.setAdapter(new android.widget.ArrayAdapter(this, R.layout.list_dialog_element, playlists));
+
+               AlertDialog dialog = new AlertDialog.Builder(this)
+                  .setTitle(R.string.dialog_download_playlist)
+                  .setView(view)
+                  .setPositiveButton(R.string.download, new DialogInterface.OnClickListener()
+                   {
+                      public void onClick(DialogInterface dialog, int which)
+                      {
+                         String filename = null;
+
+                         if (-1 == which)
+                            // User entered new playlist name in edit box
+                            filename = textView.getText().toString();
+                         else
+                            // User clicked list
+                            filename = (String)listView.getAdapter().getItem(which);
+
+                         sendBroadcast
+                            (new Intent (utils.ACTION_COMMAND)
+                             .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_DOWNLOAD)
+                             .putExtra(utils.EXTRA_COMMAND_PLAYLIST, playlistDir.getAbsolutePath() +
+                                       "/" + filename));
+                      };
+                   }
+                   ).create();
+
+               return dialog;
+            }
+            catch (Exception e)
+            {
+               utils.alertLog(this, "create download playlist dialog failed ", e);
+               return null;
+            }
+         }
+
       default:
          utils.errorLog(this, "unknown dialog id " + id);
          return null;
@@ -499,6 +564,7 @@ public class activity extends android.app.Activity
       menu.add(0, MENU_LINER, 0, R.string.menu_liner);
       menu.add(0, MENU_COPY, 0, R.string.menu_copy);
       menu.add(0, MENU_RESET_PLAYLIST, 0, R.string.menu_reset_playlist);
+      menu.add(0, MENU_DOWNLOAD_PLAYLIST, 0, R.string.menu_download_playlist);
       menu.add(0, MENU_PREFERENCES, 0, R.string.menu_preferences);
       menu.add(0, MENU_DUMP_LOG, 0, R.string.menu_dump_log);
       return true; // display menu
@@ -522,6 +588,19 @@ public class activity extends android.app.Activity
 
       case MENU_DUMP_LOG:
          sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_DUMP_LOG));
+         break;
+
+      case MENU_DOWNLOAD_PLAYLIST:
+         {
+            Resources         res      = getResources();
+            SharedPreferences prefs    = getSharedPreferences(utils.serviceClassName, MODE_PRIVATE);
+            String            serverIP = prefs.getString (res.getString(R.string.server_IP_key), null);
+
+            if (null == serverIP)
+               utils.alertLog(this, "set Server IP in preferences");
+            else
+               showDialog(DIALOG_DOWNLOAD_PLAYLIST);
+         }
          break;
 
       case MENU_PREFERENCES:

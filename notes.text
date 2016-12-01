@@ -21,20 +21,13 @@ download via http protocol:
         need key/menu entry to refresh gnu-global db/cross reference cache
         on PrjSelect menu
 
-    new prefs:
-        auto-downloadable playlist
-
-    in server, on timer event (ie 2:30AM)
-        for all autodownload playlists:
-            if current song_count < song_count_max - song_count_threshold
-                download song_count_max - song_count
-
-    in activity: menu download
-        update existing playlist
-            add param to intent to specify playlist
-            add new ACTION_DOWNLOAD?
-
         download new playlist
+            serverIP is null
+                even after set in preferences!
+                onSharedPreferenceChanged is not called!
+                had empty preferences default; is that the problem? no
+                can put ip in default of getString, but that's bogus
+
             create empty playlist file in activity?
 
         with progress display

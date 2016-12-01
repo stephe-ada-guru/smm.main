@@ -132,6 +132,11 @@ public class preferences extends android.preference.PreferenceActivity
          };
       } while (likelyRootsI.hasNext());
 
+      // On a clean install, user must download new playlists into
+      // some directory; this should work.
+      File tmp = Environment.getExternalStoragePublicDirectory("Audio");
+      playlistDirs.add(tmp.getAbsolutePath());
+
       final String[] playlistDirsArray = new String[playlistDirs.size()];
       Iterator<String> playlistDirsI = playlistDirs.iterator();
 
@@ -189,7 +194,7 @@ public class preferences extends android.preference.PreferenceActivity
       PreferenceManager.getDefaultSharedPreferences(this).unregisterOnSharedPreferenceChangeListener(this);
    }
 
-   @Override public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key)
+   @Override public void onSharedPreferenceChanged(SharedPreferences prefs, String key)
    {
       Resources res = getResources();
 

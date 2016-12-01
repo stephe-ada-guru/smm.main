@@ -50,7 +50,7 @@ public class utils
    //  position int (milliseconds)
 
    //  Commands to server via Intent actions sent via broadcast. Alphabetical order
-   //  Only one intent, so we can add commands without adding to the reciever filter.
+   //  Only one action, so we can add commands without adding to the reciever filter.
    public static final String ACTION_COMMAND = "org.stephe_leake.android.stephes_music.action.command";
    // according to android docs, extra field names must inlude the package prefix (no explanation of why)
    public static final String EXTRA_COMMAND = "org.stephe_leake.android.stephes_music.extra.command";
