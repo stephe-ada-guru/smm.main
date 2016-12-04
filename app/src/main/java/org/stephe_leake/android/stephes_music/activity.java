@@ -18,6 +18,7 @@
 
 package org.stephe_leake.android.stephes_music;
 
+import android.view.inputmethod.InputMethodManager;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -510,8 +511,14 @@ public class activity extends android.app.Activity
                final ListView listView = (ListView)view.findViewById(R.id.list_view);
                final EditText textView = (EditText)view.findViewById(R.id.text_view);
 
-               if (null != playlists)
+               if (null == playlists)
+               {
                   // playlists is null before user has downloaded any.
+                  // Force display keboard for new name entry.
+                  InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+                  imm.showSoftInput(textView, InputMethodManager.SHOW_IMPLICIT);
+               }
+               else
                   listView.setAdapter(new android.widget.ArrayAdapter(this, R.layout.list_dialog_element, playlists));
 
                AlertDialog dialog = new AlertDialog.Builder(this)
@@ -525,7 +532,7 @@ public class activity extends android.app.Activity
 
                          if (-1 == which)
                             // User entered new playlist name in edit box
-                            filename = textView.getText().toString();
+                            filename = textView.getText().toString() + ".m3u";
                          else
                             // User clicked list
                             filename = (String)listView.getAdapter().getItem(which);
@@ -593,7 +600,7 @@ public class activity extends android.app.Activity
       case MENU_DOWNLOAD_PLAYLIST:
          {
             Resources         res      = getResources();
-            SharedPreferences prefs    = getSharedPreferences(utils.serviceClassName, MODE_PRIVATE);
+            SharedPreferences prefs    = PreferenceManager.getDefaultSharedPreferences(this);
             String            serverIP = prefs.getString (res.getString(R.string.server_IP_key), null);
 
             if (null == serverIP)
@@ -676,6 +683,14 @@ public class activity extends android.app.Activity
             {
                sendBroadcast
                   (new Intent (utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_SMM_DIRECTORY));
+               // value from preferences
+            }
+            break;
+
+         case utils.RESULT_PLAYLIST_DIRECTORY:
+            {
+               sendBroadcast
+                  (new Intent (utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PLAYLIST_DIRECTORY));
                // value from preferences
             }
             break;

@@ -12,8 +12,10 @@ branches:
     o.s_l.m_p.work                     - download via http
 
 current songs:
-    instrumental: Like Someone in Love
-    vocal       : Evermore
+    instrumental: 106 Adagio sostenuto
+    vocal       : 200
+
+dump log to clipboard, not inaccessible file
 
 download via http protocol:
     DownloadUtils.java
@@ -22,15 +24,16 @@ download via http protocol:
         on PrjSelect menu
 
         download new playlist
-            serverIP is null
-                even after set in preferences!
-                onSharedPreferenceChanged is not called!
-                had empty preferences default; is that the problem? no
-                can put ip in default of getString, but that's bogus
+            in download_playlist dialog, focus is in TextEdit, but keyboard not showing
+                imm.showSoft has no effect
+                can't debug onCreateDialog!
+                change to modern dialog method
 
-            create empty playlist file in activity?
+            service is _not_ a separate thread!
+                can't do network in main thread
 
         with progress display
+            in notification, including error messages
 
 swipe notification to dismiss
     also disable lock screen art

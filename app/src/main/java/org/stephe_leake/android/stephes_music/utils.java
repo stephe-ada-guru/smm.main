@@ -61,25 +61,27 @@ public class utils
 
    // values for extras; alphabetical. We'd like to use an enum here,
    // but we can't make that parcelable for intent extras.
-   public static final int COMMAND_DOWNLOAD       = 1;
-   public static final int COMMAND_DUMP_LOG       = 2;
-   public static final int COMMAND_NEXT           = 3;
-   public static final int COMMAND_NOTE           = 4;
-   public static final int COMMAND_PAUSE          = 5;
-   public static final int COMMAND_PLAY           = 6;
-   public static final int COMMAND_PLAYLIST       = 7; // playlist  string (abs file name)
-   public static final int COMMAND_PREVIOUS       = 8;
-   public static final int COMMAND_QUIT           = 15;
-   public static final int COMMAND_RESET_PLAYLIST = 9;
-   public static final int COMMAND_SAVE_STATE     = 10;
-   public static final int COMMAND_SEEK           = 11; // position  int (milliseconds)
-   public static final int COMMAND_SMM_DIRECTORY  = 12;
-   public static final int COMMAND_TOGGLEPAUSE    = 13;
-   public static final int COMMAND_UPDATE_DISPLAY = 14;
+   public static final int COMMAND_DOWNLOAD           = 1;
+   public static final int COMMAND_DUMP_LOG           = 2;
+   public static final int COMMAND_NEXT               = 3;
+   public static final int COMMAND_NOTE               = 4;
+   public static final int COMMAND_PAUSE              = 5;
+   public static final int COMMAND_PLAY               = 6;
+   public static final int COMMAND_PLAYLIST           = 7; // playlist  string (abs file name)
+   public static final int COMMAND_PREVIOUS           = 8;
+   public static final int COMMAND_QUIT               = 9;
+   public static final int COMMAND_RESET_PLAYLIST     = 10;
+   public static final int COMMAND_SAVE_STATE         = 11;
+   public static final int COMMAND_SEEK               = 12; // position  int (milliseconds)
+   public static final int COMMAND_PLAYLIST_DIRECTORY = 13;
+   public static final int COMMAND_SMM_DIRECTORY      = 14;
+   public static final int COMMAND_TOGGLEPAUSE        = 15;
+   public static final int COMMAND_UPDATE_DISPLAY     = 16;
 
    // sub-activity result codes
-   public static final int RESULT_TEXT_SCALE    = Activity.RESULT_FIRST_USER + 1;
-   public static final int RESULT_SMM_DIRECTORY = Activity.RESULT_FIRST_USER + 2;
+   public static final int RESULT_TEXT_SCALE         = Activity.RESULT_FIRST_USER + 1;
+   public static final int RESULT_PLAYLIST_DIRECTORY = Activity.RESULT_FIRST_USER + 2;
+   public static final int RESULT_SMM_DIRECTORY      = Activity.RESULT_FIRST_USER + 3;
 
    public static MetaData retriever;
 

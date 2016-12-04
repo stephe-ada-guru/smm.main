@@ -66,6 +66,8 @@ import java.util.LinkedList;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.FileUtils;
 
 public class service extends Service
 {
@@ -73,8 +75,8 @@ public class service extends Service
    private static final int UNPAUSE        = 3;
    private static final int UPDATE_DISPLAY = 4;
 
-   // We only have one notification.
-   private static final int notif_id = 1;
+   private static final int notif_play_id     = 1;
+   private static final int notif_download_id = 2;
 
    private static final long millisPerDay = 24 * 60 * 60 * 1000;
 
@@ -129,7 +131,7 @@ public class service extends Service
    private String playlistFullPath()
    // return current playlist file abs path
    {
-      return playlistDirectory + "/" + playlistFilename + ".m3u";
+      return playlistDirectory + "/" + playlistBasename + ".m3u";
    }
 
    private void next()
@@ -139,8 +141,7 @@ public class service extends Service
       // anything started playing.
       if (playlist.size() == 0)
       {
-         playlistPos        = -1;
-         highestPlaylistPos = playlistPos;
+         playlistPos = -1;
          stop();
       }
       else
@@ -148,13 +149,6 @@ public class service extends Service
          if (playlistPos < playlist.size() - 1)
          {
             playlistPos++;
-            if (playlistPos > highestPlaylistPos)
-            {
-               highestPlaylistPos = playlistPos;
-            }
-
-            // WORKAROUND for car display; it requires pause/play to process metadata.
-            pause(PlayState.Paused_Transient);
 
             play(playlist.get(playlistPos), 0);
          }
@@ -164,7 +158,6 @@ public class service extends Service
             // end up repeating the whole playlist. There isn't a good
             // way to indicate we've wrapped; it looks like there is
             // lots of music left, so we don't sync.
-            highestPlaylistPos = playlistPos;
             stop();
          };
       }
@@ -174,7 +167,7 @@ public class service extends Service
       saveState();
    }
 
-   private void setNotification(MetaData retriever)
+   private void setPlayNotif(MetaData retriever)
    {
       // Default init to keep compiler happy
       PendingIntent playPauseIntent = null;
@@ -223,7 +216,7 @@ public class service extends Service
          try
          {
             NotificationManager notifManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            notifManager.notify(null, notif_id, notif);
+            notifManager.notify(null, notif_play_id, notif);
          }
          catch (RuntimeException e)
          {
@@ -290,7 +283,7 @@ public class service extends Service
             sendStickyBroadcast
                (new Intent (utils.META_CHANGED).putExtra
                 ("playlist",
-                 playlistFilename + " " + (playlistPos + 1) + " / " + playlist.size()));
+                 playlistBasename + " " + (playlistPos + 1) + " / " + playlist.size()));
 
             MediaMetadata metadata = new MediaMetadata.Builder()
                .putString(MediaMetadata.METADATA_KEY_TITLE, utils.retriever.title)
@@ -305,7 +298,7 @@ public class service extends Service
 
             mediaSession.setMetadata(metadata);
 
-            setNotification(utils.retriever);
+            setPlayNotif(utils.retriever);
          }
          break;
 
@@ -337,7 +330,7 @@ public class service extends Service
                if (what == WhatChanged.State & utils.retriever != null)
                {
                   // normally set by previous META_CHANGED; may not be at startup
-                  setNotification(utils.retriever);
+                  setPlayNotif(utils.retriever);
                }
                break;
 
@@ -350,7 +343,7 @@ public class service extends Service
 
                if (what == WhatChanged.State && utils.retriever != null)
                {
-                  setNotification(utils.retriever);
+                  setPlayNotif(utils.retriever);
                }
                break;
             }
@@ -461,20 +454,15 @@ public class service extends Service
       // 2) USB stick moved to a different device
       //    - Google TV to Neo
       //    - back to Google TV in different USB port
-      //
-      // getName returns just the basename of a file, throwing away
-      // the absolute path.
-      String tmpPlaylistFilename = playlistFile.getName();
 
-      // Activity only sends filenames that end in .m3u; strip that
-      tmpPlaylistFilename  = tmpPlaylistFilename.substring(0, tmpPlaylistFilename.length() - 4);
+      String tmpPlaylistBaseName = FilenameUtils.getBaseName(playlistFile.toString());
 
       SharedPreferences storage = getSharedPreferences(utils.serviceClassName, MODE_PRIVATE);
 
       String currentFile = null;
       int    pos = 0;
 
-      final String smmFileName = smmDirectory + "/" + tmpPlaylistFilename + ".last";
+      final String smmFileName = smmDirectory + "/" + tmpPlaylistBaseName + ".last";
 
       if (new File(smmFileName).exists())
          try
@@ -500,7 +488,7 @@ public class service extends Service
          String                       line        = in.readLine();
          java.util.LinkedList<String> tmpPlaylist = new LinkedList<String>();
          int                          lineCount   = 0;
-         int                          startAt     = -1;
+         int                          startAt     = 0;
 
          while (line != null)
          {
@@ -513,19 +501,8 @@ public class service extends Service
 
             if (currentFile != null && line.equals(currentFile))
             {
-               if (startAt == -1)
-               {
-                  // If 'currentFile' is in the playlist multiple times,
-                  // this finds the first one. That's a bug in SMM, so it
-                  // doesn't much matter what we do; this ensures that
-                  // all of the playlist is played at least once.
-                  startAt = lineCount;
-                  pos     = storage.getInt(tmpPlaylistFilename + keyCurrentPos, 0);
-               }
-               else
-               {
-                  utils.debugLog(currentFile + " found more than once in playlist");
-               }
+               startAt = lineCount;
+               pos     = storage.getInt(tmpPlaylistBaseName + keyCurrentPos, 0);
             }
 
             tmpPlaylist.add(line);
@@ -541,19 +518,10 @@ public class service extends Service
             throw new Fail();
          }
 
-         if (-1 == startAt)
-         {
-            startAt = 0;
-         }
-
          playlistDirectory = playlistFile.getParent();
-         playlistFilename  = tmpPlaylistFilename;
+         playlistBasename  = tmpPlaylistBaseName;
          playlist          = tmpPlaylist;
          playlistPos       = startAt;
-
-         highestPlaylistPos = playlistPos;
-         // There could be a higher song in the smm file, but we'll
-         // ignore that until it becomes a problem.
 
          switch (newState)
          {
@@ -605,8 +573,7 @@ public class service extends Service
       final int prevThreshold = Integer.valueOf
          (prefs.getString
           (res.getString(R.string.prev_threshold_key),
-           res.getString(R.string.prev_threshold_default)))
-         .intValue();
+           res.getString(R.string.prev_threshold_default)));
 
       final int currentPos = mediaPlayer.getCurrentPosition();
 
@@ -660,15 +627,15 @@ public class service extends Service
       SharedPreferences storage = getSharedPreferences(utils.serviceClassName, MODE_PRIVATE);
 
       playlistDirectory = storage.getString(keyPlaylistDirectory, null);
-      playlistFilename  = storage.getString(keyPlaylistFilename, null);
+      playlistBasename  = storage.getString(keyPlaylistFilename, null);
 
-      if (BuildConfig.DEBUG) utils.verboseLog("restoreState: " + playlistDirectory + ", " + playlistFilename);
+      if (BuildConfig.DEBUG) utils.verboseLog("restoreState: " + playlistDirectory + ", " + playlistBasename);
 
-      if (playlistDirectory != null && playlistFilename != null)
+      if (playlistDirectory != null && playlistBasename != null)
       {
          try
          {
-            playList (playlistDirectory + "/" + playlistFilename + ".m3u", PlayState.Paused);
+            playList (playlistDirectory + "/" + playlistBasename + ".m3u", PlayState.Paused);
          }
          catch (Fail e)
          {
@@ -693,10 +660,10 @@ public class service extends Service
       Editor            editor  = storage.edit();
 
       editor.putString(keyPlaylistDirectory, playlistDirectory);
-      editor.putString(keyPlaylistFilename, playlistFilename);
+      editor.putString(keyPlaylistFilename, playlistBasename);
 
       editor.putInt
-         (playlistFilename + keyCurrentPos,
+         (playlistBasename + keyCurrentPos,
           (playing == PlayState.Idle) ? 0 : mediaPlayer.getCurrentPosition());
 
       editor.commit();
@@ -708,7 +675,7 @@ public class service extends Service
    {
       playing           = PlayState.Idle;
       playlistDirectory = null;
-      playlistFilename  = null;
+      playlistBasename  = null;
       playlist.clear();
       playlistPos       = -1;
    }
@@ -758,7 +725,7 @@ public class service extends Service
    {
       if (playlistPos > -1)
       {
-         final String noteFileName = smmDirectory + "/" + playlistFilename + ".note";
+         final String noteFileName = smmDirectory + "/" + playlistBasename + ".note";
 
          try
          {
@@ -779,6 +746,15 @@ public class service extends Service
       }
    }
 
+   private void setPlaylistDirectory()
+   {
+      Resources         res   = getResources();
+      SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+      playlistDirectory = prefs.getString
+         (res.getString(R.string.playlist_directory_key),
+          res.getString(R.string.playlist_directory_default));
+   }
+
    private void setSMMDirectory()
    {
       Resources         res   = getResources();
@@ -790,16 +766,13 @@ public class service extends Service
 
    private void writeSMMFile()
    {
-      // Tell smm what tracks from the current playlist have been
-      // played and can therefore be deleted.
-      //
-      // Which we can do by writing the filename of the previous
-      // track, which has been completed.
+      // Record the current playing song in a file, for smm and
+      // transfer to another device.
 
-      if (playlistFilename == null)
+      if (playlistBasename == null)
          return;
 
-      final String smmFileName = smmDirectory + "/" + playlistFilename + ".last";
+      final String smmFileName = smmDirectory + "/" + playlistBasename + ".last";
 
       File file = new File(smmFileName);
 
@@ -818,13 +791,13 @@ public class service extends Service
          {
             BufferedWriter writer = new BufferedWriter(new FileWriter(file));
 
-            if (highestPlaylistPos < 1)
+            if (playlistPos < 0)
             {
-               // 0 or -1; none played yet; write empty file
+               // none played yet; write empty file
             }
             else
             {
-               writer.write(playlist.get(highestPlaylistPos - 1));
+               writer.write(playlist.get(playlistPos));
             }
             writer.newLine();
             writer.close();
@@ -839,87 +812,126 @@ public class service extends Service
          }
    }
 
-   private int countSongsRemaining(String category)
-      throws FileNotFoundException, IOException
+   private int countSongsRemaining(String category, File playlistFile)
+      throws IOException
    {
-      if (category.equals(playlistFilename))
-         return playlist.size() - playlistPos;
-      else
-      {
-         // Duplicate the part of restoreState that gets playlistPos
-         final File   playlistFile = new File(playlistDirectory + "/" + category + ".m3u");
-         final String smmFileName  = smmDirectory + "/" + category + ".last";
+      // Duplicate the part of restoreState that gets playlistPos
+      final String smmFileName = smmDirectory + "/" + category + ".last";
 
-         BufferedReader in        = new BufferedReader (new FileReader (playlistFile));
-         String         line      = in.readLine();
-         int            lineCount = 0;
-         int            startAt   = -1;
+      BufferedReader in        = new BufferedReader (new FileReader (playlistFile));
+      String         line      = in.readLine();
+      int            lineCount = 0;
+      int            startAt   = 0;
 
-         String currentFile = null;
+      String currentFile = null;
 
-         if (new File(smmFileName).exists())
-            try
-            {
-               BufferedReader reader = new BufferedReader(new FileReader(smmFileName));
-
-               currentFile = reader.readLine();
-               reader.close();
-            }
-            catch (IOException e) {}
-
-         while (line != null)
+      if (new File(smmFileName).exists())
+         try
          {
-            if (currentFile != null && line.equals(currentFile))
-               startAt = lineCount;
+            BufferedReader reader = new BufferedReader(new FileReader(smmFileName));
 
-            line = in.readLine();
-            lineCount++;
+            currentFile = reader.readLine();
+            reader.close();
          }
+         catch (IOException e) {}
 
-         in.close();
+      while (line != null)
+      {
+         if (currentFile != null && line.equals(currentFile))
+            startAt = lineCount;
 
-         if (-1 == startAt)
-            startAt = 0;
-
-         return lineCount - startAt;
+         line = in.readLine();
+         lineCount++;
       }
+
+      in.close();
+
+      return lineCount - startAt;
+
    }
 
-   private void download(String category)
+   private void notifyDownload(String title, String msg)
    {
-      Resources         res     = getResources();
-      SharedPreferences prefs   = getSharedPreferences(utils.serviceClassName, MODE_PRIVATE);
-      String songCountMaxStr    = prefs.getString
+      try
+      {
+         Notification notif = new Notification.Builder(context)
+            .setAutoCancel(false)
+            .setContentTitle(title)
+            .setStyle(new Notification.BigTextStyle().bigText(msg))
+            .setContentIntent(activityIntent)
+            .setSmallIcon(R.drawable.download_icon) // shown in status bar
+            .build();
+
+         try
+         {
+            NotificationManager notifManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            notifManager.notify(null, notif_download_id, notif);
+         }
+         catch (RuntimeException e)
+         {
+            utils.errorLog(this, "notify " + e.toString());
+         }
+      }
+      catch (RuntimeException e)
+      {
+         utils.errorLog(this, "notify build " + e.toString());
+      }
+
+   }
+
+   private void download(String playlistAbsName)
+   {
+      Resources         res               = getResources();
+      SharedPreferences prefs             = PreferenceManager.getDefaultSharedPreferences(context);
+      String songCountMaxStr              = prefs.getString
          (res.getString(R.string.song_count_max_key),
           res.getString(R.string.song_count_max_default));
-      String songCountThreshStr = prefs.getString
+      String songCountThreshStr           = prefs.getString
          (res.getString(R.string.song_count_threshold_key),
           res.getString(R.string.song_count_threshold_default));
-      String serverIP = prefs.getString (res.getString(R.string.server_IP_key), null);
+      String            serverIP          = prefs.getString (res.getString(R.string.server_IP_key), null);
+      File              playlistFile      = new File(playlistAbsName);
+      File              playlistDirectory = new File(FilenameUtils.getPath(playlistFile.getPath()));
+      String            category          = FilenameUtils.getBaseName(playlistAbsName);
+
+      // File.exists throws IOException ENOENT if the directory does not exist!
+      playlistDirectory.mkdirs();
 
       try
       {
+         int songsRemaining =
+            playlistAbsName.equals(this.playlistDirectory + "/" + this.playlistBasename + ".m3u") ?
+            playlist.size() - playlistPos :
+            (playlistFile.exists() ? countSongsRemaining(category, playlistFile) : 0);
+
          int songCountMax    = Integer.valueOf(songCountMaxStr);
          int songCountThresh = Integer.valueOf(songCountThreshStr);
 
          if ((playing == PlayState.Idle ||
               playing == PlayState.Paused) &&
              serverIP != null &&
-             (countSongsRemaining(category) < songCountMax - songCountThresh))
+             songsRemaining < songCountMax - songCountThresh)
          {
             String[] newSongs;
 
-            DownloadUtils.firstPass(category, playlistDirectory, smmDirectory);
-            playlistPos = 1;
+            if (playlistFile.exists())
+               DownloadUtils.firstPass(category, playlistDirectory.getAbsolutePath(), smmDirectory);
+            else
+            {
+               new File(playlistDirectory, category).mkdir();
+               playlistFile.createNewFile();
+            }
 
-            newSongs = DownloadUtils.getNewSongsList(serverIP, playlistFilename, songCountMax - playlist.size(), -1);
-            DownloadUtils.getSongs(serverIP, newSongs, playlistFilename, playlistDirectory);
+            playlistPos = 0;
+
+            newSongs = DownloadUtils.getNewSongsList(serverIP, category, songCountMax - songsRemaining, -1);
+            DownloadUtils.getSongs(serverIP, newSongs, category, playlistDirectory.getAbsolutePath());
          }
       }
       catch (IOException e)
       {
          // something is screwed up
-         utils.errorLog(this, "download: ", e);
+         notifyDownload("download error", e.toString());
       }
       catch (URISyntaxException e)
       {
@@ -972,7 +984,7 @@ public class service extends Service
                   if (null == intentPlaylist)
                   {
                      Resources         res       = getResources();
-                     SharedPreferences prefs     = getSharedPreferences(utils.serviceClassName, MODE_PRIVATE);
+                     SharedPreferences prefs     = PreferenceManager.getDefaultSharedPreferences(context);
                      Set<String>       playlists = prefs.getStringSet
                         (res.getString(R.string.auto_download_playlists_key),
                          new LinkedHashSet<String>());
@@ -1059,6 +1071,10 @@ public class service extends Service
                }
                break;
 
+            case utils.COMMAND_PLAYLIST_DIRECTORY:
+               setPlaylistDirectory();
+               break;
+
             case utils.COMMAND_SMM_DIRECTORY:
                setSMMDirectory();
                break;
@@ -1094,7 +1110,7 @@ public class service extends Service
                pause(PlayState.Paused);
 
                NotificationManager notifManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-               notifManager.cancel(null, notif_id);
+               notifManager.cancel(null, notif_play_id);
                break;
 
             default:
@@ -1281,17 +1297,13 @@ public class service extends Service
    //
    // Set from playlist file passed to playList
 
-   private String playlistFilename;
+   private String playlistBasename;
    // Relative to Playlist_Directory, without extension (suitable
    // for user display). null if no playlist is current.
 
    java.util.LinkedList<String> playlist;
    int                          playlistPos;
    // Current position in PlayList (0 indexed; -1 if none)
-
-   int highestPlaylistPos;
-   // highest position played on this playlist; for writeSMMFile, to
-   // handle wrap and prev.
 
    boolean haveAudioFocus;
 
@@ -1359,11 +1371,10 @@ public class service extends Service
 
       utils.retriever = new MetaData();
 
-      playlist           = new LinkedList<String>();
-      playlistPos        = -1;
-      highestPlaylistPos = playlistPos;
-      playing            = PlayState.Idle;
-      haveAudioFocus     = false;
+      playlist       = new LinkedList<String>();
+      playlistPos    = -1;
+      playing        = PlayState.Idle;
+      haveAudioFocus = false;
 
       restoreState();
 
@@ -1391,7 +1402,8 @@ public class service extends Service
       pause(PlayState.Idle); // does saveState()
 
       NotificationManager notifManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-      notifManager.cancel(null, notif_id);
+      notifManager.cancel(null, notif_play_id);
+      notifManager.cancel(null, notif_download_id);
       activityIntent.cancel();
       prevIntent.cancel();
       nextIntent.cancel();
@@ -1453,11 +1465,10 @@ public class service extends Service
    {
       writer.println("playing            : " + playing);
       writer.println("playlistDirectory  : " + playlistDirectory);
-      writer.println("playlistFilename   : " + playlistFilename);
+      writer.println("playlistBasename   : " + playlistBasename);
       writer.println("playlist size      : " + playlist.size());
       writer.println("currentFile        : " + playlist.get(playlistPos));
       writer.println("playlistPos        : " + playlistPos);
-      writer.println("highestPlaylistPos : " + highestPlaylistPos);
 
       SharedPreferences storage = getSharedPreferences(utils.serviceClassName, MODE_PRIVATE);
 
