@@ -1,10 +1,14 @@
 build/Makefile
 
-see ../Android/org.stephe_leake.music_player.java/notes.text
+see ../Android/org.stephe_leake.music_player.work/notes.text
 
 weekly refill via http
 
 Ada done; do java
+
+add web search
+    grep smm.db?
+    smm.find with wildcards?
 
 protocol:
     app delete played, trim playlist

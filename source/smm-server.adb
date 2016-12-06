@@ -65,9 +65,8 @@ package body SMM.Server is
                Seed           => Seed);
 
             for I of Songs loop
-               Response :=  Response & Read (Db, I, File_Key) & ASCII.CR & ASCII.LF;
+               Response :=  Response & Normalize (Read (Db, I, File_Key)) & ASCII.CR & ASCII.LF;
             end loop;
-            --  FIXME: add liner_notes.pdf, AlbumArt*.jpg
 
             return Build ("text/plain", Response);
          end;

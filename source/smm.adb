@@ -342,6 +342,8 @@ package body SMM is
 
       Time_List_I := Time_List.First;
 
+      --  FIXME: Time_List_I can be null if Category doesn't match any songs (ie spelled wrong).
+
       if Element (Time_List_I).Last_Downloaded = 0.0 then
          --  New songs
 
