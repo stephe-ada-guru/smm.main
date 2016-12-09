@@ -31,6 +31,7 @@ test : force
 	gradle --daemon compileDebugSources compileDebugUnitTestSources
 
 clean : test-clean
+	rm -rf .gradle
 	rm -rf build/*
 	rm -rf app/build/*
 

@@ -53,10 +53,16 @@ android
     }
   }
 
+  // compileJava
+  // {
+  //   // FIXME: there must be a way to put this in 'lintOptions'!
+  //   options.compilerArgs << "-Xlint:unchecked"
+  // }
+  
   lintOptions
   {
     // see also lint.xml
-    
+
     // Notification uses "left" for gravity
     disable 'RtlHardcoded'
 

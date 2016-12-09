@@ -20,6 +20,7 @@ package org.stephe_leake.android.stephes_music;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.text.format.Time;
 import android.util.Log;
@@ -33,12 +34,19 @@ import java.lang.RuntimeException;
 public class utils
 {
 
+   public static final String preferencesName = "stephes_music";
+
    // Must be shorter than 23 chars
-   public static final String serviceClassName =
+   public static final String logTag =
       "stephes_music";
    //  1        10        20 |
 
-   //  Notification messages to user views, sent via Intent. Alphabetical order
+   //  Notification ids; all with null tag
+   public static final int notif_play_id     = 1;
+   public static final int notif_download_id = 2;
+
+
+   //  Messages to user views, sent via Intent. Alphabetical order
    public static final String META_CHANGED = "org.stephe_leake.android.stephes_music.metachanged";
    //  get artist, album, title, albumArt from utils.retriever.
    //  extras:
@@ -61,31 +69,52 @@ public class utils
 
    // values for extras; alphabetical. We'd like to use an enum here,
    // but we can't make that parcelable for intent extras.
-   public static final int COMMAND_DOWNLOAD           = 1;
-   public static final int COMMAND_DUMP_LOG           = 2;
-   public static final int COMMAND_NEXT               = 3;
-   public static final int COMMAND_NOTE               = 4;
-   public static final int COMMAND_PAUSE              = 5;
-   public static final int COMMAND_PLAY               = 6;
-   public static final int COMMAND_PLAYLIST           = 7; // playlist  string (abs file name)
-   public static final int COMMAND_PREVIOUS           = 8;
-   public static final int COMMAND_QUIT               = 9;
-   public static final int COMMAND_RESET_PLAYLIST     = 10;
-   public static final int COMMAND_SAVE_STATE         = 11;
-   public static final int COMMAND_SEEK               = 12; // position  int (milliseconds)
-   public static final int COMMAND_PLAYLIST_DIRECTORY = 13;
-   public static final int COMMAND_SMM_DIRECTORY      = 14;
-   public static final int COMMAND_TOGGLEPAUSE        = 15;
-   public static final int COMMAND_UPDATE_DISPLAY     = 16;
+   public static final int COMMAND_RESERVED = 1; // something sends this to PlayService!
+
+   public static final int COMMAND_DOWNLOAD           = 2;
+   public static final int COMMAND_DUMP_LOG           = 3;
+   public static final int COMMAND_NEXT               = 4;
+   public static final int COMMAND_NOTE               = 5;
+   public static final int COMMAND_PAUSE              = 6;
+   public static final int COMMAND_PLAY               = 7;
+   public static final int COMMAND_PLAYLIST           = 8; // playlist  string (abs file name)
+   public static final int COMMAND_PREVIOUS           = 9;
+   public static final int COMMAND_QUIT               = 10;
+   public static final int COMMAND_RESET_PLAYLIST     = 11;
+   public static final int COMMAND_SAVE_STATE         = 12;
+   public static final int COMMAND_SEEK               = 13; // position  int (milliseconds)
+   public static final int COMMAND_PLAYLIST_DIRECTORY = 14;
+   public static final int COMMAND_SMM_DIRECTORY      = 15;
+   public static final int COMMAND_TOGGLEPAUSE        = 16;
+   public static final int COMMAND_UPDATE_DISPLAY     = 17;
 
    // sub-activity result codes
    public static final int RESULT_TEXT_SCALE         = Activity.RESULT_FIRST_USER + 1;
    public static final int RESULT_PLAYLIST_DIRECTORY = Activity.RESULT_FIRST_USER + 2;
    public static final int RESULT_SMM_DIRECTORY      = Activity.RESULT_FIRST_USER + 3;
 
+   ////////// Shared objects
+
    public static MetaData retriever;
 
-   // methods
+   public static String playlistDirectory;
+   // Absolute path to directory where playlist files reside. The
+   // list of available playlists consists of all .m3u files in
+   // this directory.
+   //
+   // Set from playlist file passed to playList, or by preferences
+
+   public static String smmDirectory;
+   // Absolute path to directory containing files used to interface
+   // with Stephe's Music manager (smm); contains .last files, notes
+   // files.
+   //
+   // Set by preferences.
+
+   public static PendingIntent activityIntent;
+   // For notifications.
+
+   ////////// methods
 
    public static TextView findTextViewById (Activity a, int id)
    {
@@ -187,21 +216,21 @@ public class utils
    public static void errorLog(Context context, String msg, Throwable e)
    {
       // programmer errors (possibly due to Android bugs :)
-      Log.e(serviceClassName, msg, e);
+      Log.e(logTag, msg, e);
       Toast.makeText(context, msg + e.toString(), Toast.LENGTH_LONG).show();
    }
 
    public static void errorLog(Context context, String msg)
    {
       // programmer errors (possibly due to Android bugs :)
-      Log.e(serviceClassName, msg);
+      Log.e(logTag, msg);
       Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
    }
 
    static void infoLog(Context context, String msg)
    {
       // helpful user messages, ie "could not play"; displayed for a short time.
-      Log.i(serviceClassName, msg);
+      Log.i(logTag, msg);
       Toast.makeText(context, msg, Toast.LENGTH_SHORT).show();
    }
 
@@ -210,7 +239,7 @@ public class utils
       // Messages containing info user needs time to read; requires explicit dismissal.
       //
       // Cannot be called from a service
-      Log.i(serviceClassName, msg);
+      Log.i(logTag, msg);
       new AlertDialog.Builder(context).setMessage(msg).setPositiveButton(R.string.Ok, null).show();
    }
 
@@ -219,13 +248,13 @@ public class utils
       // Messages containing info user needs time to read; requires explicit dismissal.
       //
       // Cannot be called from a service
-      Log.e(serviceClassName, msg);
+      Log.e(logTag, msg);
       new AlertDialog.Builder(context).setMessage(msg + e.toString()).setPositiveButton(R.string.Ok, null).show();
    }
 
    static void verboseLog(String msg)
    {
-      if (BuildConfig.DEBUG) Log.v(serviceClassName, msg);
+      if (BuildConfig.DEBUG) Log.v(logTag, msg);
    }
 
 }

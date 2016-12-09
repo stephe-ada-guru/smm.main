@@ -2,7 +2,7 @@
 <!--
   Abstract :
 
-  UI layout for Stephe's Music Player download playlist dialog
+  UI layout for Stephe's Music Player download new playlist dialog
 
   Copyright (C) 2016 Stephen Leake.  All Rights Reserved.
 
@@ -21,18 +21,13 @@
 
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="horizontal"
+    android:orientation="vertical"
     android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:weightSum="1">
+    android:layout_height="wrap_content">
 
   <EditText
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
       android:id="@+id/text_view" />
 
-  <ListView
-      android:layout_width="match_parent"
-      android:layout_height="wrap_content"
-      android:id="@+id/list_view" />
 </LinearLayout>

@@ -83,8 +83,7 @@ public class MediaButtonReceiver extends BroadcastReceiver
             {
                handled = true;
                context.sendBroadcast
-
-               (new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_TOGGLEPAUSE));
+                  (new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_TOGGLEPAUSE));
             }
             break;
 

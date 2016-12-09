@@ -12,28 +12,21 @@ branches:
     o.s_l.m_p.work                     - download via http
 
 current songs:
-    instrumental: 106 Adagio sostenuto
-    vocal       : 200
-
-dump log to clipboard, not inaccessible file
+    instrumental: 2 Echoes
+    vocal       : 93 Human
 
 download via http protocol:
     DownloadUtils.java
     TestDownloadUtils.java
         need key/menu entry to refresh gnu-global db/cross reference cache
-        on PrjSelect menu
+            project-rescan?
+            on PrjSelect menu
 
-        download new playlist
-            in download_playlist dialog, focus is in TextEdit, but keyboard not showing
-                imm.showSoft has no effect
-                can't debug onCreateDialog!
-                change to modern dialog method
 
-            service is _not_ a separate thread!
-                can't do network in main thread
-
-        with progress display
-            in notification, including error messages
+        download
+            vocal.m3u created, but empty
+            testing update dialog
+                doesn't work, no error messages
 
 swipe notification to dismiss
     also disable lock screen art

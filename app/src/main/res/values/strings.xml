@@ -23,7 +23,7 @@
 
   <!-- misc -->
   <string name="app_name">Stephe\'s Music Player</string>
-  <string name="dialog_download_playlist">Select or enter a playlist</string>
+  <string name="dialog_download_new_playlist">Enter a playlist category</string>
   <string name="dialog_play_playlist">Select a playlist</string>
   <string name="download">download</string>
   <string name="null_playlist">(click to select a playlist)</string>
@@ -39,13 +39,14 @@
 
   <!-- menu -->
   <string name="menu_copy">Copy</string>
-  <string name="menu_download_playlist">Download Playlist</string>
-  <string name="menu_dump_log">Dump Log</string>
+  <string name="menu_download_new_playlist">Download new playlist</string>
+  <string name="menu_dump_log">Dump log</string>
   <string name="menu_liner">Liner notes</string>
   <string name="menu_preferences">Preferences</string>
   <string name="menu_quit">Quit</string>
-  <string name="menu_reset_playlist">Reset Playlist</string>
+  <string name="menu_reset_playlist">Reset playlist</string>
   <string name="menu_share">Share</string>
+  <string name="menu_update_playlist">Update playlist</string>
 
   <!-- preference -->
   <string name="preferences_activity_name">&quot;Stephe's Music Player Preferences&quot;</string>

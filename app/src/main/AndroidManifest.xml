@@ -62,7 +62,7 @@ along with GCC; see the file COPYING3.  If not see
     </activity>
 
     <service
-        android:name="org.stephe_leake.android.stephes_music.service"
+        android:name=".PlayService"
         android:exported="false" />
 
     <!-- see comment in service.java at mediaSession object -->

@@ -18,7 +18,6 @@
 
 package org.stephe_leake.android.stephes_music;
 
-import android.view.inputmethod.InputMethodManager;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -60,17 +59,15 @@ public class activity extends android.app.Activity
    // constants
    private static final int maxProgress = 1000;
 
-   private static final int DIALOG_PLAY_PLAYLIST     = 1;
-   private static final int DIALOG_DOWNLOAD_PLAYLIST = 2;
-
-   private static final int MENU_DUMP_LOG          = 0;
-   private static final int MENU_PREFERENCES       = 1;
-   private static final int MENU_QUIT              = 2;
-   private static final int MENU_RESET_PLAYLIST    = 3;
-   private static final int MENU_SHARE             = 4;
-   private static final int MENU_COPY              = 5;
-   private static final int MENU_LINER             = 6;
-   private static final int MENU_DOWNLOAD_PLAYLIST = 7;
+   private static final int MENU_DUMP_LOG              = 0;
+   private static final int MENU_PREFERENCES           = 1;
+   private static final int MENU_QUIT                  = 2;
+   private static final int MENU_RESET_PLAYLIST        = 3;
+   private static final int MENU_SHARE                 = 4;
+   private static final int MENU_COPY                  = 5;
+   private static final int MENU_LINER                 = 6;
+   private static final int MENU_UPDATE_PLAYLIST       = 7;
+   private static final int MENU_DOWNLOAD_NEW_PLAYLIST = 8;
 
    private static final int RESULT_PREFERENCES = 1;
 
@@ -88,8 +85,9 @@ public class activity extends android.app.Activity
    private WakeLock    wakeLock;
 
    // Cached values
-   private long trackDuration = 0; // track duration in milliseconds
-   private float defaultTextViewTextSize; // set in onCreate
+   private long          trackDuration = 0; // track duration in milliseconds
+   private float         defaultTextViewTextSize; // set in onCreate
+   private ComponentName playServiceComponentName; // set in OnCreate
 
    ////////// local utils
 
@@ -132,15 +130,13 @@ public class activity extends android.app.Activity
 
    private TextView.OnClickListener playlistListener = new TextView.OnClickListener()
       {
-         // showDialog is deprecated; for some reason, the compiler
-         // insists on putting the suppress here.
-         //
-         // Waiting until it actually disappears; the fix will
-         // probably be different by then.
-         @SuppressWarnings("deprecation")
          @Override public void onClick(View v)
          {
-            showDialog(DIALOG_PLAY_PLAYLIST);
+            PickPlaylistDialogFragment diag = new PickPlaylistDialogFragment();
+            Bundle args = new Bundle();
+            args.putInt("command", utils.COMMAND_PLAYLIST);
+            diag.setArguments(args);
+            diag.show(getFragmentManager(), "pick play playlist");
          }
       };
 
@@ -273,7 +269,7 @@ public class activity extends android.app.Activity
 
          setContentView(R.layout.main);
 
-         startService (new Intent(this, service.class));
+         playServiceComponentName = startService (new Intent(this, PlayService.class));
 
          // Set up displays, top to bottom left to right
 
@@ -422,145 +418,6 @@ public class activity extends android.app.Activity
       return handled;
    };
 
-
-   ////////// playlist dialogs
-
-   // Need an external reference
-   AlertDialog dialogPlayPlaylist;
-
-
-   // onCreateDialog is deprecated
-   //
-   // Waiting until it actually disappears; the fix will
-   // probably be different by then.
-   @SuppressWarnings("deprecation")
-   @Override protected Dialog onCreateDialog(int id, Bundle args)
-   {
-      switch (id)
-      {
-      case DIALOG_PLAY_PLAYLIST:
-         {
-            try
-            {
-               Resources res = getResources();
-               SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-
-               final File playlistDir = new File
-                  (prefs.getString
-                   (res.getString(R.string.playlist_directory_key),
-                    res.getString(R.string.playlist_directory_default)));
-
-               final FileExtFilter playlistFilter = new FileExtFilter(".m3u");
-               final String[] playlists           = playlistDir.list(playlistFilter);
-
-               if (playlists == null || playlists.length == 0)
-               {
-                  utils.alertLog(this, "no playlists found in " + playlistDir);
-                  return null;
-               }
-
-               dialogPlayPlaylist = new AlertDialog.Builder(this)
-                  .setTitle(R.string.dialog_play_playlist)
-                  .setItems
-                  (playlists,
-                   new DialogInterface.OnClickListener()
-                   {
-                      public void onClick(DialogInterface dialogInt, int which)
-                      {
-                         try
-                         {
-                            final android.widget.ListView listView = dialogPlayPlaylist.getListView();
-                            final String filename = (String)listView.getAdapter().getItem(which);
-                            sendBroadcast
-                               (new Intent (utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PLAYLIST).
-                                putExtra(utils.EXTRA_COMMAND_PLAYLIST, playlistDir.getAbsolutePath() + "/" + filename));
-                         }
-                         catch (Exception e)
-                         {
-                            utils.alertLog(activity.this, "play playlist dialog onClick: ", e);
-                         }
-                      };
-                   }
-                   ).create();
-
-               return dialogPlayPlaylist;
-            }
-            catch (Exception e)
-            {
-               utils.alertLog(this, "create play playlist dialog failed ", e);
-               return null;
-            }
-         }
-
-      case DIALOG_DOWNLOAD_PLAYLIST:
-         {
-            try
-            {
-               Resources res = getResources();
-               SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-
-               final File playlistDir = new File
-                  (prefs.getString
-                   (res.getString(R.string.playlist_directory_key),
-                    res.getString(R.string.playlist_directory_default)));
-
-               final FileExtFilter playlistFilter = new FileExtFilter(".m3u");
-               final String[] playlists           = playlistDir.list(playlistFilter);
-
-               View view = getLayoutInflater().inflate(R.layout.dialog_download, null);
-               final ListView listView = (ListView)view.findViewById(R.id.list_view);
-               final EditText textView = (EditText)view.findViewById(R.id.text_view);
-
-               if (null == playlists)
-               {
-                  // playlists is null before user has downloaded any.
-                  // Force display keboard for new name entry.
-                  InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
-                  imm.showSoftInput(textView, InputMethodManager.SHOW_IMPLICIT);
-               }
-               else
-                  listView.setAdapter(new android.widget.ArrayAdapter(this, R.layout.list_dialog_element, playlists));
-
-               AlertDialog dialog = new AlertDialog.Builder(this)
-                  .setTitle(R.string.dialog_download_playlist)
-                  .setView(view)
-                  .setPositiveButton(R.string.download, new DialogInterface.OnClickListener()
-                   {
-                      public void onClick(DialogInterface dialog, int which)
-                      {
-                         String filename = null;
-
-                         if (-1 == which)
-                            // User entered new playlist name in edit box
-                            filename = textView.getText().toString() + ".m3u";
-                         else
-                            // User clicked list
-                            filename = (String)listView.getAdapter().getItem(which);
-
-                         sendBroadcast
-                            (new Intent (utils.ACTION_COMMAND)
-                             .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_DOWNLOAD)
-                             .putExtra(utils.EXTRA_COMMAND_PLAYLIST, playlistDir.getAbsolutePath() +
-                                       "/" + filename));
-                      };
-                   }
-                   ).create();
-
-               return dialog;
-            }
-            catch (Exception e)
-            {
-               utils.alertLog(this, "create download playlist dialog failed ", e);
-               return null;
-            }
-         }
-
-      default:
-         utils.errorLog(this, "unknown dialog id " + id);
-         return null;
-      }
-   }
-
    ////////// Menu
 
    @Override public boolean onCreateOptionsMenu(Menu menu)
@@ -571,7 +428,8 @@ public class activity extends android.app.Activity
       menu.add(0, MENU_LINER, 0, R.string.menu_liner);
       menu.add(0, MENU_COPY, 0, R.string.menu_copy);
       menu.add(0, MENU_RESET_PLAYLIST, 0, R.string.menu_reset_playlist);
-      menu.add(0, MENU_DOWNLOAD_PLAYLIST, 0, R.string.menu_download_playlist);
+      menu.add(0, MENU_DOWNLOAD_NEW_PLAYLIST, 0, R.string.menu_download_new_playlist);
+      menu.add(0, MENU_UPDATE_PLAYLIST, 0, R.string.menu_update_playlist);
       menu.add(0, MENU_PREFERENCES, 0, R.string.menu_preferences);
       menu.add(0, MENU_DUMP_LOG, 0, R.string.menu_dump_log);
       return true; // display menu
@@ -587,8 +445,7 @@ public class activity extends android.app.Activity
              (utils.ACTION_COMMAND)
              .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_QUIT));
 
-         stopService
-            (new Intent().setComponent(new ComponentName (this, utils.serviceClassName)));
+         stopService (new Intent().setComponent(playServiceComponentName));
 
          finish();
          break;
@@ -597,7 +454,7 @@ public class activity extends android.app.Activity
          sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_DUMP_LOG));
          break;
 
-      case MENU_DOWNLOAD_PLAYLIST:
+      case MENU_DOWNLOAD_NEW_PLAYLIST:
          {
             Resources         res      = getResources();
             SharedPreferences prefs    = PreferenceManager.getDefaultSharedPreferences(this);
@@ -606,7 +463,26 @@ public class activity extends android.app.Activity
             if (null == serverIP)
                utils.alertLog(this, "set Server IP in preferences");
             else
-               showDialog(DIALOG_DOWNLOAD_PLAYLIST);
+               new DownloadNewPlaylistDialogFragment().show(getFragmentManager(), "enter new playlist category");
+         }
+         break;
+
+      case MENU_UPDATE_PLAYLIST:
+         {
+            Resources         res      = getResources();
+            SharedPreferences prefs    = PreferenceManager.getDefaultSharedPreferences(this);
+            String            serverIP = prefs.getString (res.getString(R.string.server_IP_key), null);
+
+            if (null == serverIP)
+               utils.alertLog(this, "set Server IP in preferences");
+            else
+            {
+               PickPlaylistDialogFragment diag = new PickPlaylistDialogFragment();
+               Bundle args = new Bundle();
+               args.putInt("command", utils.COMMAND_DOWNLOAD);
+               diag.setArguments(args);
+               diag.show(getFragmentManager(), "pick update playlist");
+            }
          }
          break;
 

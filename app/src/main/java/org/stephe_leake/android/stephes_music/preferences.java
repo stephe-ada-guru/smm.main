@@ -109,7 +109,7 @@ public class preferences extends android.preference.PreferenceActivity
       // search for file names in the scanned db. That is _not_ the
       // canonical (symlinks resolved) name.
 
-      likelyRoots.add("/storage/sdcard");     // emulator external; can't see any emulator internal
+      // likelyRoots.add("/storage/sdcard");     // emulator external; can't see any emulator internal
       likelyRoots.add("/storage/sdcard0");    // Samsung Galaxy note II/III internal
       likelyRoots.add("/storage/emulated/0"); // Samsung Galaxy note Tab S2 internal (as used by media scanner)
       likelyRoots.add("/storage/extSdCard");  // Samsung Galaxy note II/III/Tab S2 external
@@ -127,7 +127,8 @@ public class preferences extends android.preference.PreferenceActivity
             {
                String dir = checkDirectory(root, likelyDirs[j]);
                if (dir != null)
-                  playlistDirs.add(dir);
+                  if (!playlistDirs.contains(dir))
+                     playlistDirs.add(dir);
             };
          };
       } while (likelyRootsI.hasNext());
@@ -135,7 +136,9 @@ public class preferences extends android.preference.PreferenceActivity
       // On a clean install, user must download new playlists into
       // some directory; this should work.
       File tmp = Environment.getExternalStoragePublicDirectory("Audio");
-      playlistDirs.add(tmp.getAbsolutePath());
+      String path = tmp.getAbsolutePath();
+      if (!playlistDirs.contains(path))
+         playlistDirs.add(path);
 
       final String[] playlistDirsArray = new String[playlistDirs.size()];
       Iterator<String> playlistDirsI = playlistDirs.iterator();
