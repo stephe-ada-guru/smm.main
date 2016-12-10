@@ -191,6 +191,7 @@ package body SMM.Server is
       end;
 
       declare
+         use Ada.Text_IO;
          use AWS.Config;
          use AWS.Config.Set;
          use SAL.Config_Files;
@@ -204,15 +205,22 @@ package body SMM.Server is
          --  we get the address to use from the config file.
          Server_Host (Obj, Read (Config, "Server_IP", Missing_Key => Raise_Exception));
 
+         if Enable_Log then
+            Log_File_Directory (Obj, Source_Root.all & "/remote_cache/");
+            Log_Filename_Prefix (Obj, "smm-server");
+
+            AWS.Server.Log.Start (Ws, Auto_Flush => True);
+
+            Put_Line ("logging to   " & Log_File_Directory (Obj) & "smm-server.log");
+         else
+            Put_Line ("not logging");
+         end if;
+
          AWS.Server.Start
            (Ws,
             Callback => Handle_Request'Access,
             Config   => Obj);
       end;
-
-      if Enable_Log then
-         AWS.Server.Log.Start (Ws);
-      end if;
 
       declare
          use Ada.Text_IO;
@@ -220,11 +228,6 @@ package body SMM.Server is
          Ws_Config : constant Object := AWS.Server.Config (Ws);
       begin
          Put_Line ("listening on " & Server_Host (Ws_Config) & ":" & Integer'Image (Server_Port (Ws_Config)));
-         if Enable_Log then
-            Put_Line ("logging to   " & Log_File_Directory (Ws_Config) & Log_Filename_Prefix (Ws_Config));
-         else
-            Put_Line ("not logging");
-         end if;
       end;
 
       AWS.Server.Wait;

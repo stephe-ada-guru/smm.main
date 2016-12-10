@@ -2,23 +2,13 @@ build/Makefile
 
 see ../Android/org.stephe_leake.music_player.work/notes.text
 
-weekly refill via http
-
-Ada done; do java
-
 add web search
     grep smm.db?
     smm.find with wildcards?
 
-protocol:
-    app delete played, trim playlist
-    app connect to smm_server
-    request list of songs to download, arg count
-    response is list of songs (path relative to music root)
-    app for each song:
-        request file, store in <playlist_name>/...
-        add file to end of playlist
-        if new dir, request meta (liner_notes, albumart)
+    compare all versions of "butterfly"
+        play songs from web
+
 
 
 http://docs.adacore.com/aws-docs/aws/
