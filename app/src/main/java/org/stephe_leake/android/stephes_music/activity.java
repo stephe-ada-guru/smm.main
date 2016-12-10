@@ -68,6 +68,7 @@ public class activity extends android.app.Activity
    private static final int MENU_LINER                 = 6;
    private static final int MENU_UPDATE_PLAYLIST       = 7;
    private static final int MENU_DOWNLOAD_NEW_PLAYLIST = 8;
+   private static final int MENU_JUMP_TO_SONG          = 9;
 
    private static final int RESULT_PREFERENCES = 1;
 
@@ -430,6 +431,7 @@ public class activity extends android.app.Activity
       menu.add(0, MENU_RESET_PLAYLIST, 0, R.string.menu_reset_playlist);
       menu.add(0, MENU_DOWNLOAD_NEW_PLAYLIST, 0, R.string.menu_download_new_playlist);
       menu.add(0, MENU_UPDATE_PLAYLIST, 0, R.string.menu_update_playlist);
+      menu.add(0, MENU_JUMP_TO_SONG, 0, R.string.menu_jump_to_song);
       menu.add(0, MENU_PREFERENCES, 0, R.string.menu_preferences);
       menu.add(0, MENU_DUMP_LOG, 0, R.string.menu_dump_log);
       return true; // display menu
@@ -463,7 +465,13 @@ public class activity extends android.app.Activity
             if (null == serverIP)
                utils.alertLog(this, "set Server IP in preferences");
             else
-               new DownloadNewPlaylistDialogFragment().show(getFragmentManager(), "enter new playlist category");
+            {
+               TextDialogFragment diag = new TextDialogFragment();
+               Bundle args = new Bundle();
+               args.putInt("command", utils.COMMAND_DOWNLOAD);
+               diag.setArguments(args);
+               diag.show(getFragmentManager(), "enter new playlist category");
+            }
          }
          break;
 
@@ -483,6 +491,16 @@ public class activity extends android.app.Activity
                diag.setArguments(args);
                diag.show(getFragmentManager(), "pick update playlist");
             }
+         }
+         break;
+
+      case MENU_JUMP_TO_SONG:
+         {
+               TextDialogFragment diag = new TextDialogFragment();
+               Bundle args = new Bundle();
+               args.putInt("command", utils.COMMAND_JUMP);
+               diag.setArguments(args);
+               diag.show(getFragmentManager(), "enter song to jump to");
          }
          break;
 

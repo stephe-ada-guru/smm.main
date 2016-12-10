@@ -12,21 +12,26 @@ branches:
     o.s_l.m_p.work                     - download via http
 
 current songs:
-    instrumental: 2 Echoes
-    vocal       : 93 Human
+    instrumental: 31 come by the hills
+    vocal       : 105 christie lee
+
+need key/menu entry to refresh gnu-global db/cross reference cache
+    project-rescan?
+    on PrjSelect menu
 
 download via http protocol:
     DownloadUtils.java
     TestDownloadUtils.java
-        need key/menu entry to refresh gnu-global db/cross reference cache
-            project-rescan?
-            on PrjSelect menu
+     ~/bin/music-server.sh 2
+
+    send notes
+        server store in d:/music/cache
 
 
-        download
-            vocal.m3u created, but empty
-            testing update dialog
-                doesn't work, no error messages
+    turn off server until finish old playlists
+
+    test overnight download
+
 
 swipe notification to dismiss
     also disable lock screen art

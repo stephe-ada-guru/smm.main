@@ -24,8 +24,10 @@
   <!-- misc -->
   <string name="app_name">Stephe\'s Music Player</string>
   <string name="dialog_download_new_playlist">Enter a playlist category</string>
+  <string name="dialog_jump_song">Enter a song number to jump to</string>
   <string name="dialog_play_playlist">Select a playlist</string>
-  <string name="download">download</string>
+  <string name="download">Download</string>
+  <string name="jump_song">Jump</string>
   <string name="null_playlist">(click to select a playlist)</string>
   <string name="null_playlist_directory">(set playlist directory in preferences)</string>
 
@@ -41,6 +43,7 @@
   <string name="menu_copy">Copy</string>
   <string name="menu_download_new_playlist">Download new playlist</string>
   <string name="menu_dump_log">Dump log</string>
+  <string name="menu_jump_to_song">Jump to song</string>
   <string name="menu_liner">Liner notes</string>
   <string name="menu_preferences">Preferences</string>
   <string name="menu_quit">Quit</string>

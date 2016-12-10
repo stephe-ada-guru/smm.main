@@ -72,6 +72,21 @@ public class preferences extends android.preference.PreferenceActivity
       return null;
    }
 
+   private void setAutoDownloadPlaylists(Resources res)
+   {
+      // Set list of playlists in auto-download pref
+      ListPreference playlistPref = (ListPreference)findPreference(res.getString(R.string.playlist_directory_key));
+      File           playlistDir  = new File(playlistPref.getValue());
+
+      MultiSelectListPreference autodownloadPref = (MultiSelectListPreference)
+         findPreference(res.getString(R.string.auto_download_playlists_key));
+
+      final String[] playlists = playlistDir.list(playlistFilter);
+
+      autodownloadPref.setEntries(playlists);
+      autodownloadPref.setEntryValues(playlists);
+   }
+
    // addPreferencesFromResource, findPreference are deprecated
    //
    // Waiting until they actually disappear; the fix will
@@ -181,6 +196,8 @@ public class preferences extends android.preference.PreferenceActivity
 
       smmPref.setEntries(smmDirs);
       smmPref.setEntryValues(smmDirs);
+
+      setAutoDownloadPlaylists(res);
    }
 
    @Override protected void onResume()
@@ -211,18 +228,7 @@ public class preferences extends android.preference.PreferenceActivity
       }
       else if (key.equals(res.getString(R.string.playlist_directory_key)))
       {
-         // Set list of playlists in auto-download pref
-         ListPreference playlistPref = (ListPreference)findPreference(res.getString(R.string.playlist_directory_key));
-         File           playlistDir  = new File(playlistPref.getValue());
-
-         MultiSelectListPreference autodownloadPref = (MultiSelectListPreference)
-            findPreference(res.getString(R.string.auto_download_playlists_key));
-
-         final String[] playlists = playlistDir.list(playlistFilter);
-
-         autodownloadPref.setEntries(playlists);
-         autodownloadPref.setEntryValues(playlists);
-
+         setAutoDownloadPlaylists(res);
          setResult(RESULT_OK);
       }
       else

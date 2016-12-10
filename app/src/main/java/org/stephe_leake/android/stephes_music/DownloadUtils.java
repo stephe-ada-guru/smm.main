@@ -18,6 +18,8 @@
 
 package org.stephe_leake.android.stephes_music;
 
+import android.media.MediaScannerConnection;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileFilter;
@@ -285,20 +287,40 @@ public class DownloadUtils
       }
    }
 
-   private static void getMeta(String serverIP, String resourcePath, File destDir)
+   private static void getMeta(String serverIP, String resourcePath, File destDir, MediaScannerConnection mediaScanner)
       throws IOException, URISyntaxException
    {
       String[] files = getMetaList(serverIP, resourcePath);
+      File objFile;
+      String ext;
+      String mime = "";
 
       if (files.length == 1 && files[0].length() == 0)
          // no meta files for this directory
          return;
 
       for (String file : files)
-         getFile(serverIP, file, new File(destDir, FilenameUtils.getName(file)));
+      {
+         objFile = new File(destDir, FilenameUtils.getName(file));
+
+         getFile(serverIP, file, objFile);
+
+         ext = FilenameUtils.getExtension(objFile.toString());
+
+         if (ext.equals(".mp3"))
+            mime = "audio/mpeg";
+         else if (ext.equals(".pdf"))
+            mime = "application/pdf";
+
+         mediaScanner.scanFile(objFile.getAbsolutePath(), mime);
+      }
    }
 
-   public static void getSongs(String serverIP, String[] songs, String category, String root)
+   public static void getSongs(String                 serverIP,
+                               String[]               songs,
+                               String                 category,
+                               String                 root,
+                               MediaScannerConnection mediaScanner)
       throws IOException, URISyntaxException
    {
       // Get 'songs' from 'serverIP', store in 'root/<category>', add
@@ -312,14 +334,17 @@ public class DownloadUtils
       {
          File destDir     = new File(songRoot, FilenameUtils.getPath(song));
          File destination = new File(songRoot, song);
+         File songFile;
 
          if (!destDir.exists())
          {
             destDir.mkdirs();
-            getMeta(serverIP, FilenameUtils.getPath(song), destDir);
+            getMeta(serverIP, FilenameUtils.getPath(song), destDir, mediaScanner);
          }
 
-         getFile(serverIP, song, new File(destDir, FilenameUtils.getName(song)));
+         songFile = new File(destDir, FilenameUtils.getName(song));
+         getFile(serverIP, song, songFile);
+         mediaScanner.scanFile(songFile.getAbsolutePath(), "audio/mpeg");
 
          playlistWriter.write(category + "/" + song + "\n");
       }

@@ -44,6 +44,7 @@ import java.util.Set;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.FileUtils;
 import android.content.Context;
+import android.media.MediaScannerConnection;
 
 public class DownloadService extends IntentService
 {
@@ -88,7 +89,7 @@ public class DownloadService extends IntentService
       return songCount - startAt;
    }
 
-   private void download(String playlistAbsName)
+   private void download(String playlistAbsName, MediaScannerConnection mediaScanner)
    {
       Resources         res             = getResources();
       SharedPreferences prefs           = PreferenceManager.getDefaultSharedPreferences(this);
@@ -131,7 +132,7 @@ public class DownloadService extends IntentService
             }
 
             newSongs = DownloadUtils.getNewSongsList(serverIP, category, songCountMax - songsRemaining, -1);
-            DownloadUtils.getSongs(serverIP, newSongs, category, playlistDirFile.getAbsolutePath());
+            DownloadUtils.getSongs(serverIP, newSongs, category, playlistDirFile.getAbsolutePath(), mediaScanner);
          }
       }
       catch (IOException e)
@@ -186,19 +187,37 @@ public class DownloadService extends IntentService
    public void onHandleIntent(Intent intent)
    {
       final String intentPlaylist = intent.getStringExtra(utils.EXTRA_COMMAND_PLAYLIST);
+      MediaScannerConnection mediaScanner = new MediaScannerConnection(this, null);
 
-      if (null == intentPlaylist)
+      try
       {
-         Resources         res       = getResources();
-         SharedPreferences prefs     = PreferenceManager.getDefaultSharedPreferences(this);
-         Set<String>       playlists = prefs.getStringSet
-            (res.getString(R.string.auto_download_playlists_key),
-             new LinkedHashSet<String>());
+         mediaScanner.connect();
 
-         for (String playlist : playlists)
-            download(utils.playlistDirectory + "/" + playlist + ".m3u");
+         if (null == intentPlaylist)
+         {
+            Resources         res       = getResources();
+            SharedPreferences prefs     = PreferenceManager.getDefaultSharedPreferences(this);
+            Set<String>       playlists = prefs.getStringSet
+               (res.getString(R.string.auto_download_playlists_key),
+                new LinkedHashSet<String>());
+
+            notifyDownload("Downloading " + playlists.size() + " playlists", "");
+
+            for (String playlist : playlists)
+               download(utils.playlistDirectory + "/" + playlist + ".m3u", mediaScanner);
+         }
+         else
+         {
+            notifyDownload("Downloading " + FilenameUtils.getBasename(intentPlaylist), "");
+
+            download(intentPlaylist, mediaScanner);
+         }
+
+         notifyDownload("Downloading done", "");
       }
-      else
-         download(intentPlaylist);
+      finally
+      {
+         mediaScanner.disconnect();
+      }
    }
 }

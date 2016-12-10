@@ -511,7 +511,7 @@ public class PlayService extends Service
             // In SMM playlists all lines are song filepaths, relative
             // to the directory filename is in.
 
-            if (new File(utils.playlistDirectory, line).canRead())
+            if (line.length() > 0)
             {
                // Sometimes smm screws up and leaves a blank line
 
@@ -913,6 +913,14 @@ public class PlayService extends Service
                dumpLog();
                break;
 
+            case utils.COMMAND_JUMP:
+               {
+                  // playlist is 0 indexed; user is 1 indexed.
+                  playlistPos = -1 + intent.getIntExtra(utils.EXTRA_COMMAND_POSITION, 0);
+                  play(playlist.get(playlistPos), 0);
+               }
+               break;
+
             case utils.COMMAND_NEXT:
                next();
                break;
@@ -1185,7 +1193,7 @@ public class PlayService extends Service
          public void run()
          {
             startService
-               (new Intent(utils.ACTION_COMMAND, null, null, DownloadService.class)
+               (new Intent(utils.ACTION_COMMAND, null, context, DownloadService.class)
                 .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_DOWNLOAD));
          }
       };

@@ -73,20 +73,21 @@ public class utils
 
    public static final int COMMAND_DOWNLOAD           = 2;
    public static final int COMMAND_DUMP_LOG           = 3;
-   public static final int COMMAND_NEXT               = 4;
-   public static final int COMMAND_NOTE               = 5;
-   public static final int COMMAND_PAUSE              = 6;
-   public static final int COMMAND_PLAY               = 7;
-   public static final int COMMAND_PLAYLIST           = 8; // playlist  string (abs file name)
-   public static final int COMMAND_PREVIOUS           = 9;
-   public static final int COMMAND_QUIT               = 10;
-   public static final int COMMAND_RESET_PLAYLIST     = 11;
-   public static final int COMMAND_SAVE_STATE         = 12;
-   public static final int COMMAND_SEEK               = 13; // position  int (milliseconds)
-   public static final int COMMAND_PLAYLIST_DIRECTORY = 14;
-   public static final int COMMAND_SMM_DIRECTORY      = 15;
-   public static final int COMMAND_TOGGLEPAUSE        = 16;
-   public static final int COMMAND_UPDATE_DISPLAY     = 17;
+   public static final int COMMAND_JUMP               = 4;
+   public static final int COMMAND_NEXT               = 5;
+   public static final int COMMAND_NOTE               = 6;
+   public static final int COMMAND_PAUSE              = 7;
+   public static final int COMMAND_PLAY               = 8;
+   public static final int COMMAND_PLAYLIST           = 9; // playlist  string (abs file name)
+   public static final int COMMAND_PREVIOUS           = 10;
+   public static final int COMMAND_QUIT               = 11;
+   public static final int COMMAND_RESET_PLAYLIST     = 12;
+   public static final int COMMAND_SAVE_STATE         = 13;
+   public static final int COMMAND_SEEK               = 14; // position  int (milliseconds)
+   public static final int COMMAND_PLAYLIST_DIRECTORY = 15;
+   public static final int COMMAND_SMM_DIRECTORY      = 17;
+   public static final int COMMAND_TOGGLEPAUSE        = 18;
+   public static final int COMMAND_UPDATE_DISPLAY     = 19;
 
    // sub-activity result codes
    public static final int RESULT_TEXT_SCALE         = Activity.RESULT_FIRST_USER + 1;
