@@ -4,8 +4,8 @@ include common.make
 
 # ../test/test_one_harness.adb
 # ../test/test_all_harness.adb
-#t_one : export SMM_Build := Debug
-t_one : RUN_ARGS := 2
+# export SMM_Build := Debug
+#t_one : RUN_ARGS := 2
 t_one : smm-server_driver.exe
 t_one : test_one_harness.run
 #t_all : export SMM_Build := Debug

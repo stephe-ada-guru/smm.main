@@ -28,114 +28,194 @@ with Ada.Calendar;
 with Ada.Command_Line;
 with Ada.Directories;
 with Ada.Exceptions;
+with Ada.Strings.Fixed;
 with Ada.Strings.Unbounded;
 with Ada.Text_IO;
 with SAL.Config_Files;
 package body SMM.Server is
 
-   Source_Root : access String; -- does not end in /
+   function "+" (Item : in String) return Ada.Strings.Unbounded.Unbounded_String
+     renames Ada.Strings.Unbounded.To_Unbounded_String;
+   function "-" (Item : in Ada.Strings.Unbounded.Unbounded_String) return String
+     renames Ada.Strings.Unbounded.To_String;
+   function Length (Item : in Ada.Strings.Unbounded.Unbounded_String) return Integer
+     renames Ada.Strings.Unbounded.Length;
 
-   Db : SAL.Config_Files.Configuration_Type;
+   Source_Root : Ada.Strings.Unbounded.Unbounded_String; -- does not end in /
+   Db_Filename : Ada.Strings.Unbounded.Unbounded_String;
 
    function Handle_Request (Request : AWS.Status.Data) return AWS.Response.Data
    is
       use AWS.Response;
+      use AWS.Status;
       use AWS.URL;
       URI : constant AWS.URL.Object := AWS.Status.URI (Request);
    begin
-      if File (URI) = "download" then
-         declare
-            use Ada.Containers;
-            use Ada.Strings.Unbounded;
-            use SAL.Config_Files;
-            use Song_Lists;
+      case Method (Request) is
+      when GET =>
+         if File (URI) = "download" then
+            declare
+               use Ada.Containers;
+               use Ada.Strings.Unbounded;
+               use SAL.Config_Files;
+               use Song_Lists;
 
-            Category   : constant String     := Parameter (URI, "category");
-            Count      : constant Count_Type := Count_Type'Value (Parameter (URI, "count"));
-            Seed_Param : constant String     := Parameter (URI, "seed"); -- only used in unit tests
-            Seed       : constant Integer    :=
-              (if Seed_Param'Length > 0 then Integer'Value (Seed_Param) else 0);
-            Songs      : List;
-            Response   : Unbounded_String;
-         begin
-            Least_Recent_Songs
-              (Db, Category, Songs,
-               Song_Count     => Count,
-               New_Song_Count => Count_Type'Min (1, Count / 10),
-               Seed           => Seed);
+               Category   : constant String     := Parameter (URI, "category");
+               Count      : constant Count_Type := Count_Type'Value (Parameter (URI, "count"));
+               Seed_Param : constant String     := Parameter (URI, "seed"); -- only used in unit tests
+               Seed       : constant Integer    :=
+                 (if Seed_Param'Length > 0 then Integer'Value (Seed_Param) else 0);
 
-            for I of Songs loop
-               Response :=  Response & Normalize (Read (Db, I, File_Key)) & ASCII.CR & ASCII.LF;
-            end loop;
+               Db       : SAL.Config_Files.Configuration_Type;
+               Songs    : List;
+               Response : Unbounded_String;
+            begin
+               Open
+                 (Db,
+                  -Db_Filename,
+                  Missing_File          => Raise_Exception,
+                  Duplicate_Key         => Raise_Exception,
+                  Read_Only             => False,
+                  Case_Insensitive_Keys => True);
 
-            return Build ("text/plain", Response);
-         end;
-      elsif File (URI) = "meta" then
+               Least_Recent_Songs
+                 (Db, Category, Songs,
+                  Song_Count     => Count,
+                  New_Song_Count => Count_Type'Min (1, Count / 10),
+                  Seed           => Seed);
+
+               for I of Songs loop
+                  Response :=  Response & Normalize (Read (Db, I, File_Key)) & ASCII.CR & ASCII.LF;
+               end loop;
+
+               Close (Db);
+
+               return Build ("text/plain", Response);
+            end;
+         elsif File (URI) = "meta" then
+            declare
+               use Ada.Directories;
+               use Ada.Strings.Unbounded;
+               Source_Dir : constant String := -Source_Root & Path (URI);
+               Response   : Unbounded_String;
+
+               procedure Copy_Aux (Dir_Ent : in Directory_Entry_Type)
+               is begin
+                  Response := Response &
+                    Relative_Name (-Source_Root, Normalize (Full_Name (Dir_Ent))) & ASCII.CR & ASCII.LF;
+               end Copy_Aux;
+            begin
+               Search
+                 (Directory => Source_Dir,
+                  Pattern   => "AlbumArt*.jpg",
+                  Filter    => (Ordinary_File => True, others => False),
+                  Process   => Copy_Aux'Access);
+
+               Search
+                 (Directory => Source_Dir,
+                  Pattern   => "liner_notes.pdf",
+                  Filter    => (Ordinary_File => True, others => False),
+                  Process   => Copy_Aux'Access);
+
+               return Build ("text/plain", Response);
+            end;
+         else
+            --  It's a file request.
+            declare
+               use Ada.Directories;
+               use SAL.Config_Files;
+
+               Filename  : constant String := -Source_Root & Path (URI) & File (URI);
+               Ext       : constant String := Extension (Filename);
+               Mime_Type : constant String :=
+                 --  MIME types from https://www.iana.org/assignments/media-types/media-types.xhtml
+                 --  also GNAT/share/examples/aws/web_elements/mime.types
+                 (if    Ext = "jpg" then "image/jpeg"
+                  elsif Ext = "mp3" then "audio/mpeg"
+                  elsif Ext = "pdf" then "application/pdf"
+                  else "");
+
+               Db : Configuration_Type;
+
+            begin
+               if Mime_Type'Length = 0 then
+                  return Acknowledge
+                    (Status_Code  => AWS.Messages.S500,
+                     Message_Body => "<p>file extension '" & Ext & "' not supported.");
+               end if;
+
+               if Exists (Filename) then
+                  if Ext = "mp3" then
+                     Open
+                       (Db,
+                        -Db_Filename,
+                        Missing_File          => Raise_Exception,
+                        Duplicate_Key         => Raise_Exception,
+                        Read_Only             => False,
+                        Case_Insensitive_Keys => True);
+
+                     --  Find does not want leading / on filename
+                     Write_Last_Downloaded
+                       (Db,
+                        Find (Db, Filename (Length (Source_Root) + 2 .. Filename'Last)),
+                        SAL.Time_Conversions.To_TAI_Time (Ada.Calendar.Clock));
+
+                     Close (Db);
+                  end if;
+                  return File (Mime_Type, Filename);
+               else
+                  return Acknowledge
+                    (Status_Code  => AWS.Messages.S404,
+                     Message_Body => "<p>file '" & Filename & "' not found.");
+               end if;
+            end;
+         end if;
+
+      when PUT =>
+         --  Notes
          declare
             use Ada.Directories;
-            use Ada.Strings.Unbounded;
-            Source_Dir : constant String := Source_Root.all & Path (URI);
-            Response   : Unbounded_String;
-
-            procedure Copy_Aux (Dir_Ent : in Directory_Entry_Type)
-            is begin
-               Response := Response &
-                 Relative_Name (Source_Root.all, Normalize (Full_Name (Dir_Ent))) & ASCII.CR & ASCII.LF;
-            end Copy_Aux;
+            use Ada.Exceptions;
+            use Ada.Strings.Fixed;
+            use Ada.Text_IO;
+            Pathname : constant String := -Source_Root & Path (URI);
+            Filename : constant String := Pathname & File (URI);
+            Data     : constant String := -Binary_Data (Request);
+            First    : Integer         := Data'First;
+            Last     : Integer;
+            File     : File_Type;
          begin
-            Search
-              (Directory => Source_Dir,
-               Pattern   => "AlbumArt*.jpg",
-               Filter    => (Ordinary_File => True, others => False),
-               Process   => Copy_Aux'Access);
-
-            Search
-              (Directory => Source_Dir,
-               Pattern   => "liner_notes.pdf",
-               Filter    => (Ordinary_File => True, others => False),
-               Process   => Copy_Aux'Access);
-
-            return Build ("text/plain", Response);
-         end;
-      else
-         --  It's a file request.
-         declare
-            use Ada.Directories;
-            Filename  : constant String := Source_Root.all & Path (URI) & File (URI);
-            Ext       : constant String := Extension (Filename);
-            Mime_Type : constant String :=
-              --  MIME types from https://www.iana.org/assignments/media-types/media-types.xhtml
-              --  also GNAT/share/examples/aws/web_elements/mime.types
-              (if    Ext = "jpg" then "image/jpeg"
-               elsif Ext = "mp3" then "audio/mpeg"
-               elsif Ext = "pdf" then "application/pdf"
-               else "");
-
-         begin
-            if Mime_Type'Length = 0 then
-               return Acknowledge
-                 (Status_Code  => AWS.Messages.S500,
-                  Message_Body => "<p>file extension '" & Ext & "' not supported.");
+            if not Exists (Pathname) then
+               Create_Directory (Pathname);
             end if;
 
             if Exists (Filename) then
-               if Ext = "mp3" then
-                  --  Find does not want leading / on filename
-                  Write_Last_Downloaded
-                    (Db,
-                     Find (Db, Filename (Source_Root.all'Length + 2 .. Filename'Last)),
-                     SAL.Time_Conversions.To_TAI_Time (Ada.Calendar.Clock));
-                  SAL.Config_Files.Flush (Db);
-               end if;
-               return File (Mime_Type, Filename);
+               Open (File, Append_File, Filename);
             else
-               return Acknowledge
-                 (Status_Code  => AWS.Messages.S404,
-                  Message_Body => "<p>file '" & Filename & "' not found.");
+               Create (File, Out_File, Filename);
             end if;
+            loop
+               Last := Index (Source => Data (First .. Data'Last), Pattern => ASCII.CR & ASCII.LF);
+               exit when Last < Data'First;
+               Put_Line (File, Data (First .. Last - 1));
+               First := Last + 2;
+            end loop;
+            Close (File);
+
+            return Acknowledge (Status_Code  => AWS.Messages.S200);
+         exception
+         when E : others =>
+            return Acknowledge
+              (Status_Code  => AWS.Messages.S500,
+               Message_Body => "exception " & Exception_Name (E) & ": " & Exception_Message (E));
          end;
-      end if;
-   exception
+
+      when others =>
+         return Acknowledge
+           (Status_Code  => AWS.Messages.S500,
+            Message_Body => "unrecognized request " & Request_Method'Image (Method (Request)));
+      end case;
+      exception
    when E : others =>
       declare
          use Ada.Exceptions;
@@ -166,12 +246,15 @@ package body SMM.Server is
       declare
          use Ada.Command_Line;
          use SAL.Config_Files;
+         Db : SAL.Config_Files.Configuration_Type;
       begin
          case Argument_Count is
          when 1 | 2 =>
             Open (Config, Argument (1));
 
             Enable_Log := Argument_Count = 2;
+
+            Db_Filename := +Read (Config, "DB_Filename", Missing_Key => Raise_Exception);
 
             Open
               (Db,
@@ -181,7 +264,9 @@ package body SMM.Server is
                Read_Only             => False,
                Case_Insensitive_Keys => True);
 
-            Source_Root := new String'(As_File (Read (Db, SMM.Root_Key, Missing_Key => Raise_Exception)));
+            Source_Root := +As_File (Read (Db, SMM.Root_Key, Missing_Key => Raise_Exception));
+
+            Close (Db);
 
          when others =>
             Usage;
@@ -206,7 +291,7 @@ package body SMM.Server is
          Server_Host (Obj, Read (Config, "Server_IP", Missing_Key => Raise_Exception));
 
          if Enable_Log then
-            Log_File_Directory (Obj, Source_Root.all & "/remote_cache/");
+            Log_File_Directory (Obj, -Source_Root & "/remote_cache/");
             Log_Filename_Prefix (Obj, "smm-server");
 
             AWS.Server.Log.Start (Ws, Auto_Flush => True);
@@ -233,3 +318,6 @@ package body SMM.Server is
       AWS.Server.Wait;
    end Server;
 end SMM.Server;
+--  Local Variables:
+--  ada-indent-comment-gnat: t
+--  End

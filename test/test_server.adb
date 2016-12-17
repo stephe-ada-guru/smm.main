@@ -19,8 +19,9 @@
 pragma License (GPL);
 
 with AUnit.Assertions;
-with AUnit.Checks;
+with AUnit.Checks.Text_IO;
 with AWS.Client;
+with AWS.Messages.AUnit;
 with AWS.Response.AUnit;
 with AWS.URL;
 with Ada.Calendar;
@@ -140,6 +141,57 @@ package body Test_Server is
       Check_File ("artist_1/album_1/", "liner_notes.pdf", "application/pdf");
    end Test_Get_File;
 
+   procedure Test_Send_Notes (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
+   is
+      use Ada.Directories;
+      use Ada.Text_IO;
+      use AUnit.Checks;
+      use AUnit.Checks.Text_IO;
+      use AWS.Response;
+      use AWS.Messages.AUnit;
+
+      Test : Test_Case renames Test_Case (T);
+
+      Note_File_Name : constant String := "tmp/source/remote_cache/vocal.note";
+      URL            : constant String := "http://" & Test.Server_IP.all & ":8080/remote_cache/vocal.note";
+
+      Note_File : File_Type;
+      Response  : Data;
+
+      Notes_1 : constant String :=
+        """vocal/artist_1/album_1/file_1.mp3"" Category" & ASCII.CR & ASCII.LF &
+        """vocal/artist_1/album_1/file_2.mp3"" Don't Play" & ASCII.CR & ASCII.LF;
+
+      Notes_2 : constant String :=
+        """vocal/artist_2/album_1/file_1.mp3"" Category" & ASCII.CR & ASCII.LF &
+        """vocal/artist_2/album_1/file_2.mp3"" Don't Play" & ASCII.CR & ASCII.LF;
+   begin
+      --  Test create notes on server
+      Response := AWS.Client.Put (URL, Notes_1);
+
+      Check ("1 status", Status_Code (Response), AWS.Messages.S200);
+
+      Check ("1 exists", Exists (Note_File_Name), True);
+      Open (Note_File, In_File, Note_File_Name);
+      Check (Note_File, """vocal/artist_1/album_1/file_1.mp3"" Category");
+      Check (Note_File, """vocal/artist_1/album_1/file_2.mp3"" Don't Play");
+      Check_End (Note_File);
+      Close (Note_File);
+
+      --  test append to notes on server
+      Response := AWS.Client.Put (URL, Notes_2);
+      Check ("2 status", Status_Code (Response), AWS.Messages.S200);
+
+      Open (Note_File, In_File, Note_File_Name);
+      Check (Note_File, """vocal/artist_1/album_1/file_1.mp3"" Category");
+      Check (Note_File, """vocal/artist_1/album_1/file_2.mp3"" Don't Play");
+      Check (Note_File, """vocal/artist_2/album_1/file_1.mp3"" Category");
+      Check (Note_File, """vocal/artist_2/album_1/file_2.mp3"" Don't Play");
+      Check_End (Note_File);
+      Close (Note_File);
+
+   end Test_Send_Notes;
+
    ----------
    --  Public bodies
 
@@ -154,9 +206,14 @@ package body Test_Server is
    is
       use Standard.AUnit.Test_Cases.Registration;
    begin
-      Register_Routine (T, Test_Playlist'Access, "Test_Playlist");
-      Register_Routine (T, Test_Meta'Access, "Test_Meta");
-      Register_Routine (T, Test_Get_File'Access, "Test_Get_File");
+      if T.Debug = 1 then
+         Register_Routine (T, Test_Send_Notes'Access, "Test_Send_Notes");
+      else
+         Register_Routine (T, Test_Playlist'Access, "Test_Playlist");
+         Register_Routine (T, Test_Meta'Access, "Test_Meta");
+         Register_Routine (T, Test_Get_File'Access, "Test_Get_File");
+         Register_Routine (T, Test_Send_Notes'Access, "Test_Send_Notes");
+      end if;
    end Register_Tests;
 
    overriding procedure Set_Up_Case (T : in out Test_Case)
