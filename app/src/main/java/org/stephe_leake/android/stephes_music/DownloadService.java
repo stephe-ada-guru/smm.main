@@ -208,7 +208,7 @@ public class DownloadService extends IntentService
          }
          else
          {
-            notifyDownload("Downloading " + FilenameUtils.getBasename(intentPlaylist), "");
+            notifyDownload("Downloading " + FilenameUtils.getBaseName(intentPlaylist), "");
 
             download(intentPlaylist, mediaScanner);
          }

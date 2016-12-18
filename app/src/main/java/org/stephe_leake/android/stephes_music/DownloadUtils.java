@@ -45,7 +45,9 @@ import org.apache.commons.io.filefilter.TrueFileFilter;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
+import okhttp3.MediaType;
 
 public class DownloadUtils
 {
@@ -248,6 +250,8 @@ public class DownloadUtils
 
       fileName.createNewFile();
 
+      if (null == httpClient) httpClient = new OkHttpClient();
+
       try (Response response = httpClient.newCall(new Request.Builder().url(url.build()).build()).execute())
       {
          if (!response.isSuccessful())
@@ -281,6 +285,8 @@ public class DownloadUtils
       final String  url     = "http://" + serverIP + ":8080/" + resourcePath + "meta";
       final Request request = new Request.Builder().url(url).build();
 
+      if (null == httpClient) httpClient = new OkHttpClient();
+
       try (Response response = httpClient.newCall(request).execute())
       {
          return response.body().string().split("\r\n");
@@ -312,7 +318,8 @@ public class DownloadUtils
          else if (ext.equals(".pdf"))
             mime = "application/pdf";
 
-         mediaScanner.scanFile(objFile.getAbsolutePath(), mime);
+         if (null != mediaScanner)
+            mediaScanner.scanFile(objFile.getAbsolutePath(), mime);
       }
    }
 
@@ -325,7 +332,8 @@ public class DownloadUtils
    {
       // Get 'songs' from 'serverIP', store in 'root/<category>', add
       // to playlist 'root/<category>.m3u'. Also get album art, liner
-      // notes for new directories.
+      // notes for new directories. Add files to mediaScanner, if not
+      // null.
       final File songRoot       = new File(new File(root), category);
       File       playlistFile   = new File(new File(root), category + ".m3u");
       FileWriter playlistWriter = new FileWriter(playlistFile, true); // append
@@ -344,7 +352,9 @@ public class DownloadUtils
 
          songFile = new File(destDir, FilenameUtils.getName(song));
          getFile(serverIP, song, songFile);
-         mediaScanner.scanFile(songFile.getAbsolutePath(), "audio/mpeg");
+
+         if (null != mediaScanner)
+            mediaScanner.scanFile(songFile.getAbsolutePath(), "audio/mpeg");
 
          playlistWriter.write(category + "/" + song + "\n");
       }
@@ -352,5 +362,51 @@ public class DownloadUtils
 
       // File objects hold the corresponding disk file locked; later
       // unit test cannot delete them.
+   }
+
+   public static void sendNotes(String serverIP,
+                                String category,
+                                String smmDir)
+      throws IOException // On http put fail
+   {
+      File noteFile = new File(smmDir, category + ".note");
+
+      if (noteFile.exists())
+      {
+         final String url  = "http://" + serverIP + ":8080/remote_cache/" + category + ".note";
+         String       data = "";
+
+         try
+         {
+            LineNumberReader noteReader = new LineNumberReader(new FileReader(noteFile));
+            String           line       = noteReader.readLine();
+
+            while (line != null)
+            {
+               // Doc for LineNumberReader says 'line' includes line terminators, but it doesn't.
+               data = data + line + "\r\n";
+               line = noteReader.readLine();
+            };
+
+         }
+         catch (FileNotFoundException e){} // from noteReader constructor; can't get here
+         catch (IOException e){} // from noteReader.readLine; can't get here
+
+         {
+            final TextBody body    = new TextBody(data);
+            final Request  request = new Request.Builder()
+               .url(url)
+               .put(body)
+               .build();
+
+            if (null == httpClient) httpClient = new OkHttpClient();
+
+            try (Response response = httpClient.newCall(request).execute())
+            {
+               if (200 != response.code())
+                  throw new IOException("put notes failed " + response.message());
+            }
+         }
+      }
    }
 }

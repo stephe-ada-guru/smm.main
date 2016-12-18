@@ -27,8 +27,10 @@ compile-debug : force
 	gradle --daemon compileDebugSources assembleDebug
 
 # We don't have any AndroidTests (yet)
+# passing -DstartServer=false doesn't work here; it does from Android Studio
+# Don't use --deamon; it leaves test files locked
 test : force
-	gradle --daemon compileDebugSources compileDebugUnitTestSources
+	gradle compileDebugSources compileDebugUnitTestSources testDebugUnitTest
 
 clean : test-clean
 	rm -rf .gradle

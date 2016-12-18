@@ -40,6 +40,11 @@ import static org.junit.Assert.assertTrue;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class TestDownloadUtils
 {
+   final String serverIP = "192.168.1.83"; // must match smm-server.config
+
+   // to start server externally for debugging, run this test with -DstartServer=false
+   final boolean startServer = new String("true").equals(System.getProperty("startServer", "true"));
+
    private void cleanup(boolean ignoreError)
    {
       File tmp = new File("tmp");
@@ -96,8 +101,6 @@ public class TestDownloadUtils
       String     lastFilename     = "tmp/smm/vocal.last";
       FileWriter output;
 
-      System.out.println("editPlaylistNominal");
-
       cleanup(false);
 
       try
@@ -137,8 +140,6 @@ public class TestDownloadUtils
       String     playlistFilename = "tmp/playlists/vocal.m3u";
       String     lastFilename     = "tmp/smm/vocal.last";
       FileWriter output;
-
-      System.out.println("firstPassNominal");
 
       // Can't delete vocal.m3u; not clear why it's locked.
       cleanup(true);
@@ -192,7 +193,6 @@ public class TestDownloadUtils
    public void c_getNewSongsNominal()
    {
       // Translated from smm test_server.adb Set_Up_Case, Test_Playlist, Test_Meta, Test_Get_File
-      final String serverIP         = "192.168.1.83"; // must match smm-server.config
       final String dbFilename       = "tmp/smm.db";
       final String playlistFilename = "tmp/playlists/vocal.m3u";
       final String category         = "vocal";
@@ -205,8 +205,6 @@ public class TestDownloadUtils
           "artist_2/album_1/2 - song_2.mp3",
           "artist_1/album_1/2 - song_2.mp3",
           "artist_2/album_1/3 - song_3.mp3"};
-
-      System.out.println("getNewSongsNominal");
 
       // Can't delete vocal.m3u; not clear why it's locked.
       cleanup(true);
@@ -249,14 +247,14 @@ public class TestDownloadUtils
          output.write("vocal/artist_3/file_4.mp3" + "\n");
          output.close();
 
-         // Spawn smm server
-         server = new ProcessBuilder("smm-server_driver", "smm-server.config").start();
+         if (startServer)
+            server = new ProcessBuilder("smm-server_driver", "smm-server.config", "1").start();
 
          newSongs = DownloadUtils.getNewSongsList(serverIP, category, 5, 0);
 
          check(newSongs, expectedSongs);
 
-         DownloadUtils.getSongs(serverIP, newSongs, category, "tmp/playlists");
+         DownloadUtils.getSongs(serverIP, newSongs, category, "tmp/playlists", null);
 
          // Check that the new song files and meta files are present
          checkExists("tmp/playlists/vocal/artist_1/album_1/1 - song_1.mp3", true);
@@ -282,6 +280,46 @@ public class TestDownloadUtils
       }
       catch (IOException e) {assertTrue(e.getMessage(), false);}
       catch (URISyntaxException e) {assertTrue(e.getMessage(), false);}
+      finally
+      {
+         if (null != server) server.destroy();
+      }
+   }
+
+   @Test
+   public void d_sendNotesNominal()
+   {
+      final String localNotesFilename  = "tmp/smm/vocal.note";
+      final String serverNotesFilename = "tmp/source/remote_cache/vocal.note";
+
+      File    smmDir = new File("tmp/smm/");
+      Process server = null;
+
+      try
+      {
+         FileWriter   output;
+
+         FileUtils.forceMkdir(smmDir);
+         output = new FileWriter(localNotesFilename);
+         output.write("\"vocal/artist_1/file_5.mp3\" Category\n");
+         output.write("\"vocal/artist_1/file_6.mp3\" Don\'t Play\n");
+         output.close();
+
+         if (startServer)
+            server = new ProcessBuilder("smm-server_driver", "smm-server.config", "1").start();
+
+         DownloadUtils.sendNotes(serverIP, "vocal", smmDir.getAbsolutePath());
+
+         checkExists(serverNotesFilename, true);
+         {
+            LineNumberReader input = new LineNumberReader(new FileReader(serverNotesFilename));
+
+            assertTrue(input.readLine().equals("\"vocal/artist_1/file_5.mp3\" Category"));
+            assertTrue(input.readLine().equals("\"vocal/artist_1/file_6.mp3\" Don\'t Play"));
+            assertTrue(input.readLine() == null);
+         }
+      }
+      catch (java.io.IOException e){assertTrue(e.toString(), false);}
       finally
       {
          if (null != server) server.destroy();
