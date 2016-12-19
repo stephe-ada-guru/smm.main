@@ -11,23 +11,20 @@ branches:
     org.stephe_leake.music_player.java - main, currently on phone
     o.s_l.m_p.work                     - download via http
 
-current songs:
-    instrumental: 195 some children see him
-    vocal       : 187 closer to fine
+d:/Music/remote_cache/smm-server_driver.log
 
-download via http protocol:
-    DownloadUtils.java
-    TestDownloadUtils.java
-     ~/bin/music-server.sh 2
+notification: share
+    for copy error URL
 
-    run unit test
-        d_sendNotesNominal
-        passes when server run separately, fails when not
+notification: download progress
+    % done on count of songs
+
+run unit test
+    d_sendNotesNominal
+    passes when server run separately, fails when not
 
 
-    turn off server until finish old playlists
-
-    scheduled download happening at 10:42 AM
+scheduled download happening at 10:42 AM, 5:42 AM
 
 
 swipe notification to dismiss

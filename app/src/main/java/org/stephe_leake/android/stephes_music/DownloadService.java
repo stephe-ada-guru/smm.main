@@ -89,7 +89,8 @@ public class DownloadService extends IntentService
       return songCount - startAt;
    }
 
-   private void download(String playlistAbsName, MediaScannerConnection mediaScanner)
+   private boolean download(String playlistAbsName, MediaScannerConnection mediaScanner)
+   // Return true on success, false on error; error message in notification.
    {
       Resources         res             = getResources();
       SharedPreferences prefs           = PreferenceManager.getDefaultSharedPreferences(this);
@@ -106,8 +107,8 @@ public class DownloadService extends IntentService
 
       if (serverIP == null)
       {
-         notifyDownload("Error", "set Server IP preference");
-         return;
+         notifyDownload("Download error : set Server IP preference", "");
+         return false;
       }
 
       // File.exists throws IOException ENOENT if the directory does not exist!
@@ -138,13 +139,17 @@ public class DownloadService extends IntentService
       catch (IOException e)
       {
          // something is screwed up
-         notifyDownload("download error", e.toString());
+         notifyDownload("Download error", e.toString());
+         return false;
       }
       catch (URISyntaxException e)
       {
          // song resource can't be encoded in a URI; not likely!
+         notifyDownload("Download error: programmer error", "");
          utils.errorLog(this, "download: ", e);
+         return false;
       }
+      return true;
    }
 
    private void notifyDownload(String title, String msg)
@@ -200,20 +205,29 @@ public class DownloadService extends IntentService
             Set<String>       playlists = prefs.getStringSet
                (res.getString(R.string.auto_download_playlists_key),
                 new LinkedHashSet<String>());
+            final String      msg       = "Downloading " + playlists.size() + " playlists ...";
+            boolean           status    = true;
 
-            notifyDownload("Downloading " + playlists.size() + " playlists", "");
+            notifyDownload(msg, "");
 
             for (String playlist : playlists)
-               download(utils.playlistDirectory + "/" + playlist + ".m3u", mediaScanner);
+            {
+               // FIXME: fail on first error
+               status = status && download(utils.playlistDirectory + "/" + playlist + ".m3u", mediaScanner);
+            }
+
+            if (status)
+               notifyDownload(msg + " done", "");
          }
          else
          {
-            notifyDownload("Downloading " + FilenameUtils.getBaseName(intentPlaylist), "");
+            final String msg = "Downloading " + FilenameUtils.getBaseName(intentPlaylist) + " ...";
 
-            download(intentPlaylist, mediaScanner);
+            notifyDownload(msg, "");
+
+            if (download(intentPlaylist, mediaScanner))
+               notifyDownload(msg + " done", "");
          }
-
-         notifyDownload("Downloading done", "");
       }
       finally
       {
