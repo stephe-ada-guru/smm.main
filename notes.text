@@ -8,6 +8,14 @@ branches:
     org.stephe_leake.music_player.java - main, currently on phone
     o.s_l.m_p.work                     - available
 
+swipe notification to dismiss
+    also disable lock screen art
+    -> quit
+
+cycle thru all avail albumart*.jpg
+
+don't need priority notification
+
 car play/pause/next/prev controls
     14 June 2016:
         tested pre-14-1: works
@@ -46,6 +54,7 @@ car play/pause/next/prev controls
             mediaButtonReciever _not_ registered in service
             mediaSession callback registered
 
+        give up
 
 notify when less than 10 songs left in playlist
     but only once; not clear where to save state, when to clear it
@@ -92,36 +101,18 @@ fix menu
     on tablet, currently works, but displayes as "MORE" instead of vertical "..."
     on phone, menu button works, nothing on screen
 
- smm
-/Projects/smm.main/build/x86_gnu_windows_release/Makefile
-
-ssh backend
-    ../../smm.work/notes.text
-
-how do podcast manager transfer their .mp3 files?
-    http://gpodder.org/
-        has android version, but nothing about that in the source
-        podcastparser probably has the windows/linux download code
-
-    https://github.com/antennapod/AntennaPod
-
-Copy playlist don't copy existing
-
-multiple categories:
-    vocal/protest/intro
-    instrumental/yoga
-        store in genre field(s)?
-
  Kate's Mythical Music Manager (KMMM Km3)
 ../stephes_music_player.kate/build/Makefile
 ../stephes_music_player.kate/src/org/stephe_leake/android/stephes_music/activity.java
 
 play directory
+    bubbleup does this
     alphabetical order/randomize?
         if random, save state is problematic; need to detect when user has changed disk
         kate says cache current playlist, regenerate on user command (don't detect disk change)
 
 play single songs from file manager
+    lots of apps do this
     next/prev?
 
 server 'playlist' extension could be .m3u, .mp3, null (directory)
@@ -130,6 +121,7 @@ windows Winamp requires import all into library
     don't want that; library is disk
         Kate doesn't need any metadata (stephe does, so has library)
     just need drag'n'drop playlist creation
+        works over usb connection (mostly)
         and then playlist/directory copy to android
 
 full support for hierarchical tree of playlists
