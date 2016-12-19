@@ -5,8 +5,15 @@ downloading 6 songs
 1958-01-01 06:00:02, 1958-01-01 06:00:00 : artist_2/played_7.mp3
 1958-01-01 06:00:00, 1958-01-01 06:00:00 : artist_1/new_1.mp3
 1958-01-01 06:00:00, 1958-01-01 06:00:00 : artist_3/new_5.mp3
+no .last file found; not editing playlist
 deleting directory Vocal/artist_3
+no .last file found; not editing playlist
 deleting directory Vocal/artist_1
+no .last file found; not editing playlist
+no .last file found; not editing playlist
+listening on 192.168.1.83: 8080
+not logging
+new db; all new songs
 
 OK ../../test/test_copy.adb : Nominal
 OK ../../test/test_download.adb : Nominal
@@ -17,8 +24,11 @@ OK ../../test/test_first_pass_with_last.adb : New_Playlist
 OK ../../test/test_first_pass_with_last.adb : Finished_Playlist
 OK ../../test/test_least_recent.adb : Nominal
 OK Test_Play_Before : Nominal
+OK test_server.adb : Test_Playlist
+OK test_server.adb : Test_Meta
+OK test_server.adb : Test_Get_File
 
-Total Tests Run:   9
-Successful Tests:  9
+Total Tests Run:   12
+Successful Tests:  12
 Failed Assertions: 0
 Unexpected Errors: 0

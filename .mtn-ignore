@@ -6,5 +6,6 @@
 ^build/gpr_query\.db-shm$
 ^build/gpr_query\.db-wal$
 ^build/objects$
+^build/smm-server_driver\.log$
 ^build/smm\.html$
 ^build/tmp$

@@ -2,7 +2,7 @@
 --
 --  Utilities for unit tests
 --
---  Copyright (C) 2007, 2009 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007, 2009, 2016 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -25,9 +25,11 @@ package Test_Utils is
    --  Delete tmp/
 
    procedure Create_Test_File (Path : in String);
-   --  File contains one line.
+   --  File contains one line, containing "body: " & Path.
+   --  Path is relative to current process directory.
 
    procedure Check_Exists (Path : in String; Expected_Exists : in Boolean);
-   --  Assertion
+   --  Assertion.
+   --  Path is relative to current process directory.
 
 end Test_Utils;

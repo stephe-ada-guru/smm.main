@@ -20,7 +20,6 @@ pragma License (GPL);
 
 with Ada.Command_Line; use Ada.Command_Line;
 with Ada.Directories;
-with Ada.Environment_Variables;
 with Ada.Exceptions.Traceback;
 with Ada.Text_IO; use Ada.Text_IO;
 with GNAT.Traceback.Symbolic;
@@ -82,21 +81,6 @@ is
    Max_Song_Count     : Ada.Containers.Count_Type;
    Min_Download_Count : Ada.Containers.Count_Type;
    New_Song_Count     : Ada.Containers.Count_Type;
-
-   function Find_Home return String
-   is
-      use Ada.Environment_Variables;
-   begin
-      if Exists ("SMM_HOME") then
-         return Value ("SMM_HOME");
-      elsif Exists ("HOME") then
-         return Value ("HOME") & "/smm";
-      elsif Exists ("APPDATA") then
-         return Value ("APPDATA") & "/smm";
-      else
-         raise Playlist_Error with "must define either APPDATA or HOME environment variable";
-      end if;
-   end Find_Home;
 
    Home : constant String := Find_Home;
 

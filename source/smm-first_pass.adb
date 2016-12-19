@@ -62,48 +62,50 @@ is
             Name : constant String := Simple_Name (Dir_Entry);
          begin
             if Name = "." or Name = ".." then
-               null;
-            else
-               --  Delete music files not in playlist
-               Search
-                 (Full_Name (Dir_Entry),
-                  Pattern => "*.mp3", -- Don't delete albumart.jpg, liner_notes.pdf
-                  Filter  => (Directory => False, Ordinary_File => True, others => False),
-                  Process => Process_Dir_Entry'Access);
-
-               --  Recurse into directories
-               Search
-                 (Full_Name (Dir_Entry),
-                  Pattern => "*",
-                  Filter  => (Directory => True, Ordinary_File => False, others => False),
-                  Process => Process_Dir_Entry'Access);
-
-               --  Delete if there's no music or directories left
-               Entry_Count := 0;
-
-               Search
-                 (Full_Name (Dir_Entry),
-                  Pattern => "*",
-                  Filter  => (Directory => True, Ordinary_File => False, others => False),
-                  Process => Count_Dir_Entry'Access);
-
-               if Entry_Count > 0 then
-                  return;
-               end if;
-
-               Search
-                 (Full_Name (Dir_Entry),
-                  Pattern => "*.mp3",
-                  Filter  => (Directory => False, Ordinary_File => True, others => False),
-                  Process => Count_Dir_Entry'Access);
-
-               if Entry_Count = 0 then
-                  --  Delete album art, liner_notes, directory
-                  Delete_Tree (Full_Name (Dir_Entry));
-                  Put_Line ("deleting directory " & Relative_Name (Playlist_Dir, Normalize (Full_Name (Dir_Entry))));
-               end if;
+               return;
             end if;
          end;
+
+         --  Delete music files not in playlist
+         Search
+           (Full_Name (Dir_Entry),
+            Pattern => "*.mp3", -- Don't delete albumart.jpg, liner_notes.pdf
+            Filter  => (Directory => False, Ordinary_File => True, others => False),
+            Process => Process_Dir_Entry'Access);
+
+         --  Recurse into directories
+         Search
+           (Full_Name (Dir_Entry),
+            Pattern => "*",
+            Filter  => (Directory => True, Ordinary_File => False, others => False),
+            Process => Process_Dir_Entry'Access);
+
+         --  Delete if there's no music or directories left
+         Entry_Count := 0;
+
+         --  Count directories
+         Search
+           (Full_Name (Dir_Entry),
+            Pattern => "*",
+            Filter  => (Directory => True, Ordinary_File => False, others => False),
+            Process => Count_Dir_Entry'Access);
+
+         if Entry_Count > 0 then
+            return;
+         end if;
+
+         --  Count music files
+         Search
+           (Full_Name (Dir_Entry),
+            Pattern => "*.mp3",
+            Filter  => (Directory => False, Ordinary_File => True, others => False),
+            Process => Count_Dir_Entry'Access);
+
+         if Entry_Count = 0 then
+            --  Delete album art, liner_notes, directory
+            Delete_Tree (Full_Name (Dir_Entry));
+            Put_Line ("deleting directory " & Relative_Name (Playlist_Dir, Normalize (Full_Name (Dir_Entry))));
+         end if;
 
       when Ordinary_File =>
          declare

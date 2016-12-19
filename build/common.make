@@ -14,6 +14,13 @@ smm.exe : force
 
 test_all_harness.out : test_all_harness.exe smm.exe
 
+create_test_db :
+	mkdir -p tmp/source
+	echo "Root = " $(CURDIR) "/tmp/source" > tmp/smm.db
+
+clean ::
+	rm -fr tmp
+
 VPATH := ../source
 VPATH += ../test
 

@@ -2,7 +2,7 @@
 --
 --  see spec
 --
---  Copyright (C) 2008, 2009, 2011 - 2015 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008, 2009, 2011 - 2016 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -19,11 +19,27 @@
 with Ada.Calendar.Formatting;
 with Ada.Characters.Handling;
 with Ada.Directories;
+with Ada.Environment_Variables;
 with Ada.IO_Exceptions;
 with Ada.Text_IO;
 with Ada_Config;
 with SAL.Gen_Randomize_Doubly_Linked_Lists;
 package body SMM is
+
+   function Find_Home return String
+   is
+      use Ada.Environment_Variables;
+   begin
+      if Exists ("SMM_HOME") then
+         return Value ("SMM_HOME");
+      elsif Exists ("HOME") then
+         return Value ("HOME") & "/smm";
+      elsif Exists ("APPDATA") then
+         return Value ("APPDATA") & "/smm";
+      else
+         raise Playlist_Error with "must define either APPDATA or HOME environment variable";
+      end if;
+   end Find_Home;
 
    function Normalize (Path : in String) return String
    is
@@ -41,11 +57,13 @@ package body SMM is
      (Root      : in String;
       Full_Name : in String)
       return String
-   is begin
-      if Root = Full_Name (Full_Name'First .. Full_Name'First + Root'Length - 1) then
-         return Full_Name (Full_Name'First + Root'Length .. Full_Name'Last);
+   is
+      Dir_Root : constant String := As_Directory (Root);
+   begin
+      if Dir_Root = Full_Name (Full_Name'First .. Full_Name'First + Dir_Root'Length - 1) then
+         return Full_Name (Full_Name'First + Dir_Root'Length .. Full_Name'Last);
       else
-         raise SAL.Programmer_Error with Full_Name & " not relative to root " & Root;
+         raise SAL.Programmer_Error with Full_Name & " not relative to root " & Dir_Root;
       end if;
    end Relative_Name;
 
@@ -59,6 +77,21 @@ package body SMM is
          return Temp & '/';
       end if;
    end As_Directory;
+
+   function As_File (Path : in String) return String
+   is
+      Temp : constant String := Normalize (Path);
+   begin
+      if Path'Length = 0 then
+         return Path;
+      end if;
+
+      if Temp (Temp'Last) = '/' then
+         return Temp (Temp'First .. Temp'Last - 1);
+      else
+         return Temp;
+      end if;
+   end As_File;
 
    function To_String (Time : in SAL.Time_Conversions.Time_Type) return String
    is begin
@@ -150,6 +183,26 @@ package body SMM is
       end if;
       Write (Db, Key, SAL.Time_Conversions.To_Extended_ASIST_String (Time));
    end Write_Last_Downloaded;
+
+   function Find
+     (Db       : in SAL.Config_Files.Configuration_Type;
+      Filename : in String)
+     return SAL.Config_Files.Iterator_Type
+   is
+      use SAL.Config_Files;
+      I : Iterator_Type := First (Db, Songs_Key);
+   begin
+      loop
+         exit when Is_Done (I) or else Read (Db, I, File_Key) = Filename;
+         Next (I);
+      end loop;
+
+      if Is_Done (I) then
+         raise SAL.Not_Found with "'" & Filename & "'";
+      else
+         return I;
+      end if;
+   end Find;
 
    type Time_List_Element_Type is record
       Last_Downloaded : SAL.Time_Conversions.Time_Type;
@@ -288,6 +341,8 @@ package body SMM is
       end;
 
       Time_List_I := Time_List.First;
+
+      --  FIXME: Time_List_I can be null if Category doesn't match any songs (ie spelled wrong).
 
       if Element (Time_List_I).Last_Downloaded = 0.0 then
          --  New songs

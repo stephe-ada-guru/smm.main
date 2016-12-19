@@ -1,3 +1,26 @@
 build/Makefile
 
-see ../Android/org.stephe_leake.music_player.java/notes.text
+see ../Android/org.stephe_leake.music_player.work/notes.text
+
+Laraaji/Ambiant%203-$20Day%20of%20Radiance/01$20The%20Dance%20%231.mp3
+    %23 = #
+    interpreted as 'fragment'? should not be!
+
+log is smm-server_driver.log
+    log file settings ignored
+
+add web search
+    grep smm.db?
+    smm.find with wildcards?
+
+    compare all versions of "butterfly"
+        play songs from web
+
+
+
+http://docs.adacore.com/aws-docs/aws/
+    installed in gpr 2016
+    edit makefile.conf:
+        prefix = d:/Apps/GNAT-gpl_2016
+            so it doesn't use cygwin syntax
+        DEBUG = true

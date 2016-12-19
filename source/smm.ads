@@ -2,7 +2,7 @@
 --
 --  Root of Stephe's Music Manager packages
 --
---  Copyright (C) 2008 - 2015 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2016 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -31,13 +31,19 @@ package SMM is
 
    Playlist_Error : exception;
 
+   function Find_Home return String;
+
    function Normalize (Path : in String) return String;
    --  convert '\' to '/'
 
    function Relative_Name (Root : in String; Full_Name : in String) return String;
+   --  Ensure Root is As_Directory.
 
    function As_Directory (Path : in String) return String;
    --  normalize, append '/' if needed.
+
+   function As_File (Path : in String) return String;
+   --  delete trailing '/' if needed.
 
    function To_String (Time : in SAL.Time_Conversions.Time_Type) return String;
    --  User friendly date representation
@@ -70,6 +76,12 @@ package SMM is
      (Db       : in out SAL.Config_Files.Configuration_Type;
       Root_Key : in     String;
       Time     : in     SAL.Time_Conversions.Time_Type);
+
+   function Find
+     (Db       : in SAL.Config_Files.Configuration_Type;
+      Filename : in String)
+     return SAL.Config_Files.Iterator_Type;
+   --  Filename is Artist/Album/title.mp3; file name relative to music root.
 
    package Song_Lists is new Ada.Containers.Doubly_Linked_Lists (SAL.Config_Files.Iterator_Type, SAL.Config_Files."=");
 

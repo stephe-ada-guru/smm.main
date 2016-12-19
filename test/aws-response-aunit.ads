@@ -1,8 +1,8 @@
 --  Abstract :
 --
---  First pass of playlists.
+--  AUnit checks for types in parent.
 --
---  Copyright (C) 2007, 2009, 2012, 2015, 2016 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2016 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -13,19 +13,14 @@
 --  PURPOSE. See the GNU General Public License for more details. You
 --  should have received a copy of the GNU General Public License
 --  distributed with this program; see file COPYING. If not, write to
---  the Free Software Foundation, 59 Temple Place - Suite 330, Boston,
---  MA 02111-1307, USA.
+--  the Free Software Foundation, 51 Franklin Street, Suite 500, Boston,
+--  MA 02110-1335, USA.
 
 pragma License (GPL);
 
-procedure SMM.First_Pass
-  (Category     : in     String;
-   Playlist_Dir : in     String;
-   SMM_Dir      : in     String;
-   File_Count   :    out Integer);
---  Delete lines in category.m3u that are before song in
---  SMM_Dir/category.last. Delete files from Playlist_Dir/Category
---  that are not mentioned in playlist file category.m3u. Return count
---  of files remaining in playlist.
---
---  Directory names end in '/'
+with AUnit.Checks;
+package AWS.Response.AUnit is
+
+   procedure Check is new Standard.AUnit.Checks.Gen_Check_Discrete (Data_Mode);
+
+end AWS.Response.AUnit;
