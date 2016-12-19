@@ -2,6 +2,13 @@ build/Makefile
 
 see ../Android/org.stephe_leake.music_player.work/notes.text
 
+Laraaji/Ambiant%203-$20Day%20of%20Radiance/01$20The%20Dance%20%231.mp3
+    %23 = #
+    interpreted as 'fragment'? should not be!
+
+log is smm-server_driver.log
+    log file settings ignored
+
 add web search
     grep smm.db?
     smm.find with wildcards?
