@@ -60,7 +60,7 @@ package body Test_Server is
           "artist_1/album_1/1 - song_1.mp3" & ASCII.CR & ASCII.LF &
           "artist_2/album_1/2 - song_2.mp3" & ASCII.CR & ASCII.LF &
           "artist_1/album_1/2 - song_2.mp3" & ASCII.CR & ASCII.LF &
-          "artist_2/album_1/3 - song_3.mp3" & ASCII.CR & ASCII.LF;
+          "artist_1/album_1/03 The Dance #1.mp3" & ASCII.CR & ASCII.LF;
    begin
       if Verbose then
          Ada.Text_IO.Put (Msg);
@@ -139,6 +139,7 @@ package body Test_Server is
       Check_File ("artist_1/album_1/", "AlbumArt_1.jpg", "image/jpeg");
       Check_File ("artist_1/album_1/", "1 - song_1.mp3", "audio/mpeg", Song_Index => 1);
       Check_File ("artist_1/album_1/", "liner_notes.pdf", "application/pdf");
+      Check_File ("artist_1/album_1/", "03 The Dance #1.mp3", "audio/mpeg", Song_Index => 7);
    end Test_Get_File;
 
    procedure Test_Send_Notes (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
@@ -207,7 +208,7 @@ package body Test_Server is
       use Standard.AUnit.Test_Cases.Registration;
    begin
       if T.Debug = 1 then
-         Register_Routine (T, Test_Send_Notes'Access, "Test_Send_Notes");
+         Register_Routine (T, Test_Get_File'Access, "Test_Get_File");
       else
          Register_Routine (T, Test_Playlist'Access, "Test_Playlist");
          Register_Routine (T, Test_Meta'Access, "Test_Meta");
@@ -251,6 +252,8 @@ package body Test_Server is
          Put_Line (Db_File, "Songs. 5.Category = vocal");
          Put_Line (Db_File, "Songs. 6.File = artist_2/album_1/3 - song_3.mp3");
          Put_Line (Db_File, "Songs. 6.Category = vocal");
+         Put_Line (Db_File, "Songs. 7.File = artist_1/album_1/03 The Dance #1.mp3");
+         Put_Line (Db_File, "Songs. 7.Category = vocal");
 
          Close (Db_File);
 
@@ -261,6 +264,7 @@ package body Test_Server is
          Create_Test_File ("tmp/source/artist_1/album_1/AlbumArt_1.jpg");
          Create_Test_File ("tmp/source/artist_1/album_1/1 - song_1.mp3");
          Create_Test_File ("tmp/source/artist_1/album_1/2 - song_2.mp3");
+         Create_Test_File ("tmp/source/artist_1/album_1/03 The Dance #1.mp3");
 
          Create_Directory ("tmp/source/artist_2");
          Create_Directory ("tmp/source/artist_2/album_1");

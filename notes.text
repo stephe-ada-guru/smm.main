@@ -1,10 +1,50 @@
 build/Makefile
 
-see ../Android/org.stephe_leake.music_player.work/notes.text
+see ../Android/org.stephe_leake.music_player.java/notes.text
 
-Laraaji/Ambiant%203-$20Day%20of%20Radiance/01$20The%20Dance%20%231.mp3
+branches:
+    smm.main - installed in Windows
+    smm.work - ssh download; terminated
+    smm.work_1 - available
+
+d:/Music/remote_cache/smm-server_driver.log
+
+
+Laraaji/Ambiant%203-$20Day%20of%20Radiance/01%20The%20Dance%20%231.mp3
     %23 = #
     interpreted as 'fragment'? should not be!
+    write separate test for URI parsing
+        test_url.adb
+            AWS.URL.File does _not_ decode!?
+            calling Decode in unit test makes the above ok.
+
+    add this name to server test, find out where it screws up
+        smm-server.adb Handle_Request: uri contains decoded strings, with "#1.mp3" in Fragment
+        called from aws-dispatchers-callback.adb Dispatch; Request contains decoded URI.
+        called from aws-server-http_utils.adb Answer_To_Client.Build_Answer; C_Stat = Request
+        called from aws-server-protocol_handler.adb Protocol_handler, LA.Stat = Request
+        set by aws-server-http_utils.adb Get_Request_Line from buffered socket
+            via aws-server-http_utils.adb Parse_Request_Line,
+                which splits out Method, Resource, HTTP_Version, with Resource decoded!
+                then calls aws-status-set.adb Request,
+                which calls aws-url-set.adb URL.Set.Parse
+            fundamentally wrong!?
+
+        posted to comp.lang.ada; yes, it's a bug in AWS
+
+    create patch against https://github.com/AdaCore/aws
+        in Debian VM; nope, no templates_parser
+
+    edited d:/Apps/GNAT-gpl_2016/aws...src/*
+        orig in d:/Apps/GNAT-gpl_2016/orig/*
+        diff in d:/Apps/GNAT-gpl_2016/aws_decode.diff
+
+    downloading mediation in progress (got past #)
+
+    run tests
+        # test fails!?
+            because client.get calls url.parse; need "decode => false"
+
 
 log is smm-server_driver.log
     log file settings ignored
@@ -16,11 +56,9 @@ add web search
     compare all versions of "butterfly"
         play songs from web
 
+Copy playlist don't copy existing
 
-
-http://docs.adacore.com/aws-docs/aws/
-    installed in gpr 2016
-    edit makefile.conf:
-        prefix = d:/Apps/GNAT-gpl_2016
-            so it doesn't use cygwin syntax
-        DEBUG = true
+multiple categories:
+    vocal/protest/intro
+    instrumental/yoga
+        store in genre field(s)?
