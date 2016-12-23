@@ -1,7 +1,7 @@
 .*/\.#
-\.diff$
 \.exe$
 \.out$
+^build/.*\.diff$
 ^build/gpr_query\.db$
 ^build/gpr_query\.db-shm$
 ^build/gpr_query\.db-wal$
