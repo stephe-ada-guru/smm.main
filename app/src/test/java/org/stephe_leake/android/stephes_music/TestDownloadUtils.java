@@ -119,7 +119,7 @@ public class TestDownloadUtils
          output.write("vocal/artist_1/file_5.mp3" + "\n");
          output.close();
 
-         DownloadUtils.editPlaylist(playlistFilename, lastFilename);
+         DownloadUtils.editPlaylist(null, playlistFilename, lastFilename);
 
          {
             LineNumberReader input = new LineNumberReader(new FileReader(playlistFilename));
@@ -166,7 +166,10 @@ public class TestDownloadUtils
          output.close();
 
          DownloadUtils.firstPass
-            ("vocal", (new File("tmp/playlists/")).getAbsolutePath(), (new File("tmp/smm/")).getAbsolutePath());
+            (null,
+             "vocal",
+             (new File("tmp/playlists/")).getAbsolutePath(),
+             (new File("tmp/smm/")).getAbsolutePath());
 
          // Check that the played files are deleted, but the others are not.
          checkExists("tmp/playlists/vocal/artist_1/file_4.mp3", false);
@@ -250,11 +253,11 @@ public class TestDownloadUtils
          if (startServer)
             server = new ProcessBuilder("smm-server_driver", "smm-server.config", "1").start();
 
-         newSongs = DownloadUtils.getNewSongsList(serverIP, category, 5, 0);
+         newSongs = DownloadUtils.getNewSongsList(null, serverIP, category, 5, 0);
 
          check(newSongs, expectedSongs);
 
-         DownloadUtils.getSongs(serverIP, newSongs, category, "tmp/playlists", null);
+         DownloadUtils.getSongs(null, serverIP, newSongs, category, "tmp/playlists", null);
 
          // Check that the new song files and meta files are present
          checkExists("tmp/playlists/vocal/artist_1/album_1/1 - song_1.mp3", true);
@@ -279,7 +282,6 @@ public class TestDownloadUtils
          }
       }
       catch (IOException e) {assertTrue(e.getMessage(), false);}
-      catch (URISyntaxException e) {assertTrue(e.getMessage(), false);}
       finally
       {
          if (null != server) server.destroy();
@@ -308,7 +310,7 @@ public class TestDownloadUtils
          if (startServer)
             server = new ProcessBuilder("smm-server_driver", "smm-server.config", "1").start();
 
-         DownloadUtils.sendNotes(serverIP, "vocal", smmDir.getAbsolutePath());
+         DownloadUtils.sendNotes(null, serverIP, "vocal", smmDir.getAbsolutePath());
 
          checkExists(serverNotesFilename, true);
          {

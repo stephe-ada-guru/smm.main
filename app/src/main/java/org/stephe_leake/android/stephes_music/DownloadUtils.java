@@ -19,6 +19,7 @@
 package org.stephe_leake.android.stephes_music;
 
 import android.media.MediaScannerConnection;
+import android.content.Context;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -34,6 +35,10 @@ import java.net.URISyntaxException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.text.SimpleDateFormat;
+import java.io.PrintWriter;
+import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.FileUtils;
@@ -57,6 +62,46 @@ public class DownloadUtils
    private static List<String> mentionedFiles;
    private static OkHttpClient httpClient = null;
 
+   public static String logFileName()
+   {
+      return utils.smmDirectory + "/download_log.text";
+   }
+
+   private static void log(Context context, String msg)
+   {
+      final SimpleDateFormat fmt         = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss : ", Locale.US);
+      final long             time        = System.currentTimeMillis(); // local time zone
+      final String           timeStamp   = fmt.format(time);
+      final String           logFileName = DownloadUtils.logFileName();
+
+      {
+         File logFile = new File(logFileName);
+         if (logFile.exists() && time - logFile.lastModified() > 4 * utils.millisPerHour)
+         {
+            final String oldLogFileName = utils.smmDirectory + "/download_log_1.text";
+            File oldLogFile = new File(oldLogFileName);
+
+            if (oldLogFile.exists()) oldLogFile.delete();
+
+            logFile.renameTo(oldLogFile);
+         }
+      }
+
+      try
+      {
+         PrintWriter writer = new PrintWriter(new FileWriter(logFileName, true)); // append
+
+         writer.println(timeStamp + msg);
+         writer.close();
+      }
+      catch (java.io.IOException e)
+      {
+         if (null != context)
+            // null in unit tests
+            utils.errorLog(context, "can't write log to " + logFileName(), e);
+      }
+   }
+
    private static List<String> readPlaylist(String playlistFilename, boolean lowercase)
       throws IOException
    {
@@ -75,15 +120,16 @@ public class DownloadUtils
       return result;
    }
 
-   public static void editPlaylist(String playlistFilename, String lastFilename)
+   public static void editPlaylist(Context context, String playlistFilename, String lastFilename)
       throws IOException
    // Delete lines from start of playlist file up to and including
    // line in last file. Delete last file.
+   //
+   // throws IOException if can't read or write playlistFilename
    {
-      List<String> lines = readPlaylist(playlistFilename, false);
-
       try
       {
+         List<String>     lines      = readPlaylist(playlistFilename, false);
          FileWriter       output     = new FileWriter(playlistFilename);
          LineNumberReader input      = new LineNumberReader(new FileReader(lastFilename));
          String           lastPlayed = input.readLine();
@@ -94,17 +140,16 @@ public class DownloadUtils
          if (null == lastPlayed)
          {
             // last file is empty; nothing to delete
-            output.close();
-            new File(lastFilename).delete();
-            return;
          }
-
-         for (String line : lines)
+         else
          {
-            if (found)
-               output.write(line + "\n");
-            else
-               found = line.equals(lastPlayed);
+            for (String line : lines)
+            {
+               if (found)
+                  output.write(line + "\n");
+               else
+                  found = line.equals(lastPlayed);
+            }
          }
          output.close();
 
@@ -134,10 +179,11 @@ public class DownloadUtils
          return "";
    }
 
-   private static void processDirEntry(File entry)
-      throws IOException
+   private static int processDirEntry(Context context, File entry)
+   // Returns count of files deleted
    {
-      int entryCount = 0;
+      int entryCount  = 0;
+      int deleteCount = 0;
 
       if (entry.isDirectory())
       {
@@ -145,12 +191,12 @@ public class DownloadUtils
 
          // Delete music files not in playlist
          for (File subDir : FileUtils.listFiles(entry, new SuffixFileFilter(".mp3"), FalseFileFilter.FALSE))
-            processDirEntry(subDir);
+            deleteCount += processDirEntry(context, subDir);
 
          // Recurse into directories
         for (File subDir : FileUtils.listFilesAndDirs(entry, FalseFileFilter.FALSE, TrueFileFilter.TRUE))
            if (subDir != entry)
-              processDirEntry(subDir);
+              deleteCount += processDirEntry(context, subDir);
 
          // Delete dir if there's no music or subdirectories left
          //
@@ -159,27 +205,50 @@ public class DownloadUtils
             if (subDir != entry)
                entryCount++;
 
-         if (entryCount > 0) return;
-
-         // Count music files
-         for (File subDir : FileUtils.listFiles(entry, new SuffixFileFilter(".mp3"), FalseFileFilter.FALSE))
-            entryCount++;
+         if (0 == entryCount)
+         {
+            // Count music files
+            for (File subDir : FileUtils.listFiles(entry, new SuffixFileFilter(".mp3"), FalseFileFilter.FALSE))
+               entryCount++;
+         }
 
          if (0 == entryCount)
-            FileUtils.deleteDirectory(entry);
+            try
+            {
+               FileUtils.deleteDirectory(entry);
+            }
+            catch (IOException e)
+            {
+               log(context, "cannot delete directory '" + entry.getAbsolutePath() + "'");
+            }
       }
       else if (entry.isFile())
       {
          final String name = relativeName(playlistDir, entry.getAbsolutePath()).toLowerCase();
 
          if (!mentionedFiles.contains(name))
+         {
             entry.delete();
+            deleteCount++;
+         }
       }
       // else special file; ignored
+
+      return deleteCount;
    }
 
-   public static void firstPass(String category, String playlistDir, String smmDir)
-      throws IOException
+   private static void ensureHttpClient()
+   {
+      if (null == httpClient)
+      {
+         httpClient = new OkHttpClient.Builder()
+            .retryOnConnectionFailure(true)
+            .connectTimeout(5, TimeUnit.MINUTES) // don't have to handle retry at higher level
+            .build();
+      }
+   }
+
+   public static void firstPass(Context context, String category, String playlistDir, String smmDir)
    {
       //  Delete lines in category.m3u that are before song in
       //  SMM_Dir/category.last. Delete files from Playlist_Dir/Category
@@ -195,42 +264,68 @@ public class DownloadUtils
 
       DownloadUtils.playlistDir = playlistDir;
 
-      // getPath() returns empty string if file does not exist
-      if ("" != FilenameUtils.getPath(playlistFilename))
-         if ("" != FilenameUtils.getPath(lastFilename))
-            editPlaylist(playlistFilename, lastFilename);
-
-      mentionedFiles = readPlaylist(playlistFilename, true);
-
-      //  Search playlist directory, delete files not in playlist
+      try
       {
-         File targetDir = new File(playlistDir, category);
+         // getPath() returns empty string if file does not exist
+         if ("" != FilenameUtils.getPath(playlistFilename))
+            if ("" != FilenameUtils.getPath(lastFilename))
+               editPlaylist(context, playlistFilename, lastFilename);
 
-         for (File subDir : FileUtils.listFilesAndDirs(targetDir, FalseFileFilter.FALSE, TrueFileFilter.TRUE))
-            if (subDir != targetDir)
-                processDirEntry(subDir);
+         mentionedFiles = readPlaylist(playlistFilename, true);
+
+         //  Search playlist directory, delete files not in playlist
+         {
+            File targetDir   = new File(playlistDir, category);
+            int  deleteCount = 0;
+
+            for (File subDir : FileUtils.listFilesAndDirs(targetDir, FalseFileFilter.FALSE, TrueFileFilter.TRUE))
+               if (subDir != targetDir)
+                  deleteCount += processDirEntry(context, subDir);
+
+            log(context, category + " playlist cleaned: " + deleteCount + " files deleted");
+         }
+      }
+      catch (IOException e)
+      {
+         // from editPlaylist (which calls readPlaylist)
+         log(context, "cannot read/write playlist '" + playlistFilename + "'");
       }
    }
 
-   public static String[] getNewSongsList(String serverIP, String category, int count, int randomSeed)
-      throws IOException
+   public static String[] getNewSongsList(Context context, String serverIP, String category, int count, int randomSeed)
    // randomSeed = -1 means randomize; other values used in unit tests.
    {
       final String url = "http://" + serverIP + ":8080/download?category=" + category +
          "&count=" + Integer.toString(count) + (-1 == randomSeed ? "" : "&seed=" + Integer.toString(randomSeed));
 
       Request request = new Request.Builder().url(url).build();
+      String[] result = {};
 
-      if (null == httpClient) httpClient = new OkHttpClient();
+      ensureHttpClient();
 
       try (Response response = httpClient.newCall(request).execute())
       {
-         return response.body().string().split("\r\n");
+         try
+         {
+            result = response.body().string().split("\r\n");
+         }
+         catch (IOException e)
+         {
+            // From response.body()
+            log(context, "getNewSongsList request has no body: " + e.toString());
+         }
       }
+      catch (IOException e)
+      {
+         // From httpClient.newCall; connection failed after retry
+         log(context, "getNewSongsList '" + url + "': http request failed: " + e.toString());
+      }
+
+      log(context, "getNewSongsList: " + Integer.toString(result.length) + " songs");
+      return result;
    }
 
-   private static void getFile(String serverIP, String resource, File fileName)
-      throws IOException, URISyntaxException
+   private static void getFile(Context context, String serverIP, String resource, File fileName)
    {
       // Get 'resource' from 'serverIP', store in 'fileName'.
       // 'resource' may have only path and file name.
@@ -248,14 +343,23 @@ public class DownloadUtils
       for (String segment : pathSegments)
          url.addPathSegment(segment);
 
-      fileName.createNewFile();
-
-      if (null == httpClient) httpClient = new OkHttpClient();
+      try
+      {
+         fileName.createNewFile();
+      }
+      catch (IOException e)
+      {
+         log(context, "cannot create file " + fileName.getAbsolutePath());
+      }
 
       try (Response response = httpClient.newCall(new Request.Builder().url(url.build()).build()).execute())
       {
          if (!response.isSuccessful())
-            throw new IOException(response.code() + " " + response.message() + " " + url.toString());
+         {
+            log(context, "getFile '" + url.toString() +"' request failed: " +
+                response.code() + " " + response.message());
+            return;
+         }
 
          BufferedInputStream in            = new BufferedInputStream(response.body().byteStream());
          FileOutputStream    out           = new FileOutputStream(fileName);
@@ -274,29 +378,61 @@ public class DownloadUtils
          in.close();
 
          if (downloaded != contentLength)
-            throw new IOException("downloaded " + downloaded + ", expecting " + count);
+            log(context, "downloading '" + fileName + "'; got " +
+                downloaded + "bytes, expecting " + contentLength);
+         else
+            log(context, "downloaded '" + fileName + "'");
       }
-      catch (NumberFormatException e) {} // from parseInt
+      catch (IOException e)
+      {
+         // From httpClient.newCall; connection failed after retry
+         log(context, "getFile '" + fileName.getAbsolutePath() + "': http request failed: " + e.toString());
+      }
+      catch (NumberFormatException e)
+      {
+         // from parseInt; assume it can't fail
+         log(context, "Programmer Error: parseInt failed");
+      }
    }
 
-   public static String[] getMetaList(String serverIP, String resourcePath)
-      throws IOException
+   public static String[] getMetaList(Context context,
+                                      String  serverIP,
+                                      String  resourcePath)
    {
       final String  url     = "http://" + serverIP + ":8080/" + resourcePath + "meta";
       final Request request = new Request.Builder().url(url).build();
+      String[] result       = new String("").split("\r\n");
 
-      if (null == httpClient) httpClient = new OkHttpClient();
+      ensureHttpClient();
 
       try (Response response = httpClient.newCall(request).execute())
       {
-         return response.body().string().split("\r\n");
+         try
+         {
+            result = response.body().string().split("\r\n");
+         }
+         catch (IOException e)
+         {
+            // From response.body()
+            log(context, "getMetaList request has no body: " + e.toString());
+         }
       }
+      catch (IOException e)
+      {
+         // From httpClient.newCall; connection failed after retry
+         log(context, "getMetaList '" + resourcePath + "': http request failed: " + e.toString());
+      }
+
+      return result;
    }
 
-   private static void getMeta(String serverIP, String resourcePath, File destDir, MediaScannerConnection mediaScanner)
-      throws IOException, URISyntaxException
+   private static void getMeta(Context                context,
+                               String                 serverIP,
+                               String                 resourcePath,
+                               File                   destDir,
+                               MediaScannerConnection mediaScanner)
    {
-      String[] files = getMetaList(serverIP, resourcePath);
+      String[] files = getMetaList(context, serverIP, resourcePath);
       File objFile;
       String ext;
       String mime = "";
@@ -309,7 +445,7 @@ public class DownloadUtils
       {
          objFile = new File(destDir, FilenameUtils.getName(file));
 
-         getFile(serverIP, file, objFile);
+         getFile(context, serverIP, file, objFile);
 
          ext = FilenameUtils.getExtension(objFile.toString());
 
@@ -323,51 +459,85 @@ public class DownloadUtils
       }
    }
 
-   public static void getSongs(String                 serverIP,
+   public static void getSongs(Context                context,
+                               String                 serverIP,
                                String[]               songs,
                                String                 category,
                                String                 root,
                                MediaScannerConnection mediaScanner)
-      throws IOException, URISyntaxException
    {
       // Get 'songs' from 'serverIP', store in 'root/<category>', add
       // to playlist 'root/<category>.m3u'. Also get album art, liner
       // notes for new directories. Add files to mediaScanner, if not
       // null.
-      final File songRoot       = new File(new File(root), category);
-      File       playlistFile   = new File(new File(root), category + ".m3u");
-      FileWriter playlistWriter = new FileWriter(playlistFile, true); // append
+      final File songRoot     = new File(new File(root), category);
+      File       playlistFile = new File(new File(root), category + ".m3u");
+      FileWriter playlistWriter;
+      int        count        = 0;
 
-      for (String song : songs)
+      try
       {
-         File destDir     = new File(songRoot, FilenameUtils.getPath(song));
-         File destination = new File(songRoot, song);
-         File songFile;
-
-         if (!destDir.exists())
-         {
-            destDir.mkdirs();
-            getMeta(serverIP, FilenameUtils.getPath(song), destDir, mediaScanner);
-         }
-
-         songFile = new File(destDir, FilenameUtils.getName(song));
-         getFile(serverIP, song, songFile);
-
-         if (null != mediaScanner)
-            mediaScanner.scanFile(songFile.getAbsolutePath(), "audio/mpeg");
-
-         playlistWriter.write(category + "/" + song + "\n");
+         playlistWriter = new FileWriter(playlistFile, true); // append
       }
-      playlistWriter.close();
+      catch (IOException e)
+      {
+         log(context, "cannot open '" + playlistFile.getAbsolutePath() + "' for append.");
+         return;
+      }
+
+      try
+      {
+         for (String song : songs)
+         {
+            File destDir     = new File(songRoot, FilenameUtils.getPath(song));
+            File destination = new File(songRoot, song);
+            File songFile;
+
+            if (!destDir.exists())
+            {
+               destDir.mkdirs();
+               getMeta(context, serverIP, FilenameUtils.getPath(song), destDir, mediaScanner);
+            }
+
+            songFile = new File(destDir, FilenameUtils.getName(song));
+            getFile(context, serverIP, song, songFile);
+
+            if (null != mediaScanner)
+               mediaScanner.scanFile(songFile.getAbsolutePath(), "audio/mpeg");
+
+            playlistWriter.write(category + "/" + song + "\n");
+
+            count++;
+         }
+      }
+      catch (IOException e)
+      {
+         // From playlistWriter.write
+         log(context, "cannot append to '" + playlistFile.getAbsolutePath() + "'; disk full?");
+      }
+      finally
+      {
+         try
+         {
+            playlistWriter.close();
+         }
+         catch (IOException e)
+         {
+            // probably from flush cache
+            log(context, "cannot close '" + playlistFile.getAbsolutePath() + "'; disk full?");
+         }
+      }
+
+      log(context, count + " " + category + " songs downloaded");
 
       // File objects hold the corresponding disk file locked; later
       // unit test cannot delete them.
    }
 
-   public static void sendNotes(String serverIP,
-                                String category,
-                                String smmDir)
-      throws IOException // On http put fail
+   public static void sendNotes(Context context,
+                                String  serverIP,
+                                String  category,
+                                String  smmDir)
    {
       File noteFile = new File(smmDir, category + ".note");
 
@@ -399,14 +569,23 @@ public class DownloadUtils
                .put(body)
                .build();
 
-            if (null == httpClient) httpClient = new OkHttpClient();
+            ensureHttpClient();
 
             try (Response response = httpClient.newCall(request).execute())
             {
                if (200 != response.code())
-                  throw new IOException("put notes failed " + response.message());
+                  log(context, "put notes failed " + response.message());
+               else
+                  log(context, category + " sendNotes");
+            }
+            catch (IOException e)
+            {
+               // From httpClient.newCall; connection failed after retry
+               log(context, category + " sendNotes http request failed: " + e.toString());
             }
          }
+
+         noteFile.delete();
       }
    }
 }

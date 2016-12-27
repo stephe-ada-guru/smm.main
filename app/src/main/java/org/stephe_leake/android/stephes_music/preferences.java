@@ -31,6 +31,8 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 
+import org.apache.commons.io.FilenameUtils;
+
 public class preferences extends android.preference.PreferenceActivity
    implements SharedPreferences.OnSharedPreferenceChangeListener
 {
@@ -81,7 +83,11 @@ public class preferences extends android.preference.PreferenceActivity
       MultiSelectListPreference autodownloadPref = (MultiSelectListPreference)
          findPreference(res.getString(R.string.auto_download_playlists_key));
 
-      final String[] playlists = playlistDir.list(playlistFilter);
+      String[] playlists = playlistDir.list(playlistFilter);
+
+      // strip ".m3u"
+      for (int i = 0; i < playlists.length; i++)
+         playlists[i] = FilenameUtils.getBaseName(playlists[i]);
 
       autodownloadPref.setEntries(playlists);
       autodownloadPref.setEntryValues(playlists);

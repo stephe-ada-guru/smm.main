@@ -46,12 +46,13 @@ import java.io.FileInputStream;
 
 public class MetaData
 {
-   public String title;
-   public String album;
-   public String artist;
-   public String duration; // service needs a string for sendStickyBroadcast, so don't bother with integer conversions
-   public Uri musicUri; // for sharing
-   public Uri linerUri;
+   public String  title;
+   public String  album;
+   public String  artist;
+   public String  duration;     // service needs a string for sendBroadcast, so don't bother with integer conversions
+   public Uri     musicUri;     // for sharing
+   public Uri     linerUri;
+   private String linerFileName;
 
    private String currentMusicFileName; // absolute
    private Bitmap albumArt;
@@ -59,6 +60,11 @@ public class MetaData
    public Boolean albumArtValid()
    {
       return albumArt != null;
+   }
+
+   public Boolean linerNotesExist()
+   {
+      return new File(linerFileName).exists();
    }
 
    public Bitmap getAlbumArt()
@@ -103,9 +109,10 @@ public class MetaData
          .path(sourceFile)
          .build();
 
+      linerFileName = musicFile.getParentFile().getAbsolutePath() + "/liner_notes.pdf";
       linerUri = new Uri.Builder()
          .scheme("file")
-         .path(musicFile.getParentFile().getAbsolutePath() + "/liner_notes.pdf")
+         .path(linerFileName)
          .build();
 
       try

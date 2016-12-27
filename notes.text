@@ -7,35 +7,32 @@ d:/Archive/Android/libs/commons-io-2.5/docs/index.html
 https://github.com/square/okhttp/wiki
 http://square.github.io/okhttp/3.x/okhttp/ javadoc
 
+d:/Music/remote_cache/smm-server_driver.log
+
 branches:
     org.stephe_leake.music_player.java - main, currently on phone
     o.s_l.m_p.work                     - available
 
-d:/Music/remote_cache/smm-server_driver.log
+
+tap notification fails to open log file
+    Music log intent wrong?
+        not clear why
 
-notification: share
-    for copy error URL
+    test in debug app
+
+reschedule on network fail
+    set 5 min timeout/retry in utils, but only retries once?
 
 notification: download progress
     % done on count of songs
-
-run unit test
-    d_sendNotesNominal
-    passes when server run separately, fails when not
-
+    need progress interface
+        with Android and unit test implementations
 
 scheduled download happening at 10:42 AM, 5:42 AM
+    add preference time picker
 
 
-swipe notification to dismiss
-    also disable lock screen art
-    -> quit
-
-cycle thru all avail albumart*.jpg
-
-don't need priority notification
-
-swipe notification to dismiss
+swipe controls notification to dismiss
     also disable lock screen art
     -> quit
 

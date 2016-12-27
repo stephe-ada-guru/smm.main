@@ -45,9 +45,14 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.FileUtils;
 import android.content.Context;
 import android.media.MediaScannerConnection;
+import android.app.PendingIntent;
+import android.net.Uri;
+import android.net.Uri.Builder;
 
 public class DownloadService extends IntentService
 {
+   private static PendingIntent showLogIntent;
+
    ////////// private methods (alphabetical order)
 
    private int countSongsRemaining(String category, File playlistFile)
@@ -89,7 +94,7 @@ public class DownloadService extends IntentService
       return songCount - startAt;
    }
 
-   private boolean download(String playlistAbsName, MediaScannerConnection mediaScanner)
+   private boolean download(Context context, String playlistAbsName, MediaScannerConnection mediaScanner)
    // Return true on success, false on error; error message in notification.
    {
       Resources         res             = getResources();
@@ -125,28 +130,36 @@ public class DownloadService extends IntentService
             String[] newSongs;
 
             if (playlistFile.exists())
-               DownloadUtils.firstPass(category, playlistDirFile.getAbsolutePath(), utils.smmDirectory);
+            {
+               DownloadUtils.firstPass(context, category, playlistDirFile.getAbsolutePath(), utils.smmDirectory);
+               DownloadUtils.sendNotes(context, serverIP, category, utils.smmDirectory);
+            }
             else
             {
                new File(playlistDirFile, category).mkdir();
                playlistFile.createNewFile();
             }
 
-            newSongs = DownloadUtils.getNewSongsList(serverIP, category, songCountMax - songsRemaining, -1);
-            DownloadUtils.getSongs(serverIP, newSongs, category, playlistDirFile.getAbsolutePath(), mediaScanner);
+            newSongs = DownloadUtils.getNewSongsList(context, serverIP, category, songCountMax - songsRemaining, -1);
+
+            DownloadUtils.getSongs
+               (context, serverIP, newSongs, category, playlistDirFile.getAbsolutePath(), mediaScanner);
+
+            if (utils.playlistAbsPath().equals(playlistAbsName))
+            {
+               // Restart playlist to show new song position, count
+               sendBroadcast
+                  (new Intent (utils.ACTION_COMMAND)
+                   .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PLAYLIST)
+                   .putExtra(utils.EXTRA_COMMAND_PLAYLIST, playlistAbsName)
+                   .putExtra(utils.EXTRA_COMMAND_STATE, PlayState.Paused.toInt()));
+            }
          }
       }
       catch (IOException e)
       {
          // something is screwed up
          notifyDownload("Download error", e.toString());
-         return false;
-      }
-      catch (URISyntaxException e)
-      {
-         // song resource can't be encoded in a URI; not likely!
-         notifyDownload("Download error: programmer error", "");
-         utils.errorLog(this, "download: ", e);
          return false;
       }
       return true;
@@ -160,7 +173,7 @@ public class DownloadService extends IntentService
             .setAutoCancel(false)
             .setContentTitle(title)
             .setStyle(new Notification.BigTextStyle().bigText(msg))
-            .setContentIntent(utils.activityIntent)
+            .setContentIntent(showLogIntent)
             .setSmallIcon(R.drawable.download_icon) // shown in status bar
             .build();
 
@@ -178,7 +191,6 @@ public class DownloadService extends IntentService
       {
          utils.errorLog(this, "notify build " + e.toString());
       }
-
    }
 
    ////////// service lifetime methods
@@ -191,8 +203,23 @@ public class DownloadService extends IntentService
    @Override
    public void onHandleIntent(Intent intent)
    {
-      final String intentPlaylist = intent.getStringExtra(utils.EXTRA_COMMAND_PLAYLIST);
-      MediaScannerConnection mediaScanner = new MediaScannerConnection(this, null);
+      final String           intentPlaylist = intent.getStringExtra(utils.EXTRA_COMMAND_PLAYLIST);
+      MediaScannerConnection mediaScanner   = new MediaScannerConnection(this, null);
+      String                 msg = "";
+      boolean                status         = true;
+
+      showLogIntent = PendingIntent.getActivity
+         (this.getApplicationContext(),
+          utils.showLogIntentId,
+          new Intent(Intent.ACTION_VIEW)
+          .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+          .setDataAndType
+          (new Uri.Builder()
+           .scheme("file")
+           .path(DownloadUtils.logFileName())
+           .build(),
+           "text/plain"),
+          0);
 
       try
       {
@@ -205,32 +232,30 @@ public class DownloadService extends IntentService
             Set<String>       playlists = prefs.getStringSet
                (res.getString(R.string.auto_download_playlists_key),
                 new LinkedHashSet<String>());
-            final String      msg       = "Downloading " + playlists.size() + " playlists ...";
-            boolean           status    = true;
+
+            msg = "Downloading " + playlists.size() + " playlists ...";
 
             notifyDownload(msg, "");
 
             for (String playlist : playlists)
             {
-               // FIXME: fail on first error
-               status = status && download(utils.playlistDirectory + "/" + playlist + ".m3u", mediaScanner);
+               status = status && download(this, utils.playlistDirectory + "/" + playlist + ".m3u", mediaScanner);
             }
-
-            if (status)
-               notifyDownload(msg + " done", "");
          }
          else
          {
-            final String msg = "Downloading " + FilenameUtils.getBaseName(intentPlaylist) + " ...";
+            msg = "Downloading " + FilenameUtils.getBaseName(intentPlaylist) + " ...";
 
             notifyDownload(msg, "");
 
-            if (download(intentPlaylist, mediaScanner))
-               notifyDownload(msg + " done", "");
+            status = download(this, intentPlaylist, mediaScanner);
          }
       }
       finally
       {
+         if (status)
+            notifyDownload(msg + "\ndone", "");
+
          mediaScanner.disconnect();
       }
    }

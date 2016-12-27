@@ -75,24 +75,6 @@ public class PlayService extends Service
    private static final int UNPAUSE        = 3;
    private static final int UPDATE_DISPLAY = 4;
 
-   private static final long millisPerDay = 24 * 60 * 60 * 1000;
-
-   enum PlayState
-   {
-     Idle,
-     //  Media_Player has no song Loaded
-
-     Playing,
-     //  Media_Player has song, is playing it
-
-     Paused,
-     //  Media_Player has song, is not playing it, at request of user
-
-     Paused_Transient
-     //  Media_Player has song, is not playing it, at request of
-     //  system (phone call, navigation announcement, etc).
-   };
-
    enum WhatChanged
    {
       Meta,    // song or playlist
@@ -101,12 +83,6 @@ public class PlayService extends Service
    };
 
    Context context;
-
-   final int pauseIntentId    = 1;
-   final int playIntentId     = 2;
-   final int prevIntentId     = 3;
-   final int nextIntentId     = 4;
-   final int activityIntentId = 5;
 
    PendingIntent nextIntent;
    PendingIntent pauseIntent;
@@ -120,10 +96,6 @@ public class PlayService extends Service
    ////////// state
 
    static private PlayState playing;
-
-   private String playlistBasename;
-   // Relative to playlistDirectory, without extension (suitable
-   // for user display). null if no playlist is current.
 
    java.util.LinkedList<String> playlist;
    int                          playlistPos;
@@ -142,12 +114,6 @@ public class PlayService extends Service
       mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
       mediaPlayer.setOnCompletionListener(completionListener);
       mediaPlayer.setOnErrorListener(errorListener);
-   }
-
-   private String playlistFullPath()
-   // return current playlist file abs path
-   {
-      return utils.playlistDirectory + "/" + playlistBasename + ".m3u";
    }
 
    private void next()
@@ -299,7 +265,7 @@ public class PlayService extends Service
             sendStickyBroadcast
                (new Intent (utils.META_CHANGED).putExtra
                 ("playlist",
-                 playlistBasename + " " + (playlistPos + 1) + " / " + playlist.size()));
+                 utils.playlistBasename + " " + (playlistPos + 1) + " / " + playlist.size()));
 
             MediaMetadata metadata = new MediaMetadata.Builder()
                .putString(MediaMetadata.METADATA_KEY_TITLE, utils.retriever.title)
@@ -450,8 +416,8 @@ public class PlayService extends Service
    {
       // Start playing playlist 'filename' (absolute path).
       //
-      // Lookup the current file for the playlist from
-      // SharedPreferences. If non-null, start at that file.
+      // Lookup the current song for the playlist from
+      // the .last file. If non-null, start at that song.
 
       final File playlistFile = new File(filename);
       if (!playlistFile.canRead())
@@ -478,23 +444,14 @@ public class PlayService extends Service
       String currentFile = null;
       int    pos = 0;
 
-      final String smmFileName = utils.smmDirectory + "/" + tmpPlaylistBaseName + ".last";
-
-      if (new File(smmFileName).exists())
-         try
-         {
-            BufferedReader reader = new BufferedReader(new FileReader(smmFileName));
-
-            currentFile = reader.readLine();
-            reader.close();
-         }
-         catch (IOException e) {}
-      else
+      try
       {
-         // We get here on a new install; smmDirectory preference not
-         // set correctly, or no songs played yet.
-         utils.infoLog(context, "set smmDirectory preference");
+         BufferedReader reader = new BufferedReader(new FileReader(utils.lastFileAbsPath(tmpPlaylistBaseName)));
+
+         currentFile = reader.readLine();
+         reader.close();
       }
+      catch (IOException e) {} // .last file deleted by DownloadUtils.firstPass
 
       if (BuildConfig.DEBUG) utils.debugLog("start file: " + currentFile);
 
@@ -513,7 +470,7 @@ public class PlayService extends Service
 
             if (line.length() > 0)
             {
-               // Sometimes smm screws up and leaves a blank line
+               // Sometimes DownloadUtils.firstPass screws up and leaves a blank line
 
                if (currentFile != null && line.equals(currentFile))
                {
@@ -537,7 +494,7 @@ public class PlayService extends Service
          }
 
          utils.playlistDirectory = playlistFile.getParent();
-         playlistBasename  = tmpPlaylistBaseName;
+         utils.playlistBasename  = tmpPlaylistBaseName;
          playlist          = tmpPlaylist;
          playlistPos       = startAt;
 
@@ -645,15 +602,16 @@ public class PlayService extends Service
       SharedPreferences storage = getSharedPreferences(utils.preferencesName, MODE_PRIVATE);
 
       utils.playlistDirectory = storage.getString(keyPlaylistDirectory, null);
-      playlistBasename  = storage.getString(keyPlaylistFilename, null);
+      utils.playlistBasename  = storage.getString(keyPlaylistFilename, null);
 
-      if (BuildConfig.DEBUG) utils.verboseLog("restoreState: " + utils.playlistDirectory + ", " + playlistBasename);
+      if (BuildConfig.DEBUG)
+         utils.verboseLog("restoreState: " + utils.playlistDirectory + ", " + utils.playlistBasename);
 
-      if (utils.playlistDirectory != null && playlistBasename != null)
+      if (utils.playlistDirectory != null && utils.playlistBasename != null)
       {
          try
          {
-            playList (utils.playlistDirectory + "/" + playlistBasename + ".m3u", PlayState.Paused);
+            playList (utils.playlistDirectory + "/" + utils.playlistBasename + ".m3u", PlayState.Paused);
          }
          catch (Fail e)
          {
@@ -678,10 +636,10 @@ public class PlayService extends Service
       Editor            editor  = storage.edit();
 
       editor.putString(keyPlaylistDirectory, utils.playlistDirectory);
-      editor.putString(keyPlaylistFilename, playlistBasename);
+      editor.putString(keyPlaylistFilename, utils.playlistBasename);
 
       editor.putInt
-         (playlistBasename + keyCurrentPos,
+         (utils.playlistBasename + keyCurrentPos,
           (playing == PlayState.Idle) ? 0 : mediaPlayer.getCurrentPosition());
 
       editor.commit();
@@ -692,7 +650,7 @@ public class PlayService extends Service
    private void setIdleNull()
    {
       playing           = PlayState.Idle;
-      playlistBasename  = null;
+      utils.playlistBasename  = null;
       playlist.clear();
       playlistPos       = -1;
    }
@@ -742,7 +700,7 @@ public class PlayService extends Service
    {
       if (playlistPos > -1)
       {
-         final String noteFileName = utils.smmDirectory + "/" + playlistBasename + ".note";
+         final String noteFileName = utils.smmDirectory + "/" + utils.playlistBasename + ".note";
 
          try
          {
@@ -788,12 +746,10 @@ public class PlayService extends Service
       // Record the current playing song in a file, for smm and
       // transfer to another device.
 
-      if (playlistBasename == null)
+      if (utils.playlistBasename == null)
          return;
 
-      final String smmFileName = utils.smmDirectory + "/" + playlistBasename + ".last";
-
-      File file = new File(smmFileName);
+      File file = new File(utils.lastFileAbsPath(utils.playlistBasename));
 
       if (!file.exists())
          try
@@ -802,7 +758,7 @@ public class PlayService extends Service
          }
          catch (IOException e)
          {
-            utils.errorLog(this, "can't create smm file: " + smmFileName, e);
+            utils.errorLog(this, "can't create smm file: " + utils.lastFileAbsPath(utils.playlistBasename), e);
          }
 
       if (file.exists())
@@ -829,45 +785,6 @@ public class PlayService extends Service
          {
             utils.errorLog(this, "writeSMMFile: ", e);
          }
-   }
-
-   private int countSongsRemaining(String category, File playlistFile)
-      throws IOException
-   {
-      // Duplicate the part of restoreState that gets playlistPos
-      final String smmFileName = utils.smmDirectory + "/" + category + ".last";
-
-      BufferedReader in        = new BufferedReader (new FileReader (playlistFile));
-      String         line      = in.readLine();
-      int            songCount = 0;
-      int            startAt   = 0;
-
-      String currentFile = null;
-
-      if (new File(smmFileName).exists())
-         try
-         {
-            BufferedReader reader = new BufferedReader(new FileReader(smmFileName));
-
-            currentFile = reader.readLine();
-            reader.close();
-         }
-         catch (IOException e) {}
-
-      while (line != null)
-      {
-         if (new File(utils.playlistDirectory, line).canRead())
-            {
-               if (currentFile != null && line.equals(currentFile))
-                  startAt = songCount;
-               songCount++;
-            }
-         line = in.readLine();
-      }
-
-      in.close();
-
-      return songCount - startAt;
    }
 
    ////////// nested classes
@@ -960,10 +877,13 @@ public class PlayService extends Service
 
                try
                {
+                  final PlayState newState = PlayState.toPlayState
+                     (intent.getIntExtra (utils.EXTRA_COMMAND_STATE, PlayState.Playing.toInt()));
+
                   // User will want to resume the current playlist at some point.
                   saveState();
 
-                  playList(intent.getStringExtra(utils.EXTRA_COMMAND_PLAYLIST), PlayState.Playing);
+                  playList(intent.getStringExtra(utils.EXTRA_COMMAND_PLAYLIST), newState);
                }
                catch (Fail e)
                {
@@ -1222,28 +1142,28 @@ public class PlayService extends Service
 
       utils.activityIntent = PendingIntent.getActivity
          (context.getApplicationContext(),
-          activityIntentId,
+          utils.activityIntentId,
           new Intent(context, activity.class),
           0);
 
       prevIntent = PendingIntent.getBroadcast
          (context.getApplicationContext(),
-          prevIntentId,
+          utils.prevIntentId,
           new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PREVIOUS), 0);
 
       nextIntent = PendingIntent.getBroadcast
          (context.getApplicationContext(),
-          nextIntentId,
+          utils.nextIntentId,
           new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_NEXT), 0);
 
       pauseIntent = PendingIntent.getBroadcast
          (context.getApplicationContext(),
-          pauseIntentId,
+          utils.pauseIntentId,
           new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PAUSE), 0);
 
       playIntent = PendingIntent.getBroadcast
          (context.getApplicationContext(),
-          playIntentId,
+          utils.playIntentId,
           new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PLAY), 0);
 
       createMediaPlayer();
@@ -1270,11 +1190,11 @@ public class PlayService extends Service
       {
          GregorianCalendar time = new GregorianCalendar(); // holds current time
          time.add(Calendar.DAY_OF_MONTH, 1); // tomorrow
-         time.set(Calendar.HOUR_OF_DAY, 2);
-         time.set(Calendar.MINUTE, 30); // 2:30 AM
+         time.set(Calendar.HOUR_OF_DAY, 0);
+         time.set(Calendar.MINUTE, 30); // 12:30 AM
 
          downloadTimer = new Timer();
-         downloadTimer.scheduleAtFixedRate(downloadTimerTask, time.getTime(), millisPerDay);
+         downloadTimer.scheduleAtFixedRate(downloadTimerTask, time.getTime(), utils.millisPerDay);
       }
    }
 
@@ -1353,7 +1273,7 @@ public class PlayService extends Service
       writer.println("playing            : " + playing);
       writer.println("playlistDirectory  : " + utils.playlistDirectory);
       writer.println("smmDirectory       : " + utils.smmDirectory);
-      writer.println("playlistBasename   : " + playlistBasename);
+      writer.println("playlistBasename   : " + utils.playlistBasename);
       writer.println("playlist size      : " + playlist.size());
       writer.println("currentFile        : " + playlist.get(playlistPos));
       writer.println("playlistPos        : " + playlistPos);

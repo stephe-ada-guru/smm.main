@@ -34,6 +34,9 @@ import java.lang.RuntimeException;
 public class utils
 {
 
+   public static final long millisPerHour = 60 * 60 * 1000;
+   public static final long millisPerDay  = 24 * millisPerHour;
+
    public static final String preferencesName = "stephes_music";
 
    // Must be shorter than 23 chars
@@ -66,6 +69,8 @@ public class utils
       "org.stephe_leake.android.stephes_music.action.command_position";
    public static final String EXTRA_COMMAND_PLAYLIST =
       "org.stephe_leake.android.stephes_music.action.command_playlist";
+   public static final String EXTRA_COMMAND_STATE =
+      "org.stephe_leake.android.stephes_music.action.command_state";
 
    // values for extras; alphabetical. We'd like to use an enum here,
    // but we can't make that parcelable for intent extras.
@@ -94,6 +99,13 @@ public class utils
    public static final int RESULT_PLAYLIST_DIRECTORY = Activity.RESULT_FIRST_USER + 2;
    public static final int RESULT_SMM_DIRECTORY      = Activity.RESULT_FIRST_USER + 3;
 
+   public static final int pauseIntentId    = 1;
+   public static final int playIntentId     = 2;
+   public static final int prevIntentId     = 3;
+   public static final int nextIntentId     = 4;
+   public static final int activityIntentId = 5;
+   public static final int showLogIntentId  = 6;
+
    ////////// Shared objects
 
    public static MetaData retriever;
@@ -105,12 +117,28 @@ public class utils
    //
    // Set from playlist file passed to playList, or by preferences
 
+   public static String playlistBasename;
+   // Relative to playlistDirectory, without extension (suitable
+   // for user display). null if no playlist is current.
+
+   public static String playlistAbsPath()
+   // return current playlist file abs path
+   {
+      return utils.playlistDirectory + "/" + utils.playlistBasename + ".m3u";
+   }
+
    public static String smmDirectory;
    // Absolute path to directory containing files used to interface
    // with Stephe's Music manager (smm); contains .last files, notes
    // files.
    //
    // Set by preferences.
+
+   public static String lastFileAbsPath(String basename)
+   {
+      // Return absolute path of file containing last song played
+      return utils.smmDirectory + "/" + basename + ".last";
+   }
 
    public static PendingIntent activityIntent;
    // For notifications.
