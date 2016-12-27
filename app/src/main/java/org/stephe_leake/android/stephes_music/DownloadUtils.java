@@ -325,11 +325,13 @@ public class DownloadUtils
       return result;
    }
 
-   private static void getFile(Context context, String serverIP, String resource, File fileName)
+   private static Boolean getFile(Context context, String serverIP, String resource, File fileName)
    {
       // Get 'resource' from 'serverIP', store in 'fileName'.
       // 'resource' may have only path and file name.
       //
+      // Return true if successful, false for any errors (error messages in log).
+
       // We need to encode spaces but not path separators.
       // addPathSegment encodes both, so we split out the path
       // segments first.
@@ -350,6 +352,7 @@ public class DownloadUtils
       catch (IOException e)
       {
          log(context, "cannot create file " + fileName.getAbsolutePath());
+         return false;
       }
 
       try (Response response = httpClient.newCall(new Request.Builder().url(url.build()).build()).execute())
@@ -358,7 +361,7 @@ public class DownloadUtils
          {
             log(context, "getFile '" + url.toString() +"' request failed: " +
                 response.code() + " " + response.message());
-            return;
+            return false;
          }
 
          BufferedInputStream in            = new BufferedInputStream(response.body().byteStream());
@@ -378,21 +381,25 @@ public class DownloadUtils
          in.close();
 
          if (downloaded != contentLength)
-            log(context, "downloading '" + fileName + "'; got " +
+            log(context, "downloading '" + resource + "'; got " +
                 downloaded + "bytes, expecting " + contentLength);
          else
-            log(context, "downloaded '" + fileName + "'");
+            log(context, "downloaded '" + resource + "'");
       }
       catch (IOException e)
       {
          // From httpClient.newCall; connection failed after retry
-         log(context, "getFile '" + fileName.getAbsolutePath() + "': http request failed: " + e.toString());
+         log(context, "http request failed: getFile '" + resource + "': " + e.toString());
+         return false;
       }
       catch (NumberFormatException e)
       {
          // from parseInt; assume it can't fail
          log(context, "Programmer Error: parseInt failed");
+         return false;
       }
+
+      return true;
    }
 
    public static String[] getMetaList(Context context,
@@ -414,13 +421,13 @@ public class DownloadUtils
          catch (IOException e)
          {
             // From response.body()
-            log(context, "getMetaList request has no body: " + e.toString());
+            log(context, "failed: getMetaList request has no body: " + e.toString());
          }
       }
       catch (IOException e)
       {
          // From httpClient.newCall; connection failed after retry
-         log(context, "getMetaList '" + resourcePath + "': http request failed: " + e.toString());
+         log(context, "http request failed: getMetaList '" + resourcePath + "': " + e.toString());
       }
 
       return result;
@@ -500,14 +507,15 @@ public class DownloadUtils
             }
 
             songFile = new File(destDir, FilenameUtils.getName(song));
-            getFile(context, serverIP, song, songFile);
+            if (getFile(context, serverIP, song, songFile))
+            {
+               if (null != mediaScanner)
+                  mediaScanner.scanFile(songFile.getAbsolutePath(), "audio/mpeg");
 
-            if (null != mediaScanner)
-               mediaScanner.scanFile(songFile.getAbsolutePath(), "audio/mpeg");
+               playlistWriter.write(category + "/" + song + "\n");
 
-            playlistWriter.write(category + "/" + song + "\n");
-
-            count++;
+               count++;
+            }
          }
       }
       catch (IOException e)
