@@ -64,7 +64,7 @@ public class DownloadUtils
 
    public static String logFileName()
    {
-      return utils.smmDirectory + "/download_log.text";
+      return utils.smmDirectory + "/download_log.txt";
    }
 
    private static void log(Context context, String msg)
@@ -130,8 +130,8 @@ public class DownloadUtils
       try
       {
          List<String>     lines      = readPlaylist(playlistFilename, false);
-         FileWriter       output     = new FileWriter(playlistFilename);
          LineNumberReader input      = new LineNumberReader(new FileReader(lastFilename));
+         FileWriter       output     = new FileWriter(playlistFilename); // Erases file
          String           lastPlayed = input.readLine();
          boolean          found      = false;
 
@@ -156,7 +156,7 @@ public class DownloadUtils
          new File(lastFilename).delete();
       }
       catch (FileNotFoundException e)
-      { // last file not found; same as empty; do nothing
+      { // from 'FileReader(lastFilename)'; file not found; same as empty; do nothing
       }
    }
 

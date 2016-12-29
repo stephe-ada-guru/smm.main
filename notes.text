@@ -14,12 +14,6 @@ branches:
     o.s_l.m_p.work                     - available
 
 
-tap notification fails to open log file
-    Music log intent wrong?
-        not clear why
-
-    test in debug app
-
 reschedule on network fail
     set 5 min timeout/retry in utils, but only retries once?
 

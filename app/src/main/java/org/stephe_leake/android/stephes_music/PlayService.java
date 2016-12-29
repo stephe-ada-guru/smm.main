@@ -489,7 +489,7 @@ public class PlayService extends Service
 
          if (0 == tmpPlaylist.size())
          {
-            utils.debugLog("no songs found in playlist file " + filename);
+            utils.infoLog(context, "no songs found in playlist file " + tmpPlaylistBaseName);
             throw new Fail();
          }
 

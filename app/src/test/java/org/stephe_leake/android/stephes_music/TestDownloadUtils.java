@@ -132,7 +132,42 @@ public class TestDownloadUtils
    }
 
    @Test
-   public void b_firstPassNominal()
+   public void b_editPlaylistNoLast()
+   {
+      //  Create the test environment; a playlist, no .last
+      String     playlistFilename = "tmp/playlists/vocal.m3u";
+      String     lastFilename     = "tmp/smm/vocal.last";
+      FileWriter output;
+
+      cleanup(true);
+
+      try
+      {
+         output = new FileWriter(playlistFilename);
+
+         output.write("vocal/artist_1/file_4.mp3" + "\n");
+         output.write("vocal/artist_1/file_5.mp3" + "\n");
+         output.write("vocal/artist_2/file_6.mp3" + "\n");
+         output.close();
+
+         assertTrue("mkdir smm", new File("tmp/smm/").mkdir());
+
+         DownloadUtils.editPlaylist(null, playlistFilename, lastFilename);
+
+         {
+            LineNumberReader input = new LineNumberReader(new FileReader(playlistFilename));
+
+            assertTrue(input.readLine().equals("vocal/artist_1/file_4.mp3"));
+            assertTrue(input.readLine().equals("vocal/artist_1/file_5.mp3"));
+            assertTrue(input.readLine().equals("vocal/artist_2/file_6.mp3"));
+            assertTrue(input.readLine() == null);
+         }
+      }
+      catch (java.io.IOException e){assertTrue(e.toString(), false);}
+   }
+
+   @Test
+   public void c_firstPassNominal()
    {
       // Translated from smm test_first_pass_with_last.adb Nominal
 
@@ -193,7 +228,7 @@ public class TestDownloadUtils
    }
 
    @Test
-   public void c_getNewSongsNominal()
+   public void d_getNewSongsNominal()
    {
       // Translated from smm test_server.adb Set_Up_Case, Test_Playlist, Test_Meta, Test_Get_File
       final String dbFilename       = "tmp/smm.db";
@@ -289,7 +324,7 @@ public class TestDownloadUtils
    }
 
    @Test
-   public void d_sendNotesNominal()
+   public void e_sendNotesNominal()
    {
       final String localNotesFilename  = "tmp/smm/vocal.note";
       final String serverNotesFilename = "tmp/source/remote_cache/vocal.note";

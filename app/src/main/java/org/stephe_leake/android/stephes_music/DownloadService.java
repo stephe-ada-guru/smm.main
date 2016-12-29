@@ -208,17 +208,21 @@ public class DownloadService extends IntentService
       String                 msg = "";
       boolean                status         = true;
 
+      // Ghost Commander TextViewer works here with .txt extension,
+      // Jota+ doesn't work with either extension
       showLogIntent = PendingIntent.getActivity
          (this.getApplicationContext(),
           utils.showLogIntentId,
-          new Intent(Intent.ACTION_VIEW)
-          .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-          .setDataAndType
-          (new Uri.Builder()
-           .scheme("file")
-           .path(DownloadUtils.logFileName())
-           .build(),
-           "text/plain"),
+          Intent.createChooser
+          (new Intent(Intent.ACTION_VIEW)
+           .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+           .setDataAndType
+           (new Uri.Builder()
+            .scheme("file")
+            .path(DownloadUtils.logFileName())
+            .build(),
+            "text/plain"),
+           "View log via ..."),
           0);
 
       try
