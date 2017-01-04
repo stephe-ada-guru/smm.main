@@ -2,7 +2,7 @@
 //
 //  Provides User Interface to Stephe's Music Player.
 //
-//  Copyright (C) 2011 - 2013, 2015 - 2016 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2011 - 2013, 2015 - 2017 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -53,13 +53,15 @@ import java.io.File;
 import java.lang.Class;
 import java.lang.Float;
 import java.lang.Integer;
+import android.net.Uri;
+import android.net.Uri.Builder;
 
 public class activity extends android.app.Activity
 {
    // constants
    private static final int maxProgress = 1000;
 
-   private static final int MENU_DUMP_LOG              = 0;
+   private static final int MENU_DUMP_DEBUG_LOG        = 0;
    private static final int MENU_PREFERENCES           = 1;
    private static final int MENU_QUIT                  = 2;
    private static final int MENU_RESET_PLAYLIST        = 3;
@@ -69,6 +71,7 @@ public class activity extends android.app.Activity
    private static final int MENU_UPDATE_PLAYLIST       = 7;
    private static final int MENU_DOWNLOAD_NEW_PLAYLIST = 8;
    private static final int MENU_JUMP_TO_SONG          = 9;
+   private static final int MENU_SHOW_DOWNLOAD_LOG     = 10;
 
    private static final int RESULT_PREFERENCES = 1;
 
@@ -264,6 +267,18 @@ public class activity extends android.app.Activity
 
       final Intent intent = getIntent();
 
+      utils.showLogIntent = Intent.createChooser
+         (new Intent(Intent.ACTION_VIEW)
+          .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+          .setDataAndType
+          (new Uri.Builder()
+           .scheme("file")
+           .authority("")
+           .path(DownloadUtils.logFileName())
+           .build(),
+           "text/plain"),
+          "Show download log via");
+
       try
       {
          super.onCreate(savedInstanceState);
@@ -430,10 +445,11 @@ public class activity extends android.app.Activity
       menu.add(0, MENU_COPY, 0, R.string.menu_copy);
       menu.add(0, MENU_RESET_PLAYLIST, 0, R.string.menu_reset_playlist);
       menu.add(0, MENU_UPDATE_PLAYLIST, 0, R.string.menu_update_playlist);
+      menu.add(0, MENU_SHOW_DOWNLOAD_LOG, 0, R.string.menu_show_download_log);
       menu.add(0, MENU_JUMP_TO_SONG, 0, R.string.menu_jump_to_song);
       menu.add(0, MENU_PREFERENCES, 0, R.string.menu_preferences);
       menu.add(0, MENU_DOWNLOAD_NEW_PLAYLIST, 0, R.string.menu_download_new_playlist);
-      menu.add(0, MENU_DUMP_LOG, 0, R.string.menu_dump_log);
+      menu.add(0, MENU_DUMP_DEBUG_LOG, 0, R.string.menu_dump_log);
       return true; // display menu
    }
 
@@ -464,7 +480,7 @@ public class activity extends android.app.Activity
          finish();
          break;
 
-      case MENU_DUMP_LOG:
+      case MENU_DUMP_DEBUG_LOG:
          sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_DUMP_LOG));
          break;
 
@@ -514,6 +530,10 @@ public class activity extends android.app.Activity
                diag.setArguments(args);
                diag.show(getFragmentManager(), "enter song to jump to");
          }
+         break;
+
+      case MENU_SHOW_DOWNLOAD_LOG:
+         startActivity(utils.showLogIntent);
          break;
 
       case MENU_PREFERENCES:

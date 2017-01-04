@@ -2,7 +2,7 @@
 //
 //  Provides background download from smm server.
 //
-//  Copyright (C) 2016 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2016, 2017 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -51,7 +51,7 @@ import android.net.Uri.Builder;
 
 public class DownloadService extends IntentService
 {
-   private static PendingIntent showLogIntent;
+   private static PendingIntent showLogPendingIntent;
 
    ////////// private methods (alphabetical order)
 
@@ -155,6 +155,8 @@ public class DownloadService extends IntentService
                    .putExtra(utils.EXTRA_COMMAND_STATE, PlayState.Paused.toInt()));
             }
          }
+         else
+            DownloadUtils.log(context, DownloadUtils.LogLevel.Info, category + ": no update needed");
       }
       catch (IOException e)
       {
@@ -173,7 +175,7 @@ public class DownloadService extends IntentService
             .setAutoCancel(false)
             .setContentTitle(title)
             .setStyle(new Notification.BigTextStyle().bigText(msg))
-            .setContentIntent(showLogIntent)
+            .setContentIntent(showLogPendingIntent)
             .setSmallIcon(R.drawable.download_icon) // shown in status bar
             .build();
 
@@ -208,21 +210,10 @@ public class DownloadService extends IntentService
       String                 msg = "";
       boolean                status         = true;
 
-      // Ghost Commander TextViewer works here with .txt extension,
-      // Jota+ doesn't work with either extension
-      showLogIntent = PendingIntent.getActivity
+      showLogPendingIntent = PendingIntent.getActivity
          (this.getApplicationContext(),
           utils.showLogIntentId,
-          Intent.createChooser
-          (new Intent(Intent.ACTION_VIEW)
-           .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-           .setDataAndType
-           (new Uri.Builder()
-            .scheme("file")
-            .path(DownloadUtils.logFileName())
-            .build(),
-            "text/plain"),
-           "View log via ..."),
+          utils.showLogIntent,
           0);
 
       try

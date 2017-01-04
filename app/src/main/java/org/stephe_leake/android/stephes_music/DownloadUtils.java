@@ -2,7 +2,7 @@
 //
 //  Utilities for downloading from smm_server
 //
-//  Copyright (C) 2016 Stephen Leake. All Rights Reserved.
+//  Copyright (C) 2016, 2017 Stephen Leake. All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -58,27 +58,46 @@ public class DownloadUtils
 {
    private static final int BUFFER_SIZE = 8 * 1024;
 
+   public enum LogLevel
+   {
+      Info,
+      Error;
+   }
+
    private static String       playlistDir;
    private static List<String> mentionedFiles;
    private static OkHttpClient httpClient = null;
 
+   final private static String logFileExt = ".txt";
    public static String logFileName()
    {
-      return utils.smmDirectory + "/download_log.txt";
+      return utils.smmDirectory + "/download_log" + logFileExt;
    }
 
-   private static void log(Context context, String msg)
+   public static void log(Context context, LogLevel level, String msg)
    {
       final SimpleDateFormat fmt         = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss : ", Locale.US);
       final long             time        = System.currentTimeMillis(); // local time zone
       final String           timeStamp   = fmt.format(time);
       final String           logFileName = DownloadUtils.logFileName();
+      String                 levelImg    = "";
+
+      switch (level)
+      {
+      case Info:
+         levelImg = "";
+         break;
+
+      case Error:
+         levelImg = "ERROR: ";
+         break;
+      }
 
       {
          File logFile = new File(logFileName);
          if (logFile.exists() && time - logFile.lastModified() > 4 * utils.millisPerHour)
          {
-            final String oldLogFileName = utils.smmDirectory + "/download_log_1.text";
+            final String oldLogFileName = utils.smmDirectory + "/download_log_1" + logFileExt;
             File oldLogFile = new File(oldLogFileName);
 
             if (oldLogFile.exists()) oldLogFile.delete();
@@ -91,7 +110,7 @@ public class DownloadUtils
       {
          PrintWriter writer = new PrintWriter(new FileWriter(logFileName, true)); // append
 
-         writer.println(timeStamp + msg);
+         writer.println(timeStamp + levelImg + msg);
          writer.close();
       }
       catch (java.io.IOException e)
@@ -219,7 +238,7 @@ public class DownloadUtils
             }
             catch (IOException e)
             {
-               log(context, "cannot delete directory '" + entry.getAbsolutePath() + "'");
+               log(context, LogLevel.Error, "cannot delete directory '" + entry.getAbsolutePath() + "'");
             }
       }
       else if (entry.isFile())
@@ -282,13 +301,13 @@ public class DownloadUtils
                if (subDir != targetDir)
                   deleteCount += processDirEntry(context, subDir);
 
-            log(context, category + " playlist cleaned: " + deleteCount + " files deleted");
+            log(context, LogLevel.Info, category + " playlist cleaned: " + deleteCount + " files deleted");
          }
       }
       catch (IOException e)
       {
          // from editPlaylist (which calls readPlaylist)
-         log(context, "cannot read/write playlist '" + playlistFilename + "'");
+         log(context, LogLevel.Error, "cannot read/write playlist '" + playlistFilename + "'");
       }
    }
 
@@ -312,16 +331,16 @@ public class DownloadUtils
          catch (IOException e)
          {
             // From response.body()
-            log(context, "getNewSongsList request has no body: " + e.toString());
+            log(context, LogLevel.Error, "getNewSongsList request has no body: " + e.toString());
          }
       }
       catch (IOException e)
       {
          // From httpClient.newCall; connection failed after retry
-         log(context, "getNewSongsList '" + url + "': http request failed: " + e.toString());
+         log(context, LogLevel.Error, "getNewSongsList '" + url + "': http request failed: " + e.toString());
       }
 
-      log(context, "getNewSongsList: " + Integer.toString(result.length) + " songs");
+      log(context, LogLevel.Info, "getNewSongsList: " + Integer.toString(result.length) + " songs");
       return result;
    }
 
@@ -351,7 +370,7 @@ public class DownloadUtils
       }
       catch (IOException e)
       {
-         log(context, "cannot create file " + fileName.getAbsolutePath());
+         log(context, LogLevel.Error, "cannot create file " + fileName.getAbsolutePath());
          return false;
       }
 
@@ -359,7 +378,7 @@ public class DownloadUtils
       {
          if (!response.isSuccessful())
          {
-            log(context, "getFile '" + url.toString() +"' request failed: " +
+            log(context, LogLevel.Error, "getFile '" + url.toString() +"' request failed: " +
                 response.code() + " " + response.message());
             return false;
          }
@@ -381,21 +400,21 @@ public class DownloadUtils
          in.close();
 
          if (downloaded != contentLength)
-            log(context, "downloading '" + resource + "'; got " +
+            log(context, LogLevel.Error, "downloading '" + resource + "'; got " +
                 downloaded + "bytes, expecting " + contentLength);
          else
-            log(context, "downloaded '" + resource + "'");
+            log(context, LogLevel.Info, "downloaded '" + resource + "'");
       }
       catch (IOException e)
       {
          // From httpClient.newCall; connection failed after retry
-         log(context, "http request failed: getFile '" + resource + "': " + e.toString());
+         log(context, LogLevel.Error, "http request failed: getFile '" + resource + "': " + e.toString());
          return false;
       }
       catch (NumberFormatException e)
       {
          // from parseInt; assume it can't fail
-         log(context, "Programmer Error: parseInt failed");
+         log(context, LogLevel.Error, "Programmer Error: parseInt failed");
          return false;
       }
 
@@ -421,13 +440,13 @@ public class DownloadUtils
          catch (IOException e)
          {
             // From response.body()
-            log(context, "failed: getMetaList request has no body: " + e.toString());
+            log(context, LogLevel.Error, "getMetaList request has no body: " + e.toString());
          }
       }
       catch (IOException e)
       {
          // From httpClient.newCall; connection failed after retry
-         log(context, "http request failed: getMetaList '" + resourcePath + "': " + e.toString());
+         log(context, LogLevel.Error, "http request failed: getMetaList '" + resourcePath + "': " + e.toString());
       }
 
       return result;
@@ -488,7 +507,7 @@ public class DownloadUtils
       }
       catch (IOException e)
       {
-         log(context, "cannot open '" + playlistFile.getAbsolutePath() + "' for append.");
+         log(context, LogLevel.Error, "cannot open '" + playlistFile.getAbsolutePath() + "' for append.");
          return;
       }
 
@@ -521,7 +540,7 @@ public class DownloadUtils
       catch (IOException e)
       {
          // From playlistWriter.write
-         log(context, "cannot append to '" + playlistFile.getAbsolutePath() + "'; disk full?");
+         log(context, LogLevel.Error, "cannot append to '" + playlistFile.getAbsolutePath() + "'; disk full?");
       }
       finally
       {
@@ -532,11 +551,11 @@ public class DownloadUtils
          catch (IOException e)
          {
             // probably from flush cache
-            log(context, "cannot close '" + playlistFile.getAbsolutePath() + "'; disk full?");
+            log(context, LogLevel.Error, "cannot close '" + playlistFile.getAbsolutePath() + "'; disk full?");
          }
       }
 
-      log(context, count + " " + category + " songs downloaded");
+      log(context, LogLevel.Info, count + " " + category + " songs downloaded");
 
       // File objects hold the corresponding disk file locked; later
       // unit test cannot delete them.
@@ -582,14 +601,14 @@ public class DownloadUtils
             try (Response response = httpClient.newCall(request).execute())
             {
                if (200 != response.code())
-                  log(context, "put notes failed " + response.message());
+                  log(context, LogLevel.Error, "put notes failed " + response.message());
                else
-                  log(context, category + " sendNotes");
+                  log(context, LogLevel.Info, category + " sendNotes");
             }
             catch (IOException e)
             {
                // From httpClient.newCall; connection failed after retry
-               log(context, category + " sendNotes http request failed: " + e.toString());
+               log(context, LogLevel.Error, category + " sendNotes http request failed: " + e.toString());
             }
          }
 

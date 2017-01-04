@@ -1,7 +1,7 @@
- current tasks
+ references
 NEWS.text
 Makefile
-(dvc-status)
+c:/Projects/smm.main/notes.text
 ~/Misc/android.text
 d:/Archive/Android/libs/commons-io-2.5/docs/index.html
 https://github.com/square/okhttp/wiki
@@ -13,7 +13,10 @@ branches:
     org.stephe_leake.music_player.java - main, currently on phone
     o.s_l.m_p.work                     - available
 
-
+ current tasks
+Jota can't find log file
+    sent email to aquamarine; suggest .authority; no help
+
 reschedule on network fail
     set 5 min timeout/retry in utils, but only retries once?
 

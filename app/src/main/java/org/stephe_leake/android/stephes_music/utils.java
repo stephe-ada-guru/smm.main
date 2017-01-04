@@ -2,7 +2,7 @@
 //
 //  misc stuff
 //
-//  Copyright (C) 2011 - 2013, 2015 - 2016 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2011 - 2013, 2015 - 2017 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -20,6 +20,7 @@ package org.stephe_leake.android.stephes_music;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.text.format.Time;
@@ -141,6 +142,7 @@ public class utils
    }
 
    public static PendingIntent activityIntent;
+   public static Intent        showLogIntent;
    // For notifications.
 
    ////////// methods
