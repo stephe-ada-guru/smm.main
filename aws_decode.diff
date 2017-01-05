@@ -1,309 +1,268 @@
-diff -p -r orig/aws-gpl-2016-src/src/core/aws-server-http_utils.adb aws-gpl-2016-src/src/core/aws-server-http_utils.adb
-*** orig/aws-gpl-2016-src/src/core/aws-server-http_utils.adb	2016-05-16 03:21:12.000000000 -0600
---- aws-gpl-2016-src/src/core/aws-server-http_utils.adb	2016-12-22 15:52:30.121453400 -0600
-*************** package body AWS.Server.HTTP_Utils is
-*** 1267,1275 ****
-        function Resource return String is
-        begin
-           if I3 = 0 then
-!             return URL.Decode (Command (I1 + 1 .. I2 - 1));
-           else
-!             return URL.Decode (Command (I1 + 1 .. I3 - 1));
-           end if;
-        end Resource;
-  
---- 1267,1275 ----
-        function Resource return String is
-        begin
-           if I3 = 0 then
-!             return Command (I1 + 1 .. I2 - 1);
-           else
-!             return Command (I1 + 1 .. I3 - 1);
-           end if;
-        end Resource;
-  
-Only in aws-gpl-2016-src/src/core/: aws-server-http_utils.adb~
-diff -p -r orig/aws-gpl-2016-src/src/core/aws-status-set.adb aws-gpl-2016-src/src/core/aws-status-set.adb
-*** orig/aws-gpl-2016-src/src/core/aws-status-set.adb	2016-05-16 03:21:12.000000000 -0600
---- aws-gpl-2016-src/src/core/aws-status-set.adb	2016-12-22 15:53:49.146556800 -0600
-*************** package body AWS.Status.Set is
-*** 480,486 ****
-  
-        --  Parse URI and keep parameters case sensitivity flag
-  
-!       AWS.URL.Set.Parse (D.URI, URI, False, False);
-     end Request;
-  
-     -----------
---- 480,490 ----
-  
-        --  Parse URI and keep parameters case sensitivity flag
-  
-!       AWS.URL.Set.Parse
-!         (D.URI, URI,
-!          Check_Validity => False,
-!          Normalize      => False,
-!          Decode         => True);
-     end Request;
-  
-     -----------
-Only in aws-gpl-2016-src/src/core/: aws-status-set.adb~
-diff -p -r orig/aws-gpl-2016-src/src/core/aws-url.adb aws-gpl-2016-src/src/core/aws-url.adb
-*** orig/aws-gpl-2016-src/src/core/aws-url.adb	2016-05-16 03:21:12.000000000 -0600
---- aws-gpl-2016-src/src/core/aws-url.adb	2016-12-22 15:49:12.611478400 -0600
-*************** package body AWS.URL is
-*** 286,296 ****
-     function Parse
-        (URL            : String;
-         Check_Validity : Boolean := True;
-!        Normalize      : Boolean := False) return Object
-     is
-        O : Object;
-     begin
-!       Set.Parse (O, URL, Check_Validity, Normalize);
-  
-        return O;
-     end Parse;
---- 286,297 ----
-     function Parse
-        (URL            : String;
-         Check_Validity : Boolean := True;
-!        Normalize      : Boolean := False;
-!        Decode         : Boolean := False) return Object
-     is
-        O : Object;
-     begin
-!       Set.Parse (O, URL, Check_Validity, Normalize, Decode);
-  
-        return O;
-     end Parse;
-Only in aws-gpl-2016-src/src/core/: aws-url.adb~
-diff -p -r orig/aws-gpl-2016-src/src/core/aws-url.ads aws-gpl-2016-src/src/core/aws-url.ads
-*** orig/aws-gpl-2016-src/src/core/aws-url.ads	2016-05-16 03:21:12.000000000 -0600
---- aws-gpl-2016-src/src/core/aws-url.ads	2016-12-22 15:45:40.503490000 -0600
-***************
-*** 1,7 ****
-  ------------------------------------------------------------------------------
-  --                              Ada Web Server                              --
-  --                                                                          --
-! --                     Copyright (C) 2000-2015, AdaCore                     --
-  --                                                                          --
-  --  This library is free software;  you can redistribute it and/or modify   --
-  --  it under terms of the  GNU General Public License  as published by the  --
---- 1,7 ----
-  ------------------------------------------------------------------------------
-  --                              Ada Web Server                              --
-  --                                                                          --
-! --                     Copyright (C) 2000-2016, AdaCore                     --
-  --                                                                          --
-  --  This library is free software;  you can redistribute it and/or modify   --
-  --  it under terms of the  GNU General Public License  as published by the  --
-*************** package AWS.URL is
-*** 67,77 ****
-     function Parse
+Only in aws-gpl-2016-src/: .build
+Only in orig/aws-gpl-2016-src/docs/build: apirefs
+Only in orig/aws-gpl-2016-src/docs/build: doctrees
+Only in orig/aws-gpl-2016-src/docs/build: latex
+Only in aws-gpl-2016-src/gps: aws_api.xml
+diff -r -u orig/aws-gpl-2016-src/makefile.conf aws-gpl-2016-src/makefile.conf
+--- orig/aws-gpl-2016-src/makefile.conf	2016-04-25 08:20:39.000000000 -0600
++++ aws-gpl-2016-src/makefile.conf	2016-11-12 06:24:41.998052500 -0600
+@@ -11,7 +11,7 @@
+ # the install directory. By default, it is set to the current GNAT root
+ # directory to have AWS project files automatically available.
+ #
+-prefix	 = $(dir $(shell which gnatls))..
++prefix	 = d:/Apps/GNAT-gpl_2016
+ 
+ ##############################################################################
+ # TARGET platform
+@@ -116,7 +116,7 @@
+ #
+ # DEBUG = [true|false]
+ #
+-DEBUG	= false
++DEBUG	= true
+ 
+ ##############################################################################
+ # Number of parallel compilations to do.
+Only in aws-gpl-2016-src/: makefile.conf~
+Only in aws-gpl-2016-src/: makefile.setup
+Only in aws-gpl-2016-src/: Makefile~
+diff -r -u orig/aws-gpl-2016-src/src/core/aws-server-http_utils.adb aws-gpl-2016-src/src/core/aws-server-http_utils.adb
+--- orig/aws-gpl-2016-src/src/core/aws-server-http_utils.adb	2016-05-16 03:21:12.000000000 -0600
++++ aws-gpl-2016-src/src/core/aws-server-http_utils.adb	2016-12-22 15:52:30.121453400 -0600
+@@ -1267,9 +1267,9 @@
+       function Resource return String is
+       begin
+          if I3 = 0 then
+-            return URL.Decode (Command (I1 + 1 .. I2 - 1));
++            return Command (I1 + 1 .. I2 - 1);
+          else
+-            return URL.Decode (Command (I1 + 1 .. I3 - 1));
++            return Command (I1 + 1 .. I3 - 1);
+          end if;
+       end Resource;
+ 
+Only in aws-gpl-2016-src/src/core: aws-server-http_utils.adb~
+diff -r -u orig/aws-gpl-2016-src/src/core/aws-status-set.adb aws-gpl-2016-src/src/core/aws-status-set.adb
+--- orig/aws-gpl-2016-src/src/core/aws-status-set.adb	2016-05-16 03:21:12.000000000 -0600
++++ aws-gpl-2016-src/src/core/aws-status-set.adb	2016-12-22 15:53:49.146556800 -0600
+@@ -480,7 +480,11 @@
+ 
+       --  Parse URI and keep parameters case sensitivity flag
+ 
+-      AWS.URL.Set.Parse (D.URI, URI, False, False);
++      AWS.URL.Set.Parse
++        (D.URI, URI,
++         Check_Validity => False,
++         Normalize      => False,
++         Decode         => True);
+    end Request;
+ 
+    -----------
+Only in aws-gpl-2016-src/src/core: aws-status-set.adb~
+diff -r -u orig/aws-gpl-2016-src/src/core/aws-url.adb aws-gpl-2016-src/src/core/aws-url.adb
+--- orig/aws-gpl-2016-src/src/core/aws-url.adb	2016-05-16 03:21:12.000000000 -0600
++++ aws-gpl-2016-src/src/core/aws-url.adb	2017-01-05 14:42:08.361808000 -0600
+@@ -123,10 +123,6 @@
+             Res (K) := Character'Val (Utils.Hex_Value (Str (I + 1 .. I + 2)));
+             I := I + 2;
+ 
+-         elsif Str (I) = '+' then
+-            --  A plus is used for spaces in forms value for example
+-            Res (K) := ' ';
+-
+          else
+             Res (K) := Str (I);
+          end if;
+@@ -286,11 +282,12 @@
+    function Parse
        (URL            : String;
         Check_Validity : Boolean := True;
-!       Normalize      : Boolean := False) return Object;
-!    --  Parse an URL and return an Object representing this URL. It is then
-!    --  possible to extract each part of the URL with the services bellow.
-!    --  Raises URL_Error if Check_Validity is true and the URL reference a
-!    --  resource above the web root directory.
-  
-     procedure Normalize (URL : in out Object);
-     --  Removes all occurrences to parent directory ".." and current directory
---- 67,79 ----
-     function Parse
-       (URL            : String;
-        Check_Validity : Boolean := True;
-!       Normalize      : Boolean := False;
-!       Decode         : Boolean := False) return Object;
-!    --  Parse a URL and return an Object representing this URL. If
-!    --  Decode, also decode it. It is then possible to extract each
-!    --  part of the URL with the services bellow. Raises URL_Error if
-!    --  Check_Validity is true and the URL reference a resource above
-!    --  the web root directory.
-  
-     procedure Normalize (URL : in out Object);
-     --  Removes all occurrences to parent directory ".." and current directory
-Only in aws-gpl-2016-src/src/core/: aws-url.ads~
-diff -p -r orig/aws-gpl-2016-src/src/core/aws-url-set.adb aws-gpl-2016-src/src/core/aws-url-set.adb
-*** orig/aws-gpl-2016-src/src/core/aws-url-set.adb	2016-05-16 03:21:12.000000000 -0600
---- aws-gpl-2016-src/src/core/aws-url-set.adb	2016-12-22 15:50:13.691129000 -0600
-***************
-*** 1,7 ****
-  ------------------------------------------------------------------------------
-  --                              Ada Web Server                              --
-  --                                                                          --
-! --                     Copyright (C) 2007-2015, AdaCore                     --
-  --                                                                          --
-  --  This library is free software;  you can redistribute it and/or modify   --
-  --  it under terms of the  GNU General Public License  as published by the  --
---- 1,7 ----
-  ------------------------------------------------------------------------------
-  --                              Ada Web Server                              --
-  --                                                                          --
-! --                     Copyright (C) 2007-2016, AdaCore                     --
-  --                                                                          --
-  --  This library is free software;  you can redistribute it and/or modify   --
-  --  it under terms of the  GNU General Public License  as published by the  --
-*************** package body AWS.URL.Set is
-*** 158,164 ****
-       (Item           : in out Object;
-        URL            : String;
-        Check_Validity : Boolean := True;
-!       Normalize      : Boolean := False)
-     is
-        FTP_Token   : constant String := "ftp:";
-        HTTP_Token  : constant String := "http:";
---- 158,165 ----
-       (Item           : in out Object;
-        URL            : String;
-        Check_Validity : Boolean := True;
-!       Normalize      : Boolean := False;
-!       Decode         : Boolean := False)
-     is
-        FTP_Token   : constant String := "ftp:";
-        HTTP_Token  : constant String := "http:";
-*************** package body AWS.URL.Set is
-*** 214,220 ****
-                 --  which must be part of the path.
-  
-                 declare
-!                   File : constant String := URL (Start .. URL'Last);
-                 begin
-                    if File = ".." or else File = "." then
-                       Item.Path := +File;
---- 215,224 ----
-                 --  which must be part of the path.
-  
-                 declare
-!                   File : constant String :=
-!                     (if Decode
-!                      then AWS.URL.Decode (URL (Start .. URL'Last))
-!                      else URL (Start .. URL'Last));
-                 begin
-                    if File = ".." or else File = "." then
-                       Item.Path := +File;
-*************** package body AWS.URL.Set is
-*** 230,243 ****
-                 --  parent directories which must be part of the path.
-  
-                 declare
-!                   File : constant String := URL (I3 + 1 .. URL'Last);
-                 begin
-                    if File = ".." or else File = "." then
-!                      Item.Path := +URL (Start .. URL'Last);
-                       Item.File := +"";
-                    else
-!                      Item.Path := +URL (Start .. I3);
-!                      Item.File := +File;
-                    end if;
-                 end;
-              end if;
---- 234,258 ----
-                 --  parent directories which must be part of the path.
-  
-                 declare
-!                   File : constant String :=
-!                     (if Decode
-!                      then AWS.URL.Decode (URL (I3 + 1 .. URL'Last))
-!                      else URL (I3 + 1 .. URL'Last));
-                 begin
-                    if File = ".." or else File = "." then
-!                      Item.Path := +
-!                        (if Decode
-!                         then AWS.URL.Decode (URL (Start .. URL'Last))
-!                         else URL (Start .. URL'Last));
-                       Item.File := +"";
-                    else
-!                      if Decode then
-!                         Item.Path := +AWS.URL.Decode (URL (Start .. I3));
-!                         Item.File := +AWS.URL.Decode (File);
-!                      else
-!                         Item.Path := +URL (Start .. I3);
-!                         Item.File := +File;
-!                      end if;
-                    end if;
-                 end;
-              end if;
-*************** package body AWS.URL.Set is
-*** 249,254 ****
---- 264,270 ----
-  
-           procedure Set_Host (First, Last : Positive) is
-           begin
-+             --  FIXME: does host need to be decoded?
-              if First < Last
-                and then URL (First) = '['
-                and then URL (Last) = ']'
-*************** package body AWS.URL.Set is
-*** 293,298 ****
---- 309,315 ----
-  
-              if I1 /= 0 and then I3 /= 0 and then I1 < I3 then
-                 --  We have [user:password@]
-+                --  FIXME: decode user, password?
-                 Item.User     := +URL (F .. I1 - 1);
-                 Item.Password := +URL (I1 + 1 .. I3 - 1);
-  
-*************** package body AWS.URL.Set is
-*** 419,425 ****
-           Item.Fragment := Null_Unbounded_String;
-  
-        else
-!          Item.Fragment := To_Unbounded_String (L_URL (F .. L_URL'Last));
-           F := F - 1;
-        end if;
-  
---- 436,445 ----
-           Item.Fragment := Null_Unbounded_String;
-  
-        else
-!          Item.Fragment := To_Unbounded_String
-!            (if Decode
-!             then AWS.URL.Decode (L_URL (F .. L_URL'Last))
-!             else L_URL (F .. L_URL'Last));
-           F := F - 1;
-        end if;
-  
-*************** package body AWS.URL.Set is
-*** 431,437 ****
-           P := F;
-  
-        else
-!          Item.Parameters.Add (L_URL (P .. F));
-           P := P - 1;
-        end if;
-  
---- 451,460 ----
-           P := F;
-  
-        else
-!          Item.Parameters.Add
-!            (if Decode
-!             then AWS.URL.Decode (L_URL (P .. F))
-!             else L_URL (P .. F));
-           P := P - 1;
-        end if;
-  
-Only in aws-gpl-2016-src/src/core/: aws-url-set.adb~
-diff -p -r orig/aws-gpl-2016-src/src/core/aws-url-set.ads aws-gpl-2016-src/src/core/aws-url-set.ads
-*** orig/aws-gpl-2016-src/src/core/aws-url-set.ads	2016-05-16 03:21:12.000000000 -0600
---- aws-gpl-2016-src/src/core/aws-url-set.ads	2016-12-22 15:49:38.126570700 -0600
-*************** package AWS.URL.Set is
-*** 53,58 ****
-       (Item           : in out Object;
-        URL            : String;
-        Check_Validity : Boolean := True;
-!       Normalize      : Boolean := False);
-  
-  end AWS.URL.Set;
---- 53,59 ----
-       (Item           : in out Object;
-        URL            : String;
-        Check_Validity : Boolean := True;
-!       Normalize      : Boolean := False;
-!       Decode         : Boolean := False);
-  
-  end AWS.URL.Set;
-Only in aws-gpl-2016-src/src/core/: aws-url-set.ads~
+-       Normalize      : Boolean := False) return Object
++       Normalize      : Boolean := False;
++       Decode         : Boolean := False) return Object
+    is
+       O : Object;
+    begin
+-      Set.Parse (O, URL, Check_Validity, Normalize);
++      Set.Parse (O, URL, Check_Validity, Normalize, Decode);
+ 
+       return O;
+    end Parse;
+Only in aws-gpl-2016-src/src/core: aws-url.adb~
+diff -r -u orig/aws-gpl-2016-src/src/core/aws-url.ads aws-gpl-2016-src/src/core/aws-url.ads
+--- orig/aws-gpl-2016-src/src/core/aws-url.ads	2016-05-16 03:21:12.000000000 -0600
++++ aws-gpl-2016-src/src/core/aws-url.ads	2016-12-22 15:45:40.503490000 -0600
+@@ -1,7 +1,7 @@
+ ------------------------------------------------------------------------------
+ --                              Ada Web Server                              --
+ --                                                                          --
+---                     Copyright (C) 2000-2015, AdaCore                     --
++--                     Copyright (C) 2000-2016, AdaCore                     --
+ --                                                                          --
+ --  This library is free software;  you can redistribute it and/or modify   --
+ --  it under terms of the  GNU General Public License  as published by the  --
+@@ -67,11 +67,13 @@
+    function Parse
+      (URL            : String;
+       Check_Validity : Boolean := True;
+-      Normalize      : Boolean := False) return Object;
+-   --  Parse an URL and return an Object representing this URL. It is then
+-   --  possible to extract each part of the URL with the services bellow.
+-   --  Raises URL_Error if Check_Validity is true and the URL reference a
+-   --  resource above the web root directory.
++      Normalize      : Boolean := False;
++      Decode         : Boolean := False) return Object;
++   --  Parse a URL and return an Object representing this URL. If
++   --  Decode, also decode it. It is then possible to extract each
++   --  part of the URL with the services bellow. Raises URL_Error if
++   --  Check_Validity is true and the URL reference a resource above
++   --  the web root directory.
+ 
+    procedure Normalize (URL : in out Object);
+    --  Removes all occurrences to parent directory ".." and current directory
+Only in aws-gpl-2016-src/src/core: aws-url.ads~
+diff -r -u orig/aws-gpl-2016-src/src/core/aws-url-set.adb aws-gpl-2016-src/src/core/aws-url-set.adb
+--- orig/aws-gpl-2016-src/src/core/aws-url-set.adb	2016-05-16 03:21:12.000000000 -0600
++++ aws-gpl-2016-src/src/core/aws-url-set.adb	2017-01-05 14:46:42.324182900 -0600
+@@ -1,7 +1,7 @@
+ ------------------------------------------------------------------------------
+ --                              Ada Web Server                              --
+ --                                                                          --
+---                     Copyright (C) 2007-2015, AdaCore                     --
++--                     Copyright (C) 2007-2016, AdaCore                     --
+ --                                                                          --
+ --  This library is free software;  you can redistribute it and/or modify   --
+ --  it under terms of the  GNU General Public License  as published by the  --
+@@ -158,7 +158,8 @@
+      (Item           : in out Object;
+       URL            : String;
+       Check_Validity : Boolean := True;
+-      Normalize      : Boolean := False)
++      Normalize      : Boolean := False;
++      Decode         : Boolean := False)
+    is
+       FTP_Token   : constant String := "ftp:";
+       HTTP_Token  : constant String := "http:";
+@@ -214,7 +215,10 @@
+                --  which must be part of the path.
+ 
+                declare
+-                  File : constant String := URL (Start .. URL'Last);
++                  File : constant String :=
++                    (if Decode
++                     then AWS.URL.Decode (URL (Start .. URL'Last))
++                     else URL (Start .. URL'Last));
+                begin
+                   if File = ".." or else File = "." then
+                      Item.Path := +File;
+@@ -230,14 +234,25 @@
+                --  parent directories which must be part of the path.
+ 
+                declare
+-                  File : constant String := URL (I3 + 1 .. URL'Last);
++                  File : constant String :=
++                    (if Decode
++                     then AWS.URL.Decode (URL (I3 + 1 .. URL'Last))
++                     else URL (I3 + 1 .. URL'Last));
+                begin
+                   if File = ".." or else File = "." then
+-                     Item.Path := +URL (Start .. URL'Last);
++                     Item.Path := +
++                       (if Decode
++                        then AWS.URL.Decode (URL (Start .. URL'Last))
++                        else URL (Start .. URL'Last));
+                      Item.File := +"";
+                   else
+-                     Item.Path := +URL (Start .. I3);
+-                     Item.File := +File;
++                     if Decode then
++                        Item.Path := +AWS.URL.Decode (URL (Start .. I3));
++                        Item.File := +AWS.URL.Decode (File);
++                     else
++                        Item.Path := +URL (Start .. I3);
++                        Item.File := +File;
++                     end if;
+                   end if;
+                end;
+             end if;
+@@ -257,6 +272,10 @@
+             else
+                Item.Host := +URL (First .. Last);
+             end if;
++
++            if Decode then
++               Item.Host := +AWS.URL.Decode (To_String (Item.Host));
++            end if;
+          end Set_Host;
+ 
+       begin
+@@ -293,8 +312,13 @@
+ 
+             if I1 /= 0 and then I3 /= 0 and then I1 < I3 then
+                --  We have [user:password@]
+-               Item.User     := +URL (F .. I1 - 1);
+-               Item.Password := +URL (I1 + 1 .. I3 - 1);
++               Item.User     :=
++                 (if Decode then +AWS.URL.Decode (URL (F .. I1 - 1))
++                  else +URL (F .. I1 - 1));
++
++               Item.Password :=
++                 (if Decode then +AWS.URL.Decode (URL (I1 + 1 .. I3 - 1))
++                  else +URL (I1 + 1 .. I3 - 1));
+ 
+                F  := I3 + 1;
+ 
+@@ -419,7 +443,10 @@
+          Item.Fragment := Null_Unbounded_String;
+ 
+       else
+-         Item.Fragment := To_Unbounded_String (L_URL (F .. L_URL'Last));
++         Item.Fragment := To_Unbounded_String
++           (if Decode
++            then AWS.URL.Decode (L_URL (F .. L_URL'Last))
++            else L_URL (F .. L_URL'Last));
+          F := F - 1;
+       end if;
+ 
+@@ -431,7 +458,10 @@
+          P := F;
+ 
+       else
+-         Item.Parameters.Add (L_URL (P .. F));
++         Item.Parameters.Add
++           (if Decode
++            then AWS.URL.Decode (L_URL (P .. F))
++            else L_URL (P .. F));
+          P := P - 1;
+       end if;
+ 
+Only in aws-gpl-2016-src/src/core: aws-url-set.adb~
+diff -r -u orig/aws-gpl-2016-src/src/core/aws-url-set.ads aws-gpl-2016-src/src/core/aws-url-set.ads
+--- orig/aws-gpl-2016-src/src/core/aws-url-set.ads	2016-05-16 03:21:12.000000000 -0600
++++ aws-gpl-2016-src/src/core/aws-url-set.ads	2016-12-22 15:49:38.126570700 -0600
+@@ -53,6 +53,7 @@
+      (Item           : in out Object;
+       URL            : String;
+       Check_Validity : Boolean := True;
+-      Normalize      : Boolean := False);
++      Normalize      : Boolean := False;
++      Decode         : Boolean := False);
+ 
+ end AWS.URL.Set;
+Only in aws-gpl-2016-src/src/core: aws-url-set.ads~
+diff -r -u orig/aws-gpl-2016-src/templates_parser/makefile.setup aws-gpl-2016-src/templates_parser/makefile.setup
+--- orig/aws-gpl-2016-src/templates_parser/makefile.setup	2016-05-16 03:20:50.000000000 -0600
++++ aws-gpl-2016-src/templates_parser/makefile.setup	2016-11-12 06:25:40.111113700 -0600
+@@ -1,8 +1,8 @@
+-prefix=/hangzhou.a/gnatmail/sandbox/gpl-2016-src/x86_64-linux/stable-gnat/install/bin/..
++prefix=d:/Apps/GNAT-gpl_2016
+ DEFAULT_LIBRARY_TYPE=static
+ ENABLE_STATIC=true
+ ENABLE_SHARED=true
+-DEBUG=false
++DEBUG=true
+ PROCESSORS=0
+ TP_XMLADA=Installed
+-TARGET=x86_64-pc-linux-gnu
++TARGET=i686-pc-mingw32

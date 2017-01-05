@@ -2,7 +2,7 @@
 --
 --  Stephe's Music Manager Server
 --
---  Copyright (C) 2016 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2016, 2017 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -28,6 +28,7 @@ with Ada.Calendar;
 with Ada.Command_Line;
 with Ada.Directories;
 with Ada.Exceptions;
+with Ada.IO_Exceptions;
 with Ada.Strings.Fixed;
 with Ada.Strings.Unbounded;
 with Ada.Text_IO;
@@ -118,6 +119,10 @@ package body SMM.Server is
                   Process   => Copy_Aux'Access);
 
                return Build ("text/plain", Response);
+            exception
+            when Ada.IO_Exceptions.Name_Error =>
+               --  GNAT runtime sets message to "(unknown directory "")"; no file name!
+               raise Ada.IO_Exceptions.Name_Error with "unknown directory '" & Path (URI) & "'";
             end;
          else
             --  It's a file request.

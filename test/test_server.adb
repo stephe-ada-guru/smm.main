@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2004, 2016 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2004, 2016, 2017 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -18,6 +18,7 @@
 
 pragma License (GPL);
 
+with Ada.Strings.Maps;
 with AUnit.Assertions;
 with AUnit.Checks.Text_IO;
 with AWS.Client;
@@ -33,6 +34,8 @@ with SAL.Time_Conversions.AUnit;
 with SMM;
 with Test_Utils;
 package body Test_Server is
+
+   CRLF : constant String := ASCII.CR & ASCII.LF;
 
    Db_File_Name : constant String := "tmp/smm.db";
 
@@ -70,24 +73,39 @@ package body Test_Server is
 
    procedure Test_Meta (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
    is
-      use AUnit.Checks;
       use AWS.Response;
 
       Test : Test_Case renames Test_Case (T);
 
-      URL      : constant String := "http://" & Test.Server_IP.all & ":8080/artist_1/album_1/meta";
-      Response : constant Data   := AWS.Client.Get (URL);
-      Msg      : constant String := Message_Body (Response);
+      procedure Check
+        (Label    : in String;
+         Resource : in String;
+         Expected : in String)
+      is
+         --  Mimic Android OkHttp encoding, which does not encode [ ].
+         Encoded_Resource : constant String := AWS.URL.Encode (Resource, Ada.Strings.Maps.To_Set (";/:$,""{}|\^`'"));
 
-      --  Song order depends on random engine
-      Expected : constant String :=
-        "artist_1/album_1/AlbumArt_1.jpg" & ASCII.CR & ASCII.LF &
-        "artist_1/album_1/liner_notes.pdf" & ASCII.CR & ASCII.LF;
+         URL      : constant String := "http://" & Test.Server_IP.all & ":8080/" & Encoded_Resource & "/meta";
+         Response : constant Data   := AWS.Client.Get (URL);
+         Msg      : constant String := Message_Body (Response);
+      begin
+         if Verbose then
+            Ada.Text_IO.Put_Line (URL);
+            Ada.Text_IO.Put_Line (Msg);
+         end if;
+         AUnit.Checks.Check (Label, Msg, Expected);
+      end Check;
    begin
-      if Verbose then
-         Ada.Text_IO.Put (Msg);
-      end if;
-      Check ("meta", Msg, Expected);
+      Check
+        ("1",
+         "artist_1/album_1",
+         "artist_1/album_1/AlbumArt_1.jpg" & CRLF &
+           "artist_1/album_1/liner_notes.pdf" & CRLF);
+
+      Check
+        ("2",
+         "Jason Castro [Deluxe] [+Video] [+Digital Booklet]",
+         "Jason Castro [Deluxe] [+Video] [+Digital Booklet]/liner_notes.pdf" & CRLF);
    end Test_Meta;
 
    procedure Test_Get_File (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
@@ -118,7 +136,7 @@ package body Test_Server is
       begin
          Check ("mode", Mode (Response), Message); --  Not clear why this is "message", not "file"
          Check ("mime", Content_Type (Response), Mime);
-         Check ("file content", Msg, "body: tmp/source/" & Directory & Filename & ASCII.CR & ASCII.LF);
+         Check ("file content", Msg, "body: tmp/source/" & Directory & Filename & CRLF);
 
          if Song_Index > 0 then
             Open (Db_File, Db_File_Name, Missing_File => Raise_Exception, Read_Only => True);
@@ -160,12 +178,12 @@ package body Test_Server is
       Response  : Data;
 
       Notes_1 : constant String :=
-        """vocal/artist_1/album_1/file_1.mp3"" Category" & ASCII.CR & ASCII.LF &
-        """vocal/artist_1/album_1/file_2.mp3"" Don't Play" & ASCII.CR & ASCII.LF;
+        """vocal/artist_1/album_1/file_1.mp3"" Category" & CRLF &
+        """vocal/artist_1/album_1/file_2.mp3"" Don't Play" & CRLF;
 
       Notes_2 : constant String :=
-        """vocal/artist_2/album_1/file_1.mp3"" Category" & ASCII.CR & ASCII.LF &
-        """vocal/artist_2/album_1/file_2.mp3"" Don't Play" & ASCII.CR & ASCII.LF;
+        """vocal/artist_2/album_1/file_1.mp3"" Category" & CRLF &
+        """vocal/artist_2/album_1/file_2.mp3"" Don't Play" & CRLF;
    begin
       --  Test create notes on server
       Response := AWS.Client.Put (URL, Notes_1);
@@ -208,7 +226,7 @@ package body Test_Server is
       use Standard.AUnit.Test_Cases.Registration;
    begin
       if T.Debug = 1 then
-         Register_Routine (T, Test_Get_File'Access, "Test_Get_File");
+         Register_Routine (T, Test_Meta'Access, "Debug");
       else
          Register_Routine (T, Test_Playlist'Access, "Test_Playlist");
          Register_Routine (T, Test_Meta'Access, "Test_Meta");
@@ -274,6 +292,8 @@ package body Test_Server is
          Create_Test_File ("tmp/source/artist_2/album_1/2 - song_2.mp3");
          Create_Test_File ("tmp/source/artist_2/album_1/3 - song_3.mp3");
 
+         Create_Directory ("tmp/source/Jason Castro [Deluxe] [+Video] [+Digital Booklet]");
+         Create_Test_File ("tmp/source/Jason Castro [Deluxe] [+Video] [+Digital Booklet]/liner_notes.pdf");
       end if;
 
       if T.Debug /= 1 then
