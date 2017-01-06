@@ -131,7 +131,7 @@ public class DownloadService extends IntentService
 
             if (playlistFile.exists())
             {
-               DownloadUtils.firstPass(context, category, playlistDirFile.getAbsolutePath(), utils.smmDirectory);
+               DownloadUtils.cleanPlaylist(context, category, playlistFile.getAbsolutePath(), utils.smmDirectory);
                DownloadUtils.sendNotes(context, serverIP, category, utils.smmDirectory);
             }
             else
@@ -154,9 +154,15 @@ public class DownloadService extends IntentService
                    .putExtra(utils.EXTRA_COMMAND_PLAYLIST, playlistAbsName)
                    .putExtra(utils.EXTRA_COMMAND_STATE, PlayState.Paused.toInt()));
             }
+
+            // cleanSongs after download new, to minimize metadata download
+            DownloadUtils.cleanSongs(context, category, playlistDirFile.getAbsolutePath(), utils.smmDirectory);
+
+            DownloadUtils.log(context, DownloadUtils.LogLevel.Info, category + ": update done\n\n");
+
          }
          else
-            DownloadUtils.log(context, DownloadUtils.LogLevel.Info, category + ": no update needed");
+            DownloadUtils.log(context, DownloadUtils.LogLevel.Info, category + ": no update needed\n\n");
       }
       catch (IOException e)
       {

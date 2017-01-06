@@ -257,6 +257,24 @@ public class activity extends android.app.Activity
          }
       };
 
+   private void setPlaylistDirectory()
+   {
+      Resources         res   = getResources();
+      SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+      utils.playlistDirectory = prefs.getString
+         (res.getString(R.string.playlist_directory_key),
+          res.getString(R.string.playlist_directory_default));
+   }
+
+   private void setSMMDirectory()
+   {
+      Resources         res   = getResources();
+      SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+      utils.smmDirectory = prefs.getString
+         (res.getString(R.string.smm_directory_key),
+          res.getString(R.string.smm_directory_default));
+   }
+
    ////////// Activity lifetime methods (in lifecycle order)
 
    @Override public void onCreate(Bundle savedInstanceState)
@@ -267,8 +285,11 @@ public class activity extends android.app.Activity
 
       final Intent intent = getIntent();
 
-      utils.showLogIntent = Intent.createChooser
-         (new Intent(Intent.ACTION_VIEW)
+      setPlaylistDirectory();
+      setSMMDirectory();
+
+      utils.showLogIntent =
+         new Intent(Intent.ACTION_VIEW)
           .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
           .setDataAndType
           (new Uri.Builder()
@@ -276,8 +297,7 @@ public class activity extends android.app.Activity
            .authority("")
            .path(DownloadUtils.logFileName())
            .build(),
-           "text/plain"),
-          "Show download log via");
+           "text/plain");
 
       try
       {
@@ -607,16 +627,14 @@ public class activity extends android.app.Activity
 
          case utils.RESULT_SMM_DIRECTORY:
             {
-               sendBroadcast
-                  (new Intent (utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_SMM_DIRECTORY));
+               setSMMDirectory();
                // value from preferences
             }
             break;
 
          case utils.RESULT_PLAYLIST_DIRECTORY:
             {
-               sendBroadcast
-                  (new Intent (utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PLAYLIST_DIRECTORY));
+               setPlaylistDirectory();
                // value from preferences
             }
             break;

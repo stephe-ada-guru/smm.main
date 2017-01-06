@@ -14,16 +14,30 @@ branches:
     o.s_l.m_p.work                     - available
 
  current tasks
+instrumental overcleaned
+    .last not deleted?
+    dont delete any if not found
+    edited
+
+https://inthecheesefactory.com/blog/how-to-share-access-to-file-with-fileprovider-on-android-nougat/en
+    use fileProvider instead of share file: uri
+
+log preference verbose
+    individual files are verbose
+
 Jota can't find log file
     sent email to aquamarine; suggest .authority; no help
 
-reschedule on network fail
+reschedule on network fail?
     set 5 min timeout/retry in utils, but only retries once?
 
-notification: download progress
+notification:
+    animate icon
+    download progress
     % done on count of songs
     need progress interface
         with Android and unit test implementations
+    report error count
 
 scheduled download happening at 10:42 AM, 5:42 AM
     add preference time picker

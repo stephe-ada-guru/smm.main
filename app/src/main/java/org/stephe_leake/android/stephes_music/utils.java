@@ -90,10 +90,8 @@ public class utils
    public static final int COMMAND_RESET_PLAYLIST     = 12;
    public static final int COMMAND_SAVE_STATE         = 13;
    public static final int COMMAND_SEEK               = 14; // position  int (milliseconds)
-   public static final int COMMAND_PLAYLIST_DIRECTORY = 15;
-   public static final int COMMAND_SMM_DIRECTORY      = 17;
-   public static final int COMMAND_TOGGLEPAUSE        = 18;
-   public static final int COMMAND_UPDATE_DISPLAY     = 19;
+   public static final int COMMAND_TOGGLEPAUSE        = 15;
+   public static final int COMMAND_UPDATE_DISPLAY     = 16;
 
    // sub-activity result codes
    public static final int RESULT_TEXT_SCALE         = Activity.RESULT_FIRST_USER + 1;

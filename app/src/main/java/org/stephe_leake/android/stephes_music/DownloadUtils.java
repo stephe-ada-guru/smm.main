@@ -64,8 +64,10 @@ public class DownloadUtils
       Error;
    }
 
+   // used in processDirEntry
    private static String       playlistDir;
    private static List<String> mentionedFiles;
+
    private static OkHttpClient httpClient = null;
 
    final private static String logFileExt = ".txt";
@@ -150,11 +152,11 @@ public class DownloadUtils
       {
          List<String>     lines      = readPlaylist(playlistFilename, false);
          LineNumberReader input      = new LineNumberReader(new FileReader(lastFilename));
-         FileWriter       output     = new FileWriter(playlistFilename); // Erases file
          String           lastPlayed = input.readLine();
          boolean          found      = false;
 
          input.close();
+         new File(lastFilename).delete();
 
          if (null == lastPlayed)
          {
@@ -162,6 +164,20 @@ public class DownloadUtils
          }
          else
          {
+            // Check if lastPlayed is in playlist
+            for (String line : lines)
+            {
+               if (!found)
+                  found = line.equals(lastPlayed);
+            }
+         }
+
+         if (found)
+         {
+            FileWriter output = new FileWriter(playlistFilename); // Erases file
+
+            found = false;
+
             for (String line : lines)
             {
                if (found)
@@ -169,10 +185,8 @@ public class DownloadUtils
                else
                   found = line.equals(lastPlayed);
             }
+            output.close();
          }
-         output.close();
-
-         new File(lastFilename).delete();
       }
       catch (FileNotFoundException e)
       { // from 'FileReader(lastFilename)'; file not found; same as empty; do nothing
@@ -267,12 +281,36 @@ public class DownloadUtils
       }
    }
 
-   public static void firstPass(Context context, String category, String playlistDir, String smmDir)
+   public static void cleanPlaylist(Context context, String category, String playlistDir, String smmDir)
    {
       //  Delete lines in category.m3u that are before song in
-      //  SMM_Dir/category.last. Delete files from Playlist_Dir/Category
-      //  that are not mentioned in playlist file category.m3u. Return count
-      //  of files remaining in playlist.
+      //  SMM_Dir/category.last.
+      //
+      //  Directory names end in '/'
+
+      // We can't declare a File object for lastFile; that prevents
+      // delete in editPlaylist.
+      final String playlistFilename = FilenameUtils.concat(playlistDir, category + ".m3u");
+      final String lastFilename     = FilenameUtils.concat(smmDir, category + ".last");
+
+      try
+      {
+         // getPath() returns empty string if file does not exist
+         if ("" != FilenameUtils.getPath(playlistFilename))
+            if ("" != FilenameUtils.getPath(lastFilename))
+               editPlaylist(context, playlistFilename, lastFilename);
+      }
+      catch (IOException e)
+      {
+         // from editPlaylist (which calls readPlaylist)
+         log(context, LogLevel.Error, "cannot read/write playlist '" + playlistFilename + "'");
+      }
+   }
+
+   public static void cleanSongs(Context context, String category, String playlistDir, String smmDir)
+   {
+      //  Delete files from Playlist_Dir/Category that are not
+      //  mentioned in playlist file category.m3u.
       //
       //  Directory names end in '/'
 
@@ -285,11 +323,6 @@ public class DownloadUtils
 
       try
       {
-         // getPath() returns empty string if file does not exist
-         if ("" != FilenameUtils.getPath(playlistFilename))
-            if ("" != FilenameUtils.getPath(lastFilename))
-               editPlaylist(context, playlistFilename, lastFilename);
-
          mentionedFiles = readPlaylist(playlistFilename, true);
 
          //  Search playlist directory, delete files not in playlist
@@ -351,18 +384,12 @@ public class DownloadUtils
       //
       // Return true if successful, false for any errors (error messages in log).
 
-      // We need to encode spaces but not path separators.
-      // addPathSegment encodes both, so we split out the path
-      // segments first.
-      final String[] pathSegments = resource.split("/");
-
-      HttpUrl.Builder url = new HttpUrl.Builder()
+      HttpUrl url = new HttpUrl.Builder()
          .scheme("http")
          .host(serverIP)
-         .port(8080);
-
-      for (String segment : pathSegments)
-         url.addPathSegment(segment);
+         .port(8080)
+         .addPathSegments(resource)
+         .build();
 
       try
       {
@@ -374,7 +401,7 @@ public class DownloadUtils
          return false;
       }
 
-      try (Response response = httpClient.newCall(new Request.Builder().url(url.build()).build()).execute())
+      try (Response response = httpClient.newCall(new Request.Builder().url(url).build()).execute())
       {
          if (!response.isSuccessful())
          {
@@ -423,9 +450,16 @@ public class DownloadUtils
 
    public static String[] getMetaList(Context context,
                                       String  serverIP,
-                                      String  resourcePath)
+                                      String  resource)
    {
-      final String  url     = "http://" + serverIP + ":8080/" + resourcePath + "meta";
+      HttpUrl url = new HttpUrl.Builder()
+         .scheme("http")
+         .host(serverIP)
+         .port(8080)
+         .addPathSegments(resource)
+         .addPathSegment("meta")
+         .build();
+
       final Request request = new Request.Builder().url(url).build();
       String[] result       = new String("").split("\r\n");
 
@@ -446,7 +480,7 @@ public class DownloadUtils
       catch (IOException e)
       {
          // From httpClient.newCall; connection failed after retry
-         log(context, LogLevel.Error, "http request failed: getMetaList '" + resourcePath + "': " + e.toString());
+         log(context, LogLevel.Error, "http request failed: getMetaList '" + resource + "': " + e.toString());
       }
 
       return result;

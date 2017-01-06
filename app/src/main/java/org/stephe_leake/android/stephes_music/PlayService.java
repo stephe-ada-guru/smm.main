@@ -3,7 +3,7 @@
 //  Provides background audio playback capabilities, allowing the
 //  user to switch between activities without stopping playback.
 //
-//  Copyright (C) 2011 - 2013, 2015 - 2016 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2011 - 2013, 2015 - 2017 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -721,26 +721,6 @@ public class PlayService extends Service
       }
    }
 
-   private void setPlaylistDirectory()
-   {
-      // FIXME: this can be done from activity now that playlistDirectory is in utils.
-      Resources         res   = getResources();
-      SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-      utils.playlistDirectory = prefs.getString
-         (res.getString(R.string.playlist_directory_key),
-          res.getString(R.string.playlist_directory_default));
-   }
-
-   private void setSMMDirectory()
-   {
-      // FIXME: this can be done from activity now that smmDirectory is in utils.
-      Resources         res   = getResources();
-      SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-      utils.smmDirectory = prefs.getString
-         (res.getString(R.string.smm_directory_key),
-          res.getString(R.string.smm_directory_default));
-   }
-
    private void writeSMMFile()
    {
       // Record the current playing song in a file, for smm and
@@ -909,14 +889,6 @@ public class PlayService extends Service
                   mediaPlayer.seekTo((int)pos);
                   notifyChange(WhatChanged.Position);
                }
-               break;
-
-            case utils.COMMAND_PLAYLIST_DIRECTORY:
-               setPlaylistDirectory();
-               break;
-
-            case utils.COMMAND_SMM_DIRECTORY:
-               setSMMDirectory();
                break;
 
             case utils.COMMAND_TOGGLEPAUSE:
@@ -1129,8 +1101,6 @@ public class PlayService extends Service
       super.onCreate();
 
       context = this;
-
-      setSMMDirectory();
 
       IntentFilter filter = new IntentFilter();
       filter.addAction(utils.ACTION_COMMAND);

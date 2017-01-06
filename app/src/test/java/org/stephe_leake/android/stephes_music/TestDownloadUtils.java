@@ -2,7 +2,7 @@
 //
 //  Test functions in DownloadUtils
 //
-//  Copyright (C) 2016 Stephen Leake. All Rights Reserved.
+//  Copyright (C) 2016, 2017 Stephen Leake. All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -40,7 +40,8 @@ import static org.junit.Assert.assertTrue;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class TestDownloadUtils
 {
-   final String serverIP = "192.168.1.83"; // must match smm-server.config
+   final String serverIP   = "192.168.1.83"; // must match smm-server.config
+   final String dbFilename = "tmp/smm.db";
 
    // to start server externally for debugging, run this test with -DstartServer=false
    final boolean startServer = new String("true").equals(System.getProperty("startServer", "true"));
@@ -231,7 +232,6 @@ public class TestDownloadUtils
    public void d_getNewSongsNominal()
    {
       // Translated from smm test_server.adb Set_Up_Case, Test_Playlist, Test_Meta, Test_Get_File
-      final String dbFilename       = "tmp/smm.db";
       final String playlistFilename = "tmp/playlists/vocal.m3u";
       final String category         = "vocal";
       FileWriter   output;
@@ -362,5 +362,44 @@ public class TestDownloadUtils
          if (null != server) server.destroy();
       }
    }
+
+   @Test
+   public void f_getMetaList()
+   {
+      // This directory name caused problems at one point
+      Process    server = null;
+      FileWriter output;
+      String[] expected = {"Jason Castro [Deluxe] [+Video] [+Digital Booklet]/liner_notes.pdf"};
+      String[] metaList;
+
+      cleanup(true);
+      try
+      {
+         FileUtils.forceMkdir(new File("tmp"));
+         output = new FileWriter(dbFilename);
+         output.write("Root = " + new File("tmp/source").getAbsolutePath() + "\n");
+         output.close();
+
+         FileUtils.forceMkdir(new File("tmp/source/Jason Castro [Deluxe] [+Video] [+Digital Booklet]"));
+         createTestFile("tmp/source/Jason Castro [Deluxe] [+Video] [+Digital Booklet]/liner_notes.pdf");
+
+         if (startServer)
+            server = new ProcessBuilder("smm-server_driver", "smm-server.config", "1").start();
+
+         metaList = DownloadUtils.getMetaList(null, serverIP, "Jason Castro [Deluxe] [+Video] [+Digital Booklet]/");
+
+         check(metaList, expected);
+      }
+      catch (IOException e)
+      {
+         assertTrue(e.getMessage(), false);
+      }
+      finally
+      {
+         if (null != server) server.destroy();
+      }
+
+   }
+
 }
 // end of file
