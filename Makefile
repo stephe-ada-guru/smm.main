@@ -20,11 +20,12 @@ build : force
 # compileDebugUnitTestSources
 # compileReleaseSources
 # compileReleaseUnitTestSources
-#
-# create apks:
-# assembleDebug
+
+# There's about a zillion tasks to create an apk, and the list
+# probably changes with each realease, so use 'build' for that; this
+# is only sufficient for finding compilation errors
 compile-debug : force
-	gradle --daemon compileDebugSources assembleDebug
+	gradle --daemon compileDebugSources
 
 # We don't have any AndroidTests (yet)
 # passing -DstartServer=false doesn't work here; it does from Android Studio
@@ -50,7 +51,7 @@ tag :
 archive :
 	cp build/outputs/apk/org.stephe_leake.music_player.java-release-$(VERSION).apk /cygdrive/d/Archive/Android
 
-install-emulator-all : compile install-emulator-debug
+install-emulator-all : build install-emulator-debug
 
 # FIXME: fails with INSTALL_PARSE_FAILED_INCONSISTENT_CERTIFICATES
 # but works from Android Studio (which also provides log filters). and debug works.
@@ -63,19 +64,19 @@ install-emulator-debug :
 install-pda-usb-release :
 	adb -d install -r build/outputs/apk/org.stephe_leake.music_player.java-release-$(VERSION).apk
 
-install-pda-usb-debug-all : compile-debug install-pda-usb-debug
+install-pda-usb-debug-all : build install-pda-usb-debug
 install-pda-usb-debug :
 	adb -d install -r app/build/outputs/apk/app-debug-$(VERSION).apk
 
 # assumes PDA is running sshDroid server, ssh key is active
 # apk version is in build.gradle
-install-pda-ssh-release-all : all install-pda-ssh-release
+install-pda-ssh-release-all : build install-pda-ssh-release
 
 install-pda-ssh-release : PDA_IP := 192.168.1.66
 install-pda-ssh-release :
 	scp -P 2222 build/outputs/apk/org.stephe_leake.music_player.java-release-$(VERSION).apk root@$(PDA_IP):/storage/sdcard0/Download/
 
-install-pda-ssh-debug-all : all install-pda-ssh-debug
+install-pda-ssh-debug-all : build install-pda-ssh-debug
 install-pda-ssh-debug : PDA_IP := 192.168.1.66
 install-pda-ssh-debug :
 	scp -P 2222 build/outputs/apk/org.stephe_leake.music_player.java-debug-$(VERSION).apk root@$(PDA_IP):/storage/sdcard0/Download/

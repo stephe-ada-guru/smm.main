@@ -131,7 +131,7 @@ public class DownloadService extends IntentService
 
             if (playlistFile.exists())
             {
-               DownloadUtils.cleanPlaylist(context, category, playlistFile.getAbsolutePath(), utils.smmDirectory);
+               DownloadUtils.cleanPlaylist(context, category, playlistDirFile.getAbsolutePath(), utils.smmDirectory);
                DownloadUtils.sendNotes(context, serverIP, category, utils.smmDirectory);
             }
             else
@@ -216,6 +216,8 @@ public class DownloadService extends IntentService
       String                 msg = "";
       boolean                status         = true;
 
+      // Not in constructor, because showLogIntent can change if user
+      // changes preference.
       showLogPendingIntent = PendingIntent.getActivity
          (this.getApplicationContext(),
           utils.showLogIntentId,

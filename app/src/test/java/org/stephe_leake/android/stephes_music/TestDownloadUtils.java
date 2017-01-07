@@ -201,7 +201,13 @@ public class TestDownloadUtils
          output.write("vocal/artist_1/file_5.mp3" + "\n");
          output.close();
 
-         DownloadUtils.firstPass
+         DownloadUtils.cleanPlaylist
+            (null,
+             "vocal",
+             (new File("tmp/playlists/")).getAbsolutePath(),
+             (new File("tmp/smm/")).getAbsolutePath());
+
+         DownloadUtils.cleanSongs
             (null,
              "vocal",
              (new File("tmp/playlists/")).getAbsolutePath(),

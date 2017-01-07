@@ -141,19 +141,23 @@ public class DownloadUtils
       return result;
    }
 
-   public static void editPlaylist(Context context, String playlistFilename, String lastFilename)
+   public static int editPlaylist(Context context, String playlistFilename, String lastFilename)
       throws IOException
    // Delete lines from start of playlist file up to and including
    // line in last file. Delete last file.
    //
+   // Return delete count.
+   //
    // throws IOException if can't read or write playlistFilename
    {
+      int deleteCount = 0;
+
       try
       {
-         List<String>     lines      = readPlaylist(playlistFilename, false);
-         LineNumberReader input      = new LineNumberReader(new FileReader(lastFilename));
-         String           lastPlayed = input.readLine();
-         boolean          found      = false;
+         List<String>     lines       = readPlaylist(playlistFilename, false);
+         LineNumberReader input       = new LineNumberReader(new FileReader(lastFilename));
+         String           lastPlayed  = input.readLine();
+         boolean          found       = false;
 
          input.close();
          new File(lastFilename).delete();
@@ -170,27 +174,32 @@ public class DownloadUtils
                if (!found)
                   found = line.equals(lastPlayed);
             }
-         }
 
-         if (found)
-         {
-            FileWriter output = new FileWriter(playlistFilename); // Erases file
-
-            found = false;
-
-            for (String line : lines)
+            if (found)
             {
-               if (found)
-                  output.write(line + "\n");
-               else
-                  found = line.equals(lastPlayed);
+               FileWriter output = new FileWriter(playlistFilename); // Erases file
+
+               found = false;
+
+               for (String line : lines)
+               {
+                  if (found)
+                     output.write(line + "\n");
+                  else
+                  {
+                     found = line.equals(lastPlayed);
+                     deleteCount++;
+                  }
+               }
+               output.close();
             }
-            output.close();
          }
       }
       catch (FileNotFoundException e)
       { // from 'FileReader(lastFilename)'; file not found; same as empty; do nothing
       }
+
+      return deleteCount;
    }
 
    private static String normalize(String item)
@@ -298,7 +307,10 @@ public class DownloadUtils
          // getPath() returns empty string if file does not exist
          if ("" != FilenameUtils.getPath(playlistFilename))
             if ("" != FilenameUtils.getPath(lastFilename))
-               editPlaylist(context, playlistFilename, lastFilename);
+            {
+               int deleteCount = editPlaylist(context, playlistFilename, lastFilename);
+               log(context, LogLevel.Info, category + " playlist cleaned: " + deleteCount + " songs deleted");
+            }
       }
       catch (IOException e)
       {
@@ -334,7 +346,7 @@ public class DownloadUtils
                if (subDir != targetDir)
                   deleteCount += processDirEntry(context, subDir);
 
-            log(context, LogLevel.Info, category + " playlist cleaned: " + deleteCount + " files deleted");
+            log(context, LogLevel.Info, category + " song storage cleaned: " + deleteCount + " files deleted");
          }
       }
       catch (IOException e)
