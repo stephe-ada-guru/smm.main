@@ -59,13 +59,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.Integer;
 import java.net.URISyntaxException;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.FileUtils;
 
@@ -102,8 +98,6 @@ public class PlayService extends Service
    // Current position in PlayList (0 indexed; -1 if none)
 
    boolean haveAudioFocus;
-
-   Timer downloadTimer;
 
    ////////// private methods (random order)
 
@@ -1080,16 +1074,6 @@ public class PlayService extends Service
          }
       };
 
-   private TimerTask downloadTimerTask = new TimerTask()
-      {
-         public void run()
-         {
-            startService
-               (new Intent(utils.ACTION_COMMAND, null, context, DownloadService.class)
-                .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_DOWNLOAD));
-         }
-      };
-
    ////////// PlayService lifetime methods
    @Override public IBinder onBind(Intent intent)
    {
@@ -1156,16 +1140,6 @@ public class PlayService extends Service
       haveAudioFocus = false;
 
       restoreState();
-
-      {
-         GregorianCalendar time = new GregorianCalendar(); // holds current time
-         time.add(Calendar.DAY_OF_MONTH, 1); // tomorrow
-         time.set(Calendar.HOUR_OF_DAY, 0);
-         time.set(Calendar.MINUTE, 30); // 12:30 AM
-
-         downloadTimer = new Timer();
-         downloadTimer.scheduleAtFixedRate(downloadTimerTask, time.getTime(), utils.millisPerDay);
-      }
    }
 
    @Override public void onDestroy()

@@ -63,6 +63,14 @@ write to the Free Software Foundation, 51 Franklin Street, Suite
         android:summary="@string/song_count_threshold_summary"
         android:dialogTitle="@string/song_count_threshold_dialog_title" />
 
+    <ListPreference
+        android:key="@string/log_level_key"
+        android:defaultValue="Info"
+        android:title="@string/log_level_title"
+        android:summary="@string/log_level_summary"
+        android:dialogTitle="@string/log_level_dialog_title" />
+    <!-- list entries filled at runtime -->
+
     <EditTextPreference
         android:key="@string/server_IP_key"
         android:defaultValue="@string/server_IP_default"

@@ -31,6 +31,8 @@ import android.widget.Toast;
 
 import java.io.PrintWriter;
 import java.lang.RuntimeException;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class utils
 {
@@ -142,6 +144,19 @@ public class utils
    public static PendingIntent activityIntent;
    public static Intent        showLogIntent;
    // For notifications.
+
+   public static Timer downloadTimer;
+   public static Context mainActivity;
+
+   public static TimerTask downloadTimerTask = new TimerTask()
+      {
+         public void run()
+         {
+            mainActivity.startService
+               (new Intent(utils.ACTION_COMMAND, null, mainActivity, DownloadService.class)
+                .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_DOWNLOAD));
+         }
+      };
 
    ////////// methods
 

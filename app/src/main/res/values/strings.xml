@@ -52,20 +52,13 @@
   <string name="menu_show_download_log">Show download log</string>
   <string name="menu_update_playlist">Update playlist</string>
 
-  <!-- preference -->
+  <!-- preference ; alphabetical after activity name-->
   <string name="preferences_activity_name">&quot;Stephe's Music Player Preferences&quot;</string>
 
-  <string name="playlist_directory_key">playlist_directory</string>
-  <string name="playlist_directory_default">/storage/extSdCard/Audio</string>
-  <string name="playlist_directory_title">playlist directory</string>
-  <string name="playlist_directory_summary">absolute path where playlists are stored</string>
-  <string name="playlist_directory_dialog_title">playlist directory</string>
-
-  <string name="smm_directory_key">smm_directory</string>
-  <string name="smm_directory_default">/storage/extSdCard/Android/data/org.stephen_leake.android.stephes_music/cache</string>
-  <string name="smm_directory_title">smm directory</string>
-  <string name="smm_directory_summary">absolute path where smm interface files are stored</string>
-  <string name="smm_directory_dialog_title">smm directory</string>
+  <string name="always_on_key">always_on</string>
+  <string name="always_on_title">Always On</string>
+  <string name="always_on_summary">keep screen on (to avoid screen savers on Google TV)</string>
+  <string name="always_on_dialog_title">set always on</string>
 
   <string name="auto_download_playlists_key">auto_download_playlists</string>
   <string name="auto_download_playlists_default"></string>
@@ -73,11 +66,34 @@
   <string name="auto_download_playlists_summary">List of playlists that are downloaded every night</string>
   <string name="auto_download_playlists_dialog_title">Auto-download playlists</string>
 
+  <string name="log_level_key">log_level</string>
+  <string name="log_level_title">Log Level</string>
+  <string name="log_level_summary">Verbose or Info messages in download log (always includes Error) </string>
+  <string name="log_level_dialog_title">Download Log level</string>
+
+  <string name="playlist_directory_key">playlist_directory</string>
+  <string name="playlist_directory_default">/storage/extSdCard/Audio</string>
+  <string name="playlist_directory_title">playlist directory</string>
+  <string name="playlist_directory_summary">absolute path where playlists are stored</string>
+  <string name="playlist_directory_dialog_title">playlist directory</string>
+
   <string name="prev_threshold_key">prev_threshold</string>
   <string name="prev_threshold_default">5000</string>
   <string name="prev_threshold_title">previous threshold</string>
   <string name="prev_threshold_summary">threshold for previous song vs beginning of current song (milliseconds)</string>
   <string name="prev_threshold_dialog_title">previous threshold (milliseconds)</string>
+
+  <string name="server_IP_key">server_IP</string>
+  <string name="server_IP_default"></string>
+  <string name="server_IP_title">Server IP</string>
+  <string name="server_IP_summary">Server for download</string>
+  <string name="server_IP_dialog_title">Server IP</string>
+
+  <string name="smm_directory_key">smm_directory</string>
+  <string name="smm_directory_default">/storage/extSdCard/Android/data/org.stephen_leake.android.stephes_music/cache</string>
+  <string name="smm_directory_title">smm directory</string>
+  <string name="smm_directory_summary">absolute path where smm interface files are stored</string>
+  <string name="smm_directory_dialog_title">smm directory</string>
 
   <string name="song_count_max_key">song_count_max</string>
   <string name="song_count_max_default">100</string>
@@ -91,22 +107,11 @@
   <string name="song_count_threshold_summary">Count of songs played before next download</string>
   <string name="song_count_threshold_dialog_title">Song count threshold</string>
 
-  <string name="server_IP_key">server_IP</string>
-  <string name="server_IP_default"></string>
-  <string name="server_IP_title">Server IP</string>
-  <string name="server_IP_summary">Server for download</string>
-  <string name="server_IP_dialog_title">Server IP</string>
-
   <string name="text_scale_key">text_scale</string>
   <string name="text_scale_default">0.8</string>
   <string name="text_scale_title">text scale</string>
   <string name="text_scale_summary">relative size of text</string>
   <string name="text_scale_dialog_title">set text scale</string>
-
-  <string name="always_on_key">always_on</string>
-  <string name="always_on_title">Always On</string>
-  <string name="always_on_summary">keep screen on (to avoid screen savers on Google TV)</string>
-  <string name="always_on_dialog_title">set always on</string>
 
   <!-- Do not translate, but may be locale-dependent. -->
 

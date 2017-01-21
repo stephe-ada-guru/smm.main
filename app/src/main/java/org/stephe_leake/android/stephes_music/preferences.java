@@ -2,7 +2,7 @@
 //
 //  Provides User Interface to Stephe's Music Player.
 //
-//  Copyright (C) 2011 - 2013, 2015 - 2016 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2011 - 2013, 2015 - 2017 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -204,6 +204,11 @@ public class preferences extends android.preference.PreferenceActivity
       smmPref.setEntryValues(smmDirs);
 
       setAutoDownloadPlaylists(res);
+
+      ListPreference logLevelPref = (ListPreference)findPreference(res.getString(R.string.log_level_key));
+      String[] logLevelEntries = {"Verbose", "Info"};
+      logLevelPref.setEntries(logLevelEntries);
+      logLevelPref.setEntryValues(logLevelEntries);
    }
 
    @Override protected void onResume()

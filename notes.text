@@ -14,22 +14,22 @@ branches:
     o.s_l.m_p.work                     - available
 
  current tasks
-instrumental overcleaned
-    .last not deleted?
-    dont delete any if not found
+Vocal meta info out of date after update - current song deleted
+    editPlaylist edited
+
+log preference verbose
+    individual files are verbose
+    edited
+
+reschedule on network fail?
+    set 5 min timeout/retry in utils, but only retries once?
+    edited
+
+download check if file exists - meditation has < 100
     edited
 
 https://inthecheesefactory.com/blog/how-to-share-access-to-file-with-fileprovider-on-android-nougat/en
     use fileProvider instead of share file: uri
-
-log preference verbose
-    individual files are verbose
-
-Jota can't find log file
-    sent email to aquamarine; suggest .authority; no help
-
-reschedule on network fail?
-    set 5 min timeout/retry in utils, but only retries once?
 
 notification:
     animate icon

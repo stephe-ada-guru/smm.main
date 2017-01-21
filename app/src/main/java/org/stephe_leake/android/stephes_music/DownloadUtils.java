@@ -20,6 +20,9 @@ package org.stephe_leake.android.stephes_music;
 
 import android.media.MediaScannerConnection;
 import android.content.Context;
+import android.content.res.Resources;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -58,12 +61,6 @@ public class DownloadUtils
 {
    private static final int BUFFER_SIZE = 8 * 1024;
 
-   public enum LogLevel
-   {
-      Info,
-      Error;
-   }
-
    // used in processDirEntry
    private static String       playlistDir;
    private static List<String> mentionedFiles;
@@ -78,48 +75,56 @@ public class DownloadUtils
 
    public static void log(Context context, LogLevel level, String msg)
    {
-      final SimpleDateFormat fmt         = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss : ", Locale.US);
-      final long             time        = System.currentTimeMillis(); // local time zone
-      final String           timeStamp   = fmt.format(time);
-      final String           logFileName = DownloadUtils.logFileName();
-      String                 levelImg    = "";
+      Resources         res       = context.getResources();
+      SharedPreferences prefs     = PreferenceManager.getDefaultSharedPreferences(context);
+      LogLevel          prefLevel = LogLevel.valueOf
+         (prefs.getString(res.getString(R.string.log_level_key), LogLevel.Info.toString()));
 
-      switch (level)
+      if (level.toInt() >= prefLevel.toInt())
       {
-      case Info:
-         levelImg = "";
-         break;
+         final SimpleDateFormat fmt         = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss : ", Locale.US);
+         final long             time        = System.currentTimeMillis(); // local time zone
+         final String           timeStamp   = fmt.format(time);
+         final String           logFileName = DownloadUtils.logFileName();
+         String                 levelImg    = "";
 
-      case Error:
-         levelImg = "ERROR: ";
-         break;
-      }
-
-      {
-         File logFile = new File(logFileName);
-         if (logFile.exists() && time - logFile.lastModified() > 4 * utils.millisPerHour)
+         switch (level)
          {
-            final String oldLogFileName = utils.smmDirectory + "/download_log_1" + logFileExt;
-            File oldLogFile = new File(oldLogFileName);
+         case Info:
+            levelImg = "";
+            break;
 
-            if (oldLogFile.exists()) oldLogFile.delete();
-
-            logFile.renameTo(oldLogFile);
+         case Error:
+            levelImg = "ERROR: ";
+            break;
          }
-      }
 
-      try
-      {
-         PrintWriter writer = new PrintWriter(new FileWriter(logFileName, true)); // append
+         {
+            File logFile = new File(logFileName);
+            if (logFile.exists() && time - logFile.lastModified() > 4 * utils.millisPerHour)
+            {
+               final String oldLogFileName = utils.smmDirectory + "/download_log_1" + logFileExt;
+               File oldLogFile = new File(oldLogFileName);
 
-         writer.println(timeStamp + levelImg + msg);
-         writer.close();
-      }
-      catch (java.io.IOException e)
-      {
-         if (null != context)
-            // null in unit tests
-            utils.errorLog(context, "can't write log to " + logFileName(), e);
+               if (oldLogFile.exists()) oldLogFile.delete();
+
+               logFile.renameTo(oldLogFile);
+            }
+         }
+
+         try
+         {
+            PrintWriter writer = new PrintWriter(new FileWriter(logFileName, true)); // append
+
+            writer.println(timeStamp + levelImg + msg);
+            writer.close();
+         }
+         catch (java.io.IOException e)
+         {
+            if (null != context)
+               // null in unit tests
+               utils.errorLog(context, "can't write log to " + logFileName(), e);
+         }
       }
    }
 
@@ -143,8 +148,8 @@ public class DownloadUtils
 
    public static int editPlaylist(Context context, String playlistFilename, String lastFilename)
       throws IOException
-   // Delete lines from start of playlist file up to and including
-   // line in last file. Delete last file.
+   // Delete lines from start of playlist file up to but not including
+   // line in last file; that song is currently being played.
    //
    // Return delete count.
    //
@@ -183,13 +188,14 @@ public class DownloadUtils
 
                for (String line : lines)
                {
+                  if (!found)
+                  {
+                     found = line.equals(lastPlayed);
+                  }
                   if (found)
                      output.write(line + "\n");
                   else
-                  {
-                     found = line.equals(lastPlayed);
                      deleteCount++;
-                  }
                }
                output.close();
             }
@@ -442,7 +448,7 @@ public class DownloadUtils
             log(context, LogLevel.Error, "downloading '" + resource + "'; got " +
                 downloaded + "bytes, expecting " + contentLength);
          else
-            log(context, LogLevel.Info, "downloaded '" + resource + "'");
+            log(context, LogLevel.Verbose, "downloaded '" + resource + "'");
       }
       catch (IOException e)
       {
@@ -463,7 +469,10 @@ public class DownloadUtils
    public static String[] getMetaList(Context context,
                                       String  serverIP,
                                       String  resource)
+      throws IOException
    {
+      // If throw exception, error is already logged; client should retry later.
+
       HttpUrl url = new HttpUrl.Builder()
          .scheme("http")
          .host(serverIP)
@@ -487,37 +496,57 @@ public class DownloadUtils
          {
             // From response.body()
             log(context, LogLevel.Error, "getMetaList request has no body: " + e.toString());
+            throw e;
          }
       }
       catch (IOException e)
       {
          // From httpClient.newCall; connection failed after retry
          log(context, LogLevel.Error, "http request failed: getMetaList '" + resource + "': " + e.toString());
+         throw e;
       }
 
       return result;
    }
 
-   private static void getMeta(Context                context,
-                               String                 serverIP,
-                               String                 resourcePath,
-                               File                   destDir,
-                               MediaScannerConnection mediaScanner)
+   private static Boolean getMeta(Context                context,
+                                  String                 serverIP,
+                                  String                 resourcePath,
+                                  File                   destDir,
+                                  MediaScannerConnection mediaScanner)
    {
-      String[] files = getMetaList(context, serverIP, resourcePath);
+      // Return false for any errors
+      String[] files;
+
       File objFile;
       String ext;
       String mime = "";
 
+      try
+      {
+         files = getMetaList(context, serverIP, resourcePath);
+      }
+      catch (IOException e)
+      {
+         return false;
+      }
+
       if (files.length == 1 && files[0].length() == 0)
          // no meta files for this directory
-         return;
+         return true;
 
       for (String file : files)
       {
          objFile = new File(destDir, FilenameUtils.getName(file));
 
-         getFile(context, serverIP, file, objFile);
+         if (!objFile.exists())
+            // might exist if more songs in playlist than in db; meditation.
+         {
+            if (!getFile(context, serverIP, file, objFile))
+               //  Assume network connection died; subsequent files will
+               //  fail as well
+               return false;
+         }
 
          ext = FilenameUtils.getExtension(objFile.toString());
 
@@ -529,23 +558,29 @@ public class DownloadUtils
          if (null != mediaScanner)
             mediaScanner.scanFile(objFile.getAbsolutePath(), mime);
       }
+      return true;
    }
 
-   public static void getSongs(Context                context,
-                               String                 serverIP,
-                               String[]               songs,
-                               String                 category,
-                               String                 root,
-                               MediaScannerConnection mediaScanner)
+   public static Boolean getSongs(Context                context,
+                                  String                 serverIP,
+                                  String[]               songs,
+                                  String                 category,
+                                  String                 root,
+                                  MediaScannerConnection mediaScanner)
    {
       // Get 'songs' from 'serverIP', store in 'root/<category>', add
       // to playlist 'root/<category>.m3u'. Also get album art, liner
       // notes for new directories. Add files to mediaScanner, if not
       // null.
+      //
+      // Returns 'true' for success or non-recoverable error; 'false'
+      // for recoverable error; client should retry later.
+
       final File songRoot     = new File(new File(root), category);
       File       playlistFile = new File(new File(root), category + ".m3u");
       FileWriter playlistWriter;
       int        count        = 0;
+      Boolean    success      = true;
 
       try
       {
@@ -554,7 +589,7 @@ public class DownloadUtils
       catch (IOException e)
       {
          log(context, LogLevel.Error, "cannot open '" + playlistFile.getAbsolutePath() + "' for append.");
-         return;
+         return true; // non-recoverable
       }
 
       try
@@ -568,18 +603,28 @@ public class DownloadUtils
             if (!destDir.exists())
             {
                destDir.mkdirs();
-               getMeta(context, serverIP, FilenameUtils.getPath(song), destDir, mediaScanner);
+               if (!getMeta(context, serverIP, FilenameUtils.getPath(song), destDir, mediaScanner))
+               {
+                  // Delete dir so meta will be downloaded on retry
+                  destDir.delete();
+                  success = false;
+               }
             }
 
-            songFile = new File(destDir, FilenameUtils.getName(song));
-            if (getFile(context, serverIP, song, songFile))
+            if (success)
             {
-               if (null != mediaScanner)
-                  mediaScanner.scanFile(songFile.getAbsolutePath(), "audio/mpeg");
+               songFile = new File(destDir, FilenameUtils.getName(song));
+               if (getFile(context, serverIP, song, songFile))
+               {
+                  if (null != mediaScanner)
+                     mediaScanner.scanFile(songFile.getAbsolutePath(), "audio/mpeg");
 
-               playlistWriter.write(category + "/" + song + "\n");
+                  playlistWriter.write(category + "/" + song + "\n");
 
-               count++;
+                  count++;
+               }
+               else
+                  success = false;
             }
          }
       }
@@ -587,6 +632,7 @@ public class DownloadUtils
       {
          // From playlistWriter.write
          log(context, LogLevel.Error, "cannot append to '" + playlistFile.getAbsolutePath() + "'; disk full?");
+         success = true; // non-recoverable
       }
       finally
       {
@@ -598,21 +644,28 @@ public class DownloadUtils
          {
             // probably from flush cache
             log(context, LogLevel.Error, "cannot close '" + playlistFile.getAbsolutePath() + "'; disk full?");
+            success = true; // non-recoverable
          }
       }
 
       log(context, LogLevel.Info, count + " " + category + " songs downloaded");
 
+      return success;
+
       // File objects hold the corresponding disk file locked; later
       // unit test cannot delete them.
    }
 
-   public static void sendNotes(Context context,
-                                String  serverIP,
-                                String  category,
-                                String  smmDir)
+   public static Boolean sendNotes(Context context,
+                                   String  serverIP,
+                                   String  category,
+                                   String  smmDir)
    {
-      File noteFile = new File(smmDir, category + ".note");
+      // Returns 'true' for success or non-recoverable error; 'false'
+      // for recoverable error; client should retry later.
+
+      File    noteFile = new File(smmDir, category + ".note");
+      Boolean success  = true;
 
       if (noteFile.exists())
       {
@@ -655,10 +708,13 @@ public class DownloadUtils
             {
                // From httpClient.newCall; connection failed after retry
                log(context, LogLevel.Error, category + " sendNotes http request failed: " + e.toString());
+               success = false;
             }
          }
 
          noteFile.delete();
       }
+
+      return success;
    }
 }

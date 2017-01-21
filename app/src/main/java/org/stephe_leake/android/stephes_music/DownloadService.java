@@ -18,12 +18,17 @@
 
 package org.stephe_leake.android.stephes_music;
 
+import android.app.IntentService;
 import android.app.Notification;
 import android.app.NotificationManager;
-import android.app.IntentService;
+import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.media.MediaScannerConnection;
+import android.net.Uri.Builder;
+import android.net.Uri;
 import android.preference.PreferenceManager;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -37,17 +42,14 @@ import java.io.PrintWriter;
 import java.lang.Integer;
 import java.net.URISyntaxException;
 import java.util.Calendar;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.GregorianCalendar;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Set;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.FileUtils;
-import android.content.Context;
-import android.media.MediaScannerConnection;
-import android.app.PendingIntent;
-import android.net.Uri;
-import android.net.Uri.Builder;
+import org.apache.commons.io.FilenameUtils;
 
 public class DownloadService extends IntentService
 {
@@ -95,7 +97,7 @@ public class DownloadService extends IntentService
    }
 
    private boolean download(Context context, String playlistAbsName, MediaScannerConnection mediaScanner)
-   // Return true on success, false on error; error message in notification.
+   // Return true on success or non-recoverable error, false on error; error message in log file.
    {
       Resources         res             = getResources();
       SharedPreferences prefs           = PreferenceManager.getDefaultSharedPreferences(this);
@@ -112,8 +114,8 @@ public class DownloadService extends IntentService
 
       if (serverIP == null)
       {
-         notifyDownload("Download error : set Server IP preference", "");
-         return false;
+         notifyDownload("Download error", "set Server IP preference");
+         return true; // non-recoverable
       }
 
       // File.exists throws IOException ENOENT if the directory does not exist!
@@ -121,7 +123,7 @@ public class DownloadService extends IntentService
 
       try
       {
-         int songsRemaining = playlistFile.exists() ? countSongsRemaining(category, playlistFile) : 0;
+         int songsRemaining  = playlistFile.exists() ? countSongsRemaining(category, playlistFile) : 0;
          int songCountMax    = Integer.valueOf(songCountMaxStr);
          int songCountThresh = Integer.valueOf(songCountThreshStr);
 
@@ -132,7 +134,8 @@ public class DownloadService extends IntentService
             if (playlistFile.exists())
             {
                DownloadUtils.cleanPlaylist(context, category, playlistDirFile.getAbsolutePath(), utils.smmDirectory);
-               DownloadUtils.sendNotes(context, serverIP, category, utils.smmDirectory);
+               if (!DownloadUtils.sendNotes(context, serverIP, category, utils.smmDirectory))
+                  return false;
             }
             else
             {
@@ -142,8 +145,12 @@ public class DownloadService extends IntentService
 
             newSongs = DownloadUtils.getNewSongsList(context, serverIP, category, songCountMax - songsRemaining, -1);
 
-            DownloadUtils.getSongs
-               (context, serverIP, newSongs, category, playlistDirFile.getAbsolutePath(), mediaScanner);
+            if (newSongs.length == 0)
+               return false;
+
+            if (!DownloadUtils.getSongs
+                (context, serverIP, newSongs, category, playlistDirFile.getAbsolutePath(), mediaScanner))
+               return false;
 
             if (utils.playlistAbsPath().equals(playlistAbsName))
             {
@@ -158,17 +165,17 @@ public class DownloadService extends IntentService
             // cleanSongs after download new, to minimize metadata download
             DownloadUtils.cleanSongs(context, category, playlistDirFile.getAbsolutePath(), utils.smmDirectory);
 
-            DownloadUtils.log(context, DownloadUtils.LogLevel.Info, category + ": update done\n\n");
+            DownloadUtils.log(context, LogLevel.Info, category + ": update done\n\n");
 
          }
          else
-            DownloadUtils.log(context, DownloadUtils.LogLevel.Info, category + ": no update needed\n\n");
+            DownloadUtils.log(context, LogLevel.Info, category + ": no update needed\n\n");
       }
       catch (IOException e)
       {
          // something is screwed up
          notifyDownload("Download error", e.toString());
-         return false;
+         return true; // non-recoverable
       }
       return true;
    }
@@ -213,8 +220,8 @@ public class DownloadService extends IntentService
    {
       final String           intentPlaylist = intent.getStringExtra(utils.EXTRA_COMMAND_PLAYLIST);
       MediaScannerConnection mediaScanner   = new MediaScannerConnection(this, null);
-      String                 msg = "";
-      boolean                status         = true;
+      String                 msg            = "";
+      Boolean                success        = true;
 
       // Not in constructor, because showLogIntent can change if user
       // changes preference.
@@ -242,7 +249,16 @@ public class DownloadService extends IntentService
 
             for (String playlist : playlists)
             {
-               status = status && download(this, utils.playlistDirectory + "/" + playlist + ".m3u", mediaScanner);
+               success = download(this, utils.playlistDirectory + "/" + playlist + ".m3u", mediaScanner);
+               if (!success)
+               {
+                  // Reschedule for later when wifi may be back
+                  GregorianCalendar time = new GregorianCalendar(); // holds current time
+                  time.set(Calendar.MINUTE, 10); // 10 minutes from now
+
+                  utils.downloadTimer.scheduleAtFixedRate(utils.downloadTimerTask, time.getTime(), utils.millisPerDay);
+                  break;
+               }
             }
          }
          else
@@ -251,13 +267,15 @@ public class DownloadService extends IntentService
 
             notifyDownload(msg, "");
 
-            status = download(this, intentPlaylist, mediaScanner);
+            success = download(this, intentPlaylist, mediaScanner);
          }
       }
       finally
       {
-         if (status)
-            notifyDownload(msg + "\ndone", "");
+         if (success)
+            notifyDownload(msg, "done");
+         else
+            notifyDownload(msg, "error");
 
          mediaScanner.disconnect();
       }

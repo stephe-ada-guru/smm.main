@@ -31,6 +31,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.net.Uri.Builder;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.PowerManager.WakeLock;
 import android.os.PowerManager;
@@ -53,8 +55,9 @@ import java.io.File;
 import java.lang.Class;
 import java.lang.Float;
 import java.lang.Integer;
-import android.net.Uri;
-import android.net.Uri.Builder;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.Timer;
 
 public class activity extends android.app.Activity
 {
@@ -279,6 +282,8 @@ public class activity extends android.app.Activity
 
    @Override public void onCreate(Bundle savedInstanceState)
    {
+      utils.mainActivity = this;
+
       PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 
       final float scale = getTextViewTextScale();
@@ -298,6 +303,16 @@ public class activity extends android.app.Activity
            .path(DownloadUtils.logFileName())
            .build(),
            "text/plain");
+
+      {
+         GregorianCalendar time = new GregorianCalendar(); // holds current time
+         time.add(Calendar.DAY_OF_MONTH, 1); // tomorrow
+         time.set(Calendar.HOUR_OF_DAY, 0);
+         time.set(Calendar.MINUTE, 30); // 12:30 AM
+
+         utils.downloadTimer = new Timer();
+         utils.downloadTimer.scheduleAtFixedRate(utils.downloadTimerTask, time.getTime(), utils.millisPerDay);
+      }
 
       try
       {
