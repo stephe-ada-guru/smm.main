@@ -98,6 +98,7 @@ public class TestDownloadUtils
    public void a_editPlaylistNominal()
    {
       //  Create the test environment; a playlist, a .last
+      //  .last is the file currenty being played
       String     playlistFilename = "tmp/playlists/vocal.m3u";
       String     lastFilename     = "tmp/smm/vocal.last";
       FileWriter output;
@@ -125,6 +126,7 @@ public class TestDownloadUtils
          {
             LineNumberReader input = new LineNumberReader(new FileReader(playlistFilename));
 
+            assertTrue(input.readLine().equals("vocal/artist_1/file_5.mp3"));
             assertTrue(input.readLine().equals("vocal/artist_2/file_6.mp3"));
             assertTrue(input.readLine() == null);
          }
@@ -198,7 +200,7 @@ public class TestDownloadUtils
 
          assertTrue("mkdir smm", new File("tmp/smm/").mkdir());
          output = new FileWriter(lastFilename);
-         output.write("vocal/artist_1/file_5.mp3" + "\n");
+         output.write("vocal/artist_2/file_6.mp3" + "\n");
          output.close();
 
          DownloadUtils.cleanPlaylist

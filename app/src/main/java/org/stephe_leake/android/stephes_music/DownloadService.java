@@ -25,10 +25,13 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.content.res.Resources;
 import android.media.MediaScannerConnection;
 import android.net.Uri.Builder;
 import android.net.Uri;
+import android.preference.PreferenceManager;
 import android.preference.PreferenceManager;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -230,6 +233,14 @@ public class DownloadService extends IntentService
           utils.showLogIntentId,
           utils.showLogIntent,
           0);
+
+      {
+         Resources         res   = getResources();
+         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+
+         DownloadUtils.prefLogLevel = LogLevel.valueOf
+            (prefs.getString(res.getString(R.string.log_level_key), LogLevel.Info.toString()));
+      }
 
       try
       {

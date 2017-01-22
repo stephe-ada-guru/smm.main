@@ -20,9 +20,6 @@ package org.stephe_leake.android.stephes_music;
 
 import android.media.MediaScannerConnection;
 import android.content.Context;
-import android.content.res.Resources;
-import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -73,14 +70,11 @@ public class DownloadUtils
       return utils.smmDirectory + "/download_log" + logFileExt;
    }
 
+   public static LogLevel prefLogLevel = LogLevel.Info;
+
    public static void log(Context context, LogLevel level, String msg)
    {
-      Resources         res       = context.getResources();
-      SharedPreferences prefs     = PreferenceManager.getDefaultSharedPreferences(context);
-      LogLevel          prefLevel = LogLevel.valueOf
-         (prefs.getString(res.getString(R.string.log_level_key), LogLevel.Info.toString()));
-
-      if (level.toInt() >= prefLevel.toInt())
+      if (level.toInt() >= prefLogLevel.toInt())
       {
          final SimpleDateFormat fmt         = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss : ", Locale.US);
          final long             time        = System.currentTimeMillis(); // local time zone
