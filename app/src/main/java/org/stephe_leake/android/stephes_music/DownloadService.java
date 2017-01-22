@@ -51,12 +51,15 @@ import java.util.GregorianCalendar;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Set;
+import java.util.Timer;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
 public class DownloadService extends IntentService
 {
    private static PendingIntent showLogPendingIntent;
+
+   private Timer delayTimer = new Timer();
 
    ////////// private methods (alphabetical order)
 
@@ -242,53 +245,44 @@ public class DownloadService extends IntentService
             (prefs.getString(res.getString(R.string.log_level_key), LogLevel.Info.toString()));
       }
 
-      try
+      mediaScanner.connect();
+
+      if (null == intentPlaylist)
       {
-         mediaScanner.connect();
+         Resources         res       = getResources();
+         SharedPreferences prefs     = PreferenceManager.getDefaultSharedPreferences(this);
+         Set<String>       playlists = prefs.getStringSet
+            (res.getString(R.string.auto_download_playlists_key),
+             new LinkedHashSet<String>());
 
-         if (null == intentPlaylist)
+         msg = "Downloading " + playlists.size() + " playlists ...";
+
+         notifyDownload(msg, "");
+
+         for (String playlist : playlists)
          {
-            Resources         res       = getResources();
-            SharedPreferences prefs     = PreferenceManager.getDefaultSharedPreferences(this);
-            Set<String>       playlists = prefs.getStringSet
-               (res.getString(R.string.auto_download_playlists_key),
-                new LinkedHashSet<String>());
-
-            msg = "Downloading " + playlists.size() + " playlists ...";
-
-            notifyDownload(msg, "");
-
-            for (String playlist : playlists)
+            success = download(this, utils.playlistDirectory + "/" + playlist + ".m3u", mediaScanner);
+            if (!success)
             {
-               success = download(this, utils.playlistDirectory + "/" + playlist + ".m3u", mediaScanner);
-               if (!success)
-               {
-                  // Reschedule for later when wifi may be back
-                  GregorianCalendar time = new GregorianCalendar(); // holds current time
-                  time.set(Calendar.MINUTE, 10); // 10 minutes from now
-
-                  utils.downloadTimer.scheduleAtFixedRate(utils.downloadTimerTask, time.getTime(), utils.millisPerDay);
-                  break;
-               }
+               delayTimer.schedule(utils.downloadTimerTask, 10 * utils.millisPerMinute);
+               break;
             }
          }
-         else
-         {
-            msg = "Downloading " + FilenameUtils.getBaseName(intentPlaylist) + " ...";
-
-            notifyDownload(msg, "");
-
-            success = download(this, intentPlaylist, mediaScanner);
-         }
       }
-      finally
+      else
       {
-         if (success)
-            notifyDownload(msg, "done");
-         else
-            notifyDownload(msg, "error");
+         msg = "Downloading " + FilenameUtils.getBaseName(intentPlaylist) + " ...";
 
-         mediaScanner.disconnect();
+         notifyDownload(msg, "");
+
+         success = download(this, intentPlaylist, mediaScanner);
       }
+
+      if (success)
+         notifyDownload(msg, "done");
+      else
+         notifyDownload(msg, "error");
+
+      mediaScanner.disconnect();
    }
 }

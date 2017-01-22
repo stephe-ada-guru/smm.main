@@ -37,8 +37,9 @@ import java.util.TimerTask;
 public class utils
 {
 
-   public static final long millisPerHour = 60 * 60 * 1000;
-   public static final long millisPerDay  = 24 * millisPerHour;
+   public static final long millisPerMinute = 60 * 1000;
+   public static final long millisPerHour   = 60 * millisPerMinute;
+   public static final long millisPerDay    = 24 * millisPerHour;
 
    public static final String preferencesName = "stephes_music";
 
