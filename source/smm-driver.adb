@@ -2,7 +2,7 @@
 --
 --  main procedure for SMM application
 --
---  Copyright (C) 2008 - 2013, 2015, 2016 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2013, 2015 - 2017 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -71,7 +71,7 @@ is
       Put_Line ("    compare music files to db, report any missing.");
       New_Line;
       Put_Line ("  history");
-      Put_Line ("    report average and standard deviation of download interval (last to previous).");
+      Put_Line ("    output histogram (in gnuplot files) of download interval (last to previous).");
    end Put_Usage;
 
    Db_File_Name : access String;
@@ -237,7 +237,6 @@ begin
 
    when History =>
       SMM.History (Db);
-
    end case;
 
    SAL.Config_Files.Close (Db);

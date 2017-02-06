@@ -1,8 +1,9 @@
 --  Abstract :
 --
---  Report average, standard deviation of download period (last to previous)
+--  Report average, standard deviation of download period (last to
+--  previous). Also output histogram plot in gnuplot files.
 --
---  Copyright (C) 2016 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2016 - 2017 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -23,6 +24,7 @@ with Ada.Numerics.Generic_Elementary_Functions;
 with Ada.Text_IO;      use Ada.Text_IO;
 with SAL.Config_Files; use SAL.Config_Files;
 with SAL.Gen_Stats;
+with SAL.Gen_Histogram.Gen_Gnuplot;
 procedure SMM.History (Db : in out SAL.Config_Files.Configuration_Type)
 is
    use SAL.Time_Conversions;
@@ -33,13 +35,54 @@ is
 
    Stats : Float_Stats.Stats_Type;
 
+   function To_Bin (Item : in Float) return Integer
+   is begin
+      return Integer (Item);
+   end To_Bin;
+
+   Bin_Max : constant := 10; -- years
+
+   package Histograms is new SAL.Gen_Histogram
+     (Bin_Min => -1,
+      Bin_Max => Bin_Max,
+      Value   => Float,
+      To_Bin  => To_Bin);
+
+   Histogram        : Histograms.Object;
+   Dont_Play        : Integer := 0;
+   Never_Downloaded : Integer := 0;
+   Downloaded_Once  : Integer := 0;
+
+   package Histogram_Plots is new Histograms.Gen_Gnuplot;
+
    procedure Accumulate (I : in Iterator_Type)
    is
-      Last : constant Time_Type := Read_Last_Downloaded (Db, I);
-      Prev : constant Time_Type := Read_Prev_Downloaded (Db, I);
+      use Ada.Float_Text_IO;
+
+      Last   : constant Time_Type := Read_Last_Downloaded (Db, I);
+      Prev   : constant Time_Type := Read_Prev_Downloaded (Db, I);
+      Period : constant Float     := Float ((Last - Prev) / Seconds_Per_Year);
    begin
-      if Last /= 0.0 and Prev /= 0.0 then
-         Stats.Accumulate (Float ((Last - Prev) / Seconds_Per_Year));
+      if Read (Db, I, Category_Key, Missing_Key => Ignore) = "dont_play" then
+         Dont_Play := Dont_Play + 1;
+         return;
+      end if;
+
+      if Last = 0.0 then
+         Never_Downloaded := Never_Downloaded + 1;
+
+      elsif Prev = 0.0 then
+         Downloaded_Once := Downloaded_Once + 1;
+
+      else
+         Stats.Accumulate (Period);
+         Histogram.Accumulate (Period);
+
+         if To_Bin (Period) > Bin_Max then
+            Put ("song:" & Current (I) & " period:");
+            Put (Period, Aft => 2, Exp => 0);
+            New_Line;
+         end if;
       end if;
    end Accumulate;
 
@@ -57,11 +100,17 @@ begin
       Display : constant Float_Stats.Display_Type := Stats.Display;
    begin
       Put_Line ("last/prev downloaded stats (years):");
-      Put_Line ("songs   :" & Integer'Image (Display.Count));
+      Put_Line ("songs            :" & Integer'Image (Display.Count));
+      Put_Line ("dont_play        :" & Integer'Image (Dont_Play));
+      Put_Line ("never downloaded :" & Integer'Image (Never_Downloaded));
+      Put_Line ("downloaded once  :" & Integer'Image (Downloaded_Once));
       Put ("mean    :"); Put (Display.Mean, Fore => 3, Aft => 2, Exp => 0); New_Line;
       Put ("std dev :"); Put (Display.Standard_Deviation, Fore => 3, Aft => 2, Exp => 0); New_Line;
       Put ("min     :"); Put (Display.Min, Fore => 3, Aft => 2, Exp => 0); New_Line;
       Put ("max     :"); Put (Display.Max, Fore => 3, Aft => 2, Exp => 0); New_Line;
    end;
 
+   Histogram_Plots.Put_Plot (Histogram, "histogram.dat", "histogram.gnuplot", "years");
+
+   Put_Line ("do: 'gnuplot histogram.gnuplot > histogram.png'");
 end SMM.History;

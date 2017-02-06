@@ -13,6 +13,8 @@ d:/Music/remote_cache/smm-server_driver.log
 log is smm-server_driver.log
     log file settings ignored
 
+check include liner_notes.pdf
+
 add web search
     grep smm.db?
     smm.find with wildcards?
