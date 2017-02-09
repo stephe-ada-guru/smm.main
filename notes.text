@@ -14,19 +14,32 @@ branches:
     o.s_l.m_p.work                     - available
 
  current tasks
-Vocal meta info out of date after update - current song deleted
-    editPlaylist edited
+reload playlist after clean and after download
+    if download aborts, disk playlist /= memory playlist
 
-log preference verbose
-    individual files are verbose
-    edited
+    deleteing .last loses current song position?
+
+app crashes in car
+    started when state farm trip app installed
+    run under debugger
+
+    add catch-all exception handlers that dump exception message to a log file
+        in service, handler, ?
+
+per-list max songs
+    only 70? meditation in db
+    different mode: request all, delete missing (category changed), download new
 
 reschedule on network fail?
     set 5 min timeout/retry in utils, but only retries once?
-    edited
+    edited, not working
+    add nofication "delayed"
 
-download check if file exists - meditation has < 100
-    edited
+scheduled download happening at 10:42 AM, 5:42 AM
+    add preference time picker
+
+    how does vanilla schedule downloads?
+
 
 https://inthecheesefactory.com/blog/how-to-share-access-to-file-with-fileprovider-on-android-nougat/en
     use fileProvider instead of share file: uri
@@ -38,10 +51,6 @@ notification:
     need progress interface
         with Android and unit test implementations
     report error count
-
-scheduled download happening at 10:42 AM, 5:42 AM
-    add preference time picker
-
 
 swipe controls notification to dismiss
     also disable lock screen art

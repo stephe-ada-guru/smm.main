@@ -374,9 +374,9 @@ public class TestDownloadUtils
    @Test
    public void f_getMetaList()
    {
-      // This directory name caused problems at one point
       Process    server = null;
       FileWriter output;
+      // This directory name caused problems at one point (server fixed to handle it)
       String[] expected = {"Jason Castro [Deluxe] [+Video] [+Digital Booklet]/liner_notes.pdf"};
       String[] metaList;
 
@@ -407,6 +407,37 @@ public class TestDownloadUtils
          if (null != server) server.destroy();
       }
 
+   }
+
+   @Test
+   public void g_log()
+   {
+      try
+      {
+         utils.smmDirectory = "tmp/smm";
+         FileUtils.forceMkdir(new File(utils.smmDirectory));
+
+         DownloadUtils.prefLogLevel = LogLevel.Verbose;
+         DownloadUtils.log (null, LogLevel.Verbose, "1 verbose");
+         DownloadUtils.log (null, LogLevel.Info, "1 info");
+         DownloadUtils.log (null, LogLevel.Error, "1 error");
+
+         DownloadUtils.prefLogLevel = LogLevel.Info;
+         DownloadUtils.log (null, LogLevel.Verbose, "2 verbose");
+         DownloadUtils.log (null, LogLevel.Info, "2 info");
+         DownloadUtils.log (null, LogLevel.Error, "2 error");
+
+         LineNumberReader input        = new LineNumberReader(new FileReader(DownloadUtils.logFileName()));
+         final int        prefixLength = "2017-01-23 06:36:46 : ".length();
+
+         assertTrue(input.readLine().substring(prefixLength).equals("1 verbose"));
+         assertTrue(input.readLine().substring(prefixLength).equals("1 info"));
+         assertTrue(input.readLine().substring(prefixLength).equals("ERROR: 1 error"));
+         assertTrue(input.readLine().substring(prefixLength).equals("2 info"));
+         assertTrue(input.readLine().substring(prefixLength).equals("ERROR: 2 error"));
+         assertTrue(input.readLine() == null);
+      }
+      catch (java.io.IOException e){assertTrue(e.toString(), false);}
    }
 
 }

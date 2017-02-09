@@ -193,7 +193,7 @@ public class DownloadService extends IntentService
          Notification notif = new Notification.Builder(this)
             .setAutoCancel(false)
             .setContentTitle(title)
-            .setStyle(new Notification.BigTextStyle().bigText(msg))
+            .setContentText(msg)
             .setContentIntent(showLogPendingIntent)
             .setSmallIcon(R.drawable.download_icon) // shown in status bar
             .build();
@@ -255,9 +255,9 @@ public class DownloadService extends IntentService
             (res.getString(R.string.auto_download_playlists_key),
              new LinkedHashSet<String>());
 
-         msg = "Downloading " + playlists.size() + " playlists ...";
+         msg = "Downloading " + playlists.size() + " playlists";
 
-         notifyDownload(msg, "");
+         notifyDownload(msg, "...");
 
          for (String playlist : playlists)
          {
@@ -271,9 +271,9 @@ public class DownloadService extends IntentService
       }
       else
       {
-         msg = "Downloading " + FilenameUtils.getBaseName(intentPlaylist) + " ...";
+         msg = "Downloading " + FilenameUtils.getBaseName(intentPlaylist);
 
-         notifyDownload(msg, "");
+         notifyDownload(msg, "...");
 
          success = download(this, intentPlaylist, mediaScanner);
       }

@@ -74,7 +74,7 @@ public class DownloadUtils
 
    public static void log(Context context, LogLevel level, String msg)
    {
-      if (prefLogLevel.toInt() >= level.toInt())
+      if (level.toInt() >= prefLogLevel.toInt() )
       {
          final SimpleDateFormat fmt         = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss : ", Locale.US);
          final long             time        = System.currentTimeMillis(); // local time zone
