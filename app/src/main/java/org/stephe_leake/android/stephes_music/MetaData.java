@@ -222,7 +222,7 @@ public class MetaData
          if (BuildConfig.DEBUG)
          {
             utils.debugLog("metadata bitmap exception");
-            utils.debugLog(e);
+            utils.debugLog(e.toString());
          }
          albumArt = null;
       }

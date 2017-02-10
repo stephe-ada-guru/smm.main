@@ -56,3 +56,8 @@ Nov 2016
 
 - version 16
     download from smm-server
+
+Feb 2017
+
+- version 17
+    add more catch-all exception handlers, doc interaction with State Farm Drive Safe

@@ -380,8 +380,7 @@ public class PlayService extends Service
             // We consider this a programmer error, because it
             // probably indicates an SMM sync bug. It could also be a
             // failing sdcard.
-            utils.debugLog("can't play '" + path);
-            utils.debugLog(e);
+            utils.errorLog(null, "can't play '" + path, e);
 
             notifyChange(WhatChanged.Meta);
             return;
@@ -636,9 +635,18 @@ public class PlayService extends Service
          (utils.playlistBasename + keyCurrentPos,
           (playing == PlayState.Idle) ? 0 : mediaPlayer.getCurrentPosition());
 
-      editor.commit();
+      try
+      {
+         editor.commit();
 
-      writeSMMFile();
+         writeSMMFile();
+      }
+      catch (Exception e)
+      {
+         // State Farm Drive Save apparently locks the file system for
+         // a long time occasionally, causing these writes to fail.
+         // They will probably succeed next time.
+      }
    }
 
    private void setIdleNull()
@@ -789,141 +797,146 @@ public class PlayService extends Service
          // Intent filter set for ACTION_COMMAND
          @Override public void onReceive(Context context, Intent intent)
          {
-            final int command = intent.getIntExtra(utils.EXTRA_COMMAND, -1);
-
-            if (BuildConfig.DEBUG) utils.verboseLog("command: " + Integer.toString (command));
-
-            // command alphabetical order
-            switch (command)
+            try
             {
-            case utils.COMMAND_RESERVED:
-               // not clear what is sending this!
-               break;
+               final int command = intent.getIntExtra(utils.EXTRA_COMMAND, -1);
 
-            case utils.COMMAND_DUMP_LOG:
-               dumpLog();
-               break;
+               if (BuildConfig.DEBUG) utils.verboseLog("command: " + Integer.toString (command));
 
-            case utils.COMMAND_JUMP:
+               // command alphabetical order
+               switch (command)
                {
-                  // playlist is 0 indexed; user is 1 indexed.
-                  playlistPos = -1 + intent.getIntExtra(utils.EXTRA_COMMAND_POSITION, 0);
-                  play(playlist.get(playlistPos), 0);
-               }
-               break;
+               case utils.COMMAND_RESERVED:
+                  // not clear what is sending this!
+                  break;
 
-            case utils.COMMAND_NEXT:
-               next();
-               break;
+               case utils.COMMAND_JUMP:
+                  {
+                     // playlist is 0 indexed; user is 1 indexed.
+                     playlistPos = -1 + intent.getIntExtra(utils.EXTRA_COMMAND_POSITION, 0);
+                     play(playlist.get(playlistPos), 0);
+                  }
+                  break;
 
-            case utils.COMMAND_NOTE:
-               writeNote(intent.getStringExtra("note"));
-               break;
-
-            case utils.COMMAND_PAUSE:
-               pause(PlayState.Paused);
-               break;
-
-            case utils.COMMAND_PLAY:
-
-               switch (PlayService.playing)
-               {
-               case Idle:
+               case utils.COMMAND_NEXT:
                   next();
                   break;
 
-               case Playing:
+               case utils.COMMAND_NOTE:
+                  writeNote(intent.getStringExtra("note"));
                   break;
 
-               case Paused:
-                  unpause();
-                  break;
-
-               case Paused_Transient:
-                  // user wants to override
-                  unpause();
-                  break;
-
-               };
-               break;
-
-            case utils.COMMAND_PLAYLIST:
-
-               try
-               {
-                  final PlayState newState = PlayState.toPlayState
-                     (intent.getIntExtra (utils.EXTRA_COMMAND_STATE, PlayState.Playing.toInt()));
-
-                  // User will want to resume the current playlist at some point.
-                  saveState();
-
-                  playList(intent.getStringExtra(utils.EXTRA_COMMAND_PLAYLIST), newState);
-               }
-               catch (Fail e)
-               {
-                  // nothing to do here.
-               }
-               break;
-
-            case utils.COMMAND_PREVIOUS:
-               previous();
-               break;
-
-            case utils.COMMAND_RESET_PLAYLIST:
-               resetPlaylist();
-               break;
-
-            case utils.COMMAND_SAVE_STATE:
-               saveState();
-               break;
-
-            case utils.COMMAND_SEEK:
-               {
-                  final long pos = intent.getLongExtra(utils.EXTRA_COMMAND_POSITION, 0);
-                  mediaPlayer.seekTo((int)pos);
-                  notifyChange(WhatChanged.Position);
-               }
-               break;
-
-            case utils.COMMAND_TOGGLEPAUSE:
-               switch (PlayService.playing)
-               {
-               case Idle:
-                  break;
-
-               case Playing:
+               case utils.COMMAND_PAUSE:
                   pause(PlayState.Paused);
                   break;
 
-               case Paused:
-                  unpause();
+               case utils.COMMAND_PLAY:
+
+                  switch (PlayService.playing)
+                  {
+                  case Idle:
+                     next();
+                     break;
+
+                  case Playing:
+                     break;
+
+                  case Paused:
+                     unpause();
+                     break;
+
+                  case Paused_Transient:
+                     // user wants to override
+                     unpause();
+                     break;
+
+                  };
                   break;
 
-               case Paused_Transient:
-                  // user wants to override
-                  unpause();
+               case utils.COMMAND_PLAYLIST:
+
+                  try
+                  {
+                     final PlayState newState = PlayState.toPlayState
+                        (intent.getIntExtra (utils.EXTRA_COMMAND_STATE, PlayState.Playing.toInt()));
+
+                     // User will want to resume the current playlist at some point.
+                     saveState();
+
+                     playList(intent.getStringExtra(utils.EXTRA_COMMAND_PLAYLIST), newState);
+                  }
+                  catch (Fail e)
+                  {
+                     // nothing to do here.
+                  }
                   break;
 
-               };
-               break;
+               case utils.COMMAND_PREVIOUS:
+                  previous();
+                  break;
 
-            case utils.COMMAND_UPDATE_DISPLAY:
-               notifyChange(WhatChanged.Meta);
-               notifyChange(WhatChanged.State);
-               break;
+               case utils.COMMAND_RESET_PLAYLIST:
+                  resetPlaylist();
+                  break;
 
-            case utils.COMMAND_QUIT:
-               pause(PlayState.Paused);
+               case utils.COMMAND_SAVE_STATE:
+                  saveState();
+                  break;
 
-               NotificationManager notifManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-               notifManager.cancel(null, utils.notif_play_id);
-               break;
+               case utils.COMMAND_SEEK:
+                  {
+                     final long pos = intent.getLongExtra(utils.EXTRA_COMMAND_POSITION, 0);
+                     mediaPlayer.seekTo((int)pos);
+                     notifyChange(WhatChanged.Position);
+                  }
+                  break;
 
-            default:
+               case utils.COMMAND_TOGGLEPAUSE:
+                  switch (PlayService.playing)
+                  {
+                  case Idle:
+                     break;
+
+                  case Playing:
+                     pause(PlayState.Paused);
+                     break;
+
+                  case Paused:
+                     unpause();
+                     break;
+
+                  case Paused_Transient:
+                     // user wants to override
+                     unpause();
+                     break;
+
+                  };
+                  break;
+
+               case utils.COMMAND_UPDATE_DISPLAY:
+                  notifyChange(WhatChanged.Meta);
+                  notifyChange(WhatChanged.State);
+                  break;
+
+               case utils.COMMAND_QUIT:
+                  pause(PlayState.Paused);
+
+                  NotificationManager notifManager = (NotificationManager)
+                     getSystemService(Context.NOTIFICATION_SERVICE);
+                  notifManager.cancel(null, utils.notif_play_id);
+                  break;
+
+               default:
+                  utils.errorLog
+                     (context, "broadcastReceiverCommand.onReceive: unknown command: " + Integer.toString(command) +
+                      ", " + intent.getExtras());
+
+               }
+            }
+            catch (Exception e)
+            {
                utils.errorLog
-                  (context, "broadcastReceiverCommand.onReceive: unknown command: " + Integer.toString(command) +
-                   ", " + intent.getExtras());
-
+                  (context, "broadcastReceiverCommand.onReceive: exception: ", e);
             }
          }
       };
@@ -960,35 +973,76 @@ public class PlayService extends Service
 
    private MediaSession.Callback mediaCallback = new MediaSession.Callback()
       {
-         @Override public void onPause() { pause(PlayState.Paused);}
+         @Override public void onPause()
+         {
+            try
+            {
+               pause(PlayState.Paused);
+            }
+            catch (Exception e)
+            {
+               utils.errorLog
+                  (context, "mediaCallback.onPause: exception: ", e);
+            }
+         }
 
          @Override
          public void onPlay()
          {
-            switch (PlayService.playing)
+            try
             {
-            case Idle:
-               next();
-               break;
+               switch (PlayService.playing)
+               {
+               case Idle:
+                  next();
+                  break;
 
-            case Playing:
-               break;
+               case Playing:
+                  break;
 
-            case Paused:
-               unpause();
-               break;
+               case Paused:
+                  unpause();
+                  break;
 
-            case Paused_Transient:
-               // user wants to override
-               unpause();
-               break;
+               case Paused_Transient:
+                  // user wants to override
+                  unpause();
+                  break;
 
-            };
+               };
+            }
+            catch (Exception e)
+            {
+               utils.errorLog
+                  (context, "mediaCallback.onPlay: exception: ", e);
+            }
          }
 
-         @Override public void onSkipToNext() { next();}
+         @Override public void onSkipToNext()
+         {
+            try
+            {
+               next();
+            }
+            catch (Exception e)
+            {
+               utils.errorLog
+                  (context, "mediaCallback.onSkipToNext: exception: ", e);
+            }
+         }
 
-         @Override public void onSkipToPrevious() { previous();}
+         @Override public void onSkipToPrevious()
+         {
+            try
+            {
+               previous();
+            }
+            catch (Exception e)
+            {
+               utils.errorLog
+                  (context, "mediaCallback.onSkipToPrevious: exception: ", e);
+            }
+         }
       };
 
    private OnAudioFocusChangeListener audioFocusListener = new OnAudioFocusChangeListener()
@@ -1084,62 +1138,70 @@ public class PlayService extends Service
    {
       super.onCreate();
 
-      context = this;
+      try
+      {
+         context = this;
 
-      IntentFilter filter = new IntentFilter();
-      filter.addAction(utils.ACTION_COMMAND);
-      registerReceiver(broadcastReceiverCommand, filter);
+         IntentFilter filter = new IntentFilter();
+         filter.addAction(utils.ACTION_COMMAND);
+         registerReceiver(broadcastReceiverCommand, filter);
 
-      filter = new IntentFilter();
-      filter.addAction(AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED);
-      registerReceiver(broadcastReceiverBTConnect, filter);
+         filter = new IntentFilter();
+         filter.addAction(AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED);
+         registerReceiver(broadcastReceiverBTConnect, filter);
 
-      utils.activityIntent = PendingIntent.getActivity
-         (context.getApplicationContext(),
-          utils.activityIntentId,
-          new Intent(context, activity.class),
-          0);
+         utils.activityIntent = PendingIntent.getActivity
+            (context.getApplicationContext(),
+             utils.activityIntentId,
+             new Intent(context, activity.class),
+             0);
 
-      prevIntent = PendingIntent.getBroadcast
-         (context.getApplicationContext(),
-          utils.prevIntentId,
-          new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PREVIOUS), 0);
+         prevIntent = PendingIntent.getBroadcast
+            (context.getApplicationContext(),
+             utils.prevIntentId,
+             new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PREVIOUS), 0);
 
-      nextIntent = PendingIntent.getBroadcast
-         (context.getApplicationContext(),
-          utils.nextIntentId,
-          new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_NEXT), 0);
+         nextIntent = PendingIntent.getBroadcast
+            (context.getApplicationContext(),
+             utils.nextIntentId,
+             new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_NEXT), 0);
 
-      pauseIntent = PendingIntent.getBroadcast
-         (context.getApplicationContext(),
-          utils.pauseIntentId,
-          new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PAUSE), 0);
+         pauseIntent = PendingIntent.getBroadcast
+            (context.getApplicationContext(),
+             utils.pauseIntentId,
+             new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PAUSE), 0);
 
-      playIntent = PendingIntent.getBroadcast
-         (context.getApplicationContext(),
-          utils.playIntentId,
-          new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PLAY), 0);
+         playIntent = PendingIntent.getBroadcast
+            (context.getApplicationContext(),
+             utils.playIntentId,
+             new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PLAY), 0);
 
-      createMediaPlayer();
+         createMediaPlayer();
 
-      audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 
-      mediaSession = new MediaSession(context, "stephes media session");
+         mediaSession = new MediaSession(context, "stephes media session");
 
-      mediaSession.setFlags
-         (MediaSession.FLAG_HANDLES_MEDIA_BUTTONS | MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS);
+         mediaSession.setFlags
+            (MediaSession.FLAG_HANDLES_MEDIA_BUTTONS | MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS);
 
-      mediaSession.setCallback(mediaCallback);
-      mediaSession.setActive(true);
+         mediaSession.setCallback(mediaCallback);
+         mediaSession.setActive(true);
 
-      utils.retriever = new MetaData();
+         utils.retriever = new MetaData();
 
-      playlist       = new LinkedList<String>();
-      playlistPos    = -1;
-      playing        = PlayState.Idle;
-      haveAudioFocus = false;
+         playlist       = new LinkedList<String>();
+         playlistPos    = -1;
+         playing        = PlayState.Idle;
+         haveAudioFocus = false;
 
-      restoreState();
+         restoreState();
+      }
+      catch (Exception e)
+      {
+         utils.errorLog
+            (context, "PlayService.onCreate: exception: ", e);
+      }
    }
 
    @Override public void onDestroy()
@@ -1152,28 +1214,37 @@ public class PlayService extends Service
       // not request it, and without an activity to control us! So
       // force idle.
 
-      pause(PlayState.Idle); // does saveState()
+      try
+      {
+         pause(PlayState.Idle); // does saveState()
 
-      NotificationManager notifManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-      notifManager.cancel(null, utils.notif_play_id);
-      prevIntent.cancel();
-      nextIntent.cancel();
-      playIntent.cancel();
-      pauseIntent.cancel();
+         NotificationManager notifManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+         notifManager.cancel(null, utils.notif_play_id);
+         prevIntent.cancel();
+         nextIntent.cancel();
+         playIntent.cancel();
+         pauseIntent.cancel();
 
-      mediaPlayer.reset();
-      mediaPlayer.release();
-      mediaPlayer = null;
+         mediaPlayer.reset();
+         mediaPlayer.release();
+         mediaPlayer = null;
 
-      audioManager.abandonAudioFocus(audioFocusListener);
+         audioManager.abandonAudioFocus(audioFocusListener);
 
-      mediaSession.release();
+         mediaSession.release();
 
-      handler.removeCallbacksAndMessages(null);
+         handler.removeCallbacksAndMessages(null);
 
-      unregisterReceiver(broadcastReceiverCommand);
+         unregisterReceiver(broadcastReceiverCommand);
 
-      unregisterReceiver(broadcastReceiverBTConnect);
+         unregisterReceiver(broadcastReceiverBTConnect);
+
+      }
+      catch (Exception e)
+      {
+         utils.errorLog
+            (context, "PlayService.onDestroy: exception: ", e);
+      }
 
       super.onDestroy();
    }
@@ -1191,44 +1262,5 @@ public class PlayService extends Service
          utils.debugLog("onStartCommand got unexpected intent: " + intent);
       }
       return START_STICKY;
-    }
-
-   private void dumpLog()
-   {
-      final String logFilename = utils.smmDirectory + "/debug.log";
-
-      try
-      {
-         PrintWriter writer = new PrintWriter(new FileWriter(logFilename));
-
-         dump(null, writer, null);
-         utils.debugClear();
-         writer.close();
-         utils.infoLog(this, "log written to " + logFilename);
-      }
-      catch (java.io.IOException e)
-      {
-         utils.errorLog(this, "can't write log to " + logFilename, e);
-      }
    }
-
-   @Override protected void dump(FileDescriptor fd, PrintWriter writer, String[] args)
-   {
-      writer.println("playing            : " + playing);
-      writer.println("playlistDirectory  : " + utils.playlistDirectory);
-      writer.println("smmDirectory       : " + utils.smmDirectory);
-      writer.println("playlistBasename   : " + utils.playlistBasename);
-      writer.println("playlist size      : " + playlist.size());
-      writer.println("currentFile        : " + playlist.get(playlistPos));
-      writer.println("playlistPos        : " + playlistPos);
-
-      SharedPreferences storage = getSharedPreferences(utils.preferencesName, MODE_PRIVATE);
-
-      writer.println("storage." + keyPlaylistDirectory + ": " + storage.getString(keyPlaylistDirectory, ""));
-      writer.println("storage." + keyPlaylistFilename + ": " + storage.getString(keyPlaylistFilename, ""));
-
-      utils.debugDump(writer);
-
-      utils.debugClear();
-    }
 }

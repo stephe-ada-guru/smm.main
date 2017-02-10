@@ -1,7 +1,7 @@
 # top level Makefile to build Stephe's Music Player app
 
 # must match app/build.gradle versionName, versionCode
-VERSION := 16
+VERSION := 17
 
 .PHONY : force
 

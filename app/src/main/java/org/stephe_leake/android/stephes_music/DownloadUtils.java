@@ -35,9 +35,7 @@ import java.net.URISyntaxException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.text.SimpleDateFormat;
 import java.io.PrintWriter;
-import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FilenameUtils;
@@ -64,10 +62,11 @@ public class DownloadUtils
 
    private static OkHttpClient httpClient = null;
 
-   final private static String logFileExt = ".txt";
+   private static String logFileBaseName = "download_log";
+
    public static String logFileName()
    {
-      return utils.smmDirectory + "/download_log" + logFileExt;
+      return utils.smmDirectory + "/" + logFileBaseName + utils.logFileExt;
    }
 
    public static LogLevel prefLogLevel = LogLevel.Info;
@@ -76,49 +75,7 @@ public class DownloadUtils
    {
       if (level.toInt() >= prefLogLevel.toInt() )
       {
-         final SimpleDateFormat fmt         = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss : ", Locale.US);
-         final long             time        = System.currentTimeMillis(); // local time zone
-         final String           timeStamp   = fmt.format(time);
-         final String           logFileName = DownloadUtils.logFileName();
-         String                 levelImg    = "";
-
-         switch (level)
-         {
-         case Info:
-            levelImg = "";
-            break;
-
-         case Error:
-            levelImg = "ERROR: ";
-            break;
-         }
-
-         {
-            File logFile = new File(logFileName);
-            if (logFile.exists() && time - logFile.lastModified() > 4 * utils.millisPerHour)
-            {
-               final String oldLogFileName = utils.smmDirectory + "/download_log_1" + logFileExt;
-               File oldLogFile = new File(oldLogFileName);
-
-               if (oldLogFile.exists()) oldLogFile.delete();
-
-               logFile.renameTo(oldLogFile);
-            }
-         }
-
-         try
-         {
-            PrintWriter writer = new PrintWriter(new FileWriter(logFileName, true)); // append
-
-            writer.println(timeStamp + levelImg + msg);
-            writer.close();
-         }
-         catch (java.io.IOException e)
-         {
-            if (null != context)
-               // null in unit tests
-               utils.errorLog(context, "can't write log to " + logFileName(), e);
-         }
+         utils.log(context, level, msg, logFileBaseName);
       }
    }
 

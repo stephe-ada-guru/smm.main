@@ -99,7 +99,7 @@ public class DownloadService extends IntentService
 
       in.close();
 
-      return songCount - startAt;
+      return songCount - startAt - 1;
    }
 
    private boolean download(Context context, String playlistAbsName, MediaScannerConnection mediaScanner)

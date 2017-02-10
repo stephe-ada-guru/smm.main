@@ -18,8 +18,8 @@ android
     applicationId "org.stephe_leake.android.stephes_music"
     minSdkVersion 21
     targetSdkVersion 23
-    versionName "16"
-    versionCode 16
+    versionName "17"
+    versionCode 17
   }
 
   signingConfigs

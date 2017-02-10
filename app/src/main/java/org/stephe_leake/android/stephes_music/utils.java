@@ -31,8 +31,12 @@ import android.widget.Toast;
 
 import java.io.PrintWriter;
 import java.lang.RuntimeException;
+import java.text.SimpleDateFormat;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.io.File;
+import java.io.FileWriter;
+import java.util.Locale;
 
 public class utils
 {
@@ -42,11 +46,6 @@ public class utils
    public static final long millisPerDay    = 24 * millisPerHour;
 
    public static final String preferencesName = "stephes_music";
-
-   // Must be shorter than 23 chars
-   public static final String logTag =
-      "stephes_music";
-   //  1        10        20 |
 
    //  Notification ids; all with null tag
    public static final int notif_play_id     = 1;
@@ -81,7 +80,6 @@ public class utils
    public static final int COMMAND_RESERVED = 1; // something sends this to PlayService!
 
    public static final int COMMAND_DOWNLOAD           = 2;
-   public static final int COMMAND_DUMP_LOG           = 3;
    public static final int COMMAND_JUMP               = 4;
    public static final int COMMAND_NEXT               = 5;
    public static final int COMMAND_NOTE               = 6;
@@ -188,89 +186,69 @@ public class utils
       return time.format(format);
    }
 
-   static class LogEntry
+   final public static String logFileExt = ".txt";
+
+   final public static String errorLogFileBaseName = "error_log";
+
+   public static void log(Context context, LogLevel level, String msg, String logFileBaseName)
    {
-      Object item;
+      final SimpleDateFormat fmt         = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss : ", Locale.US);
+      final long             time        = System.currentTimeMillis(); // local time zone
+      final String           timeStamp   = fmt.format(time);
+      String                 levelImg    = level.image();
+      String                 logFileName = utils.smmDirectory + "/" + logFileBaseName + logFileExt;
+      File                   logFile     = new File(logFileName);
 
-      LogEntry(Object o) {item = o;}
-
-      void dump(PrintWriter out)
+      if (logFile.exists() && time - logFile.lastModified() > 4 * utils.millisPerHour)
       {
-         if (item instanceof Exception)
-         {
-            out.println(item);
-            ((Exception)item).printStackTrace(out);
-         }
-         else
-         {
-            out.println(item);
-         }
+         final String oldLogFileName = utils.smmDirectory + "/" + logFileBaseName + "_1" + logFileExt;
+         File oldLogFile = new File(oldLogFileName);
+
+         if (oldLogFile.exists()) oldLogFile.delete();
+
+         logFile.renameTo(oldLogFile);
+      }
+
+      try
+      {
+         PrintWriter writer = new PrintWriter(new FileWriter(logFileName, true)); // append
+
+         writer.println(timeStamp + levelImg + msg);
+         writer.close();
+      }
+      catch (java.io.IOException e)
+      {
+         if (null != context)
+            // null in unit tests and when called from Service
+            utils.errorLog(context, "can't write log to " + logFileName, e);
       }
    }
 
-   private static LogEntry[] log = new LogEntry[100];
-
-   private static int logNext = 0;
-
-   public static void debugClear()
+   public static void debugLog(String msg)
    {
-      for (int i = 0; i < log.length; i++)
-      {
-         log[i] = null;
-      }
-      logNext = 0;
-   }
-
-   public static void debugLog(Object o)
-   {
-      // Cache error messages to be dumped by debugDump, which is
-      // called by 'adb shell dumpsys activity service ...service' and
-      // activity menu "dump log".
-      //
-      // However, this log disappears if the service dies. FIXME: need
-      // 'dump log on service die' option.
-      //
-      // If 'o' is an Exception, the dump will include a stack trace.
-
-      log[logNext++] = new LogEntry(o);
-      if (logNext >= log.length)
-      {
-         logNext = 0;
-      }
-   }
-
-   public static void debugDump(PrintWriter out)
-   {
-      // No point in catching exceptions here, we can't report them
-      // (no Context, so no toasts).
-      for (int i = 0; i < log.length; i++)
-      {
-         int idx = (logNext + i);
-         if (idx >= log.length)
-         {
-            idx -= log.length;
-         }
-         LogEntry entry = log[idx];
-         if (entry != null)
-         {
-            entry.dump(out);
-         }
-      }
+      log(null, LogLevel.Debug, msg, errorLogFileBaseName);
    }
 
    public static void errorLog(Context context, String msg, Throwable e)
    {
       // programmer errors (possibly due to Android bugs :)
-      Log.e(logTag, msg, e);
+      log(context, LogLevel.Error, msg + e.toString(), errorLogFileBaseName);
       Toast.makeText(context, msg + e.toString(), Toast.LENGTH_LONG).show();
    }
 
    public static void errorLog(Context context, String msg)
    {
       // programmer errors (possibly due to Android bugs :)
-      Log.e(logTag, msg);
+      log (context, LogLevel.Error, msg, errorLogFileBaseName);
       Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
    }
+
+   // The following write to the Android log, viewed with Android Studio
+
+   // Must be shorter than 23 chars
+   public static final String logTag =
+      "stephes_music";
+   //  1        10        20 |
 
    static void infoLog(Context context, String msg)
    {

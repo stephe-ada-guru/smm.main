@@ -22,10 +22,32 @@ public enum LogLevel
 {
    Verbose(0),
    Info(1),
-   Error(2);
+   Error(2),
+   Debug(3);
 
    private int index;
    private LogLevel(int i) {index = i;}
 
    int toInt() {return index;}
+
+   // String toString() implicit
+
+   String image()
+   {
+      switch (this)
+      {
+      case Verbose:
+      case Info:
+         return "";
+
+      case Error:
+         return "ERROR: ";
+
+      case Debug:
+         return "Debug: ";
+
+      default:
+         return "ProgrammerError";
+      }
+   }
 }

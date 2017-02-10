@@ -64,7 +64,6 @@ public class activity extends android.app.Activity
    // constants
    private static final int maxProgress = 1000;
 
-   private static final int MENU_DUMP_DEBUG_LOG        = 0;
    private static final int MENU_PREFERENCES           = 1;
    private static final int MENU_QUIT                  = 2;
    private static final int MENU_RESET_PLAYLIST        = 3;
@@ -255,7 +254,7 @@ public class activity extends android.app.Activity
             }
             catch (RuntimeException e)
             {
-               utils.debugLog("activity.broadcastReceiver: " + e);
+               utils.errorLog(null, "activity.broadcastReceiver: " + e);
             }
          }
       };
@@ -366,9 +365,9 @@ public class activity extends android.app.Activity
             utils.errorLog(this, "onCreate got unexpected intent: " + intent.toString());
          }
       }
-      catch (RuntimeException e)
+      catch (Exception e)
       {
-         utils.errorLog(this, "onCreate: That does not compute: " + e.getMessage(), e);
+         utils.errorLog(this, "activity.onCreate: exception: ", e);
          finish();
       }
    }
@@ -394,9 +393,9 @@ public class activity extends android.app.Activity
             wakeLock.acquire();
          }
       }
-      catch (RuntimeException e)
+      catch (Exception e)
       {
-         utils.errorLog(this, "onResume: ", e);
+         utils.errorLog(this, "activity.onResume: ", e);
       }
    }
 
@@ -418,7 +417,7 @@ public class activity extends android.app.Activity
       }
       catch (RuntimeException e)
       {
-         utils.errorLog(this, "onPause: ", e);
+         utils.errorLog(this, "activity.onPause: ", e);
       }
    }
 
@@ -484,7 +483,6 @@ public class activity extends android.app.Activity
       menu.add(0, MENU_JUMP_TO_SONG, 0, R.string.menu_jump_to_song);
       menu.add(0, MENU_PREFERENCES, 0, R.string.menu_preferences);
       menu.add(0, MENU_DOWNLOAD_NEW_PLAYLIST, 0, R.string.menu_download_new_playlist);
-      menu.add(0, MENU_DUMP_DEBUG_LOG, 0, R.string.menu_dump_log);
       return true; // display menu
    }
 
@@ -513,10 +511,6 @@ public class activity extends android.app.Activity
          stopService (new Intent().setComponent(playServiceComponentName));
 
          finish();
-         break;
-
-      case MENU_DUMP_DEBUG_LOG:
-         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_DUMP_LOG));
          break;
 
       case MENU_DOWNLOAD_NEW_PLAYLIST:
