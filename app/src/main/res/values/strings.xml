@@ -42,7 +42,6 @@
   <!-- menu -->
   <string name="menu_copy">Copy</string>
   <string name="menu_download_new_playlist">Download new playlist</string>
-  <string name="menu_dump_log">Dump log</string>
   <string name="menu_jump_to_song">Jump to song</string>
   <string name="menu_liner">Liner notes</string>
   <string name="menu_preferences">Preferences</string>
@@ -50,6 +49,7 @@
   <string name="menu_reset_playlist">Reset playlist</string>
   <string name="menu_share">Share</string>
   <string name="menu_show_download_log">Show download log</string>
+  <string name="menu_show_error_log">Show error log</string>
   <string name="menu_update_playlist">Update playlist</string>
 
   <!-- preference ; alphabetical after activity name-->

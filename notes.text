@@ -19,14 +19,6 @@ reload playlist after clean and after download
 
     deleteing .last loses current song position?
 
-app crashes in car
-    started when state farm trip app installed
-    run under debugger
-        save-state editor.commit failed; no such file/device!?
-
-    add catch-all exception handlers that dump exception message to a log file
-        in service, handler, ?
-
 per-list max songs
     only 70? meditation in db
     different mode: request all, delete missing (category changed), download new

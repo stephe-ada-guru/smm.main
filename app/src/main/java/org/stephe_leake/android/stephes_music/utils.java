@@ -99,12 +99,13 @@ public class utils
    public static final int RESULT_PLAYLIST_DIRECTORY = Activity.RESULT_FIRST_USER + 2;
    public static final int RESULT_SMM_DIRECTORY      = Activity.RESULT_FIRST_USER + 3;
 
-   public static final int pauseIntentId    = 1;
-   public static final int playIntentId     = 2;
-   public static final int prevIntentId     = 3;
-   public static final int nextIntentId     = 4;
-   public static final int activityIntentId = 5;
-   public static final int showLogIntentId  = 6;
+   public static final int pauseIntentId           = 1;
+   public static final int playIntentId            = 2;
+   public static final int prevIntentId            = 3;
+   public static final int nextIntentId            = 4;
+   public static final int activityIntentId        = 5;
+   public static final int showDownloadLogIntentId = 6;
+   public static final int showErrorLogIntentId    = 7;
 
    ////////// Shared objects
 
@@ -141,7 +142,8 @@ public class utils
    }
 
    public static PendingIntent activityIntent;
-   public static Intent        showLogIntent;
+   public static Intent        showDownloadLogIntent;
+   public static Intent        showErrorLogIntent;
    // For notifications.
 
    public static Timer downloadTimer;
@@ -190,6 +192,11 @@ public class utils
 
    final public static String errorLogFileBaseName = "error_log";
 
+   public static String errorLogFileName()
+   {
+      return utils.smmDirectory + "/" + errorLogFileBaseName + logFileExt;
+   }
+
    public static void log(Context context, LogLevel level, String msg, String logFileBaseName)
    {
       final SimpleDateFormat fmt         = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss : ", Locale.US);
@@ -226,7 +233,8 @@ public class utils
 
    public static void debugLog(String msg)
    {
-      log(null, LogLevel.Debug, msg, errorLogFileBaseName);
+      if (BuildConfig.DEBUG)
+         log(null, LogLevel.Debug, msg, errorLogFileBaseName);
    }
 
    public static void errorLog(Context context, String msg, Throwable e)

@@ -74,6 +74,7 @@ public class activity extends android.app.Activity
    private static final int MENU_DOWNLOAD_NEW_PLAYLIST = 8;
    private static final int MENU_JUMP_TO_SONG          = 9;
    private static final int MENU_SHOW_DOWNLOAD_LOG     = 10;
+   private static final int MENU_SHOW_ERROR_LOG        = 11;
 
    private static final int RESULT_PREFERENCES = 1;
 
@@ -292,7 +293,7 @@ public class activity extends android.app.Activity
       setPlaylistDirectory();
       setSMMDirectory();
 
-      utils.showLogIntent =
+      utils.showDownloadLogIntent =
          new Intent(Intent.ACTION_VIEW)
           .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
           .setDataAndType
@@ -303,6 +304,16 @@ public class activity extends android.app.Activity
            .build(),
            "text/plain");
 
+      utils.showErrorLogIntent =
+         new Intent(Intent.ACTION_VIEW)
+          .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+          .setDataAndType
+          (new Uri.Builder()
+           .scheme("file")
+           .authority("")
+           .path(utils.errorLogFileName())
+           .build(),
+           "text/plain");
       {
          GregorianCalendar time = new GregorianCalendar(); // holds current time
          time.add(Calendar.DAY_OF_MONTH, 1); // tomorrow
@@ -480,6 +491,7 @@ public class activity extends android.app.Activity
       menu.add(0, MENU_RESET_PLAYLIST, 0, R.string.menu_reset_playlist);
       menu.add(0, MENU_UPDATE_PLAYLIST, 0, R.string.menu_update_playlist);
       menu.add(0, MENU_SHOW_DOWNLOAD_LOG, 0, R.string.menu_show_download_log);
+      menu.add(0, MENU_SHOW_ERROR_LOG, 0, R.string.menu_show_error_log);
       menu.add(0, MENU_JUMP_TO_SONG, 0, R.string.menu_jump_to_song);
       menu.add(0, MENU_PREFERENCES, 0, R.string.menu_preferences);
       menu.add(0, MENU_DOWNLOAD_NEW_PLAYLIST, 0, R.string.menu_download_new_playlist);
@@ -562,7 +574,11 @@ public class activity extends android.app.Activity
          break;
 
       case MENU_SHOW_DOWNLOAD_LOG:
-         startActivity(utils.showLogIntent);
+         startActivity(utils.showDownloadLogIntent);
+         break;
+
+      case MENU_SHOW_ERROR_LOG:
+         startActivity(utils.showErrorLogIntent);
          break;
 
       case MENU_PREFERENCES:

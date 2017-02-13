@@ -16,7 +16,7 @@
 //  it's broken my Samsung Galaxy Note II and III. So this uses the
 //  MediaStore interface.
 //
-//  Copyright (C) 2013, 2015, 2016 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2013, 2015 - 2017 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -138,7 +138,7 @@ public class MetaData
          if (cursor == null ||
              cursor.getCount() < 1)
          {
-            utils.debugLog("media query failed");
+            utils.errorLog(context, "media query failed");
 
             title    = "<query failed>";
             album    = "<query failed>";
@@ -159,7 +159,7 @@ public class MetaData
 
             if (cursor.isAfterLast())
             {
-               utils.debugLog("file not found: " + sourceFile);
+               utils.errorLog(context, "file not found in media db: " + sourceFile);
                title    = "<file not found>";
                album    = "<file not found>";
                artist   = "<file not found>";
@@ -177,7 +177,7 @@ public class MetaData
       }
       catch (Exception e)
       {
-         utils.debugLog("query failed: " + e);
+         utils.errorLog(context, "media query failed: " + e);
          title    = "<query failed>";
          album    = "<query failed>";
          artist   = "<query failed>";
@@ -190,11 +190,6 @@ public class MetaData
          File albumArtFile = null;
          long maxSize = 0;
 
-         if (BuildConfig.DEBUG)
-            utils.debugLog
-               (Integer.toString(albumArtFiles.length) + ".jpg files found in " +
-                musicFile.getParentFile().getAbsolutePath());
-
          for (File file : albumArtFiles)
          {
             if (file.length() > maxSize)
@@ -206,8 +201,6 @@ public class MetaData
 
          if (albumArtFile != null)
          {
-            if (BuildConfig.DEBUG) utils.debugLog ("create bitmap for " + albumArtFile.getAbsolutePath());
-
             // FIXME: scale to layout.
             albumArt = BitmapFactory.decodeStream(new FileInputStream(albumArtFile));
          }

@@ -349,17 +349,11 @@ public class PlayService extends Service
          // saveState properly. So do it here.
          saveState();
       }
-      else
-      {
-         if (BuildConfig.DEBUG) utils.verboseLog("pause while not playing");
-      }
    }
 
    private void play(final String path, final int pos)
    {
       // path must be relative to playlistDirectory
-
-      if (BuildConfig.DEBUG) utils.verboseLog("play " + path + "; at " + pos);
 
       try
       {
@@ -398,7 +392,7 @@ public class PlayService extends Service
       }
       catch (RuntimeException e)
       {
-         utils.debugLog("play failed: " + e.toString());
+         utils.errorLog(null, "play failed: ", e);
       }
    }
 
@@ -416,7 +410,7 @@ public class PlayService extends Service
       if (!playlistFile.canRead())
       {
          // This is an SMM error, or failing sdcard
-         utils.debugLog("can't read " + filename);
+         utils.errorLog(null, "can't read " + filename);
          throw new Fail();
       }
 
@@ -445,8 +439,6 @@ public class PlayService extends Service
          reader.close();
       }
       catch (IOException e) {} // .last file deleted by DownloadUtils.firstPass
-
-      if (BuildConfig.DEBUG) utils.debugLog("start file: " + currentFile);
 
       try
       {
@@ -519,17 +511,17 @@ public class PlayService extends Service
       }
       catch (java.io.FileNotFoundException e)
       {
-         utils.debugLog("playlist file not found: " + filename + e.toString());
+         utils.errorLog(null, "playlist file not found: " + filename + e.toString());
          throw new Fail();
       }
       catch (java.io.IOException e)
       {
-         utils.debugLog("error reading playlist file: "  + filename + e.toString());
+         utils.errorLog(null, "error reading playlist file: "  + filename + e.toString());
          throw new Fail();
       }
       catch (RuntimeException e)
       {
-         utils.debugLog("playList failed" + e.toString());
+         utils.errorLog(null, "playList failed" + e.toString());
          throw new Fail();
       }
    }
@@ -596,9 +588,6 @@ public class PlayService extends Service
 
       utils.playlistDirectory = storage.getString(keyPlaylistDirectory, null);
       utils.playlistBasename  = storage.getString(keyPlaylistFilename, null);
-
-      if (BuildConfig.DEBUG)
-         utils.verboseLog("restoreState: " + utils.playlistDirectory + ", " + utils.playlistBasename);
 
       if (utils.playlistDirectory != null && utils.playlistBasename != null)
       {
@@ -671,8 +660,6 @@ public class PlayService extends Service
    {
       if (!haveAudioFocus)
       {
-         if (BuildConfig.DEBUG) utils.verboseLog("unpause requestAudioFocus");
-
          final int result = audioManager.requestAudioFocus
             (audioFocusListener,
              android.media.AudioManager.STREAM_MUSIC,
@@ -680,13 +667,9 @@ public class PlayService extends Service
 
          if (result != android.media.AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
          {
-            utils.debugLog("can't get audio focus");
+            utils.errorLog(context, "can't get audio focus");
             return;
          }
-      }
-      else
-      {
-         if (BuildConfig.DEBUG) utils.verboseLog("unpause haveAudioFocus");
       }
 
       mediaPlayer.start();
@@ -714,11 +697,14 @@ public class PlayService extends Service
          }
          catch (IOException e)
          {
-            utils.debugLog("can't write note file: " + e);
+            // If we can't write the note file, we probably can't
+            // write the error log either. But there's nothing else we
+            // can do from here.
+            utils.errorLog(null, "can't write note file: ", e);
          }
          catch (RuntimeException e)
          {
-            utils.debugLog("writeNote: " + e);
+            utils.errorLog(null, "writeNote: ", e);
          }
       }
    }
@@ -778,7 +764,6 @@ public class PlayService extends Service
             switch (msg.what)
             {
             case UNPAUSE:
-               if (BuildConfig.DEBUG) utils.verboseLog("PlayService handler: UNPAUSE");
                unpause();
 
             case UPDATE_DISPLAY:
@@ -800,8 +785,6 @@ public class PlayService extends Service
             try
             {
                final int command = intent.getIntExtra(utils.EXTRA_COMMAND, -1);
-
-               if (BuildConfig.DEBUG) utils.verboseLog("command: " + Integer.toString (command));
 
                // command alphabetical order
                switch (command)
@@ -948,8 +931,6 @@ public class PlayService extends Service
          {
             final int state = intent.getIntExtra(AudioManager.EXTRA_SCO_AUDIO_STATE, -2);
 
-            if (BuildConfig.DEBUG) utils.verboseLog("bluetooth state: " + state);
-
             switch (state)
             {
             case AudioManager.SCO_AUDIO_STATE_CONNECTED:
@@ -1084,7 +1065,7 @@ public class PlayService extends Service
              }
              else
              {
-                utils.debugLog("Unknown onAudioFocusChange code " + focusChange);
+                utils.errorLog(null, "Unknown onAudioFocusChange code " + focusChange);
              }
           }
        };
@@ -1101,13 +1082,11 @@ public class PlayService extends Service
       {
          public boolean onError(MediaPlayer mp, int what, int extra)
          {
-            if (BuildConfig.DEBUG) utils.verboseLog("MediaPlayer onError: " + what + "," + extra);
+            utils.errorLog(null, "MediaPlayer onError: " + what + "," + extra);
 
             switch (what)
             {
             case MediaPlayer.MEDIA_ERROR_SERVER_DIED: // = 100
-               if (BuildConfig.DEBUG) utils.verboseLog("recreating MediaPlayer");
-
                mediaPlayer.release();
                createMediaPlayer();
                // Since we don't know why it died, just trying again seems
@@ -1121,7 +1100,7 @@ public class PlayService extends Service
                return true;
 
             default:
-               if (BuildConfig.DEBUG) utils.verboseLog("unknown MediaPlayer error code");
+               utils.errorLog(null, "unknown MediaPlayer error code");
                // onCompletion will _not_ be called
                return true;
             }
@@ -1206,8 +1185,6 @@ public class PlayService extends Service
 
    @Override public void onDestroy()
    {
-      if (BuildConfig.DEBUG) utils.verboseLog("onDestroy");
-
       // Android sometimes restarts this service even though we have
       // quit and the user did not request it. So if we save
       // PlayState.playing, we will start playing when the user did
@@ -1255,11 +1232,10 @@ public class PlayService extends Service
       {
          // intent is null if the service is restarted by Android
          // after a crash.
-         if (BuildConfig.DEBUG) utils.verboseLog("onStartCommand null intent");
       }
       else if (intent.getAction() != null)
       {
-         utils.debugLog("onStartCommand got unexpected intent: " + intent);
+         utils.errorLog(null, "onStartCommand got unexpected intent: " + intent);
       }
       return START_STICKY;
    }

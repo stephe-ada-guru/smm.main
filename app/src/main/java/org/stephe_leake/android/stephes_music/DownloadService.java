@@ -229,12 +229,12 @@ public class DownloadService extends IntentService
       String                 msg            = "";
       Boolean                success        = true;
 
-      // Not in constructor, because showLogIntent can change if user
-      // changes preference.
+      // Not in constructor, because showDownloadLogIntent can change
+      // if user changes preference.
       showLogPendingIntent = PendingIntent.getActivity
          (this.getApplicationContext(),
-          utils.showLogIntentId,
-          utils.showLogIntent,
+          utils.showDownloadLogIntentId,
+          utils.showDownloadLogIntent,
           0);
 
       {
