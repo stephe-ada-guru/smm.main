@@ -1,7 +1,7 @@
 # top level Makefile to build Stephe's Music Player app
 
 # must match app/build.gradle versionName, versionCode
-VERSION := 17
+VERSION := 18
 
 .PHONY : force
 
@@ -49,7 +49,7 @@ tag :
 	mtn tag h:org.stephe_leake.music_player.java version-$(VERSION)
 
 archive :
-	cp build/outputs/apk/org.stephe_leake.music_player.java-release-$(VERSION).apk /cygdrive/d/Archive/Android
+	cp app/build/outputs/apk/app-debug-$(VERSION).apk /cygdrive/d/Archive/Android/org.stephe_leake.music_player.debug-$(VERSION).apk
 
 install-emulator-all : build install-emulator-debug
 

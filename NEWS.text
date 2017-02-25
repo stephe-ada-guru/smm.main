@@ -61,3 +61,6 @@ Feb 2017
 
 - version 17
     add more catch-all exception handlers, doc interaction with State Farm Drive Safe
+
+- version 18
+    don't restart timer on rotate

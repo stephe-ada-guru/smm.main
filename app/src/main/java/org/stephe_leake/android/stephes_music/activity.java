@@ -282,51 +282,54 @@ public class activity extends android.app.Activity
 
    @Override public void onCreate(Bundle savedInstanceState)
    {
-      utils.mainActivity = this;
-
-      PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
-
-      final float scale = getTextViewTextScale();
-
-      final Intent intent = getIntent();
-
-      setPlaylistDirectory();
-      setSMMDirectory();
-
-      utils.showDownloadLogIntent =
-         new Intent(Intent.ACTION_VIEW)
-          .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-          .setDataAndType
-          (new Uri.Builder()
-           .scheme("file")
-           .authority("")
-           .path(DownloadUtils.logFileName())
-           .build(),
-           "text/plain");
-
-      utils.showErrorLogIntent =
-         new Intent(Intent.ACTION_VIEW)
-          .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-          .setDataAndType
-          (new Uri.Builder()
-           .scheme("file")
-           .authority("")
-           .path(utils.errorLogFileName())
-           .build(),
-           "text/plain");
-      {
-         GregorianCalendar time = new GregorianCalendar(); // holds current time
-         time.add(Calendar.DAY_OF_MONTH, 1); // tomorrow
-         time.set(Calendar.HOUR_OF_DAY, 0);
-         time.set(Calendar.MINUTE, 30); // 12:30 AM
-
-         utils.downloadTimer = new Timer();
-         utils.downloadTimer.scheduleAtFixedRate(utils.downloadTimerTask, time.getTime(), utils.millisPerDay);
-      }
-
       try
       {
          super.onCreate(savedInstanceState);
+
+         utils.mainActivity = this;
+
+         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
+
+         final float scale = getTextViewTextScale();
+
+         final Intent intent = getIntent();
+
+         setPlaylistDirectory();
+         setSMMDirectory();
+
+         utils.showDownloadLogIntent =
+            new Intent(Intent.ACTION_VIEW)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            .setDataAndType
+            (new Uri.Builder()
+             .scheme("file")
+             .authority("")
+             .path(DownloadUtils.logFileName())
+             .build(),
+             "text/plain");
+
+         utils.showErrorLogIntent =
+            new Intent(Intent.ACTION_VIEW)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            .setDataAndType
+            (new Uri.Builder()
+             .scheme("file")
+             .authority("")
+             .path(utils.errorLogFileName())
+             .build(),
+             "text/plain");
+         {
+            GregorianCalendar time = new GregorianCalendar(); // holds current time
+            time.add(Calendar.DAY_OF_MONTH, 1); // tomorrow
+            time.set(Calendar.HOUR_OF_DAY, 0);
+            time.set(Calendar.MINUTE, 30); // 12:30 AM
+
+            if (null == utils.downloadTimer)
+            {
+               utils.downloadTimer = new Timer();
+               utils.downloadTimer.scheduleAtFixedRate(utils.downloadTimerTask, time.getTime(), utils.millisPerDay);
+            }
+         }
 
          setContentView(R.layout.main);
 
