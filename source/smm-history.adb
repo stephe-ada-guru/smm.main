@@ -38,16 +38,13 @@ is
 
    package Float_Stats is new SAL.Gen_Stats (Float, Float_Elementary);
 
-   Stats : Float_Stats.Stats_Type;
-
+   Bin_Max       : constant       := 10;
    Years_Per_Bin : constant Float := 0.5;
 
    function To_Bin (Item : in Float) return Integer
    is begin
       return Integer (Item / Years_Per_Bin);
    end To_Bin;
-
-   Bin_Max : constant := 10;
 
    package Histograms is new SAL.Gen_Histogram
      (Bin_Min => 0,
@@ -59,6 +56,7 @@ is
 
    procedure Do_Category (Category : in String)
    is
+      Stats            : Float_Stats.Stats_Type;
       Histogram        : Histograms.Object;
       Dont_Play        : Integer := 0;
       Never_Downloaded : Integer := 0;
