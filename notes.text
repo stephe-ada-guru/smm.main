@@ -15,12 +15,15 @@ log is smm-server_driver.log
 
 check include liner_notes.pdf
 
-add web search
-    grep smm.db?
-    smm.find with wildcards?
+web:
+    add search
+        grep smm.db?
+        smm.find with wildcards?
 
-    compare all versions of "butterfly"
-        play songs from web
+        compare all versions of "butterfly"
+            play songs from web
+
+    process notes
 
 Copy playlist don't copy existing
 

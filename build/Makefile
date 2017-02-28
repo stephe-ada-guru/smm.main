@@ -11,8 +11,10 @@ t_one : test_one_harness.run
 #t_all : export SMM_Build := Debug
 t_all : smm-server_driver.exe test_all_harness.diff
 
-one : install
-	cd d:/Music; smm history; gnuplot histogram.gnuplot > histogram.png
+music : install
+	cd d:/Music; smm history
+	cd d:/Music; gnuplot vocal_histogram.gnuplot > vocal_histogram.png
+	cd d:/Music; gnuplot instrumental_histogram.gnuplot > instrumental_histogram.png
 
 install : ~/bin/smm.exe ~/bin/smm-server_driver.exe
 
