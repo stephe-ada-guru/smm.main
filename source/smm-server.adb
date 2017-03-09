@@ -82,7 +82,7 @@ package body SMM.Server is
                Least_Recent_Songs
                  (Db, Category, Songs,
                   Song_Count     => Count,
-                  New_Song_Count => Count_Type'Min (1, Count / 10),
+                  New_Song_Count => Count_Type'Max (1, Count / 10),
                   Seed           => Seed);
 
                for I of Songs loop
@@ -93,6 +93,7 @@ package body SMM.Server is
 
                return Build ("text/plain", Response);
             end;
+
          elsif File (URI) = "meta" then
             declare
                use Ada.Directories;
@@ -124,6 +125,7 @@ package body SMM.Server is
                --  GNAT runtime sets message to "(unknown directory "")"; no file name!
                raise Ada.IO_Exceptions.Name_Error with "unknown directory '" & Path (URI) & "'";
             end;
+
          else
             --  It's a file request.
             declare
