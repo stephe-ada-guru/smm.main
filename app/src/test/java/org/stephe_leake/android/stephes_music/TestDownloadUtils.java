@@ -240,12 +240,12 @@ public class TestDownloadUtils
    public void d_getNewSongsNominal()
    {
       // Translated from smm test_server.adb Set_Up_Case, Test_Playlist, Test_Meta, Test_Get_File
-      final String playlistFilename = "tmp/playlists/vocal.m3u";
-      final String category         = "vocal";
-      FileWriter   output;
-      Process      server           = null;
-      String[]     newSongs;
-      String[]     expectedSongs    =
+      final String  playlistFilename = "tmp/playlists/vocal.m3u";
+      final String  category         = "vocal";
+      FileWriter    output;
+      Process       server           = null;
+      StatusStrings newSongs;
+      String[]     expectedSongs     =
          {"artist_2/album_1/1 - song_1.mp3",
           "artist_1/album_1/1 - song_1.mp3",
           "artist_2/album_1/2 - song_2.mp3",
@@ -298,9 +298,9 @@ public class TestDownloadUtils
 
          newSongs = DownloadUtils.getNewSongsList(null, serverIP, category, 5, 0);
 
-         check(newSongs, expectedSongs);
+         check(newSongs.strings, expectedSongs);
 
-         DownloadUtils.getSongs(null, serverIP, newSongs, category, "tmp/playlists", null);
+         DownloadUtils.getSongs(null, serverIP, newSongs.strings, category, "tmp/playlists", null);
 
          // Check that the new song files and meta files are present
          checkExists("tmp/playlists/vocal/artist_1/album_1/1 - song_1.mp3", true);

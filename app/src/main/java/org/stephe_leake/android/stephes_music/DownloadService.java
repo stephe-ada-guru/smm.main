@@ -102,8 +102,7 @@ public class DownloadService extends IntentService
       return songCount - startAt - 1;
    }
 
-   private boolean download(Context context, String playlistAbsName, MediaScannerConnection mediaScanner)
-   // Return true on success or non-recoverable error, false on error; error message in log file.
+   private StatusCount download(Context context, String playlistAbsName, MediaScannerConnection mediaScanner)
    {
       Resources         res             = getResources();
       SharedPreferences prefs           = PreferenceManager.getDefaultSharedPreferences(this);
@@ -117,11 +116,13 @@ public class DownloadService extends IntentService
       File              playlistFile    = new File(playlistAbsName);
       File              playlistDirFile = new File(FilenameUtils.getPath(playlistFile.getPath()));
       String            category        = FilenameUtils.getBaseName(playlistAbsName);
+      StatusCount       status          = new StatusCount (ProcessStatus.Success, 0);
 
       if (serverIP == null)
       {
          notifyDownload("Download error", "set Server IP preference");
-         return true; // non-recoverable
+         status.status = ProcessStatus.Fatal;
+         return status;
       }
 
       // File.exists throws IOException ENOENT if the directory does not exist!
@@ -135,13 +136,25 @@ public class DownloadService extends IntentService
 
          if (songsRemaining < songCountMax - songCountThresh)
          {
-            String[] newSongs;
+            StatusStrings newSongs;
 
             if (playlistFile.exists())
             {
                DownloadUtils.cleanPlaylist(context, category, playlistDirFile.getAbsolutePath(), utils.smmDirectory);
-               if (!DownloadUtils.sendNotes(context, serverIP, category, utils.smmDirectory))
-                  return false;
+
+               if (utils.playlistAbsPath().equals(playlistAbsName))
+               {
+                  // Restart playlist to show new song position, count
+                  sendBroadcast
+                     (new Intent (utils.ACTION_COMMAND)
+                      .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PLAYLIST)
+                      .putExtra(utils.EXTRA_COMMAND_PLAYLIST, playlistAbsName)
+                      .putExtra(utils.EXTRA_COMMAND_STATE, PlayState.Paused.toInt()));
+               }
+
+               status.status = DownloadUtils.sendNotes(context, serverIP, category, utils.smmDirectory);
+               if (status.status != ProcessStatus.Success)
+                  return status;
             }
             else
             {
@@ -151,12 +164,18 @@ public class DownloadService extends IntentService
 
             newSongs = DownloadUtils.getNewSongsList(context, serverIP, category, songCountMax - songsRemaining, -1);
 
-            if (newSongs.length == 0)
-               return false;
+            if (newSongs.strings.length == 0)
+            {
+               status.status = newSongs.status;
+               status.count = 0;
+               return status;
+            }
 
-            if (!DownloadUtils.getSongs
-                (context, serverIP, newSongs, category, playlistDirFile.getAbsolutePath(), mediaScanner))
-               return false;
+            status = DownloadUtils.getSongs
+               (context, serverIP, newSongs.strings, category, playlistDirFile.getAbsolutePath(), mediaScanner);
+
+            if (status.status != ProcessStatus.Success)
+               return status;
 
             if (utils.playlistAbsPath().equals(playlistAbsName))
             {
@@ -181,9 +200,9 @@ public class DownloadService extends IntentService
       {
          // something is screwed up
          notifyDownload("Download error", e.toString());
-         return true; // non-recoverable
+         status.status = ProcessStatus.Fatal;
       }
-      return true;
+      return status;
    }
 
    private void notifyDownload(String title, String msg)
@@ -224,65 +243,82 @@ public class DownloadService extends IntentService
    @Override
    public void onHandleIntent(Intent intent)
    {
-      final String           intentPlaylist = intent.getStringExtra(utils.EXTRA_COMMAND_PLAYLIST);
-      MediaScannerConnection mediaScanner   = new MediaScannerConnection(this, null);
-      String                 msg            = "";
-      Boolean                success        = true;
-
-      // Not in constructor, because showDownloadLogIntent can change
-      // if user changes preference.
-      showLogPendingIntent = PendingIntent.getActivity
-         (this.getApplicationContext(),
-          utils.showDownloadLogIntentId,
-          utils.showDownloadLogIntent,
-          0);
-
+      try
       {
-         Resources         res   = getResources();
-         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+         final String           intentPlaylist = intent.getStringExtra(utils.EXTRA_COMMAND_PLAYLIST);
+         MediaScannerConnection mediaScanner   = new MediaScannerConnection(this, null);
+         String                 msg            = "";
+         StatusCount            status         = new StatusCount (ProcessStatus.Success, 0);
 
-         DownloadUtils.prefLogLevel = LogLevel.valueOf
-            (prefs.getString(res.getString(R.string.log_level_key), LogLevel.Info.toString()));
-      }
+         // Not in constructor, because showDownloadLogIntent can change
+         // if user changes preference.
+         showLogPendingIntent = PendingIntent.getActivity
+            (this.getApplicationContext(),
+             utils.showDownloadLogIntentId,
+             utils.showDownloadLogIntent,
+             0);
 
-      mediaScanner.connect();
-
-      if (null == intentPlaylist)
-      {
-         Resources         res       = getResources();
-         SharedPreferences prefs     = PreferenceManager.getDefaultSharedPreferences(this);
-         Set<String>       playlists = prefs.getStringSet
-            (res.getString(R.string.auto_download_playlists_key),
-             new LinkedHashSet<String>());
-
-         msg = "Downloading " + playlists.size() + " playlists";
-
-         notifyDownload(msg, "...");
-
-         for (String playlist : playlists)
          {
-            success = download(this, utils.playlistDirectory + "/" + playlist + ".m3u", mediaScanner);
-            if (!success)
+            Resources         res   = getResources();
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+
+            DownloadUtils.prefLogLevel = LogLevel.valueOf
+               (prefs.getString(res.getString(R.string.log_level_key), LogLevel.Info.toString()));
+         }
+
+         mediaScanner.connect();
+
+         if (null == intentPlaylist)
+         {
+            Resources         res       = getResources();
+            SharedPreferences prefs     = PreferenceManager.getDefaultSharedPreferences(this);
+            Set<String>       playlists = prefs.getStringSet
+               (res.getString(R.string.auto_download_playlists_key),
+                new LinkedHashSet<String>());
+
+            msg = "Downloading " + playlists.size() + " playlists";
+
+            notifyDownload(msg, "...");
+
+            for (String playlist : playlists)
             {
-               delayTimer.schedule(utils.downloadTimerTask, 10 * utils.millisPerMinute);
-               break;
+               status = download(this, utils.playlistDirectory + "/" + playlist + ".m3u", mediaScanner);
+               if (status.status == ProcessStatus.Retry)
+               {
+                  delayTimer.schedule(utils.downloadTimerTask, 10 * utils.millisPerMinute);
+                  break;
+               }
             }
          }
+         else
+         {
+            msg = "Downloading " + FilenameUtils.getBaseName(intentPlaylist);
+
+            notifyDownload(msg, "...");
+
+            status = download(this, intentPlaylist, mediaScanner);
+         }
+
+         switch (status.status)
+         {
+         case Success:
+            notifyDownload(msg, "downloaded " + status.count.toString() + " songs.");
+            break;
+
+         case Retry:
+            notifyDownload(msg, "delayed ...");
+            break;
+
+         case Fatal:
+            notifyDownload(msg, "error");
+            break;
+         }
+
+         mediaScanner.disconnect();
       }
-      else
+      catch (Exception e)
       {
-         msg = "Downloading " + FilenameUtils.getBaseName(intentPlaylist);
-
-         notifyDownload(msg, "...");
-
-         success = download(this, intentPlaylist, mediaScanner);
+         utils.errorLog(this, "DownloadService::onHandleIntent: ", e);
       }
-
-      if (success)
-         notifyDownload(msg, "done");
-      else
-         notifyDownload(msg, "error");
-
-      mediaScanner.disconnect();
    }
 }

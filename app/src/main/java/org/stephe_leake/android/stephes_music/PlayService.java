@@ -438,7 +438,7 @@ public class PlayService extends Service
          currentFile = reader.readLine();
          reader.close();
       }
-      catch (IOException e) {} // .last file deleted by DownloadUtils.firstPass
+      catch (IOException e) {} // .last file deleted
 
       try
       {

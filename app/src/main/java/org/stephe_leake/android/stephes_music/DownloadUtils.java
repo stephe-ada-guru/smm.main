@@ -116,7 +116,6 @@ public class DownloadUtils
          boolean          found       = false;
 
          input.close();
-         new File(lastFilename).delete();
 
          if (null == lastPlayed)
          {
@@ -313,14 +312,18 @@ public class DownloadUtils
       }
    }
 
-   public static String[] getNewSongsList(Context context, String serverIP, String category, int count, int randomSeed)
+   public static StatusStrings getNewSongsList(Context context,
+                                               String  serverIP,
+                                               String  category,
+                                               int     count,
+                                               int     randomSeed)
    // randomSeed = -1 means randomize; other values used in unit tests.
    {
       final String url = "http://" + serverIP + ":8080/download?category=" + category +
          "&count=" + Integer.toString(count) + (-1 == randomSeed ? "" : "&seed=" + Integer.toString(randomSeed));
 
-      Request request = new Request.Builder().url(url).build();
-      String[] result = {};
+      Request       request = new Request.Builder().url(url).build();
+      StatusStrings result  = new StatusStrings();
 
       ensureHttpClient();
 
@@ -328,21 +331,23 @@ public class DownloadUtils
       {
          try
          {
-            result = response.body().string().split("\r\n");
+            result.strings = response.body().string().split("\r\n");
          }
          catch (IOException e)
          {
             // From response.body()
             log(context, LogLevel.Error, "getNewSongsList request has no body: " + e.toString());
+            result.status = ProcessStatus.Fatal;
          }
       }
       catch (IOException e)
       {
          // From httpClient.newCall; connection failed after retry
          log(context, LogLevel.Error, "getNewSongsList '" + url + "': http request failed: " + e.toString());
+         result.status = ProcessStatus.Retry;
       }
 
-      log(context, LogLevel.Info, "getNewSongsList: " + Integer.toString(result.length) + " songs");
+      log(context, LogLevel.Info, "getNewSongsList: " + Integer.toString(result.strings.length) + " songs");
       return result;
    }
 
@@ -512,26 +517,22 @@ public class DownloadUtils
       return true;
    }
 
-   public static Boolean getSongs(Context                context,
-                                  String                 serverIP,
-                                  String[]               songs,
-                                  String                 category,
-                                  String                 root,
-                                  MediaScannerConnection mediaScanner)
+   public static StatusCount getSongs(Context                context,
+                                      String                 serverIP,
+                                      String[]               songs,
+                                      String                 category,
+                                      String                 root,
+                                      MediaScannerConnection mediaScanner)
    {
       // Get 'songs' from 'serverIP', store in 'root/<category>', add
       // to playlist 'root/<category>.m3u'. Also get album art, liner
       // notes for new directories. Add files to mediaScanner, if not
       // null.
-      //
-      // Returns 'true' for success or non-recoverable error; 'false'
-      // for recoverable error; client should retry later.
 
-      final File songRoot     = new File(new File(root), category);
-      File       playlistFile = new File(new File(root), category + ".m3u");
-      FileWriter playlistWriter;
-      int        count        = 0;
-      Boolean    success      = true;
+      final File  songRoot     = new File(new File(root), category);
+      File        playlistFile = new File(new File(root), category + ".m3u");
+      FileWriter  playlistWriter;
+      StatusCount status       = new StatusCount (ProcessStatus.Success, 0);
 
       try
       {
@@ -540,7 +541,8 @@ public class DownloadUtils
       catch (IOException e)
       {
          log(context, LogLevel.Error, "cannot open '" + playlistFile.getAbsolutePath() + "' for append.");
-         return true; // non-recoverable
+         status.status = ProcessStatus.Fatal;
+         return status;
       }
 
       try
@@ -558,11 +560,11 @@ public class DownloadUtils
                {
                   // Delete dir so meta will be downloaded on retry
                   destDir.delete();
-                  success = false;
+                  status.status = ProcessStatus.Retry;
                }
             }
 
-            if (success)
+            if (status.status == ProcessStatus.Success)
             {
                songFile = new File(destDir, FilenameUtils.getName(song));
                if (getFile(context, serverIP, song, songFile))
@@ -572,10 +574,10 @@ public class DownloadUtils
 
                   playlistWriter.write(category + "/" + song + "\n");
 
-                  count++;
+                  status.count++;
                }
                else
-                  success = false;
+                  status.status = ProcessStatus.Retry;
             }
          }
       }
@@ -583,7 +585,7 @@ public class DownloadUtils
       {
          // From playlistWriter.write
          log(context, LogLevel.Error, "cannot append to '" + playlistFile.getAbsolutePath() + "'; disk full?");
-         success = true; // non-recoverable
+         status.status = ProcessStatus.Fatal; // non-recoverable
       }
       finally
       {
@@ -595,28 +597,25 @@ public class DownloadUtils
          {
             // probably from flush cache
             log(context, LogLevel.Error, "cannot close '" + playlistFile.getAbsolutePath() + "'; disk full?");
-            success = true; // non-recoverable
+            status.status = ProcessStatus.Fatal; // non-recoverable
          }
       }
 
-      log(context, LogLevel.Info, count + " " + category + " songs downloaded");
+      log(context, LogLevel.Info, status.count + " " + category + " songs downloaded");
 
-      return success;
+      return status;
 
       // File objects hold the corresponding disk file locked; later
       // unit test cannot delete them.
    }
 
-   public static Boolean sendNotes(Context context,
-                                   String  serverIP,
-                                   String  category,
-                                   String  smmDir)
+   public static ProcessStatus sendNotes(Context context,
+                                         String  serverIP,
+                                         String  category,
+                                         String  smmDir)
    {
-      // Returns 'true' for success or non-recoverable error; 'false'
-      // for recoverable error; client should retry later.
-
-      File    noteFile = new File(smmDir, category + ".note");
-      Boolean success  = true;
+      File          noteFile = new File(smmDir, category + ".note");
+      ProcessStatus status   = ProcessStatus.Success;
 
       if (noteFile.exists())
       {
@@ -651,7 +650,10 @@ public class DownloadUtils
             try (Response response = httpClient.newCall(request).execute())
             {
                if (200 != response.code())
+               {
+                  status = ProcessStatus.Fatal; // something wrong with server
                   log(context, LogLevel.Error, "put notes failed " + response.message());
+               }
                else
                   log(context, LogLevel.Info, category + " sendNotes");
             }
@@ -659,13 +661,13 @@ public class DownloadUtils
             {
                // From httpClient.newCall; connection failed after retry
                log(context, LogLevel.Error, category + " sendNotes http request failed: " + e.toString());
-               success = false;
+               status = ProcessStatus.Retry; // retry after delay
             }
          }
 
          noteFile.delete();
       }
 
-      return success;
+      return status;
    }
 }
