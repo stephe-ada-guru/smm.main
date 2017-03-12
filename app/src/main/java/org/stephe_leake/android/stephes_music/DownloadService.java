@@ -285,7 +285,7 @@ public class DownloadService extends IntentService
                status = download(this, utils.playlistDirectory + "/" + playlist + ".m3u", mediaScanner);
                if (status.status == ProcessStatus.Retry)
                {
-                  delayTimer.schedule(utils.downloadTimerTask, 10 * utils.millisPerMinute);
+                  delayTimer.schedule(utils.delayTimerTask, 10 * utils.millisPerMinute);
                   break;
                }
             }
