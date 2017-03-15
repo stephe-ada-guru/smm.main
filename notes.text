@@ -10,6 +10,10 @@ branches:
 d:/Music/remote_cache/smm-server_driver.log
 
 
+add "lists" field to db; best, protest
+    generate html, playlists
+    html links to music server
+
 log is smm-server_driver.log
     log file settings ignored
 

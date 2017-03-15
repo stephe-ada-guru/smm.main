@@ -41,6 +41,10 @@ is
    Bin_Max       : constant       := 10;
    Years_Per_Bin : constant Float := 0.5;
 
+   Total_Songs     : Integer := 0;
+
+   type Categories is (Vocal, Instrumental, Meditation, Christmas, Dont_Play, Talk);
+
    function To_Bin (Item : in Float) return Integer
    is begin
       return Integer (Item / Years_Per_Bin);
@@ -54,82 +58,133 @@ is
 
    package Histogram_Plots is new Histograms.Gen_Gnuplot (Years_Per_Bin);
 
-   procedure Do_Category (Category : in String)
+   type Category_Data_Type (Hist : Boolean := False) is record
+      case Hist is
+      when True =>
+         Stats            : Float_Stats.Stats_Type;
+         Histogram        : Histograms.Object;
+         Never_Downloaded : Integer := 0;
+         Downloaded_Once  : Integer := 0;
+      when False =>
+         Count : Integer := 0;
+      end case;
+   end record;
+
+   Null_Histogram_Data : constant Category_Data_Type :=
+     (Hist             => True,
+      Stats            => Float_Stats.Null_Stats,
+      Histogram        => Histograms.Null_Histogram,
+      Never_Downloaded => 0,
+      Downloaded_Once  => 0);
+
+   Null_Count_Data : constant Category_Data_Type :=
+     (Hist  => False,
+      Count => 0);
+
+   type Category_Array_Data is array (Categories) of Category_Data_Type;
+
+   Category_Data : Category_Array_Data :=
+     (Vocal        => Null_Histogram_Data,
+      Instrumental => Null_Histogram_Data,
+      Meditation   => Null_Count_Data,
+      Christmas    => Null_Count_Data,
+      Dont_Play    => Null_Count_Data,
+      Talk         => Null_Count_Data);
+
+   procedure Accumulate (I : in Iterator_Type)
    is
-      Stats            : Float_Stats.Stats_Type;
-      Histogram        : Histograms.Object;
-      Dont_Play        : Integer := 0;
-      Never_Downloaded : Integer := 0;
-      Downloaded_Once  : Integer := 0;
-
-      procedure Accumulate (I : in Iterator_Type)
-      is
-         Item_Category : constant String := Read (Db, I, Category_Key, Missing_Key => Ignore);
-      begin
-         if Category /= Item_Category then
-            return;
-         elsif Category = "dont_play" then
-            Dont_Play := Dont_Play + 1;
-            return;
-         end if;
-
-         declare
-            use Ada.Float_Text_IO;
-
-            Last   : constant Time_Type := Read_Last_Downloaded (Db, I);
-            Prev   : constant Time_Type := Read_Prev_Downloaded (Db, I);
-            Period : constant Float     := Float ((Last - Prev) / Seconds_Per_Year);
-         begin
-            if Last = 0.0 then
-               Never_Downloaded := Never_Downloaded + 1;
-
-            elsif Prev = 0.0 then
-               Downloaded_Once := Downloaded_Once + 1;
-
-            else
-               Stats.Accumulate (Period);
-               Histogram.Accumulate (Period);
-
-               if To_Bin (Period) > Bin_Max then
-                  Put ("song:" & Current (I) & " period:");
-                  Put (Period, Aft => 2, Exp => 0);
-                  New_Line;
-               end if;
-            end if;
-         end;
-      end Accumulate;
-
-      I : Iterator_Type := First (Db, Songs_Key);
+      String_Category : constant String := Read (Db, I, Category_Key, Missing_Key => Ignore);
+      Category : Categories;
    begin
-      New_Line;
-      Put_Line (Category & " :");
-      loop
-         exit when Is_Null (I);
-         Accumulate (I);
-         Next (I);
-      end loop;
+      Total_Songs := Total_Songs + 1;
+
+      if String_Category = "" then
+         Category := Vocal;
+      else
+         Category := Categories'Value (String_Category);
+      end if;
 
       declare
-         use Ada.Float_Text_IO;
-         Display : constant Float_Stats.Display_Type := Stats.Display;
+         Data : Category_Data_Type renames Category_Data (Category);
       begin
-         Put_Line ("songs            :" & Integer'Image (Display.Count));
-         Put_Line ("dont_play        :" & Integer'Image (Dont_Play));
-         Put_Line ("never downloaded :" & Integer'Image (Never_Downloaded));
-         Put_Line ("downloaded once  :" & Integer'Image (Downloaded_Once));
-         Put_Line ("last/prev downloaded stats (years):");
-         Put ("mean    :"); Put (Display.Mean, Fore => 3, Aft => 2, Exp => 0); New_Line;
-         Put ("std dev :"); Put (Display.Standard_Deviation, Fore => 3, Aft => 2, Exp => 0); New_Line;
-         Put ("min     :"); Put (Display.Min, Fore => 3, Aft => 2, Exp => 0); New_Line;
-         Put ("max     :"); Put (Display.Max, Fore => 3, Aft => 2, Exp => 0); New_Line;
+         case Category_Data (Category).Hist is
+         when True =>
+            declare
+               use Ada.Float_Text_IO;
+
+               Last   : constant Time_Type := Read_Last_Downloaded (Db, I);
+               Prev   : constant Time_Type := Read_Prev_Downloaded (Db, I);
+               Period : constant Float     := Float ((Last - Prev) / Seconds_Per_Year);
+            begin
+               if Last = 0.0 then
+                  Data.Never_Downloaded := Data.Never_Downloaded + 1;
+
+               elsif Prev = 0.0 then
+                  Data.Downloaded_Once := Data.Downloaded_Once + 1;
+
+               else
+                  Data.Stats.Accumulate (Period);
+                  Data.Histogram.Accumulate (Period);
+
+                  if To_Bin (Period) > Bin_Max or
+                    To_Bin (Period) = 0
+                  then
+                     Put ("song:" & Current (I) & " period:");
+                     Put (Period, Aft => 2, Exp => 0);
+                     New_Line;
+                  end if;
+               end if;
+            end;
+         when False =>
+            Data.Count := Data.Count + 1;
+         end case;
       end;
+   end Accumulate;
 
-      Histogram_Plots.Put_Plot
-        (Histogram, Category, "years");
+   procedure Put_Category (Category : in Categories)
+   is
+      use Ada.Float_Text_IO;
+      Data    : Category_Data_Type renames Category_Data (Category);
+   begin
+      New_Line;
+      Put_Line (Categories'Image (Category) & " :");
 
-   end Do_Category;
+      case Data.Hist is
+      when True =>
+         declare
+            Display : constant Float_Stats.Display_Type := Data.Stats.Display;
+         begin
+            Put_Line ("songs            :" & Integer'Image (Display.Count));
+            Put_Line ("never downloaded :" & Integer'Image (Data.Never_Downloaded));
+            Put_Line ("downloaded once  :" & Integer'Image (Data.Downloaded_Once));
+            Put_Line ("last/prev downloaded stats (years):");
+            Put ("mean    :"); Put (Display.Mean, Fore => 3, Aft => 2, Exp => 0); New_Line;
+            Put ("std dev :"); Put (Display.Standard_Deviation, Fore => 3, Aft => 2, Exp => 0); New_Line;
+            Put ("min     :"); Put (Display.Min, Fore => 3, Aft => 2, Exp => 0); New_Line;
+            Put ("max     :"); Put (Display.Max, Fore => 3, Aft => 2, Exp => 0); New_Line;
 
+            Histogram_Plots.Put_Plot (Data.Histogram, Categories'Image (Category), "years");
+         end;
+
+      when False =>
+         Put_Line ("songs            :" & Integer'Image (Data.Count));
+
+      end case;
+   end Put_Category;
+
+   I : Iterator_Type := First (Db, Songs_Key);
 begin
-   Do_Category ("vocal");
-   Do_Category ("instrumental");
+   loop
+      exit when Is_Null (I);
+      Accumulate (I);
+      Next (I);
+   end loop;
+
+   New_Line;
+   Put_Line ("total songs     :" & Integer'Image (Total_Songs));
+
+   for Category in Categories'Range loop
+      Put_Category (Category);
+   end loop;
+
 end SMM.History;
