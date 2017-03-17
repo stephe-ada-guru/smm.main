@@ -20,7 +20,7 @@ pragma License (GPL);
 
 with AWS.Config.Set;
 with AWS.Messages;
-with AWS.Response;
+with AWS.Response.Set;
 with AWS.Server.Log;
 with AWS.Status;
 with AWS.URL;
@@ -82,7 +82,7 @@ package body SMM.Server is
                Least_Recent_Songs
                  (Db, Category, Songs,
                   Song_Count     => Count,
-                  New_Song_Count => Count_Type'Max (1, Count / 10),
+                  New_Song_Count => Count_Type'Max (1, Count / 5),
                   Seed           => Seed);
 
                for I of Songs loop
@@ -143,6 +143,9 @@ package body SMM.Server is
                   else "");
 
                Db : Configuration_Type;
+               Result : AWS.Response.Data;
+               I : SAL.Config_Files.Iterator_Type;
+               Prev_Downloaded : SAL.Time_Conversions.Extended_ASIST_Time_String_Type;
 
             begin
                if Mime_Type'Length = 0 then
@@ -162,14 +165,19 @@ package body SMM.Server is
                         Case_Insensitive_Keys => True);
 
                      --  Find does not want leading / on filename
-                     Write_Last_Downloaded
-                       (Db,
-                        Find (Db, Filename (Length (Source_Root) + 2 .. Filename'Last)),
-                        SAL.Time_Conversions.To_TAI_Time (Ada.Calendar.Clock));
+                     I := Find (Db, Filename (Length (Source_Root) + 2 .. Filename'Last));
+
+                     Write_Last_Downloaded (Db, I, SAL.Time_Conversions.To_TAI_Time (Ada.Calendar.Clock));
+
+                     Prev_Downloaded := SAL.Time_Conversions.To_Extended_ASIST_String (Read_Prev_Downloaded (Db, I));
 
                      Close (Db);
                   end if;
-                  return File (Mime_Type, Filename);
+
+                  Result := File (Mime_Type, Filename);
+                  AWS.Response.Set.Add_Header (Result, "X-prev_downloaded", Prev_Downloaded);
+                  return Result;
+
                else
                   return Acknowledge
                     (Status_Code  => AWS.Messages.S404,
