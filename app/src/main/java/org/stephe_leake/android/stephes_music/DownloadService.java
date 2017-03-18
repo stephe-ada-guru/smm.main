@@ -59,7 +59,7 @@ public class DownloadService extends IntentService
 {
    private static PendingIntent showLogPendingIntent;
 
-   private Timer delayTimer = new Timer();
+   private Timer delayTimer;
 
    ////////// private methods (alphabetical order)
 
@@ -116,7 +116,7 @@ public class DownloadService extends IntentService
       File              playlistFile    = new File(playlistAbsName);
       File              playlistDirFile = new File(FilenameUtils.getPath(playlistFile.getPath()));
       String            category        = FilenameUtils.getBaseName(playlistAbsName);
-      StatusCount       status          = new StatusCount (ProcessStatus.Success, 0);
+      StatusCount       status          = new StatusCount();
 
       if (serverIP == null)
       {
@@ -248,7 +248,8 @@ public class DownloadService extends IntentService
          final String           intentPlaylist = intent.getStringExtra(utils.EXTRA_COMMAND_PLAYLIST);
          MediaScannerConnection mediaScanner   = new MediaScannerConnection(this, null);
          String                 msg            = "";
-         StatusCount            status         = new StatusCount (ProcessStatus.Success, 0);
+         StatusCount            status         = new StatusCount();
+         Integer                totalCount     = 0;
 
          // Not in constructor, because showDownloadLogIntent can change
          // if user changes preference.
@@ -283,9 +284,12 @@ public class DownloadService extends IntentService
             for (String playlist : playlists)
             {
                status = download(this, utils.playlistDirectory + "/" + playlist + ".m3u", mediaScanner);
+               totalCount += status.count;
                if (status.status == ProcessStatus.Retry)
                {
-                  delayTimer.schedule(utils.delayTimerTask, 10 * utils.millisPerMinute);
+                  // Apparently we cannot use a timer twice.
+                  delayTimer = new Timer();
+                  delayTimer.schedule(utils.downloadTimerTask, 10 * utils.millisPerMinute);
                   break;
                }
             }
@@ -297,12 +301,13 @@ public class DownloadService extends IntentService
             notifyDownload(msg, "...");
 
             status = download(this, intentPlaylist, mediaScanner);
+            totalCount += status.count;
          }
 
          switch (status.status)
          {
          case Success:
-            notifyDownload(msg, "downloaded " + status.count.toString() + " songs.");
+            notifyDownload(msg, "downloaded " + totalCount.toString() + " songs.");
             break;
 
          case Retry:

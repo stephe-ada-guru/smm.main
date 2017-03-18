@@ -159,17 +159,6 @@ public class utils
          }
       };
 
-   // Can't schedule same task on two timers
-   public static TimerTask delayTimerTask = new TimerTask()
-      {
-         public void run()
-         {
-            mainActivity.startService
-               (new Intent(utils.ACTION_COMMAND, null, mainActivity, DownloadService.class)
-                .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_DOWNLOAD));
-         }
-      };
-
    ////////// methods
 
    public static TextView findTextViewById (Activity a, int id)

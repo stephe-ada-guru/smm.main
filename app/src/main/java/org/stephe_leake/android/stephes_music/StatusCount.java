@@ -5,9 +5,9 @@ public class StatusCount
    public ProcessStatus status; // True if caller should proceed to next step in playlist update.
    public Integer count; // songs cleaned/downloaded/whatever
 
-   StatusCount (ProcessStatus status, Integer count)
+   StatusCount ()
    {
-      this.status = status;
-      this.count = count;
+      this.status = ProcessStatus.Success;
+      this.count = 0;
    }
 }

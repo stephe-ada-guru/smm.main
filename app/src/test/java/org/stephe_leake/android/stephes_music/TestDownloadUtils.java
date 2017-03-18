@@ -378,7 +378,7 @@ public class TestDownloadUtils
       FileWriter output;
       // This directory name caused problems at one point (server fixed to handle it)
       String[] expected = {"Jason Castro [Deluxe] [+Video] [+Digital Booklet]/liner_notes.pdf"};
-      String[] metaList;
+      StatusStrings metaList;
 
       cleanup(true);
       try
@@ -396,7 +396,7 @@ public class TestDownloadUtils
 
          metaList = DownloadUtils.getMetaList(null, serverIP, "Jason Castro [Deluxe] [+Video] [+Digital Booklet]/");
 
-         check(metaList, expected);
+         check(metaList.strings, expected);
       }
       catch (IOException e)
       {

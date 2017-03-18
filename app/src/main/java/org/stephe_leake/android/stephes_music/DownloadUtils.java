@@ -351,12 +351,22 @@ public class DownloadUtils
       return result;
    }
 
-   private static Boolean getFile(Context context, String serverIP, String resource, File fileName)
+   static private final String timeOriginString = "1958-000-00:00:00.000";
+
+   private static StatusCount getFile(Context                context,
+                                      String                 serverIP,
+                                      String                 resource,
+                                      File                   fileName,
+                                      MediaScannerConnection mediaScanner)
    {
       // Get 'resource' from 'serverIP', store in 'fileName'.
-      // 'resource' may have only path and file name.
+      // 'resource' shall have only path and file name.
       //
-      // Return true if successful, false for any errors (error messages in log).
+      // Return result.status Success if successful, Fatal or Retry
+      // for any errors (error messages in log); result.count = 1 if
+      // file has never been downloaded before, 0 otherwise..
+
+      StatusCount result = new StatusCount();
 
       HttpUrl url = new HttpUrl.Builder()
          .scheme("http")
@@ -372,7 +382,8 @@ public class DownloadUtils
       catch (IOException e)
       {
          log(context, LogLevel.Error, "cannot create file " + fileName.getAbsolutePath());
-         return false;
+         result.status = ProcessStatus.Fatal;
+         return result;
       }
 
       try (Response response = httpClient.newCall(new Request.Builder().url(url).build()).execute())
@@ -381,16 +392,22 @@ public class DownloadUtils
          {
             log(context, LogLevel.Error, "getFile '" + url.toString() +"' request failed: " +
                 response.code() + " " + response.message());
-            return false;
+            result.status = ProcessStatus.Retry;
+            return result;
          }
 
-         BufferedInputStream in            = new BufferedInputStream(response.body().byteStream());
-         FileOutputStream    out           = new FileOutputStream(fileName);
-         byte[] buffer                     = new byte[BUFFER_SIZE];
-         final String        contentLen    = response.header("Content-Length");
-         int                 contentLength = Integer.parseInt(contentLen);
-         int                 downloaded    = 0;
-         int                 count         = 0;
+         BufferedInputStream in             = new BufferedInputStream(response.body().byteStream());
+         FileOutputStream    out            = new FileOutputStream(fileName);
+         byte[] buffer                      = new byte[BUFFER_SIZE];
+         final String        contentLen     = response.header("Content-Length");
+         final String        prevDownloaded = response.header("X-prev_downloaded"); // only on mp3 files
+         int                 contentLength  = Integer.parseInt(contentLen);
+         int                 downloaded     = 0;
+         int                 count          = 0;
+
+         if ((prevDownloaded != null) &&
+             (prevDownloaded.equals(timeOriginString)))
+            result.count += 1;
 
          while ((count = in.read(buffer)) != -1)
          {
@@ -405,29 +422,43 @@ public class DownloadUtils
                 downloaded + "bytes, expecting " + contentLength);
          else
             log(context, LogLevel.Verbose, "downloaded '" + resource + "'");
+
+         {
+            String ext = FilenameUtils.getExtension(fileName.toString());
+            String mime = "";
+
+            if (ext.equals(".jpg"))
+               mime = "image/jpeg";
+            else if (ext.equals(".mp3"))
+               mime = "audio/mpeg";
+            else if (ext.equals(".pdf"))
+               mime = "application/pdf";
+
+            if (null != mediaScanner)
+               mediaScanner.scanFile(fileName.getAbsolutePath(), mime);
+         }
       }
       catch (IOException e)
       {
          // From httpClient.newCall; connection failed after retry
          log(context, LogLevel.Error, "http request failed: getFile '" + resource + "': " + e.toString());
-         return false;
+         result.status = ProcessStatus.Retry;
       }
       catch (NumberFormatException e)
       {
-         // from parseInt; assume it can't fail
-         log(context, LogLevel.Error, "Programmer Error: parseInt failed");
-         return false;
+         // from parseInt; corrupted Internet transmission. 'contentLen' not visible here.
+         log(context, LogLevel.Error, "parseInt failed");
+         result.status = ProcessStatus.Retry;
       }
 
-      return true;
+      return result;
    }
 
-   public static String[] getMetaList(Context context,
-                                      String  serverIP,
-                                      String  resource)
-      throws IOException
+   public static StatusStrings getMetaList(Context context,
+                                           String  serverIP,
+                                           String  resource)
    {
-      // If throw exception, error is already logged; client should retry later.
+      StatusStrings result = new StatusStrings();
 
       HttpUrl url = new HttpUrl.Builder()
          .scheme("http")
@@ -438,7 +469,6 @@ public class DownloadUtils
          .build();
 
       final Request request = new Request.Builder().url(url).build();
-      String[] result       = new String("").split("\r\n");
 
       ensureHttpClient();
 
@@ -446,75 +476,53 @@ public class DownloadUtils
       {
          try
          {
-            result = response.body().string().split("\r\n");
+            result.strings = response.body().string().split("\r\n");
          }
          catch (IOException e)
          {
-            // From response.body()
+            // From response.body(); server error possibly due to corrupted file name
             log(context, LogLevel.Error, "getMetaList request has no body: " + e.toString());
-            throw e;
+            result.status = ProcessStatus.Retry;
          }
       }
       catch (IOException e)
       {
          // From httpClient.newCall; connection failed after retry
          log(context, LogLevel.Error, "http request failed: getMetaList '" + resource + "': " + e.toString());
-         throw e;
+         result.status = ProcessStatus.Retry;
       }
 
       return result;
    }
 
-   private static Boolean getMeta(Context                context,
-                                  String                 serverIP,
-                                  String                 resourcePath,
-                                  File                   destDir,
-                                  MediaScannerConnection mediaScanner)
+   private static ProcessStatus getMeta(Context                context,
+                                        String                 serverIP,
+                                        String                 resourcePath,
+                                        File                   destDir,
+                                        MediaScannerConnection mediaScanner)
    {
-      // Return false for any errors
-      String[] files;
+      StatusStrings files;
+      StatusCount   fileStatus;
+      File          objFile;
 
-      File objFile;
-      String ext;
-      String mime = "";
+      files = getMetaList(context, serverIP, resourcePath);
 
-      try
-      {
-         files = getMetaList(context, serverIP, resourcePath);
-      }
-      catch (IOException e)
-      {
-         return false;
-      }
+      if (ProcessStatus.Success != files.status)
+         return files.status;
 
-      if (files.length == 1 && files[0].length() == 0)
+      if (files.strings.length == 1 && files.strings[0].length() == 0)
          // no meta files for this directory
-         return true;
+         return ProcessStatus.Success;
 
-      for (String file : files)
+      for (String file : files.strings)
       {
          objFile = new File(destDir, FilenameUtils.getName(file));
 
-         if (!objFile.exists())
-            // might exist if more songs in playlist than in db; meditation.
-         {
-            if (!getFile(context, serverIP, file, objFile))
-               //  Assume network connection died; subsequent files will
-               //  fail as well
-               return false;
-         }
-
-         ext = FilenameUtils.getExtension(objFile.toString());
-
-         if (ext.equals(".mp3"))
-            mime = "audio/mpeg";
-         else if (ext.equals(".pdf"))
-            mime = "application/pdf";
-
-         if (null != mediaScanner)
-            mediaScanner.scanFile(objFile.getAbsolutePath(), mime);
+         fileStatus = getFile(context, serverIP, file, objFile, mediaScanner);
+         if (ProcessStatus.Success != fileStatus.status)
+            return fileStatus.status;
       }
-      return true;
+      return ProcessStatus.Success;
    }
 
    public static StatusCount getSongs(Context                context,
@@ -529,10 +537,13 @@ public class DownloadUtils
       // notes for new directories. Add files to mediaScanner, if not
       // null.
 
-      final File  songRoot     = new File(new File(root), category);
-      File        playlistFile = new File(new File(root), category + ".m3u");
-      FileWriter  playlistWriter;
-      StatusCount status       = new StatusCount (ProcessStatus.Success, 0);
+      final File    songRoot     = new File(new File(root), category);
+      File          playlistFile = new File(new File(root), category + ".m3u");
+      FileWriter    playlistWriter;
+      StatusCount   result       = new StatusCount();
+      ProcessStatus metaStatus;
+      StatusCount   fileStatus;
+      Integer       newSongs     = 0;
 
       try
       {
@@ -541,8 +552,8 @@ public class DownloadUtils
       catch (IOException e)
       {
          log(context, LogLevel.Error, "cannot open '" + playlistFile.getAbsolutePath() + "' for append.");
-         status.status = ProcessStatus.Fatal;
-         return status;
+         result.status = ProcessStatus.Fatal;
+         return result;
       }
 
       try
@@ -556,28 +567,40 @@ public class DownloadUtils
             if (!destDir.exists())
             {
                destDir.mkdirs();
-               if (!getMeta(context, serverIP, FilenameUtils.getPath(song), destDir, mediaScanner))
+
+               metaStatus = getMeta(context, serverIP, FilenameUtils.getPath(song), destDir, mediaScanner);
+               switch (metaStatus)
                {
+               case Success:
+                  break;
+
+               case Fatal:
+               case Retry:
                   // Delete dir so meta will be downloaded on retry
                   destDir.delete();
-                  status.status = ProcessStatus.Retry;
-               }
+                  result.status = metaStatus;
+                  break;
+               };
             }
 
-            if (status.status == ProcessStatus.Success)
+            if (result.status == ProcessStatus.Success)
             {
-               songFile = new File(destDir, FilenameUtils.getName(song));
-               if (getFile(context, serverIP, song, songFile))
+               songFile   = new File(destDir, FilenameUtils.getName(song));
+               fileStatus = getFile(context, serverIP, song, songFile, mediaScanner);
+
+               switch (fileStatus.status)
                {
-                  if (null != mediaScanner)
-                     mediaScanner.scanFile(songFile.getAbsolutePath(), "audio/mpeg");
-
+               case Success:
                   playlistWriter.write(category + "/" + song + "\n");
+                  result.count++;
+                  newSongs = newSongs + fileStatus.count;
+                  break;
 
-                  status.count++;
-               }
-               else
-                  status.status = ProcessStatus.Retry;
+               case Fatal:
+               case Retry:
+                  result.status = fileStatus.status;
+                  break;
+               };
             }
          }
       }
@@ -585,7 +608,7 @@ public class DownloadUtils
       {
          // From playlistWriter.write
          log(context, LogLevel.Error, "cannot append to '" + playlistFile.getAbsolutePath() + "'; disk full?");
-         status.status = ProcessStatus.Fatal; // non-recoverable
+         result.status = ProcessStatus.Fatal; // non-recoverable
       }
       finally
       {
@@ -597,13 +620,13 @@ public class DownloadUtils
          {
             // probably from flush cache
             log(context, LogLevel.Error, "cannot close '" + playlistFile.getAbsolutePath() + "'; disk full?");
-            status.status = ProcessStatus.Fatal; // non-recoverable
+            result.status = ProcessStatus.Fatal; // non-recoverable
          }
       }
 
-      log(context, LogLevel.Info, status.count + " " + category + " songs downloaded");
+      log(context, LogLevel.Info, result.count + " " + category + " songs downloaded, " + newSongs + " new.");
 
-      return status;
+      return result;
 
       // File objects hold the corresponding disk file locked; later
       // unit test cannot delete them.
