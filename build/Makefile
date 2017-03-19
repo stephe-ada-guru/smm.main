@@ -13,10 +13,13 @@ t_all : smm-server_driver.exe test_all_harness.diff
 
 DATE := $(shell date +%Y-%m-%d)
 
-music : install
+histogram : install
 	cd d:/Music; smm history > status-$(DATE).text
 	cd d:/Music; gnuplot vocal_histogram.gnuplot > vocal_histogram.png
 	cd d:/Music; gnuplot instrumental_histogram.gnuplot > instrumental_histogram.png
+
+check : install
+	cd d:/Music; smm check > missing.log
 
 install : ~/bin/smm.exe ~/bin/smm-server_driver.exe
 

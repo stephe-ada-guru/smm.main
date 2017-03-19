@@ -2,7 +2,7 @@
 --
 --  Check against db, report missing in either.
 --
---  Copyright (C) 2016 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2016 - 2017 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -19,6 +19,7 @@
 pragma License (GPL);
 
 with Ada.Directories;
+with Ada.Strings.Fixed;
 with Ada.Text_IO; use Ada.Text_IO;
 with SAL.Config_Files;
 procedure SMM.Check (Db : in out SAL.Config_Files.Configuration_Type)
@@ -55,9 +56,14 @@ is
       use SAL.Config_Files;
       use SAL.Time_Conversions;
 
+      Found_Mp3           : Boolean := False;
+      Found_Liner_Notes   : Boolean := False;
+      Found_AlbumArt_Huge : Boolean := False;
+
       procedure Process_Dir_Entry (Dir_Entry : in Directory_Entry_Type)
       is
          use String_Maps;
+         use Ada.Strings.Fixed;
 
          Name : constant String := Relative_Name (Db_Root, Normalize (Full_Name (Dir_Entry)));
       begin
@@ -74,10 +80,17 @@ is
          when Ordinary_File =>
             if Extension (Name) = "mp3" then
                Disk_Count := Disk_Count + 1;
+               Found_Mp3 := True;
 
                if No_Element = Song_Files.Find (Name) then
                   Put_Line ("db missing: " & Name);
                end if;
+
+            elsif 0 < Index (Name, "liner_notes.pdf") then
+               Found_Liner_Notes := True;
+
+            elsif 0 < Index (Name, "AlbumArt_huge") then
+               Found_AlbumArt_Huge := True;
             end if;
 
          when Special_File =>
@@ -97,6 +110,15 @@ is
             Directory     => True,
             Special_File  => False),
          Process          => Process_Dir_Entry'Access);
+
+      if Found_Mp3 then
+         if not Found_Liner_Notes then
+            Put_Line ("liner_notes missing  : " & Dir);
+         end if;
+         if not Found_AlbumArt_Huge then
+            Put_Line ("AlbumArt_huge missing: " & Dir);
+         end if;
+      end if;
    end Check_Dir;
 
 begin
