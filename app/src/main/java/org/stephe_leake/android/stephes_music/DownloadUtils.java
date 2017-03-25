@@ -316,11 +316,15 @@ public class DownloadUtils
                                                String  serverIP,
                                                String  category,
                                                int     count,
+                                               int     newCount,
                                                int     randomSeed)
    // randomSeed = -1 means randomize; other values used in unit tests.
    {
-      final String url = "http://" + serverIP + ":8080/download?category=" + category +
-         "&count=" + Integer.toString(count) + (-1 == randomSeed ? "" : "&seed=" + Integer.toString(randomSeed));
+      final String url = "http://" + serverIP + ":8080/download?" +
+         "category=" + category +
+         "&count=" + Integer.toString(count) +
+         "&new_count=" + Integer.toString(newCount) +
+         (-1 == randomSeed ? "" : "&seed=" + Integer.toString(randomSeed));
 
       Request       request = new Request.Builder().url(url).build();
       StatusStrings result  = new StatusStrings();
@@ -427,11 +431,15 @@ public class DownloadUtils
             String ext = FilenameUtils.getExtension(fileName.toString());
             String mime = "";
 
-            if (ext.equals(".jpg"))
+            // FIXME: debugging
+            if (ext.equals("mp3"))
+               log(context, LogLevel.Verbose, "prev_downloaded '" + prevDownloaded + "'");
+
+            if (ext.equals("jpg"))
                mime = "image/jpeg";
-            else if (ext.equals(".mp3"))
+            else if (ext.equals("mp3"))
                mime = "audio/mpeg";
-            else if (ext.equals(".pdf"))
+            else if (ext.equals("pdf"))
                mime = "application/pdf";
 
             if (null != mediaScanner)

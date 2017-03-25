@@ -296,7 +296,7 @@ public class TestDownloadUtils
          if (startServer)
             server = new ProcessBuilder("smm-server_driver", "smm-server.config", "1").start();
 
-         newSongs = DownloadUtils.getNewSongsList(null, serverIP, category, 5, 0);
+         newSongs = DownloadUtils.getNewSongsList(null, serverIP, category, 5, 0, 0);
 
          check(newSongs.strings, expectedSongs);
 

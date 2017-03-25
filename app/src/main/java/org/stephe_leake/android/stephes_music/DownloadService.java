@@ -104,19 +104,23 @@ public class DownloadService extends IntentService
 
    private StatusCount download(Context context, String playlistAbsName, MediaScannerConnection mediaScanner)
    {
-      Resources         res             = getResources();
-      SharedPreferences prefs           = PreferenceManager.getDefaultSharedPreferences(this);
-      String songCountMaxStr            = prefs.getString
+      Resources         res     = getResources();
+      SharedPreferences prefs   = PreferenceManager.getDefaultSharedPreferences(this);
+      String songCountMaxStr    = prefs.getString
          (res.getString(R.string.song_count_max_key),
           res.getString(R.string.song_count_max_default));
-      String songCountThreshStr         = prefs.getString
+      String newSongCountStr    = prefs.getString
+         (res.getString(R.string.new_song_count_key),
+          res.getString(R.string.new_song_count_default));
+      String songCountThreshStr = prefs.getString
          (res.getString(R.string.song_count_threshold_key),
           res.getString(R.string.song_count_threshold_default));
-      String            serverIP        = prefs.getString (res.getString(R.string.server_IP_key), null);
-      File              playlistFile    = new File(playlistAbsName);
-      File              playlistDirFile = new File(FilenameUtils.getPath(playlistFile.getPath()));
-      String            category        = FilenameUtils.getBaseName(playlistAbsName);
-      StatusCount       status          = new StatusCount();
+
+      String      serverIP        = prefs.getString (res.getString(R.string.server_IP_key), null);
+      File        playlistFile    = new File(playlistAbsName);
+      File        playlistDirFile = new File(FilenameUtils.getPath(playlistFile.getPath()));
+      String      category        = FilenameUtils.getBaseName(playlistAbsName);
+      StatusCount status          = new StatusCount();
 
       if (serverIP == null)
       {
@@ -137,6 +141,9 @@ public class DownloadService extends IntentService
          if (songsRemaining < songCountMax - songCountThresh)
          {
             StatusStrings newSongs;
+            int           songCount         = songCountMax - songsRemaining;
+            Float         newSongCountFloat = songCount * Float.valueOf(newSongCountStr);
+            int           newSongCount      = newSongCountFloat.intValue();
 
             if (playlistFile.exists())
             {
@@ -162,7 +169,7 @@ public class DownloadService extends IntentService
                playlistFile.createNewFile();
             }
 
-            newSongs = DownloadUtils.getNewSongsList(context, serverIP, category, songCountMax - songsRemaining, -1);
+            newSongs = DownloadUtils.getNewSongsList(context, serverIP, category, songCount, newSongCount, -1);
 
             if (newSongs.strings.length == 0)
             {

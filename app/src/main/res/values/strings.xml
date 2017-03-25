@@ -4,7 +4,7 @@
 
   translatable strings for Stephe's Music Player.
 
-  Copyright (C) 2011 Stephen Leake.  All Rights Reserved.
+  Copyright (C) 2011 - 2017 Stephen Leake.  All Rights Reserved.
 
   This program is free software; you can redistribute it and/or
   modify it under terms of the GNU General Public License as
@@ -100,6 +100,12 @@
   <string name="song_count_max_title">Song count max</string>
   <string name="song_count_max_summary">Maximum count of songs in playlist after download</string>
   <string name="song_count_max_dialog_title">Song count max</string>
+
+  <string name="new_song_count_key">new_song_count</string>
+  <string name="new_song_count_default">0.333</string>
+  <string name="new_song_count_title">New song fraction</string>
+  <string name="new_song_count_summary">Fraction of new songs downloaded</string>
+  <string name="new_song_count_dialog_title">New song count fraction</string>
 
   <string name="song_count_threshold_key">song_count_threshold</string>
   <string name="song_count_threshold_default">10</string>

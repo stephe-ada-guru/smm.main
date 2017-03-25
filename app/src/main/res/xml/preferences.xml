@@ -56,6 +56,14 @@ write to the Free Software Foundation, 51 Franklin Street, Suite
         android:dialogTitle="@string/song_count_max_dialog_title" />
 
     <EditTextPreference
+        android:key="@string/new_song_count_key"
+        android:defaultValue="@string/new_song_count_default"
+        android:numeric="integer"
+        android:title="@string/new_song_count_title"
+        android:summary="@string/new_song_count_summary"
+        android:dialogTitle="@string/new_song_count_dialog_title" />
+
+    <EditTextPreference
         android:key="@string/song_count_threshold_key"
         android:defaultValue="@string/song_count_threshold_default"
         android:numeric="integer"
