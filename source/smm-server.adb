@@ -63,6 +63,7 @@ package body SMM.Server is
 
                Category   : constant String     := Parameter (URI, "category");
                Count      : constant Count_Type := Count_Type'Value (Parameter (URI, "count"));
+               New_Count  : constant Count_Type := Count_Type'Value (Parameter (URI, "new_count"));
                Seed_Param : constant String     := Parameter (URI, "seed"); -- only used in unit tests
                Seed       : constant Integer    :=
                  (if Seed_Param'Length > 0 then Integer'Value (Seed_Param) else 0);
@@ -82,7 +83,7 @@ package body SMM.Server is
                Least_Recent_Songs
                  (Db, Category, Songs,
                   Song_Count     => Count,
-                  New_Song_Count => Count_Type'Max (1, Count / 5),
+                  New_Song_Count => New_Count,
                   Seed           => Seed);
 
                for I of Songs loop
@@ -230,7 +231,7 @@ package body SMM.Server is
            (Status_Code  => AWS.Messages.S500,
             Message_Body => "unrecognized request " & Request_Method'Image (Method (Request)));
       end case;
-      exception
+   exception
    when E : others =>
       declare
          use Ada.Exceptions;
@@ -335,4 +336,4 @@ package body SMM.Server is
 end SMM.Server;
 --  Local Variables:
 --  ada-indent-comment-gnat: t
---  End
+--  End:

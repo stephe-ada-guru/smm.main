@@ -10,6 +10,9 @@ branches:
 d:/Music/remote_cache/smm-server_driver.log
 
 
+web server never includes new?
+    specify new count in request; set from preference in app
+
 add "lists" field to db; best, protest
     generate html, playlists
     html links to music server
