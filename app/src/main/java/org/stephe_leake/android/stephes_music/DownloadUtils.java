@@ -355,7 +355,7 @@ public class DownloadUtils
       return result;
    }
 
-   static private final String timeOriginString = "1958-000-00:00:00.000";
+   static private final String timeOriginString = "1958-001-00:00:00.000";
 
    private static StatusCount getFile(Context                context,
                                       String                 serverIP,
