@@ -72,6 +72,7 @@ is
       New_Line;
       Put_Line ("  history");
       Put_Line ("    output histogram (in gnuplot files) of download interval (last to previous).");
+      Put_Line ("    list all new songs.");
    end Put_Usage;
 
    Db_File_Name : access String;

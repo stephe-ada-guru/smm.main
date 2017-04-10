@@ -41,7 +41,7 @@ is
    Bin_Max       : constant       := 10;
    Years_Per_Bin : constant Float := 0.5;
 
-   Total_Songs     : Integer := 0;
+   Total_Songs : Integer := 0;
 
    type Categories is (Vocal, Instrumental, Meditation, Christmas, Dont_Play, Talk);
 
@@ -118,6 +118,7 @@ is
             begin
                if Last = 0.0 then
                   Data.Never_Downloaded := Data.Never_Downloaded + 1;
+                  Put_Line ("new: " & Read (Db, I, File_Key));
 
                elsif Prev = 0.0 then
                   Data.Downloaded_Once := Data.Downloaded_Once + 1;
