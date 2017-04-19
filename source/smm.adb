@@ -2,7 +2,7 @@
 --
 --  see spec
 --
---  Copyright (C) 2008, 2009, 2011 - 2016 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008, 2009, 2011 - 2017 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -254,12 +254,13 @@ package body SMM is
    end Insert;
 
    procedure Least_Recent_Songs
-     (Db             : in     SAL.Config_Files.Configuration_Type;
-      Category       : in     String;
-      Songs          :    out Song_Lists.List;
-      Song_Count     : in     Ada.Containers.Count_Type;
-      New_Song_Count : in     Ada.Containers.Count_Type;
-      Seed           : in     Integer                             := 0)
+     (Db                : in     SAL.Config_Files.Configuration_Type;
+      Category          : in     String;
+      Songs             :    out Song_Lists.List;
+      Song_Count        : in     Ada.Containers.Count_Type;
+      New_Song_Count    : in     Ada.Containers.Count_Type;
+      Over_Select_Ratio : in     Float;
+      Seed              : in     Integer := 0)
    is
       --  Requirements:
       --
@@ -281,8 +282,8 @@ package body SMM is
       --  First read all songs with matching category into Time_List,
       --  grouped by Last_Downloaded.
       --
-      --  Then build a list of Min_Randomize_Count from least recent
-      --  sections
+      --  Then build a list of Over_Select * Song_Count songs from
+      --  least recent sections
       --
       --  Randomize list, return Song_Count songs from it.
 
@@ -291,7 +292,7 @@ package body SMM is
       use Ada.Containers;
       use type SAL.Time_Conversions.Time_Type;
 
-      Min_Randomize_Count : constant Count_Type := 2 * Song_Count;
+      Min_Randomize_Count : constant Count_Type := Count_Type (Over_Select_Ratio * Float (Song_Count));
       Time_List           : Time_Lists.List;
 
       procedure Finish

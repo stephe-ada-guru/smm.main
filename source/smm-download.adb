@@ -2,7 +2,7 @@
 --
 --  see spec
 --
---  Copyright (C) 2008 - 2009, 2011 - 2016 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2009, 2011 - 2017 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -25,12 +25,13 @@ with Ada.Text_IO;     use Ada.Text_IO;
 with SAL.Config_Files;
 with SAL.Time_Conversions;
 procedure SMM.Download
-  (Db             : in out SAL.Config_Files.Configuration_Type;
-   Category       : in     String;
-   Destination    : in     String;
-   Song_Count     : in     Ada.Containers.Count_Type;
-   New_Song_Count : in     Ada.Containers.Count_Type;
-   Seed           : in     Integer := 0)
+  (Db                : in out SAL.Config_Files.Configuration_Type;
+   Category          : in     String;
+   Destination       : in     String;
+   Song_Count        : in     Ada.Containers.Count_Type;
+   New_Song_Count    : in     Ada.Containers.Count_Type;
+   Over_Select_Ratio : in     Float;
+   Seed              : in     Integer := 0)
 is
    use Ada.Containers;
    use Song_Lists;
@@ -99,7 +100,7 @@ begin
       end;
    end if;
 
-   Least_Recent_Songs (Db, Category, Songs, Song_Count, New_Song_Count, Seed => Seed);
+   Least_Recent_Songs (Db, Category, Songs, Song_Count, New_Song_Count, Over_Select_Ratio, Seed => Seed);
 
    Put_Line ("downloading" & Count_Type'Image (Songs.Length) & " songs");
 

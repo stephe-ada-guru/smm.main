@@ -177,7 +177,8 @@ begin
          SMM.First_Pass (Category, Playlist_Dir, SMM_Dir, Integer (Song_Count));
          if Max_Song_Count - Song_Count >= Min_Download_Count then
             Verbosity := Verbosity - 1;
-            SMM.Download (Db, Category, Playlist_Dir, Max_Song_Count - Song_Count, New_Song_Count);
+            SMM.Download
+              (Db, Category, Playlist_Dir, Max_Song_Count - Song_Count, New_Song_Count, Over_Select_Ratio => 2.0);
             Verbosity := Verbosity + 1;
          end if;
       end;

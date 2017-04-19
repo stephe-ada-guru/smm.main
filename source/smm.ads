@@ -2,7 +2,7 @@
 --
 --  Root of Stephe's Music Manager packages
 --
---  Copyright (C) 2008 - 2016 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2017 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -86,12 +86,13 @@ package SMM is
    package Song_Lists is new Ada.Containers.Doubly_Linked_Lists (SAL.Config_Files.Iterator_Type, SAL.Config_Files."=");
 
    procedure Least_Recent_Songs
-     (Db             : in     SAL.Config_Files.Configuration_Type;
-      Category       : in     String;
-      Songs          :    out Song_Lists.List;
-      Song_Count     : in     Ada.Containers.Count_Type;
-      New_Song_Count : in     Ada.Containers.Count_Type;
-      Seed           : in     Integer                             := 0);
+     (Db                : in     SAL.Config_Files.Configuration_Type;
+      Category          : in     String;
+      Songs             :    out Song_Lists.List;
+      Song_Count        : in     Ada.Containers.Count_Type;
+      New_Song_Count    : in     Ada.Containers.Count_Type;
+      Over_Select_Ratio : in     Float;
+      Seed              : in     Integer := 0);
    --  Return randomized list of Song_Count least-recently downloaded
    --  songs in Category. If any Songs have .Play_Before attribute,
    --  enforce it.

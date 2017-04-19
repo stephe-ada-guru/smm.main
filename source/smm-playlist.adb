@@ -2,7 +2,7 @@
 --
 --  create a playlist of least-recenty heard songs
 --
---  Copyright (C) 2009, 2010, 2012, 2015 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2009, 2010, 2012, 2015, 2017 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -96,7 +96,13 @@ begin
       end if;
    end;
 
-   Least_Recent_Songs (Db, Category, Song_Count => Max_Song_Count, New_Song_Count => New_Song_Count, Songs => Songs);
+   Least_Recent_Songs
+     (Db,
+      Category,
+      Song_Count        => Max_Song_Count,
+      New_Song_Count    => New_Song_Count,
+      Over_Select_Ratio => 2.0,
+      Songs             => Songs);
 
    I := First (Songs);
    loop

@@ -11,9 +11,8 @@ d:/Music/remote_cache/smm-server_driver.log
 
 
 change over-select ratio
-    length of randomized song list / requested song-count
-    larger = longer tail in download period histogram
-    get from web request; set in app preference
+    get from web request; done
+    set in app preference
 
 play-before causes short replay periods
     select 2nd without 1st, then select 1st

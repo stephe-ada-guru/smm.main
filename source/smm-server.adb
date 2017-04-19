@@ -65,9 +65,14 @@ package body SMM.Server is
                Category   : constant String     := Parameter (URI, "category");
                Count      : constant Count_Type := Count_Type'Value (Parameter (URI, "count"));
                New_Count  : constant Count_Type := Count_Type'Value (Parameter (URI, "new_count"));
+
                Seed_Param : constant String     := Parameter (URI, "seed"); -- only used in unit tests
                Seed       : constant Integer    :=
                  (if Seed_Param'Length > 0 then Integer'Value (Seed_Param) else 0);
+
+               Over_Select_Ratio_Param : constant String := Parameter (URI, "over_select_ration");
+               Over_Select_Ratio       : constant Float  :=
+                 (if Over_Select_Ratio_Param'Length > 0 then Float'Value (Over_Select_Ratio_Param) else 2.0);
 
                Db       : SAL.Config_Files.Configuration_Type;
                Songs    : List;
@@ -83,9 +88,10 @@ package body SMM.Server is
 
                Least_Recent_Songs
                  (Db, Category, Songs,
-                  Song_Count     => Count,
-                  New_Song_Count => New_Count,
-                  Seed           => Seed);
+                  Song_Count        => Count,
+                  New_Song_Count    => New_Count,
+                  Over_Select_Ratio => Over_Select_Ratio,
+                  Seed              => Seed);
 
                for I of Songs loop
                   Response :=  Response & Normalize (Read (Db, I, File_Key)) & ASCII.CR & ASCII.LF;
