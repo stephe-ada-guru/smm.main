@@ -47,6 +47,7 @@ package body SMM.Server is
 
    function Handle_Request (Request : AWS.Status.Data) return AWS.Response.Data
    is
+      use Ada.Exceptions;
       use AWS.Response;
       use AWS.Status;
       use AWS.URL;
@@ -93,6 +94,14 @@ package body SMM.Server is
                Close (Db);
 
                return Build ("text/plain", Response);
+            exception
+            when E : others =>
+               if Is_Open (Db) then
+                  Close (Db);
+               end if;
+               return Acknowledge
+                 (Status_Code  => AWS.Messages.S500,
+                  Message_Body => "exception " & Exception_Name (E) & ": " & Exception_Message (E));
             end;
 
          elsif File (URI) = "meta" then
@@ -168,6 +177,12 @@ package body SMM.Server is
                      --  Find does not want leading / on filename
                      I := Find (Db, Filename (Length (Source_Root) + 2 .. Filename'Last));
 
+                     if I = Null_Iterator then
+                        return Acknowledge
+                          (Status_Code  => AWS.Messages.S500,
+                           Message_Body => "file not found");
+                     end if;
+
                      Write_Last_Downloaded (Db, I, SAL.Time_Conversions.To_TAI_Time (Ada.Calendar.Clock));
 
                      Prev_Downloaded := SAL.Time_Conversions.To_Extended_ASIST_String (Read_Prev_Downloaded (Db, I));
@@ -184,6 +199,14 @@ package body SMM.Server is
                     (Status_Code  => AWS.Messages.S404,
                      Message_Body => "<p>file '" & Filename & "' not found.");
                end if;
+            exception
+            when E : others =>
+               if Is_Open (Db) then
+                  Close (Db);
+               end if;
+               return Acknowledge
+                 (Status_Code  => AWS.Messages.S500,
+                  Message_Body => "exception " & Exception_Name (E) & ": " & Exception_Message (E));
             end;
          end if;
 
@@ -191,7 +214,6 @@ package body SMM.Server is
          --  Notes
          declare
             use Ada.Directories;
-            use Ada.Exceptions;
             use Ada.Strings.Fixed;
             use Ada.Text_IO;
             Pathname : constant String := -Source_Root & Path (URI);
@@ -233,13 +255,9 @@ package body SMM.Server is
       end case;
    exception
    when E : others =>
-      declare
-         use Ada.Exceptions;
-      begin
-         return Acknowledge
-           (Status_Code  => AWS.Messages.S500,
-            Message_Body => "exception " & Exception_Name (E) & ": " & Exception_Message (E));
-      end;
+      return Acknowledge
+        (Status_Code  => AWS.Messages.S500,
+         Message_Body => "exception " & Exception_Name (E) & ": " & Exception_Message (E));
    end Handle_Request;
 
    procedure Server

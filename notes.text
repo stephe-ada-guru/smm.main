@@ -18,6 +18,7 @@ change over-select ratio
 play-before causes short replay periods
     select 2nd without 1st, then select 1st
     need matching play_after
+    Set play_before to don't_play; add play_after, delete play_before
 
 add "lists" field to db; best, protest
     generate html, playlists
