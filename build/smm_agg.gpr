@@ -20,9 +20,9 @@ aggregate
 project SMM_Agg is
 
    for Project_Path use
-     ("../../org.stephe_leake.aunit_ext/build/release",
+     ("../../org.stephe_leake.aunit_ext/build",
       "../../org.stephe_leake.makerules",
-      "../../org.stephe_leake.sal/build/release");
+      "../../org.stephe_leake.sal/build");
 
    for Project_Files use ("smm.gpr");
 
