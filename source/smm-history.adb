@@ -39,7 +39,7 @@ is
    package Float_Stats is new SAL.Gen_Stats (Float, Float_Elementary);
 
    Bin_Max       : constant       := 10;
-   Years_Per_Bin : constant Float := 0.5;
+   Years_Per_Bin : constant Float := 0.1;
 
    Total_Songs : Integer := 0;
 

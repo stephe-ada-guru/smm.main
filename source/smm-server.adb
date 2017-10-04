@@ -209,8 +209,8 @@ package body SMM.Server is
             when Name_Error =>
                --  Exists raises Name_Error if the directory does not exist
                return Acknowledge
-                    (Status_Code  => AWS.Messages.S404,
-                     Message_Body => "<p>file '" & Filename & "' not found.");
+                 (Status_Code  => AWS.Messages.S404,
+                  Message_Body => "<p>file '" & Filename & "' not found.");
             when E : others =>
                if Is_Open (Db) then
                   Close (Db);

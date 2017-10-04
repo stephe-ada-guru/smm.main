@@ -10,20 +10,22 @@ branches:
 d:/Music/remote_cache/smm-server_driver.log
 
 
-change over-select ratio
-    get from web request; done
-    set in app preference
-
 play-before causes short replay periods
     select 2nd without 1st, then select 1st
     need matching play_after
     Set play_before to don't_play; add play_after, delete play_before
 
-add "lists" field to db; best, protest
+add "lists" field to db;
+    best, protest, contra
+    allow multiple lists per song
     generate html, playlists
     html links to music server
 
     parse best lists to populate initially?
+
+change over-select ratio
+    get from web request; done
+    set in app preference
 
 log is smm-server_driver.log
     log file settings ignored
