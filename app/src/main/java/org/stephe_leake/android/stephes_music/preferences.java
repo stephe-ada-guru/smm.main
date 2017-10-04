@@ -86,8 +86,9 @@ public class preferences extends android.preference.PreferenceActivity
       String[] playlists = playlistDir.list(playlistFilter);
 
       // strip ".m3u"
-      for (int i = 0; i < playlists.length; i++)
-         playlists[i] = FilenameUtils.getBaseName(playlists[i]);
+      if (playlists != null)
+         for (int i = 0; i < playlists.length; i++)
+            playlists[i] = FilenameUtils.getBaseName(playlists[i]);
 
       autodownloadPref.setEntries(playlists);
       autodownloadPref.setEntryValues(playlists);
@@ -120,20 +121,12 @@ public class preferences extends android.preference.PreferenceActivity
       // Build list of top level directories that might contain smm
       // playlists.
 
-      ListPreference playlistPref = (ListPreference)findPreference(res.getString(R.string.playlist_directory_key));
-
       LinkedList<String> playlistDirs = new LinkedList<String>();
       LinkedList<String> likelyRoots  = new LinkedList<String>();
 
-      // There are several names for internal storage, due to
-      // symlinks. We need the one used by the media scanner, since we
-      // search for file names in the scanned db. That is _not_ the
-      // canonical (symlinks resolved) name.
-
-      // likelyRoots.add("/storage/sdcard");     // emulator external; can't see any emulator internal
-      likelyRoots.add("/storage/sdcard0");    // Samsung Galaxy note II/III internal
-      likelyRoots.add("/storage/emulated/0"); // Samsung Galaxy note Tab S2 internal (as used by media scanner)
-      likelyRoots.add("/storage/extSdCard");  // Samsung Galaxy note II/III/Tab S2 external
+      File   tmp  = Environment.getExternalStoragePublicDirectory(utils.defaultPlaylistDir);
+      String path = tmp.getAbsolutePath();
+      likelyRoots.add(path);
 
       Iterator<String> likelyRootsI = likelyRoots.iterator();
 
@@ -154,13 +147,6 @@ public class preferences extends android.preference.PreferenceActivity
          };
       } while (likelyRootsI.hasNext());
 
-      // On a clean install, user must download new playlists into
-      // some directory; this should work.
-      File tmp = Environment.getExternalStoragePublicDirectory("Audio");
-      String path = tmp.getAbsolutePath();
-      if (!playlistDirs.contains(path))
-         playlistDirs.add(path);
-
       final String[] playlistDirsArray = new String[playlistDirs.size()];
       Iterator<String> playlistDirsI = playlistDirs.iterator();
 
@@ -168,6 +154,8 @@ public class preferences extends android.preference.PreferenceActivity
       {
          playlistDirsArray[i] = playlistDirsI.next();
       }
+
+      ListPreference playlistPref = (ListPreference)findPreference(res.getString(R.string.playlist_directory_key));
 
       playlistPref.setEntries(playlistDirsArray);
       playlistPref.setEntryValues(playlistDirsArray);
@@ -177,11 +165,9 @@ public class preferences extends android.preference.PreferenceActivity
 
       ListPreference smmPref = (ListPreference)findPreference(res.getString(R.string.smm_directory_key));
 
-      // WORKAROUND: getExternalCacheDirs is wrong for the sdcard on
-      // my Galaxy Note III with Android 5.2, so hardcode that.
       File[] extCacheDirs = this.getExternalCacheDirs();
 
-      String[] smmDirs = new String[extCacheDirs.length + 2];
+      String[] smmDirs = new String[extCacheDirs.length + 1];
       int last = 0;
 
       smmDirs[0] = this.getCacheDir().getAbsolutePath();
@@ -191,14 +177,12 @@ public class preferences extends android.preference.PreferenceActivity
          if (extCacheDirs[i] != null)
          {
             smmDirs[i + 1] = extCacheDirs[i].getAbsolutePath();
+
             last = last + 1;
          }
       }
 
-      smmDirs[last] = "/storage/extSdCard/Android/data/org.stephe_leake.android.stephes_music/cache";
       last = last + 1;
-
-      smmDirs = Arrays.copyOfRange(smmDirs, 0, last);
 
       smmPref.setEntries(smmDirs);
       smmPref.setEntryValues(smmDirs);

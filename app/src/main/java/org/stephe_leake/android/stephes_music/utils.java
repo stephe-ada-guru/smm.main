@@ -46,6 +46,7 @@ public class utils
    public static final long millisPerDay    = 24 * millisPerHour;
 
    public static final String preferencesName = "stephes_music";
+   public static final String defaultPlaylistDir = "Music/Audio";
 
    //  Notification ids; all with null tag
    public static final int notif_play_id     = 1;
@@ -248,7 +249,9 @@ public class utils
    {
       // programmer errors (possibly due to Android bugs :)
       log (context, LogLevel.Error, msg, errorLogFileBaseName);
-      Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
+
+      // This can crash due to lack of resources; happens when run on new device.
+      // Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
    }
 
    // The following write to the Android log, viewed with Android Studio

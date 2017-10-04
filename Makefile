@@ -1,7 +1,6 @@
 # top level Makefile to build Stephe's Music Player app
-
 # must match app/build.gradle versionName, versionCode
-VERSION := 18
+VERSION := 19
 
 .PHONY : force
 
@@ -49,7 +48,7 @@ tag :
 	mtn tag h:org.stephe_leake.music_player.java version-$(VERSION)
 
 archive :
-	cp app/build/outputs/apk/app-debug-$(VERSION).apk /cygdrive/d/Archive/Android/org.stephe_leake.music_player.debug-$(VERSION).apk
+	cp app/build/outputs/apk/app-debug-$(VERSION).apk /cygdrive/d/Archive/Android/music/org.stephe_leake.music_player.debug-$(VERSION).apk
 
 install-emulator-all : build install-emulator-debug
 
@@ -72,14 +71,14 @@ install-pda-usb-debug :
 # apk version is in build.gradle
 install-pda-ssh-release-all : build install-pda-ssh-release
 
-install-pda-ssh-release : PDA_IP := 192.168.1.66
+install-pda-ssh-release : PDA_IP := 192.168.1.69
 install-pda-ssh-release :
-	scp -P 2222 build/outputs/apk/org.stephe_leake.music_player.java-release-$(VERSION).apk root@$(PDA_IP):/storage/sdcard0/Download/
+	scp -P 2222 build/outputs/apk/org.stephe_leake.music_player.java-release-$(VERSION).apk root@$(PDA_IP):/storage/emulated/0/Download/
 
 install-pda-ssh-debug-all : build install-pda-ssh-debug
-install-pda-ssh-debug : PDA_IP := 192.168.1.66
+install-pda-ssh-debug : PDA_IP := 192.168.1.69
 install-pda-ssh-debug :
-	scp -P 2222 build/outputs/apk/org.stephe_leake.music_player.java-debug-$(VERSION).apk root@$(PDA_IP):/storage/sdcard0/Download/
+	scp -P 2222 app/build/outputs/apk/app-debug-$(VERSION).apk root@$(PDA_IP):/storage/emulated/0/Download/
 
 # only needed once in newly created virtual device; image is persistant
 install-playlist :
@@ -95,13 +94,11 @@ install-playlist :
 # In the Galaxy Tab emulator, /media is not world write, so change mode to o+rw here.
 # FIXME: have to redo 'chmod 777 /data' on each emulator boot.
 install-playlist-2 :
-	adb -e chmod 777 /data
-	adb -e chmod 777 /data/media
-	adb -e push test/Audio/vocal.m3u /data/media/Audio/vocal.m3u
-	adb -e push "d:/Music/David Wilcox/Into the Mystery/12 Native Tongue.mp3" "/data/media/Audio/vocal/David Wilcox/Into the Mystery/12 Native Tongue.mp3"
-	adb -e push "d:/Music/David Wilcox/Into the Mystery/AlbumArt_{34040FCC-77F8-4958-80DF-758892F2BF8F}_Large.jpg" "/data/media/Audio/vocal/David Wilcox/Into the Mystery/AlbumArt_{34040FCC-77F8-4958-80DF-758892F2BF8F}_Large.jpg"
-	adb -e push "d:/Music/Joni Mitchell/Don Juan's Reckless Daughter/Paprika Plains.mp3" "/data/media/Audio/vocal/Joni Mitchell/Don Juan's Reckless Daughter/Paprika Plains.mp3"
-	adb -e push "d:/Music/Mary Chapin Carpenter/State of the Heart/Down in Mary's Land.mp3" "/data/media/Audio/vocal/Mary Chapin Carpenter/State of the Heart/Down in Mary's Land.mp3"
+	adb -e push test/Audio/vocal.m3u /storage/emulated/0/Audio/vocal.m3u
+	adb -e push "d:/Music/David Wilcox/Into the Mystery/12 Native Tongue.mp3" "/storage/emulated/0/Audio/vocal/David Wilcox/Into the Mystery/12 Native Tongue.mp3"
+	adb -e push "d:/Music/David Wilcox/Into the Mystery/AlbumArt_{34040FCC-77F8-4958-80DF-758892F2BF8F}_Large.jpg" "/storage/emulated/0/Audio/vocal/David Wilcox/Into the Mystery/AlbumArt_{34040FCC-77F8-4958-80DF-758892F2BF8F}_Large.jpg"
+	adb -e push "d:/Music/Joni Mitchell/Don Juan's Reckless Daughter/Paprika Plains.mp3" "/storage/emulated/0/Audio/vocal/Joni Mitchell/Don Juan's Reckless Daughter/Paprika Plains.mp3"
+	adb -e push "d:/Music/Mary Chapin Carpenter/State of the Heart/Down in Mary's Land.mp3" "/storage/emulated/0/Audio/vocal/Mary Chapin Carpenter/State of the Heart/Down in Mary's Land.mp3"
 
 # Local Variables:
 # eval: (load (expand-file-name "prj.el"))

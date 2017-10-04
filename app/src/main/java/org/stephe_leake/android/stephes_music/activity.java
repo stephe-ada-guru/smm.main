@@ -34,9 +34,12 @@ import android.content.res.Resources;
 import android.net.Uri.Builder;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.PowerManager.WakeLock;
 import android.os.PowerManager;
 import android.os.SystemClock;
+import android.os.storage.StorageManager;
+import android.os.storage.StorageVolume;
 import android.preference.PreferenceManager;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -76,7 +79,8 @@ public class activity extends android.app.Activity
    private static final int MENU_SHOW_DOWNLOAD_LOG     = 10;
    private static final int MENU_SHOW_ERROR_LOG        = 11;
 
-   private static final int RESULT_PREFERENCES = 1;
+   private static final int RESULT_PREFERENCES    = 1;
+   private static final int RESULT_STORAGE_ACCESS = 2;
 
    // Main UI members
 
@@ -369,19 +373,32 @@ public class activity extends android.app.Activity
          playlistTitle.setTextSize(scale * defaultTextViewTextSize);
          playlistTitle.setOnClickListener(playlistListener);
 
-         if (intent.getAction() == null || // destroyed/restored (ie for screen rotate)
-             intent.getAction().equals(Intent.ACTION_MAIN)) // launched directly by user
+         // On a clean install, user must download new playlists into
+         // the standard Music directory. Ensure that we have access.
+         StorageManager storeMgr  = getSystemService(StorageManager.class);
+         StorageVolume  primStore = storeMgr.getPrimaryStorageVolume();
+
+         if (0 != primStore.getState().compareTo(Environment.MEDIA_MOUNTED))
+            utils.alertLog (this, "primary storage not mounted or read only: " + primStore.getState());
+
+         File tmp = Environment.getExternalStoragePublicDirectory(utils.defaultPlaylistDir);
+         String path = tmp.getAbsolutePath();
+         if (0 != Environment.getExternalStorageState(tmp).compareTo(Environment.MEDIA_MOUNTED))
+            utils.alertLog
+               (this, "default playlist dir '" + path + "' not mounted or read only: " +
+                Environment.getExternalStorageState(tmp));
+
+         if (!(tmp.canRead() && tmp.canWrite()))
          {
-            sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_UPDATE_DISPLAY));
+            Intent reqAccess = primStore.createAccessIntent(Environment.DIRECTORY_MUSIC); // ACTION_OPEN_DOCUMENT_TREE
+
+            startActivityForResult(reqAccess, RESULT_STORAGE_ACCESS);
          }
-         else
-         {
-            utils.errorLog(this, "onCreate got unexpected intent: " + intent.toString());
-         }
+
       }
       catch (Exception e)
       {
-         utils.errorLog(this, "activity.onCreate: exception: ", e);
+         utils.alertLog(this, "activity.onCreate: exception: ", e);
          finish();
       }
    }
@@ -636,11 +653,23 @@ public class activity extends android.app.Activity
    {
       switch(requestCode)
       {
+      case RESULT_STORAGE_ACCESS:
+      {
+         switch (resultCode)
+         {
+         case RESULT_OK: // = -1
+            break;
+
+         // Not much we can do if we don't get access.
+         }
+      }
+         break;
+
       case RESULT_PREFERENCES:
          switch (resultCode)
          {
          case RESULT_CANCELED:
-         case RESULT_OK:
+         case RESULT_OK: // = -1
             break;
 
          case utils.RESULT_TEXT_SCALE:

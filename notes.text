@@ -14,9 +14,19 @@ branches:
     o.s_l.m_p.work                     - available
 
  current tasks
-write test for new file count
+implement java-wisi
+    https://docs.oracle.com/javase/specs/jls/se7/html/jls-18.html
 
-report new count in notification.
+phone: no playlists found in /storage/emulated/0/Audio (sigh).
+    add checks on getExternalStoragePublicDirectory result mounted, readable
+
+    change to document provider API to access the playlist
+        https://developer.android.com/guide/topics/providers/document-provider.html
+
+store abs filenames in playlist for Android 7, DLNA
+
+https://stackoverflow.com/questions/14228289/android-pair-devices-via-bluetooth-programmatically#14254202
+    may allow setting bluetooth?
 
 cycle thru all avail albumart*.jpg
 

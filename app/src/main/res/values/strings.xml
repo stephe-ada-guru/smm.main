@@ -72,7 +72,7 @@
   <string name="log_level_dialog_title">Download Log level</string>
 
   <string name="playlist_directory_key">playlist_directory</string>
-  <string name="playlist_directory_default">/storage/extSdCard/Audio</string>
+  <string name="playlist_directory_default">/storage/emulated/0/Audio</string>
   <string name="playlist_directory_title">playlist directory</string>
   <string name="playlist_directory_summary">absolute path where playlists are stored</string>
   <string name="playlist_directory_dialog_title">playlist directory</string>
@@ -90,7 +90,7 @@
   <string name="server_IP_dialog_title">Server IP</string>
 
   <string name="smm_directory_key">smm_directory</string>
-  <string name="smm_directory_default">/storage/extSdCard/Android/data/org.stephen_leake.android.stephes_music/cache</string>
+  <string name="smm_directory_default">/storage/emulated/0/Android/data/org.stephen_leake.android.stephes_music/cache</string>
   <string name="smm_directory_title">smm directory</string>
   <string name="smm_directory_summary">absolute path where smm interface files are stored</string>
   <string name="smm_directory_dialog_title">smm directory</string>
