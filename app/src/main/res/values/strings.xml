@@ -29,7 +29,6 @@
   <string name="download">Download</string>
   <string name="jump_song">Jump</string>
   <string name="null_playlist">(click to select a playlist)</string>
-  <string name="null_playlist_directory">(set playlist directory in preferences)</string>
 
   <!-- note buttons -->
   <string name="note_best_list">Best List</string>
@@ -70,12 +69,6 @@
   <string name="log_level_title">Log Level</string>
   <string name="log_level_summary">Verbose or Info messages in download log (always includes Error) </string>
   <string name="log_level_dialog_title">Download Log level</string>
-
-  <string name="playlist_directory_key">playlist_directory</string>
-  <string name="playlist_directory_default">/storage/emulated/0/Audio</string>
-  <string name="playlist_directory_title">playlist directory</string>
-  <string name="playlist_directory_summary">absolute path where playlists are stored</string>
-  <string name="playlist_directory_dialog_title">playlist directory</string>
 
   <string name="prev_threshold_key">prev_threshold</string>
   <string name="prev_threshold_default">5000</string>

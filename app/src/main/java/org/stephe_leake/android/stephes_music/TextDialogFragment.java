@@ -64,8 +64,8 @@ public class TextDialogFragment extends DialogFragment
                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(activity);
                final File playlistDir  = new File
                   (prefs.getString
-                   (res.getString(R.string.playlist_directory_key),
-                    res.getString(R.string.playlist_directory_default)));
+                   (res.getString(R.string.smm_directory_key),
+                    res.getString(R.string.smm_directory_default)));
 
                builder
                   .setTitle(R.string.dialog_download_new_playlist)

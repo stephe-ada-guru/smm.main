@@ -2,7 +2,7 @@
 //
 //  misc stuff
 //
-//  Copyright (C) 2011 - 2013, 2015 - 2017 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2011 - 2013, 2015 - 2018 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -46,7 +46,6 @@ public class utils
    public static final long millisPerDay    = 24 * millisPerHour;
 
    public static final String preferencesName = "stephes_music";
-   public static final String defaultPlaylistDir = "Music/Audio";
 
    //  Notification ids; all with null tag
    public static final int notif_play_id     = 1;
@@ -97,8 +96,7 @@ public class utils
 
    // sub-activity result codes
    public static final int RESULT_TEXT_SCALE         = Activity.RESULT_FIRST_USER + 1;
-   public static final int RESULT_PLAYLIST_DIRECTORY = Activity.RESULT_FIRST_USER + 2;
-   public static final int RESULT_SMM_DIRECTORY      = Activity.RESULT_FIRST_USER + 3;
+   public static final int RESULT_SMM_DIRECTORY      = Activity.RESULT_FIRST_USER + 2;
 
    public static final int pauseIntentId           = 1;
    public static final int playIntentId            = 2;
@@ -112,29 +110,23 @@ public class utils
 
    public static MetaData retriever;
 
-   public static String playlistDirectory;
-   // Absolute path to directory where playlist files reside. The
-   // list of available playlists consists of all .m3u files in
-   // this directory.
+   public static String smmDirectory;
+   // Absolute path to directory containing playlist files and files
+   // used to interface with Stephe's Music manager (smm); .last
+   // files, notes files.
    //
-   // Set from playlist file passed to playList, or by preferences
+   // Set by preferences.
 
    public static String playlistBasename;
-   // Relative to playlistDirectory, without extension (suitable
-   // for user display). null if no playlist is current.
+   // Current playlist file name; relative to smmDirectory, without
+   // extension (suitable for user display). null if no playlist is
+   // current.
 
    public static String playlistAbsPath()
    // return current playlist file abs path
    {
-      return utils.playlistDirectory + "/" + utils.playlistBasename + ".m3u";
+      return utils.smmDirectory + "/" + utils.playlistBasename + ".m3u";
    }
-
-   public static String smmDirectory;
-   // Absolute path to directory containing files used to interface
-   // with Stephe's Music manager (smm); contains .last files, notes
-   // files.
-   //
-   // Set by preferences.
 
    public static String lastFileAbsPath(String basename)
    {

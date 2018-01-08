@@ -2,7 +2,7 @@
 //
 //  Provides User Interface to Stephe's Music Player.
 //
-//  Copyright (C) 2011 - 2013, 2015 - 2017 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2011 - 2013, 2015 - 2018 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -51,33 +51,10 @@ public class preferences extends android.preference.PreferenceActivity
    }
    private final DirFilter dirFilter = new DirFilter();
 
-   // Return path to 'dir' if 'dir' contains smm playlists
-   private String checkDirectory (File root, String dir)
-   {
-      final File playlistDir   = new File(root, dir);
-      final String[] playlists = playlistDir.list(playlistFilter);
-
-      if (playlists == null || playlists.length == 0)
-      {
-         return null;
-      }
-
-      // some playlists found; check that corresponding directories exist
-      for (int i = 0; i < playlists.length; i++)
-      {
-         final String dirName = playlists[i].substring(0, playlists[i].length() - 4); // strip ".m3u"
-         if (new File (playlistDir, dirName).isDirectory())
-         {
-            return playlistDir.getPath();
-         }
-      }
-      return null;
-   }
-
    private void setAutoDownloadPlaylists(Resources res)
    {
       // Set list of playlists in auto-download pref
-      ListPreference playlistPref = (ListPreference)findPreference(res.getString(R.string.playlist_directory_key));
+      ListPreference playlistPref = (ListPreference)findPreference(res.getString(R.string.smm_directory_key));
       File           playlistDir  = new File(playlistPref.getValue());
 
       MultiSelectListPreference autodownloadPref = (MultiSelectListPreference)
@@ -118,71 +95,22 @@ public class preferences extends android.preference.PreferenceActivity
          utils.errorLog(this, "Can't read stored preferences: clear data in Settings | Applications");
       }
 
-      // Build list of top level directories that might contain smm
+      // Build list of directories that might contain smm
       // playlists.
-
-      LinkedList<String> playlistDirs = new LinkedList<String>();
-      LinkedList<String> likelyRoots  = new LinkedList<String>();
-
-      File   tmp  = Environment.getExternalStoragePublicDirectory(utils.defaultPlaylistDir);
-      String path = tmp.getAbsolutePath();
-      likelyRoots.add(path);
-
-      Iterator<String> likelyRootsI = likelyRoots.iterator();
-
-      do
-      {
-         final File root           = new File(likelyRootsI.next());
-         final String[] likelyDirs = root.list(dirFilter);
-
-         if (likelyDirs != null)
-         {
-            for (int j = 0; j < likelyDirs.length; j++)
-            {
-               String dir = checkDirectory(root, likelyDirs[j]);
-               if (dir != null)
-                  if (!playlistDirs.contains(dir))
-                     playlistDirs.add(dir);
-            };
-         };
-      } while (likelyRootsI.hasNext());
-
-      final String[] playlistDirsArray = new String[playlistDirs.size()];
-      Iterator<String> playlistDirsI = playlistDirs.iterator();
-
-      for (int i = 0; i < playlistDirsArray.length; i++)
-      {
-         playlistDirsArray[i] = playlistDirsI.next();
-      }
-
-      ListPreference playlistPref = (ListPreference)findPreference(res.getString(R.string.playlist_directory_key));
-
-      playlistPref.setEntries(playlistDirsArray);
-      playlistPref.setEntryValues(playlistDirsArray);
-
-
-      // Create list of possible smm directories
-
-      ListPreference smmPref = (ListPreference)findPreference(res.getString(R.string.smm_directory_key));
 
       File[] extCacheDirs = this.getExternalCacheDirs();
 
+      ListPreference smmPref = (ListPreference)findPreference(res.getString(R.string.smm_directory_key));
+
       String[] smmDirs = new String[extCacheDirs.length + 1];
-      int last = 0;
-
       smmDirs[0] = this.getCacheDir().getAbsolutePath();
-
       for (int i = 0; i < extCacheDirs.length; i++)
       {
          if (extCacheDirs[i] != null)
          {
             smmDirs[i + 1] = extCacheDirs[i].getAbsolutePath();
-
-            last = last + 1;
          }
       }
-
-      last = last + 1;
 
       smmPref.setEntries(smmDirs);
       smmPref.setEntryValues(smmDirs);
@@ -221,7 +149,7 @@ public class preferences extends android.preference.PreferenceActivity
       {
          setResult(utils.RESULT_SMM_DIRECTORY);
       }
-      else if (key.equals(res.getString(R.string.playlist_directory_key)))
+      else if (key.equals(res.getString(R.string.smm_directory_key)))
       {
          setAutoDownloadPlaylists(res);
          setResult(RESULT_OK);

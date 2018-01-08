@@ -12,6 +12,5 @@
   (concat default-directory "app/src/main/res")
   ;; Including the android sources confuses completion, partly because of the long path.
   ;; "c:/Users/stephe/AppData/Local/Android/sdk/sources/android-23/" ;; can't combine two Gnu Global spaces
-  )
- )
+  ))
 ;; end of file

@@ -14,14 +14,19 @@ branches:
     o.s_l.m_p.work                     - available
 
  current tasks
-implement java-wisi
-    https://docs.oracle.com/javase/specs/jls/se7/html/jls-18.html
+compiling with command-line gradle doesn't work
+    missing some environment stuff
 
-phone: no playlists found in /storage/emulated/0/Audio (sigh).
-    add checks on getExternalStoragePublicDirectory result mounted, readable
+use smm_dir for playlists
+    download works!
 
-    change to document provider API to access the playlist
-        https://developer.android.com/guide/topics/providers/document-provider.html
+    can't use media scanner for meta-data, but maybe read-metadata will work
+
+android.os.FileUriExposedException:
+    file:///storage/emulated/0/Android/data/org.stephe_leake.android.stephes_music/cache/download_log.txt
+    exposed beyond app through Intent.getData()
+        use file provider for liner notes
+        comment out for now
 
 store abs filenames in playlist for Android 7, DLNA
 

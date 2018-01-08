@@ -48,8 +48,8 @@ public class PickPlaylistDialogFragment extends DialogFragment
          SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(activity);
          final File playlistDir  = new File
             (prefs.getString
-             (res.getString(R.string.playlist_directory_key),
-              res.getString(R.string.playlist_directory_default)));
+             (res.getString(R.string.smm_directory_key),
+              res.getString(R.string.smm_directory_default)));
 
          final FileExtFilter playlistFilter = new FileExtFilter(".m3u");
          final String[] playlists           = playlistDir.list(playlistFilter);

@@ -2,7 +2,7 @@
 //
 //  Provides background download from smm server.
 //
-//  Copyright (C) 2016, 2017 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2016 - 2018 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -88,7 +88,7 @@ public class DownloadService extends IntentService
 
       while (line != null)
       {
-         if (new File(utils.playlistDirectory, line).canRead())
+         if (new File(utils.smmDirectory, line).canRead())
             {
                if (currentFile != null && line.equals(currentFile))
                   startAt = songCount;
@@ -260,11 +260,13 @@ public class DownloadService extends IntentService
 
          // Not in constructor, because showDownloadLogIntent can change
          // if user changes preference.
-         showLogPendingIntent = PendingIntent.getActivity
-            (this.getApplicationContext(),
-             utils.showDownloadLogIntentId,
-             utils.showDownloadLogIntent,
-             0);
+         //
+         // FIXME: change to fileprovider
+         // showLogPendingIntent = PendingIntent.getActivity
+         //    (this.getApplicationContext(),
+         //     utils.showDownloadLogIntentId,
+         //     utils.showDownloadLogIntent,
+         //     0);
 
          {
             Resources         res   = getResources();
@@ -290,7 +292,7 @@ public class DownloadService extends IntentService
 
             for (String playlist : playlists)
             {
-               status = download(this, utils.playlistDirectory + "/" + playlist + ".m3u", mediaScanner);
+               status = download(this, utils.smmDirectory + "/" + playlist + ".m3u", mediaScanner);
                totalCount += status.count;
                if (status.status == ProcessStatus.Retry)
                {

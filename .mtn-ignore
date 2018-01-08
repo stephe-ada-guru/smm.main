@@ -8,5 +8,8 @@
 ^app/smm-server_driver\.log$
 ^app/tmp$
 ^build$
+^gradle$
+^gradlew$
+^gradlew\.bat$
 ^test/Audio/vocal$
 ^tmp$

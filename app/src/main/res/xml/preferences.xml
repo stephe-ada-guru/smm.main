@@ -24,14 +24,6 @@ write to the Free Software Foundation, 51 Franklin Street, Suite
       android:title="all">
 
     <ListPreference
-        android:key="@string/playlist_directory_key"
-        android:defaultValue="@string/playlist_directory_default"
-        android:title="@string/playlist_directory_title"
-        android:summary="@string/playlist_directory_summary"
-        android:dialogTitle="@string/playlist_directory_dialog_title" />
-    <!-- list entries filled at runtime -->
-
-    <ListPreference
         android:key="@string/smm_directory_key"
         android:defaultValue="@string/smm_directory_default"
         android:title="@string/smm_directory_title"

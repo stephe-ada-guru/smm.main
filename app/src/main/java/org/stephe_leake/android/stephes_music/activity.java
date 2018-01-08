@@ -2,7 +2,7 @@
 //
 //  Provides User Interface to Stephe's Music Player.
 //
-//  Copyright (C) 2011 - 2013, 2015 - 2017 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2011 - 2013, 2015 - 2018 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -264,15 +264,6 @@ public class activity extends android.app.Activity
          }
       };
 
-   private void setPlaylistDirectory()
-   {
-      Resources         res   = getResources();
-      SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-      utils.playlistDirectory = prefs.getString
-         (res.getString(R.string.playlist_directory_key),
-          res.getString(R.string.playlist_directory_default));
-   }
-
    private void setSMMDirectory()
    {
       Resources         res   = getResources();
@@ -298,7 +289,6 @@ public class activity extends android.app.Activity
 
          final Intent intent = getIntent();
 
-         setPlaylistDirectory();
          setSMMDirectory();
 
          utils.showDownloadLogIntent =
@@ -372,29 +362,6 @@ public class activity extends android.app.Activity
          playlistTitle = utils.findTextViewById(this, R.id.playlistTitle);
          playlistTitle.setTextSize(scale * defaultTextViewTextSize);
          playlistTitle.setOnClickListener(playlistListener);
-
-         // On a clean install, user must download new playlists into
-         // the standard Music directory. Ensure that we have access.
-         StorageManager storeMgr  = getSystemService(StorageManager.class);
-         StorageVolume  primStore = storeMgr.getPrimaryStorageVolume();
-
-         if (0 != primStore.getState().compareTo(Environment.MEDIA_MOUNTED))
-            utils.alertLog (this, "primary storage not mounted or read only: " + primStore.getState());
-
-         File tmp = Environment.getExternalStoragePublicDirectory(utils.defaultPlaylistDir);
-         String path = tmp.getAbsolutePath();
-         if (0 != Environment.getExternalStorageState(tmp).compareTo(Environment.MEDIA_MOUNTED))
-            utils.alertLog
-               (this, "default playlist dir '" + path + "' not mounted or read only: " +
-                Environment.getExternalStorageState(tmp));
-
-         if (!(tmp.canRead() && tmp.canWrite()))
-         {
-            Intent reqAccess = primStore.createAccessIntent(Environment.DIRECTORY_MUSIC); // ACTION_OPEN_DOCUMENT_TREE
-
-            startActivityForResult(reqAccess, RESULT_STORAGE_ACCESS);
-         }
-
       }
       catch (Exception e)
       {
@@ -685,13 +652,6 @@ public class activity extends android.app.Activity
          case utils.RESULT_SMM_DIRECTORY:
             {
                setSMMDirectory();
-               // value from preferences
-            }
-            break;
-
-         case utils.RESULT_PLAYLIST_DIRECTORY:
-            {
-               setPlaylistDirectory();
                // value from preferences
             }
             break;

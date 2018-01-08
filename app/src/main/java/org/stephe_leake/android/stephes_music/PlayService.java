@@ -3,7 +3,7 @@
 //  Provides background audio playback capabilities, allowing the
 //  user to switch between activities without stopping playback.
 //
-//  Copyright (C) 2011 - 2013, 2015 - 2017 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2011 - 2013, 2015 - 2018 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -217,27 +217,13 @@ public class PlayService extends Service
       case Meta:
          if (playing == PlayState.Idle)
          {
-            if (utils.playlistDirectory == null)
-            {
-               sendStickyBroadcast
-                  (new Intent (utils.META_CHANGED).
-                   putExtra ("artist", "").
-                   putExtra ("album", "").
-                   putExtra ("track", "").
-                   putExtra ("duration", "0").
-                   putExtra ("playlist", getResources().getString(R.string.null_playlist_directory)));
-
-            }
-            else
-            {
-               sendStickyBroadcast
-                  (new Intent (utils.META_CHANGED).
-                   putExtra ("artist", "").
-                   putExtra ("album", "").
-                   putExtra ("track", "").
-                   putExtra ("duration", "0").
-                   putExtra ("playlist", getResources().getString(R.string.null_playlist)));
-            }
+            sendStickyBroadcast
+               (new Intent (utils.META_CHANGED).
+                putExtra ("artist", "").
+                putExtra ("album", "").
+                putExtra ("track", "").
+                putExtra ("duration", "0").
+                putExtra ("playlist", getResources().getString(R.string.null_playlist)));
 
             MediaMetadata metadata = new MediaMetadata.Builder()
                .putString(MediaMetadata.METADATA_KEY_TITLE, "")
@@ -254,7 +240,7 @@ public class PlayService extends Service
          }
          else
          {
-            utils.retriever.setMetaData(context, utils.playlistDirectory, playlist.get(playlistPos));
+            utils.retriever.setMetaData(context, utils.smmDirectory, playlist.get(playlistPos));
 
             sendStickyBroadcast
                (new Intent (utils.META_CHANGED).putExtra
@@ -284,7 +270,7 @@ public class PlayService extends Service
             sendStickyBroadcast
                (new Intent (utils.PLAYSTATE_CHANGED).
                 putExtra ("playing", playing == PlayState.Playing).
-                putExtra ("position", mediaPlayer.getCurrentPosition()));
+                putExtra ("position", (playing == PlayState.Idle) ? 0 : mediaPlayer.getCurrentPosition()));
 
             switch (playing)
             {
@@ -357,7 +343,7 @@ public class PlayService extends Service
 
       try
       {
-         final String absFile = utils.playlistDirectory + "/" + path;
+         final String absFile = utils.smmDirectory + "/" + path;
 
          mediaPlayer.reset();
          playing = PlayState.Idle;
@@ -478,7 +464,7 @@ public class PlayService extends Service
             throw new Fail();
          }
 
-         utils.playlistDirectory = playlistFile.getParent();
+         utils.smmDirectory = playlistFile.getParent();
          utils.playlistBasename  = tmpPlaylistBaseName;
          playlist          = tmpPlaylist;
          playlistPos       = startAt;
@@ -562,7 +548,7 @@ public class PlayService extends Service
    }
 
    // save/restore keys; global
-   private static final String keyPlaylistDirectory = "playlistDirectory";
+   private static final String keySMMDirectory = "smmDirectory";
    private static final String keyPlaylistFilename  = "playlistFilename";
 
    // per-playlist: actual key is prefixed by the playlist filename
@@ -571,14 +557,6 @@ public class PlayService extends Service
 
    private void restoreState()
    {
-      if (!Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState()))
-      {
-         utils.infoLog(this, "external storage not mounted; can't restore");
-
-         setIdleNull();
-         return;
-      }
-
       // External storage may have changed since saveState() was
       // called. In particular, we assume SMM has edited the playlist
       // files and the SMM file. So we don't store playlistPos; we
@@ -586,14 +564,14 @@ public class PlayService extends Service
 
       SharedPreferences storage = getSharedPreferences(utils.preferencesName, MODE_PRIVATE);
 
-      utils.playlistDirectory = storage.getString(keyPlaylistDirectory, null);
+      utils.smmDirectory = storage.getString(keySMMDirectory, null);
       utils.playlistBasename  = storage.getString(keyPlaylistFilename, null);
 
-      if (utils.playlistDirectory != null && utils.playlistBasename != null)
+      if (utils.smmDirectory != null && utils.playlistBasename != null)
       {
          try
          {
-            playList (utils.playlistDirectory + "/" + utils.playlistBasename + ".m3u", PlayState.Paused);
+            playList (utils.smmDirectory + "/" + utils.playlistBasename + ".m3u", PlayState.Paused);
          }
          catch (Fail e)
          {
@@ -617,7 +595,7 @@ public class PlayService extends Service
       SharedPreferences storage = getSharedPreferences(utils.preferencesName, MODE_PRIVATE);
       Editor            editor  = storage.edit();
 
-      editor.putString(keyPlaylistDirectory, utils.playlistDirectory);
+      editor.putString(keySMMDirectory, utils.smmDirectory);
       editor.putString(keyPlaylistFilename, utils.playlistBasename);
 
       editor.putInt
