@@ -27,9 +27,6 @@ along with GCC; see the file COPYING3.  If not see
   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" /> <!-- download -->
   <uses-permission android:name="android.permission.BROADCAST_STICKY" /> <!-- send data from service to activity -->
   <uses-permission android:name="android.permission.INTERNET" />             <!-- download -->
-  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" /> <!-- read album art -->
-  <uses-permission android:name="android.permission.WAKE_LOCK" /> <!-- media player prevents screen from turning off -->
-  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /> <!-- store last played song -->
   <uses-permission android:name="android.permission.WRITE_SETTINGS" /> <!-- preferences -->
 
   <application

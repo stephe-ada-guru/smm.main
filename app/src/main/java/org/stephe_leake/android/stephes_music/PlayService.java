@@ -42,7 +42,6 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
-import android.os.PowerManager.WakeLock;
 import android.os.PowerManager;
 import android.preference.MultiSelectListPreference;
 import android.preference.PreferenceManager;
@@ -104,7 +103,6 @@ public class PlayService extends Service
    private void createMediaPlayer()
    {
       mediaPlayer = new MediaPlayer();
-      mediaPlayer.setWakeMode(this, PowerManager.PARTIAL_WAKE_LOCK);
       mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
       mediaPlayer.setOnCompletionListener(completionListener);
       mediaPlayer.setOnErrorListener(errorListener);

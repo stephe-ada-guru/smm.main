@@ -11,12 +11,7 @@
 //
 //  So we return a copy  of the bitmap.
 //
-//  Android provides MediaMetadataRetriever, which requires
-//  READ_EXTERNAL_STORAGE permission in AndroidManifest.xml. However,
-//  it's broken my Samsung Galaxy Note II and III. So this uses the
-//  MediaStore interface.
-//
-//  Copyright (C) 2013, 2015 - 2017 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2013, 2015 - 2018 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -32,15 +27,12 @@
 
 package org.stephe_leake.android.stephes_music;
 
-import android.content.ContentResolver;
 import android.content.Context;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.net.Uri.Builder;
-import android.provider.MediaStore;
 import java.io.File;
 import java.io.FileInputStream;
 
@@ -87,93 +79,16 @@ public class MetaData
       currentMusicFileName = sourceFile;
 
       // new song file
-      ContentResolver resolver = context.getContentResolver();
-
-      String[] mediaFields =
-         {
-            MediaStore.Audio.Media.TITLE,
-            MediaStore.Audio.Media.ALBUM,
-            MediaStore.Audio.Media.ARTIST,
-            MediaStore.Audio.Media.DURATION,
-            MediaStore.Audio.Media.DATA
-         };
-
-      String[] playlistFields =
-         {
-            MediaStore.Audio.Playlists._ID,
-            MediaStore.Audio.Playlists.NAME
-         };
-
-      musicUri = new Uri.Builder()
-         .scheme("file")
-         .path(sourceFile)
-         .build();
-
-      linerFileName = musicFile.getParentFile().getAbsolutePath() + "/liner_notes.pdf";
-      linerUri = new Uri.Builder()
-         .scheme("file")
-         .path(linerFileName)
-         .build();
 
       try
       {
-         // We'd like to just query on sourceFile, but that doesn't
-         // work, apparently because String doesn't compare to DATA
-         // STREAM. So we manually search the MediaStore.
-         //
-         // This would be more efficient if we first searched for
-         // the playlist, then looped thru the playlist looking for
-         // sourceFile, comparing Strings. However, sometimes the
-         // media scanner misses a playlist. So we just search the
-         // entire MediaStore.
-         //
-         // EXTERNAL_CONTENT_URI might point to the wrong volume;
-         // should use getContentUri(volumeName), but need
-         // volumeName. Which is apparently either "internal" or
-         // "external", but how do we know which? So far it has not
-         // been a problem.
-         Cursor cursor = resolver.query
-            (MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, mediaFields, null, null, null);
+         MediaMetadataRetriever retriever = new MediaMetadataRetriever();
 
-         if (cursor == null ||
-             cursor.getCount() < 1)
-         {
-            utils.errorLog(context, "media query failed");
-
-            title    = "<query failed>";
-            album    = "<query failed>";
-            artist   = "<query failed>";
-            duration = "0";
-         }
-         else
-         {
-            // cursor is valid
-            cursor.moveToNext();
-
-            while (!cursor.isAfterLast())
-            {
-               if (0 == sourceFile.compareTo(cursor.getString(4)))
-                  break;
-               cursor.moveToNext();
-            };
-
-            if (cursor.isAfterLast())
-            {
-               utils.errorLog(context, "file not found in media db: " + sourceFile);
-               title    = "<file not found>";
-               album    = "<file not found>";
-               artist   = "<file not found>";
-               duration = "0";
-            }
-            else
-            {
-               title    = cursor.getString(0);
-               album    = cursor.getString(1);
-               artist   = cursor.getString(2);
-               duration = cursor.getString(3);
-            }
-         }
-         cursor.close();
+         retriever.setDataSource(currentMusicFileName);
+         title    = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
+         album    = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM);
+         artist   = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST);
+         duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
       }
       catch (Exception e)
       {
@@ -184,6 +99,11 @@ public class MetaData
          duration = "0";
       }
 
+      // linerFileName = musicFile.getParentFile().getAbsolutePath() + "/liner_notes.pdf";
+      // linerUri = new Uri.Builder()
+      //    .scheme("file")
+      //    .path(linerFileName)
+      //    .build();
       try
       {
          File albumArtFiles[] = musicFile.getParentFile().listFiles(new FileExtFilter(".jpg"));
