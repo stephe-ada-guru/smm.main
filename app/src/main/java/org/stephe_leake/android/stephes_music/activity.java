@@ -40,6 +40,7 @@ import android.os.SystemClock;
 import android.os.storage.StorageManager;
 import android.os.storage.StorageVolume;
 import android.preference.PreferenceManager;
+import android.support.v4.content.FileProvider;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -289,27 +290,30 @@ public class activity extends android.app.Activity
 
          setSMMDirectory();
 
+         FileProvider fileProvider = new FileProvider();
+
          utils.showDownloadLogIntent =
             new Intent(Intent.ACTION_VIEW)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             .setDataAndType
-            (new Uri.Builder()
-             .scheme("file")
-             .authority("")
-             .path(DownloadUtils.logFileName())
-             .build(),
+            (fileProvider.getUriForFile
+             (this,
+              BuildConfig.APPLICATION_ID + ".fileprovider",
+              new File(DownloadUtils.logFileName())),
              "text/plain");
 
          utils.showErrorLogIntent =
             new Intent(Intent.ACTION_VIEW)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             .setDataAndType
-            (new Uri.Builder()
-             .scheme("file")
-             .authority("")
-             .path(utils.errorLogFileName())
-             .build(),
+            (fileProvider.getUriForFile
+             (this,
+              BuildConfig.APPLICATION_ID + ".fileprovider",
+              new File(utils.errorLogFileName())),
              "text/plain");
+
          {
             GregorianCalendar time = new GregorianCalendar(); // holds current time
             time.add(Calendar.DAY_OF_MONTH, 1); // tomorrow

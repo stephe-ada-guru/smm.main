@@ -93,7 +93,7 @@ public class MetaData
          retriever.setDataSource(currentMusicFileName);
          title    = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
          album    = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM);
-         artist   = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST);
+         artist   = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
          duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
       }
       catch (Exception e)
@@ -111,6 +111,10 @@ public class MetaData
       try
       {
          FileProvider fileProvider = new FileProvider();
+
+         musicUri = fileProvider.getUriForFile
+            (context, BuildConfig.APPLICATION_ID + ".fileprovider", new File(currentMusicFileName));
+
          linerFileName = musicFile.getParentFile().getAbsolutePath() + "/liner_notes.pdf";
          linerUri = fileProvider.getUriForFile
             (context, BuildConfig.APPLICATION_ID + ".fileprovider", new File(linerFileName));

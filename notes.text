@@ -14,8 +14,6 @@ branches:
     o.s_l.m_p.work                     - available
 
  current tasks
-fix show error log; use file provider
-
 need to turn off debug
     https://developer.android.com/studio/publish/preparing.html
 
