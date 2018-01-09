@@ -234,7 +234,8 @@ public class utils
    {
       // programmer errors (possibly due to Android bugs :)
       log(context, LogLevel.Error, msg + e.toString(), errorLogFileBaseName);
-      Toast.makeText(context, msg + e.toString(), Toast.LENGTH_LONG).show();
+      if (null != context)
+         Toast.makeText(context, msg + e.toString(), Toast.LENGTH_LONG).show();
    }
 
    public static void errorLog(Context context, String msg)

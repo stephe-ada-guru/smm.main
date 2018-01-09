@@ -1058,8 +1058,6 @@ public class PlayService extends Service
       {
          public boolean onError(MediaPlayer mp, int what, int extra)
          {
-            utils.errorLog(null, "MediaPlayer onError: " + what + "," + extra);
-
             switch (what)
             {
             case MediaPlayer.MEDIA_ERROR_SERVER_DIED: // = 100
@@ -1076,7 +1074,6 @@ public class PlayService extends Service
                return true;
 
             default:
-               utils.errorLog(null, "unknown MediaPlayer error code");
                // onCompletion will _not_ be called
                return true;
             }

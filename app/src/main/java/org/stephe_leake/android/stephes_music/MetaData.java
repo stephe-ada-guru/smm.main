@@ -33,6 +33,7 @@ import android.graphics.BitmapFactory;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.net.Uri.Builder;
+import android.support.v4.content.FileProvider;
 import java.io.File;
 import java.io.FileInputStream;
 
@@ -56,7 +57,12 @@ public class MetaData
 
    public Boolean linerNotesExist()
    {
-      return new File(linerFileName).exists();
+      if (linerFileName == null)
+         return false;
+      else if (linerUri == null)
+         return false;
+      else
+         return new File(linerFileName).exists();
    }
 
    public Bitmap getAlbumArt()
@@ -99,11 +105,23 @@ public class MetaData
          duration = "0";
       }
 
-      // linerFileName = musicFile.getParentFile().getAbsolutePath() + "/liner_notes.pdf";
-      // linerUri = new Uri.Builder()
-      //    .scheme("file")
-      //    .path(linerFileName)
-      //    .build();
+      // requires FileProvider declaration in AndroidManifest,
+      // res/xml/provider_paths.xml, and support-v4:23.4.0 in
+      // build.gradle dependencies
+      try
+      {
+         FileProvider fileProvider = new FileProvider();
+         linerFileName = musicFile.getParentFile().getAbsolutePath() + "/liner_notes.pdf";
+         linerUri = fileProvider.getUriForFile
+            (context, BuildConfig.APPLICATION_ID + ".fileprovider", new File(linerFileName));
+      }
+      catch (IllegalArgumentException e)
+      {
+         // probably can't find configured root for fileProvider
+         utils.errorLog(context, "fileProvider error: ", e);
+         linerUri = null;
+      }
+
       try
       {
          File albumArtFiles[] = musicFile.getParentFile().listFiles(new FileExtFilter(".jpg"));

@@ -54,11 +54,6 @@
   <!-- preference ; alphabetical after activity name-->
   <string name="preferences_activity_name">&quot;Stephe's Music Player Preferences&quot;</string>
 
-  <string name="always_on_key">always_on</string>
-  <string name="always_on_title">Always On</string>
-  <string name="always_on_summary">keep screen on (to avoid screen savers on Google TV)</string>
-  <string name="always_on_dialog_title">set always on</string>
-
   <string name="auto_download_playlists_key">auto_download_playlists</string>
   <string name="auto_download_playlists_default"></string>
   <string name="auto_download_playlists_title">Auto-download playlists</string>

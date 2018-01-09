@@ -35,7 +35,6 @@ import android.net.Uri.Builder;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.PowerManager.WakeLock;
 import android.os.PowerManager;
 import android.os.SystemClock;
 import android.os.storage.StorageManager;
@@ -93,7 +92,6 @@ public class activity extends android.app.Activity
    private ImageButton playPauseButton;
    private SeekBar     progressBar;
    private TextView    playlistTitle;
-   private WakeLock    wakeLock;
 
    // Cached values
    private long          trackDuration = 0; // track duration in milliseconds
@@ -385,11 +383,6 @@ public class activity extends android.app.Activity
          f.addAction(utils.PLAYSTATE_CHANGED);
          registerReceiver(broadcastReceiver, f);
          sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_UPDATE_DISPLAY));
-
-         if (prefs.getBoolean (res.getString(R.string.always_on_key), false))
-         {
-            wakeLock.acquire();
-         }
       }
       catch (Exception e)
       {
@@ -407,10 +400,6 @@ public class activity extends android.app.Activity
       {
          Resources         res   = getResources();
          SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-         if (prefs.getBoolean (res.getString(R.string.always_on_key), false))
-         {
-            wakeLock.release();
-         }
          unregisterReceiver(broadcastReceiver);
       }
       catch (RuntimeException e)
@@ -485,17 +474,17 @@ public class activity extends android.app.Activity
       return true; // display menu
    }
 
-   // @Override public boolean onPrepareOptionsMenu(Menu menu)
-   // {
-   //    // The Android documentation says this is called just
-   //    // before the menu is displayed. It lies; this is called once
-   //    // after onCreateOptionsMenu!
-   //    super.onPrepareOptionsMenu(menu);
+   @Override public boolean onPrepareOptionsMenu(Menu menu)
+   {
+      // The Android documentation says this is called just
+      // before the menu is displayed. It lies; this is called once
+      // after onCreateOptionsMenu!
+      super.onPrepareOptionsMenu(menu);
 
-   //    menu.findItem(MENU_LINER).setVisible(utils.retriever.linerNotesExist());
+      menu.findItem(MENU_LINER).setVisible(utils.retriever.linerNotesExist());
 
-   //    return true;
-   // }
+      return true;
+   }
 
    @Override public boolean onOptionsItemSelected(MenuItem item)
    {
@@ -603,9 +592,10 @@ public class activity extends android.app.Activity
          {
             Intent intent = new Intent(Intent.ACTION_VIEW)
                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+               .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                .setDataAndType(utils.retriever.linerUri, "application/pdf");
 
-            startActivity(Intent.createChooser(intent, "Show liner notes via ..."));
+            startActivity(intent);
          }
          break;
 

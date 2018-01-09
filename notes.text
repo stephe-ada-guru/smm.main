@@ -14,21 +14,10 @@ branches:
     o.s_l.m_p.work                     - available
 
  current tasks
-compiling with command-line gradle doesn't work
-    missing some environment stuff
+fix show error log; use file provider
 
-use smm_dir for playlists
-    download works!
-
-    can't use media scanner for meta-data, but maybe read-metadata will work
-
-android.os.FileUriExposedException:
-    file:///storage/emulated/0/Android/data/org.stephe_leake.android.stephes_music/cache/download_log.txt
-    exposed beyond app through Intent.getData()
-        use file provider for liner notes
-        comment out for now
-
-store abs filenames in playlist for Android 7, DLNA
+need to turn off debug
+    https://developer.android.com/studio/publish/preparing.html
 
 https://stackoverflow.com/questions/14228289/android-pair-devices-via-bluetooth-programmatically#14254202
     may allow setting bluetooth?
@@ -47,9 +36,6 @@ scheduled download happening at 10:42 AM, 5:42 AM
 
     how does vanilla schedule downloads?
 
-
-https://inthecheesefactory.com/blog/how-to-share-access-to-file-with-fileprovider-on-android-nougat/en
-    use fileProvider instead of share file: uri
 
 notification:
     animate icon
