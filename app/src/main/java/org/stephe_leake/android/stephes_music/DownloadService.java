@@ -258,15 +258,11 @@ public class DownloadService extends IntentService
          StatusCount            status         = new StatusCount();
          Integer                totalCount     = 0;
 
-         // Not in constructor, because showDownloadLogIntent can change
-         // if user changes preference.
-         //
-         // FIXME: change to fileprovider
-         // showLogPendingIntent = PendingIntent.getActivity
-         //    (this.getApplicationContext(),
-         //     utils.showDownloadLogIntentId,
-         //     utils.showDownloadLogIntent,
-         //     0);
+         showLogPendingIntent = PendingIntent.getActivity
+            (this.getApplicationContext(),
+             utils.showDownloadLogIntentId,
+             utils.showDownloadLogIntent,
+             0);
 
          {
             Resources         res   = getResources();

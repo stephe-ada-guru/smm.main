@@ -735,6 +735,8 @@ public class PlayService extends Service
 
    private Handler handler = new Handler()
       {
+         // FIXME: lint wants this object to be static, but then it
+         // can't call unpause, which is not static.
          @Override public void handleMessage(Message msg)
          {
             switch (msg.what)

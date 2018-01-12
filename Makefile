@@ -11,7 +11,7 @@ all : build
 #  --info gives more detail, --stacktrace gives error stack trace
 # 'gradle tasks' shows available tasks
 build : force
-	gradle --daemon build
+	./gradlew --daemon build
 
 # just compile tasks:
 # compileDebugAndroidTestSources
@@ -61,11 +61,11 @@ install-emulator-debug :
 	adb -e install -r build/outputs/apk/org.stephe_leake.music_player.java-debug-$(VERSION).apk
 
 install-pda-usb-release :
-	adb -d install -r build/outputs/apk/org.stephe_leake.music_player.java-release-$(VERSION).apk
+	adb -d install -r app/build/outputs/apk/release/app-release.apk
 
 install-pda-usb-debug-all : build install-pda-usb-debug
 install-pda-usb-debug :
-	adb -d install -r app/build/outputs/apk/app-debug-$(VERSION).apk
+	adb -d install -r app/build/outputs/apk/app-debug.apk
 
 # assumes PDA is running sshDroid server, ssh key is active
 # apk version is in build.gradle

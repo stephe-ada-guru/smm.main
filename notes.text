@@ -15,7 +15,8 @@ branches:
 
  current tasks
 need to turn off debug
-    https://developer.android.com/studio/publish/preparing.html
+    compile via Makefile, install release
+        requires uninstall; waiting for more testing (ie in car)
 
 https://stackoverflow.com/questions/14228289/android-pair-devices-via-bluetooth-programmatically#14254202
     may allow setting bluetooth?

@@ -2,7 +2,7 @@
 //
 //  Utilities for downloading from smm_server
 //
-//  Copyright (C) 2016, 2017 Stephen Leake. All Rights Reserved.
+//  Copyright (C) 2016 - 2018 Stephen Leake. All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -36,6 +36,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.io.PrintWriter;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FilenameUtils;
@@ -91,7 +92,7 @@ public class DownloadUtils
       for (i = FileUtils.lineIterator(playlistFile); i.hasNext();)
       {
          String line = i.next();
-         result.addLast(lowercase ? line.toLowerCase() : line);
+         result.addLast(lowercase ? line.toLowerCase(Locale.ROOT) : line);
       }
       i.close();
       return result;
@@ -222,7 +223,7 @@ public class DownloadUtils
       }
       else if (entry.isFile())
       {
-         final String name = relativeName(playlistDir, entry.getAbsolutePath()).toLowerCase();
+         final String name = relativeName(playlistDir, entry.getAbsolutePath()).toLowerCase(Locale.ROOT);
 
          if (!mentionedFiles.contains(name))
          {
