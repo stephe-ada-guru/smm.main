@@ -92,7 +92,7 @@ public class DownloadUtils
       for (i = FileUtils.lineIterator(playlistFile); i.hasNext();)
       {
          String line = i.next();
-         result.addLast(lowercase ? line.toLowerCase(Locale.ROOT) : line);
+         result.addLast(lowercase ? line.toLowerCase(Locale.getDefault()) : line);
       }
       i.close();
       return result;
@@ -223,7 +223,7 @@ public class DownloadUtils
       }
       else if (entry.isFile())
       {
-         final String name = relativeName(playlistDir, entry.getAbsolutePath()).toLowerCase(Locale.ROOT);
+         final String name = relativeName(playlistDir, entry.getAbsolutePath()).toLowerCase(Locale.getDefault());
 
          if (!mentionedFiles.contains(name))
          {

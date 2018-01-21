@@ -97,6 +97,7 @@ public class PlayService extends Service
    // Current position in PlayList (0 indexed; -1 if none)
 
    boolean haveAudioFocus;
+   // Set only in audioFocusListener, read elsewhere
 
    ////////// private methods (random order)
 
@@ -628,6 +629,10 @@ public class PlayService extends Service
 
       playing = PlayState.Idle;
 
+      // We don't abandon audioFocus here; user may start again, and
+      // we will abandon if another app requests focus via
+      // audioFocusListener.
+
       notifyChange(WhatChanged.State);
       handler.removeMessages(UPDATE_DISPLAY);
    }
@@ -1008,6 +1013,9 @@ public class PlayService extends Service
       {
           public void onAudioFocusChange(int focusChange)
           {
+             // FIXME: something's not working; Navigator messages are not played. So log every event.
+             utils.errorLog(null, "onAudioFocusChange code " + focusChange);
+
              if (focusChange == AudioManager.AUDIOFOCUS_LOSS)
              {
                 haveAudioFocus = false;

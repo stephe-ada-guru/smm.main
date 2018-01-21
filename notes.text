@@ -14,9 +14,18 @@ branches:
     o.s_l.m_p.work                     - available
 
  current tasks
+navigation messages not getting thru
+    audio focus management looks ok
+    change to use media session, MediaController?
+
+propagate, archive
+
+use alternate port for unit tests
+
 need to turn off debug
     compile via Makefile, install release
         requires uninstall; waiting for more testing (ie in car)
+        but install debug via Makefile can't read metadata; install debug via Android Studio can. sigh.
 
 https://stackoverflow.com/questions/14228289/android-pair-devices-via-bluetooth-programmatically#14254202
     may allow setting bluetooth?
