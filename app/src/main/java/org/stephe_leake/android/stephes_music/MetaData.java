@@ -32,7 +32,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
-import android.net.Uri.Builder;
 import android.support.v4.content.FileProvider;
 import java.io.File;
 import java.io.FileInputStream;

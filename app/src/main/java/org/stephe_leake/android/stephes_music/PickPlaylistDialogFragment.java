@@ -25,7 +25,6 @@ import android.os.Bundle;
 import android.content.res.Resources;
 import android.content.SharedPreferences;
 import java.io.File;
-import android.view.View;
 import android.preference.PreferenceManager;
 import android.app.Activity;
 import android.content.DialogInterface;

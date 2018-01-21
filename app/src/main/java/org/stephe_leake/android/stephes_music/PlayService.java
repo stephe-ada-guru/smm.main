@@ -24,45 +24,33 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences.Editor;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.media.AudioAttributes;
 import android.media.AudioManager.OnAudioFocusChangeListener;
 import android.media.AudioManager;
-import android.media.MediaMetadata.Builder;
 import android.media.MediaMetadata;
 import android.media.MediaPlayer;
 import android.media.session.MediaSession;
 import android.media.session.PlaybackState;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
-import android.os.PowerManager;
-import android.preference.MultiSelectListPreference;
 import android.preference.PreferenceManager;
-import android.view.KeyEvent;
 import android.widget.RemoteViews;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileDescriptor;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.lang.Integer;
-import java.net.URISyntaxException;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
-import java.util.Set;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.FileUtils;
 
 public class PlayService extends Service
 {
@@ -107,6 +95,12 @@ public class PlayService extends Service
       mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
       mediaPlayer.setOnCompletionListener(completionListener);
       mediaPlayer.setOnErrorListener(errorListener);
+      mediaPlayer.setAudioAttributes
+         (new AudioAttributes.Builder()
+          .setUsage(AudioAttributes.USAGE_MEDIA)
+          .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+          .build());
+
    }
 
    private void next()

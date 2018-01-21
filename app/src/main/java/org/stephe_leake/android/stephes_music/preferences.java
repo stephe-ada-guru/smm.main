@@ -20,16 +20,12 @@ package org.stephe_leake.android.stephes_music;
 
 import android.content.SharedPreferences;
 import android.content.res.Resources;
-import android.os.Environment;
 import android.preference.ListPreference;
 import android.preference.PreferenceManager;
 import android.preference.MultiSelectListPreference;
 
 import java.io.File;
 import java.io.FilenameFilter;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.LinkedList;
 
 import org.apache.commons.io.FilenameUtils;
 

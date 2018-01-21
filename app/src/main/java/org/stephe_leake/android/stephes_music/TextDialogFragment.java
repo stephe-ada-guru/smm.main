@@ -26,7 +26,6 @@ import android.content.res.Resources;
 import android.content.SharedPreferences;
 import java.io.File;
 import android.view.View;
-import android.widget.ListView;
 import android.widget.EditText;
 import android.view.inputmethod.InputMethodManager;
 import android.preference.PreferenceManager;

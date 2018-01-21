@@ -16,9 +16,13 @@ branches:
  current tasks
 navigation messages not getting thru
     audio focus management looks ok
-    change to use media session, MediaController?
+        except supposed to use mediaPlayer.setAudioAttributes; added that
+
+    added log of all audio focus events
 
 propagate, archive
+
+change to use media session, MediaController?
 
 use alternate port for unit tests
 

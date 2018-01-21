@@ -23,19 +23,14 @@ import android.content.Context;
 
 import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.LineNumberReader;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.io.PrintWriter;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
@@ -49,9 +44,7 @@ import org.apache.commons.io.filefilter.TrueFileFilter;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
-import okhttp3.RequestBody;
 import okhttp3.Response;
-import okhttp3.MediaType;
 
 public class DownloadUtils
 {
