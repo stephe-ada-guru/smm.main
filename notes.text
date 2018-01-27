@@ -14,22 +14,22 @@ branches:
     o.s_l.m_p.work                     - available
 
  current tasks
-navigation messages not getting thru
-    audio focus management looks ok
-        except supposed to use mediaPlayer.setAudioAttributes; added that
-
-    added log of all audio focus events
-
-propagate, archive
+navigation messages getting thru, but music does not get notified
+    phone interrupts music properly
 
 change to use media session, MediaController?
 
 use alternate port for unit tests
 
-need to turn off debug
+turn off debug?
     compile via Makefile, install release
         requires uninstall; waiting for more testing (ie in car)
         but install debug via Makefile can't read metadata; install debug via Android Studio can. sigh.
+
+https://github.com/hitenpratap/Task-Reminder-App/blob/master/src/com/TechSect/TaskReminderApp/ReminderManager.java
+    uses android.app.AlarmManager
+
+https://developers.google.com/training/courses/android-advanced
 
 https://stackoverflow.com/questions/14228289/android-pair-devices-via-bluetooth-programmatically#14254202
     may allow setting bluetooth?
@@ -47,7 +47,6 @@ scheduled download happening at 10:42 AM, 5:42 AM
     add preference time picker
 
     how does vanilla schedule downloads?
-
 
 notification:
     animate icon

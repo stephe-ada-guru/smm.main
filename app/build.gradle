@@ -32,17 +32,6 @@ android
     }
   }
      
-  applicationVariants.all
-  {
-    // FIXME: replace 'app' with 'org.stephe-leake.music_player'
-//    variant ->
-//      variant.outputs.each { output ->
-//        output.outputFile = new File(
-//          output.outputFile.parent,
-//          output.outputFile.name.replace(".apk", "-${variant.versionName}.apk"))
-//      }
-  }
-    
   buildTypes
   {
     release
