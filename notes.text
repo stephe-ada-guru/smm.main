@@ -18,6 +18,8 @@ navigation messages getting thru, but music does not get notified
     phone interrupts music properly
 
 change to use media session, MediaController?
+    car display seems ok
+    fix car controls
 
 use alternate port for unit tests
 

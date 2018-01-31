@@ -88,11 +88,14 @@ public class MetaData
       try
       {
          MediaMetadataRetriever retriever = new MediaMetadataRetriever();
-
          retriever.setDataSource(currentMusicFileName);
+
+         String artist1 = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
+         String artist2 = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST);
+
          title    = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
          album    = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM);
-         artist   = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
+         artist   = (artist1.length() == 0) ? artist2 : artist1;
          duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
       }
       catch (Exception e)
