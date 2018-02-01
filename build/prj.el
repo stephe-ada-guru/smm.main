@@ -3,12 +3,16 @@
 (require 'ada-project)
 (require 'xref-ada)
 
-(ada-parse-prj-file "smm.prj")
-(ada-select-prj-file "smm.prj")
-
 (add-to-list 'project-find-functions 'project-menu-prj)
 
-;; Ada mode adds another layer of project selection
-(project-menu-select "Ada mode")
+(let* ((prj-file (expand-file-name "smm.prj"))
+       (prj-name "smm main")
+       (prj (make-ada-project
+	     :ada-prj-file prj-file)))
+
+  (project-menu-add-project prj prj-name default-directory)
+
+  (project-menu-select-by-name prj-name)
+  )
 
 ;; end of file

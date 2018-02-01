@@ -2,7 +2,7 @@
 --
 --  see spec
 --
---  Copyright (C) 2008, 2009, 2011 - 2017 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008, 2009, 2011 - 2018 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -333,7 +333,9 @@ package body SMM is
             --  Db is not sorted.
             exit when Is_Null (All_Songs);
 
-            if Category = Read (Db, All_Songs, Category_Key, Default => "vocal", Missing_Key => Ignore) then
+            if Category = Read (Db, All_Songs, Category_Key, Default => "vocal", Missing_Key => Ignore) and
+              (not Is_Present (Db, All_Songs, "Play_After")) -- only play this when Play_Before is included.
+            then
                Insert (Db, Time_List, All_Songs);
             end if;
 

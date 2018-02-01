@@ -11,9 +11,9 @@ d:/Music/remote_cache/smm-server_driver.log
 
 
 play-before causes short replay periods
-    select 2nd without 1st, then select 1st
-    need matching play_after
-    Set play_before to don't_play; add play_after, delete play_before
+    fixed 1 feb 2018; short periods should dissappear from status eventually
+
+add artists field for collection albums
 
 add "lists" field to db;
     best, protest, contra
