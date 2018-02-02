@@ -2,7 +2,7 @@
 --
 --  Check against db, report missing in either.
 --
---  Copyright (C) 2016 - 2017 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2016 - 2018 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -49,6 +49,52 @@ is
       end loop;
 
    end Fill_Song_Files;
+
+   procedure Check_Before_After
+   is
+      use SAL.Config_Files;
+
+      I : Iterator_Type := First (Db, Songs_Key);
+   begin
+      loop
+         exit when I = Null_Iterator;
+
+         if Is_Present (Db, I, Play_After_Key) then
+            declare
+               After_Id  : constant String        := Current (I);
+               Before_Id : constant String        := Read (Db, I, Play_After_Key);
+               Before_J  : constant Iterator_Type := Find (Db, Root_Key => SMM.Songs_Key, Key => Before_Id);
+            begin
+               if Before_J = Null_Iterator then
+                  Put_Line ("db Play_After bad link: " & Current (I));
+               elsif Is_Present (Db, Before_J, Play_Before_Key) then
+                  if After_Id /= Read (Db, Before_J, Play_Before_Key) then
+                     Put_Line ("db mismatch Play_Before " & Before_Id & "; Play_After " & After_Id);
+                  end if;
+               else
+                  Put_Line ("db missing Play_Before: " & Before_Id & "; Play_After " & After_Id);
+               end if;
+            end;
+
+         elsif Is_Present (Db, I, Play_Before_Key) then
+            declare
+               Before_Id : constant String        := Read (Db, I, Play_Before_Key);
+               After_J   : constant Iterator_Type := Find (Db, Root_Key => SMM.Songs_Key, Key => Before_Id);
+            begin
+               if After_J = Null_Iterator then
+                  Put_Line ("db Play_Before bad link: " & Current (I));
+               elsif Is_Present (Db, After_J, Play_After_Key) then
+                  --  Match checked above
+                  null;
+               else
+                  Put_Line ("db missing Play_After: " & Current (After_J) & "; Play_Before " & Current (I));
+               end if;
+            end;
+         end if;
+
+         Next (I);
+      end loop;
+   end Check_Before_After;
 
    procedure Check_Dir (Dir : in String)
    is
@@ -123,6 +169,8 @@ is
 
 begin
    Fill_Song_Files;
+
+   Check_Before_After;
 
    Check_Dir (Db_Root);
 

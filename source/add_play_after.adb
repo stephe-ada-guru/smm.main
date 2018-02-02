@@ -61,20 +61,19 @@ begin
       loop
          exit when I = Null_Iterator;
 
-         if Is_Present (Db, I, "Play_Before") then
+         if Is_Present (Db, I, Play_Before_Key) then
             Put (".");
             declare
                Song_Id   : constant String := Current (I);
-               Before_Id : constant String := Read (Db, I, "Play_Before");
-               Find_Key : constant String := ' ' & Before_Id;
+               Before_Id : constant String := Read (Db, I, Play_Before_Key);
             begin
                if Before_Id = Song_Id then
                   Put_Line ("db ERROR: " & Song_Id & ".Play_Before = " & Before_Id);
                else
                   declare
-                     J : constant Iterator_Type := Find (Db, Root_Key => SMM.Songs_Key, Key => Find_Key);
+                     J : constant Iterator_Type := Find (Db, Root_Key => SMM.Songs_Key, Key => Before_Id);
                   begin
-                     Write (Db, J, "Play_After", Song_Id);
+                     Write (Db, J, Play_After_Key, Song_Id);
                   end;
                end if;
             exception

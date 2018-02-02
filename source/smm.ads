@@ -2,7 +2,7 @@
 --
 --  Root of Stephe's Music Manager packages
 --
---  Copyright (C) 2008 - 2017 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2018 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -49,13 +49,15 @@ package SMM is
    --  User friendly date representation
 
    --  database keys
-   Category_Key        : constant String := "Category";
-   File_Key            : constant String := "File";
+   Category_Key    : constant String := "Category";
+   File_Key        : constant String := "File";
    --  Last_Downloaded_Key : use Read_Last_Downloaded
    --  Prev_Downloaded_Key : use Read_Prev_Downloaded
-   Songs_Key           : constant String := "Songs";
-   Root_Key            : constant String := "Root";
-   Playlist_Key        : constant String := "Playlists";
+   Songs_Key       : constant String := "Songs";
+   Root_Key        : constant String := "Root";
+   Playlist_Key    : constant String := "Playlists";
+   Play_After_Key  : constant String := "Play_After";
+   Play_Before_Key : constant String := "Play_Before";
 
    function Read_Last_Downloaded
      (Db : in SAL.Config_Files.Configuration_Type;

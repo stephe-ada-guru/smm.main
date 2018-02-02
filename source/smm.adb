@@ -334,7 +334,7 @@ package body SMM is
             exit when Is_Null (All_Songs);
 
             if Category = Read (Db, All_Songs, Category_Key, Default => "vocal", Missing_Key => Ignore) and
-              (not Is_Present (Db, All_Songs, "Play_After")) -- only play this when Play_Before is included.
+              (not Is_Present (Db, All_Songs, Play_After_Key)) -- only play this when Play_Before is included.
             then
                Insert (Db, Time_List, All_Songs);
             end if;
@@ -540,10 +540,10 @@ package body SMM is
       loop
          exit Fill_Have_Play_Before when Songs_I = Song_Lists.No_Element;
 
-         if Is_Present (Db, Element (Songs_I), "Play_Before") then
+         if Is_Present (Db, Element (Songs_I), Play_Before_Key) then
             declare
                Song_Id   : constant Integer := Integer'Value (Current (Element (Songs_I)));
-               Before_Id : constant Integer := Read (Db, Element (Songs_I), "Play_Before");
+               Before_Id : constant Integer := Read (Db, Element (Songs_I), Play_Before_Key);
             begin
                if Before_Id = Song_Id then
                   Ada.Text_IO.New_Line;

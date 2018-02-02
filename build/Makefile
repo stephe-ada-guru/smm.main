@@ -4,7 +4,7 @@ include common.make
 
 # ../test/test_one_harness.adb
 # ../test/test_all_harness.adb
-#export SMM_Build := Debug
+#export Standard_Common_Build := Debug
 #t_one : RUN_ARGS := 1
 t_one : smm-server_driver.exe
 t_one : test_one_harness.run
@@ -18,8 +18,9 @@ histogram : ~/bin/smm.exe
 	cd d:/Music; gnuplot vocal_histogram.gnuplot > vocal_histogram.png
 	cd d:/Music; gnuplot instrumental_histogram.gnuplot > instrumental_histogram.png
 
-check : install
-	cd d:/Music; smm check > missing.log
+# check : export Standard_Common_Build = Debug
+check : smm.exe
+	cd d:/Music; $(CURDIR)/smm check > missing.log
 
 install : ~/bin/smm.exe ~/bin/smm-server_driver.exe
 
