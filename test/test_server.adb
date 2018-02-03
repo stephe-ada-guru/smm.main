@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2004, 2016, 2017 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2004, 2016, 2017, 2018 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -43,6 +43,12 @@ package body Test_Server is
 
    Verbose : Boolean := False;
 
+   function Encode (Item : in String) return String
+   is begin
+      --  Mimic Android OkHttp encoding, which does not encode [ ].
+      return AWS.URL.Encode (Item, Ada.Strings.Maps.To_Set (" #+;/:$,""{}|\^`'"));
+   end Encode;
+
    ----------
    --  Test procedures
 
@@ -53,7 +59,8 @@ package body Test_Server is
 
       Test : Test_Case renames Test_Case (T);
 
-      URL      : constant String := "http://" & Test.Server_IP.all & ":8080/download?category=vocal&count=5&seed=0";
+      URL      : constant String := "http://" & Test.Server_IP.all &
+        ":8080/download?category=vocal&count=5&new_count=1&seed=0";
       Response : constant Data   := AWS.Client.Get (URL);
       Msg      : constant String := Message_Body (Response);
 
@@ -82,8 +89,7 @@ package body Test_Server is
          Resource : in String;
          Expected : in String)
       is
-         --  Mimic Android OkHttp encoding, which does not encode [ ].
-         Encoded_Resource : constant String := AWS.URL.Encode (Resource, Ada.Strings.Maps.To_Set (";/:$,""{}|\^`'"));
+         Encoded_Resource : constant String := Encode (Resource);
 
          URL      : constant String := "http://" & Test.Server_IP.all & ":8080/" & Encoded_Resource & "/meta";
          Response : constant Data   := AWS.Client.Get (URL);
@@ -126,23 +132,22 @@ package body Test_Server is
          use SAL.Time_Conversions;
          use SAL.Time_Conversions.AUnit;
 
-         URL : constant String := "http://" & Test.Server_IP.all & ":8080/" & Directory &
-           AWS.URL.Encode (Filename);
+         URL : constant String := "http://" & Test.Server_IP.all & ":8080/" & Directory & Encode (Filename);
 
-         Response : constant Data   :=  AWS.Client.Get (URL);
+         Response : constant Data   := AWS.Client.Get (URL);
          Msg      : constant String := Message_Body (Response);
          Db_File  : Configuration_Type;
          I        : Iterator_Type;
       begin
-         Check ("mode", Mode (Response), Message); --  Not clear why this is "message", not "file"
-         Check ("mime", Content_Type (Response), Mime);
-         Check ("file content", Msg, "body: tmp/source/" & Directory & Filename & CRLF);
+         Check (Filename & ".mode", Mode (Response), Message); --  Not clear why this is "message", not "file"
+         Check (Filename & ".mime", Content_Type (Response), Mime);
+         Check (Filename & ".file content", Msg, "body: tmp/source/" & Directory & Filename & CRLF);
 
          if Song_Index > 0 then
             Open (Db_File, Db_File_Name, Missing_File => Raise_Exception, Read_Only => True);
             I := Find (Db_File, SMM.Songs_Key, Integer'Image (Song_Index));
             Check
-              ("last_downloaded",
+              (Filename & ".last_downloaded",
                SMM.Read_Last_Downloaded (Db_File, I),
                To_TAI_Time (Ada.Calendar.Clock),
                Tolerance => 60.0);
@@ -225,14 +230,10 @@ package body Test_Server is
    is
       use Standard.AUnit.Test_Cases.Registration;
    begin
-      if T.Debug = 1 then
-         Register_Routine (T, Test_Meta'Access, "Debug");
-      else
-         Register_Routine (T, Test_Playlist'Access, "Test_Playlist");
-         Register_Routine (T, Test_Meta'Access, "Test_Meta");
-         Register_Routine (T, Test_Get_File'Access, "Test_Get_File");
-         Register_Routine (T, Test_Send_Notes'Access, "Test_Send_Notes");
-      end if;
+      Register_Routine (T, Test_Playlist'Access, "Test_Playlist");
+      Register_Routine (T, Test_Meta'Access, "Test_Meta");
+      Register_Routine (T, Test_Get_File'Access, "Test_Get_File");
+      Register_Routine (T, Test_Send_Notes'Access, "Test_Send_Notes");
    end Register_Tests;
 
    overriding procedure Set_Up_Case (T : in out Test_Case)

@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2007 - 2009, 2012 - 2013, 2015 - 2016 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007 - 2009, 2012 - 2013, 2015 - 2016, 2018 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -159,11 +159,12 @@ package body Test_Download is
 
       SMM.Download
         (Db,
-         Category       => "vocal",
-         Destination    => SMM.As_Directory (Current_Directory & "/tmp/target"),
-         Song_Count     => 6,
-         New_Song_Count => 8,
-         Seed           => 1);
+         Category          => "vocal",
+         Destination       => SMM.As_Directory (Current_Directory & "/tmp/target"),
+         Song_Count        => 6,
+         New_Song_Count    => 8,
+         Over_Select_Ratio => 2.0,
+         Seed              => 1);
 
       Set_Directory (Start_Dir);
 

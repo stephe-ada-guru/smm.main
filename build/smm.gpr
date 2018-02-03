@@ -2,7 +2,7 @@ with "standard_common";
 with "aunit";
 with "aunit_sal_ext";
 with "aws";
-with "sal";
+with "sal_devel";
 project Smm is
    for Source_Dirs use
      ("../source",

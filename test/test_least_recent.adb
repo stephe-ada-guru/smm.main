@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2009, 2011, 2012, 2013, 2015 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2009, 2011, 2012, 2013, 2015, 2018 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -135,7 +135,9 @@ package body Test_Least_Recent is
 
       Create_Test_Db (Db);
 
-      SMM.Least_Recent_Songs (Db, "instrumental", Songs, Song_Count => 2, New_Song_Count => 2, Seed => 1);
+      SMM.Least_Recent_Songs
+        (Db, "instrumental", Songs,
+         Song_Count => 2, New_Song_Count => 2, Over_Select_Ratio => 2.0, Seed => 1);
 
       Check ("song count", Integer (Songs.Length), 2);
 
@@ -150,7 +152,9 @@ package body Test_Least_Recent is
 
       Mark_Downloaded (Db, Songs, 2.0);
 
-      SMM.Least_Recent_Songs (Db, "instrumental", Songs, Song_Count => 2, New_Song_Count => 2, Seed => 2);
+      SMM.Least_Recent_Songs
+        (Db, "instrumental", Songs,
+         Song_Count => 2, New_Song_Count => 2, Over_Select_Ratio => 2.0, Seed => 2);
 
       Check ("song count", Integer (Songs.Length), 2);
 
