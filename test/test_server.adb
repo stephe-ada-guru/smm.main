@@ -39,7 +39,8 @@ package body Test_Server is
 
    Db_File_Name : constant String := "tmp/smm.db";
 
-   Server : GNAT.OS_Lib.Process_Id;
+   Server      : GNAT.OS_Lib.Process_Id;
+   Server_Port : constant String := "8081"; --  must match ../build/smm_server_test_1.config Server_Port
 
    Verbose : Boolean := False;
 
@@ -60,7 +61,7 @@ package body Test_Server is
       Test : Test_Case renames Test_Case (T);
 
       URL      : constant String := "http://" & Test.Server_IP.all &
-        ":8080/download?category=vocal&count=5&new_count=1&seed=0";
+        ":" & Server_Port & "/download?category=vocal&count=5&new_count=1&seed=0";
       Response : constant Data   := AWS.Client.Get (URL);
       Msg      : constant String := Message_Body (Response);
 
@@ -91,7 +92,8 @@ package body Test_Server is
       is
          Encoded_Resource : constant String := Encode (Resource);
 
-         URL      : constant String := "http://" & Test.Server_IP.all & ":8080/" & Encoded_Resource & "/meta";
+         URL      : constant String := "http://" & Test.Server_IP.all & ":" & Server_Port & "/" & Encoded_Resource &
+           "/meta";
          Response : constant Data   := AWS.Client.Get (URL);
          Msg      : constant String := Message_Body (Response);
       begin
@@ -132,7 +134,8 @@ package body Test_Server is
          use SAL.Time_Conversions;
          use SAL.Time_Conversions.AUnit;
 
-         URL : constant String := "http://" & Test.Server_IP.all & ":8080/" & Directory & Encode (Filename);
+         URL : constant String := "http://" & Test.Server_IP.all & ":" & Server_Port & "/" & Directory &
+           Encode (Filename);
 
          Response : constant Data   := AWS.Client.Get (URL);
          Msg      : constant String := Message_Body (Response);
@@ -177,7 +180,8 @@ package body Test_Server is
       Test : Test_Case renames Test_Case (T);
 
       Note_File_Name : constant String := "tmp/source/remote_cache/vocal.note";
-      URL            : constant String := "http://" & Test.Server_IP.all & ":8080/remote_cache/vocal.note";
+      URL            : constant String := "http://" & Test.Server_IP.all & ":" & Server_Port &
+        "/remote_cache/vocal.note";
 
       Note_File : File_Type;
       Response  : Data;

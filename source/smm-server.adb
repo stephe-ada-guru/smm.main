@@ -2,7 +2,7 @@
 --
 --  Stephe's Music Manager Server
 --
---  Copyright (C) 2016, 2017 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2016 - 2018 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -32,7 +32,7 @@ with Ada.IO_Exceptions;
 with Ada.Strings.Fixed;
 with Ada.Strings.Unbounded;
 with Ada.Text_IO;
-with SAL.Config_Files;
+with SAL.Config_Files.Integer;
 package body SMM.Server is
 
    function "+" (Item : in String) return Ada.Strings.Unbounded.Unbounded_String
@@ -325,6 +325,7 @@ package body SMM.Server is
          use AWS.Config;
          use AWS.Config.Set;
          use SAL.Config_Files;
+         use SAL.Config_Files.Integer;
          Obj : Object := Default_Config;
       begin
          Server_Name (Obj, "SMM Server");
@@ -335,13 +336,21 @@ package body SMM.Server is
          --  we get the address to use from the config file.
          Server_Host (Obj, Read (Config, "Server_IP", Missing_Key => Raise_Exception));
 
+         --  AWS default server port is AWS.Default.Server_Port (= 8080)
+         Server_Port (Obj, Read (Config, "Server_Port", Default => 8080, Missing_Key => Ignore));
+
          if Enable_Log then
-            Log_File_Directory (Obj, -Source_Root & "/remote_cache/");
-            Log_Filename_Prefix (Obj, "smm-server");
+            declare
+               use Ada.Directories;
+               Log_Dir_Name : constant String := -Source_Root & "/remote_cache/";
+            begin
+               if not Exists (Log_Dir_Name) then
+                  Create_Directory (Log_Dir_Name);
+               end if;
 
-            AWS.Server.Log.Start (Ws, Auto_Flush => True);
-
-            Put_Line ("logging to   " & Log_File_Directory (Obj) & "smm-server.log");
+               Log_File_Directory (Obj, Log_Dir_Name);
+               Log_Filename_Prefix (Obj, "smm-server");
+            end;
          else
             Put_Line ("not logging");
          end if;
@@ -350,6 +359,12 @@ package body SMM.Server is
            (Ws,
             Callback => Handle_Request'Access,
             Config   => Obj);
+
+         if Enable_Log then
+            AWS.Server.Log.Start (Ws, Auto_Flush => True);
+
+            Put_Line ("logging to   " & Log_File_Directory (Obj) & "smm-server.log");
+         end if;
       end;
 
       declare

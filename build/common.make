@@ -10,7 +10,7 @@ include ../../org.stephe_leake.makerules/texinfo_rules.make
 
 # smm.adb is not the main program, so we need this rule
 smm.exe : force
-	gprbuild -p -Psmm_agg.gpr $(GNATMAKE_ARGS) smm-driver
+	gprbuild -p -Psmm.gpr $(GNATMAKE_ARGS) smm-driver
 
 test_all_harness.out : test_all_harness.exe smm.exe
 
@@ -24,7 +24,7 @@ clean ::
 VPATH := ../source
 VPATH += ../test
 
-GNAT_PROJECT := smm_agg.gpr
+GNAT_PROJECT := smm.gpr
 GPRBUILD_TARGET := $(shell gcc -dumpmachine)
 
 # end of file

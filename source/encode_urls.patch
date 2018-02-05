@@ -1,0 +1,177 @@
+diff -r -u aws-gpl-2017-src-orig/src/core/aws-client.adb aws-gpl-2017-src/src/core/aws-client.adb
+--- aws-gpl-2017-src-orig/src/core/aws-client.adb	2017-05-16 05:29:48.000000000 -0500
++++ aws-gpl-2017-src/src/core/aws-client.adb	2018-02-04 12:57:56.398049200 -0600
+@@ -155,7 +155,8 @@
+    is
+       use type Net.SSL.Config;
+ 
+-      Host_URL    : constant AWS.URL.Object := AWS.URL.Parse (Host);
++      Host_URL    : constant AWS.URL.Object := AWS.URL.Parse
++        (Host, Decode => False);
+       Proxy_URL   : constant AWS.URL.Object := AWS.URL.Parse (Proxy);
+       Connect_URL : AWS.URL.Object;
+    begin
+diff -r -u aws-gpl-2017-src-orig/src/core/aws-url.adb aws-gpl-2017-src/src/core/aws-url.adb
+--- aws-gpl-2017-src-orig/src/core/aws-url.adb	2017-05-16 05:29:48.000000000 -0500
++++ aws-gpl-2017-src/src/core/aws-url.adb	2018-02-04 12:57:55.213930600 -0600
+@@ -123,10 +123,6 @@
+             Res (K) := Character'Val (Utils.Hex_Value (Str (I + 1 .. I + 2)));
+             I := I + 2;
+ 
+-         elsif Str (I) = '+' then
+-            --  A plus is used for spaces in forms value for example
+-            Res (K) := ' ';
+-
+          else
+             Res (K) := Str (I);
+          end if;
+@@ -284,13 +280,15 @@
+    -----------
+ 
+    function Parse
+-      (URL            : String;
+-       Check_Validity : Boolean := True;
+-       Normalize      : Boolean := False) return Object
++     (URL            : String;
++      Check_Validity : Boolean := True;
++      Normalize      : Boolean := False;
++      Decode         : Boolean := True)
++     return Object
+    is
+       O : Object;
+    begin
+-      Set.Parse (O, URL, Check_Validity, Normalize);
++      Set.Parse (O, URL, Check_Validity, Normalize, Decode);
+ 
+       return O;
+    end Parse;
+diff -r -u aws-gpl-2017-src-orig/src/core/aws-url.ads aws-gpl-2017-src/src/core/aws-url.ads
+--- aws-gpl-2017-src-orig/src/core/aws-url.ads	2017-05-16 05:29:48.000000000 -0500
++++ aws-gpl-2017-src/src/core/aws-url.ads	2018-02-04 12:57:56.384045100 -0600
+@@ -67,7 +67,9 @@
+    function Parse
+      (URL            : String;
+       Check_Validity : Boolean := True;
+-      Normalize      : Boolean := False) return Object;
++      Normalize      : Boolean := False;
++      Decode         : Boolean := True)
++     return Object;
+    --  Parse an URL and return an Object representing this URL. It is then
+    --  possible to extract each part of the URL with the services bellow.
+    --  Raises URL_Error if Check_Validity is true and the URL reference a
+diff -r -u aws-gpl-2017-src-orig/src/core/aws-url-set.adb aws-gpl-2017-src/src/core/aws-url-set.adb
+--- aws-gpl-2017-src-orig/src/core/aws-url-set.adb	2017-05-16 05:29:48.000000000 -0500
++++ aws-gpl-2017-src/src/core/aws-url-set.adb	2018-02-04 12:52:09.406421000 -0600
+@@ -156,9 +156,10 @@
+ 
+    procedure Parse
+      (Item           : in out Object;
+-      URL            : String;
+-      Check_Validity : Boolean := True;
+-      Normalize      : Boolean := False)
++      URL            :        String;
++      Check_Validity :        Boolean := True;
++      Normalize      :        Boolean := False;
++      Decode         :        Boolean := True)
+    is
+       FTP_Token   : constant String := "ftp:";
+       HTTP_Token  : constant String := "http:";
+@@ -170,6 +171,8 @@
+       P, F        : Natural;
+       Scheme      : Unbounded_String;
+ 
++      function Maybe_Decode (Item : String) return String;
++
+       procedure Parse (URL : String);
+       --  Parse URL, the URL must not contain the HTTP_Token prefix.
+       --  If a hostname is specified, the URL should start with "//"
+@@ -178,6 +181,19 @@
+       --  Parse the protocol part of the URL and return it. Return an empty
+       --  string if not found.
+ 
++      ------------------
++      -- Maybe_Decode --
++      ------------------
++
++      function Maybe_Decode (Item : String) return String
++      is begin
++         if Decode then
++            return AWS.URL.Decode (Item);
++         else
++            return Item;
++         end if;
++      end Maybe_Decode;
++
+       -----------
+       -- Parse --
+       -----------
+@@ -419,7 +435,8 @@
+          Item.Fragment := Null_Unbounded_String;
+ 
+       else
+-         Item.Fragment := To_Unbounded_String (L_URL (F .. L_URL'Last));
++         Item.Fragment := To_Unbounded_String
++           (Maybe_Decode (L_URL (F .. L_URL'Last)));
+          F := F - 1;
+       end if;
+ 
+@@ -431,6 +448,7 @@
+          P := F;
+ 
+       else
++         --  Add looks for the rest of the '?', so we can't decode here.
+          Item.Parameters.Add (L_URL (P .. F));
+          P := P - 1;
+       end if;
+@@ -439,16 +457,16 @@
+ 
+       if Utils.Match (L_URL (L_URL'First .. P), HTTP_Token) then
+          Item.Port := Default_HTTP_Port;
+-         Parse (L_URL (L_URL'First + HTTP_Token'Length .. P));
++         Parse (Maybe_Decode (L_URL (L_URL'First + HTTP_Token'Length .. P)));
+ 
+       elsif Utils.Match (L_URL (L_URL'First .. P), HTTPS_Token) then
+          Item.Port := Default_HTTPS_Port;
+-         Parse (L_URL (L_URL'First + HTTPS_Token'Length .. P));
++         Parse (Maybe_Decode (L_URL (L_URL'First + HTTPS_Token'Length .. P)));
+          Item.Protocol := HTTPS;
+ 
+       elsif Utils.Match (L_URL (L_URL'First .. P), FTP_Token) then
+          Item.Port := Default_FTP_Port;
+-         Parse (L_URL (L_URL'First + FTP_Token'Length .. P));
++         Parse (Maybe_Decode (L_URL (L_URL'First + FTP_Token'Length .. P)));
+          Item.Protocol := FTP;
+ 
+       elsif P >= L_URL'First then
+@@ -460,11 +478,13 @@
+ 
+          if Scheme /= Null_Unbounded_String then
+             Item.Protocol := Scheme;
+-            Parse (L_URL (L_URL'First + Length (Scheme) + 1 .. P));
++            Parse
++              (Maybe_Decode
++                 (L_URL (L_URL'First + Length (Scheme) + 1 .. P)));
+ 
+          else
+             Item.Protocol := Null_Unbounded_String;
+-            Parse (L_URL (L_URL'First .. P));
++            Parse (Maybe_Decode (L_URL (L_URL'First .. P)));
+          end if;
+ 
+       else
+diff -r -u aws-gpl-2017-src-orig/src/core/aws-url-set.ads aws-gpl-2017-src/src/core/aws-url-set.ads
+--- aws-gpl-2017-src-orig/src/core/aws-url-set.ads	2017-05-16 05:29:48.000000000 -0500
++++ aws-gpl-2017-src/src/core/aws-url-set.ads	2018-02-04 12:50:25.527212100 -0600
+@@ -51,8 +51,9 @@
+ 
+    procedure Parse
+      (Item           : in out Object;
+-      URL            : String;
+-      Check_Validity : Boolean := True;
+-      Normalize      : Boolean := False);
++      URL            :        String;
++      Check_Validity :        Boolean := True;
++      Normalize      :        Boolean := False;
++      Decode         :        Boolean := True);
+ 
+ end AWS.URL.Set;

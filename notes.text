@@ -14,16 +14,6 @@ d:/Music/remote_cache/smm-server_driver.log
 play-before causes short replay periods
     fixed 1 feb 2018; short periods should dissappear from status eventually
 
-run all tests
-    test_server Test_Get_File "The Dance #1" fails
-        something in AWS is decoding URL before it should?
-        there are spaces in log, but not in request!
-        #1.mp3 is stripped; AWS thinks it's a fragment?
-            but that file was downloaded jan 11!?
-            that was compiled with AWS from GPL 2016!?
-
-            run test with GPL 2016 - still fails
-
 web: add search page
     http://192.168.1.83:8080/search_music.html
     grep smm.db?

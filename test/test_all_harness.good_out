@@ -11,8 +11,8 @@ no .last file found; not editing playlist
 deleting directory Vocal/artist_1
 no .last file found; not editing playlist
 no .last file found; not editing playlist
-listening on 192.168.1.83: 8080
 not logging
+listening on 192.168.1.83: 8081
 new db; all new songs
 
 OK ../../test/test_copy.adb : Nominal
@@ -27,8 +27,9 @@ OK Test_Play_Before : Nominal
 OK test_server.adb : Test_Playlist
 OK test_server.adb : Test_Meta
 OK test_server.adb : Test_Get_File
+OK test_server.adb : Test_Send_Notes
 
-Total Tests Run:   12
-Successful Tests:  12
+Total Tests Run:   13
+Successful Tests:  13
 Failed Assertions: 0
 Unexpected Errors: 0
