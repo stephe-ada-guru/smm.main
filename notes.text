@@ -9,19 +9,33 @@ branches:
 
 d:/Music/remote_cache/smm-server_driver.log
 
-(dvc-propagate-one "." "../smm.work_1")
+(dvc-state-multiple
+    '("../org.stephe_leake.aunit_ext"
+      "../org.stephe_leake.makerules"
+      "../org.stephe_leake.sal"))
+
+(dvc-propagate-one "." "../smm.main")
 
 play-before causes short replay periods
     fixed 1 feb 2018; short periods should dissappear from status eventually
 
 web: add search page
-    http://192.168.1.83:8080/search_music.html
+    http://192.168.1.83:8080/search
+    test_server.adb
+        add tests:
+        initial html
+            split out CSS file
+
+        query result html
+
     grep smm.db?
     smm.find with wildcards?
     switch to SQL db?
 
     compare all versions of "butterfly"
         play songs from web
+
+web: use https
 
 web: process notes page
 

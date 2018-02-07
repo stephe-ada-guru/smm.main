@@ -18,7 +18,6 @@
 
 pragma License (GPL);
 
-with Ada.Strings.Maps;
 with AUnit.Assertions;
 with AUnit.Checks.Text_IO;
 with AWS.Client;
@@ -27,6 +26,8 @@ with AWS.Response.AUnit;
 with AWS.URL;
 with Ada.Calendar;
 with Ada.Directories;
+with Ada.Strings.Fixed;
+with Ada.Strings.Maps;
 with Ada.Text_IO;
 with GNAT.OS_Lib;
 with SAL.Config_Files;
@@ -49,6 +50,41 @@ package body Test_Server is
       --  Mimic Android OkHttp encoding, which does not encode [ ].
       return AWS.URL.Encode (Item, Ada.Strings.Maps.To_Set (" #+;/:$,""{}|\^`'"));
    end Encode;
+
+   procedure Check_File
+     (Computed           : in String;
+      Expected_File_Name : in String)
+   is
+      use Ada.Strings;
+      use Ada.Strings.Fixed;
+      use Ada.Text_IO;
+      use AUnit.Checks.Text_IO;
+
+      Expected_File : File_Type;
+      Computed_Last : Integer := Computed'First - 1;
+
+      function Get_Line (Item : in String; Last : in out Integer) return String
+      is
+         --  Our known good files use Unix line endings
+         Delim : constant Integer := Index (Source => Item, Pattern => "" & ASCII.LF, From => Last + 1);
+      begin
+         if Delim < Item'First then
+            return Item (Last + 1 .. Item'Last);
+         else
+            return Result : constant String := Item (Last + 1 .. Delim - 1) do
+               Last := Delim;
+            end return;
+         end if;
+      end Get_Line;
+
+   begin
+      Open (Expected_File, In_File, Expected_File_Name);
+      loop
+         exit when End_Of_File (Expected_File);
+
+         Check (Get_Line (Computed, Computed_Last), Expected_File);
+      end loop;
+   end Check_File;
 
    ----------
    --  Test procedures
@@ -124,7 +160,7 @@ package body Test_Server is
 
       Test : Test_Case renames Test_Case (T);
 
-      procedure Check_File
+      procedure Check_One
         (Directory  : in String;
          Filename   : in String;
          Mime       : in String;
@@ -159,13 +195,13 @@ package body Test_Server is
       when AUnit.Assertions.Assertion_Error =>
          Ada.Text_IO.Put_Line (Msg);
          raise;
-      end Check_File;
+      end Check_One;
 
    begin
-      Check_File ("artist_1/album_1/", "AlbumArt_1.jpg", "image/jpeg");
-      Check_File ("artist_1/album_1/", "1 - song_1.mp3", "audio/mpeg", Song_Index => 1);
-      Check_File ("artist_1/album_1/", "liner_notes.pdf", "application/pdf");
-      Check_File ("artist_1/album_1/", "03 The Dance #1.mp3", "audio/mpeg", Song_Index => 7);
+      Check_One ("artist_1/album_1/", "AlbumArt_1.jpg", "image/jpeg");
+      Check_One ("artist_1/album_1/", "1 - song_1.mp3", "audio/mpeg", Song_Index => 1);
+      Check_One ("artist_1/album_1/", "liner_notes.pdf", "application/pdf");
+      Check_One ("artist_1/album_1/", "03 The Dance #1.mp3", "audio/mpeg", Song_Index => 7);
    end Test_Get_File;
 
    procedure Test_Send_Notes (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
@@ -220,6 +256,35 @@ package body Test_Server is
 
    end Test_Send_Notes;
 
+   procedure Test_Search_Initial (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
+   is
+      use Ada.Directories;
+      use Ada.Text_IO;
+      use AUnit.Checks;
+      use AUnit.Checks.Text_IO;
+      use AWS.Response;
+      use AWS.Messages.AUnit;
+
+      Test : Test_Case renames Test_Case (T);
+
+      URL : constant String := "http://" & Test.Server_IP.all & ":" & Server_Port & "/search";
+
+      Good_File_Name : constant String := "../test/search_initial.html";
+      Response       : Data;
+
+   begin
+      --  Test response to initial page request
+      Response := AWS.Client.Get (URL);
+
+      Check ("1 status", Status_Code (Response), AWS.Messages.S200);
+
+      declare
+         Computed : constant String := Message_Body (Response);
+      begin
+         Check_File (Computed, Good_File_Name);
+      end;
+   end Test_Search_Initial;
+
    ----------
    --  Public bodies
 
@@ -238,6 +303,7 @@ package body Test_Server is
       Register_Routine (T, Test_Meta'Access, "Test_Meta");
       Register_Routine (T, Test_Get_File'Access, "Test_Get_File");
       Register_Routine (T, Test_Send_Notes'Access, "Test_Send_Notes");
+      Register_Routine (T, Test_Search_Initial'Access, "Test_Search_Initial");
    end Register_Tests;
 
    overriding procedure Set_Up_Case (T : in out Test_Case)
@@ -299,6 +365,11 @@ package body Test_Server is
 
          Create_Directory ("tmp/source/Jason Castro [Deluxe] [+Video] [+Digital Booklet]");
          Create_Test_File ("tmp/source/Jason Castro [Deluxe] [+Video] [+Digital Booklet]/liner_notes.pdf");
+
+         --  Server-side html, css
+         Create_Directory ("tmp/server");
+         Copy_File ("../test/search_initial.html", "tmp/server/search_initial.html");
+
       end if;
 
       if T.Debug /= 1 then

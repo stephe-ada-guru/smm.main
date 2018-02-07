@@ -39,11 +39,20 @@ package body SMM.Server is
      renames Ada.Strings.Unbounded.To_Unbounded_String;
    function "-" (Item : in Ada.Strings.Unbounded.Unbounded_String) return String
      renames Ada.Strings.Unbounded.To_String;
+   function "&"
+     (Left  : in Ada.Strings.Unbounded.Unbounded_String;
+      Right : in String)
+     return Ada.Strings.Unbounded.Unbounded_String
+     renames Ada.Strings.Unbounded."&";
    function Length (Item : in Ada.Strings.Unbounded.Unbounded_String) return Integer
      renames Ada.Strings.Unbounded.Length;
 
-   Source_Root : Ada.Strings.Unbounded.Unbounded_String; -- does not end in /
+   Source_Root : Ada.Strings.Unbounded.Unbounded_String; -- Root of music files; does not end in /
+   Server_Root : Ada.Strings.Unbounded.Unbounded_String; -- Root of server html, css files; does not end in /
    Db_Filename : Ada.Strings.Unbounded.Unbounded_String;
+
+   ----------
+   --  Specific request handlers
 
    function Handle_Download (URI : in AWS.URL.Object) return AWS.Response.Data
    is
@@ -108,6 +117,7 @@ package body SMM.Server is
       use Ada.Strings.Unbounded;
       use AWS.URL;
 
+      --  FIXME: put source_dir in query
       Source_Dir : constant String := -Source_Root & Path (URI);
       Response   : Unbounded_String;
 
@@ -154,9 +164,9 @@ package body SMM.Server is
          elsif Ext = "pdf" then "application/pdf"
          else "");
 
-      Db : Configuration_Type;
-      Result : AWS.Response.Data;
-      I : SAL.Config_Files.Iterator_Type;
+      Db              : Configuration_Type;
+      Result          : AWS.Response.Data;
+      I               : SAL.Config_Files.Iterator_Type;
       Prev_Downloaded : SAL.Time_Conversions.Extended_ASIST_Time_String_Type;
 
    begin
@@ -256,6 +266,24 @@ package body SMM.Server is
          Message_Body => "exception " & Exception_Name (E) & ": " & Exception_Message (E));
    end Handle_Put_Notes;
 
+   function Handle_Search (URI : in AWS.URL.Object) return AWS.Response.Data
+   is
+      Query : constant String := AWS.URL.Query (URI);
+   begin
+      if Query'Length = 0 then
+         --  Return search page with no results.
+         return AWS.Response.File ("text/html", -Server_Root & "/search_initial.html");
+
+      else
+         return AWS.Response.Acknowledge
+           (Status_Code  => AWS.Messages.S500,
+            Message_Body => "search not implemented");
+      end if;
+   end Handle_Search;
+
+   ----------
+   --  Top level
+
    function Handle_Request (Request : in AWS.Status.Data) return AWS.Response.Data
    is
       use Ada.Exceptions;
@@ -272,7 +300,11 @@ package body SMM.Server is
          elsif File (URI) = "meta" then
             return Handle_Meta (URI);
 
+         elsif File (URI) = "search" then
+            return Handle_Search (URI);
+
          else
+            --  FIXME: change to "file", with file name in query
             --  It's a file request.
             return Handle_File (URI);
          end if;
@@ -331,6 +363,7 @@ package body SMM.Server is
                Case_Insensitive_Keys => True);
 
             Source_Root := +As_File (Read (Db, SMM.Root_Key, Missing_Key => Raise_Exception));
+            Server_Root := Source_Root & "/../server";
 
             Close (Db);
 
