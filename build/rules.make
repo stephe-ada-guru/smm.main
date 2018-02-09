@@ -10,13 +10,17 @@ include ../../org.stephe_leake.makerules/texinfo_rules.make
 
 # smm.adb is not the main program, so we need this rule
 smm.exe : force
-	gprbuild -p -Psmm.gpr $(GNATMAKE_ARGS) smm-driver
+	gprbuild -p -Psmm.gpr smm-driver
 
 test_all_harness.out : test_all_harness.exe smm.exe
 
 create_test_db :
 	mkdir -p tmp/source
 	echo "Root = " $(CURDIR) "/tmp/source" > tmp/smm.db
+
+smm_sqlite.db : ../source/create_schema.sql
+	rm -f $@
+	sqlite3 -init $< $@ ".quit"
 
 clean ::
 	rm -fr tmp

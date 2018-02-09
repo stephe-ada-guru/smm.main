@@ -5,19 +5,19 @@
   </head>
   <body>
     <!-- FIXME: move style to CSS; include <link> to stylesheet, browser will ask for it in second request -->
-    <form>
+    <form action="/search" method=get>
       <div>
         <label>Search: </label>
-        <span><input type=text style="width: 100%;"></span>
-        <fieldset style="display: inline;">
+        <span><input type=text style="width: 100%;" autofocus name="text" required></span>
+        <fieldset style="display: inline;"> <!-- tightly wrap content -->
           <legend>Search field</legend>
           <div>
-            <label><input type=radio name=search_field> Title</label>
-            <label><input type=radio name=search_field> Artist</label>
-            <label><input type=radio name=search_field> Album</label>
+            <label><input type=radio name=field> Title</label>
+            <label><input type=radio name=field> Artist</label>
+            <label><input type=radio name=field> Album</label>
           </div>
         </fieldset>
-        <div><button>Search</button></div>
+        <div><input type=submit value="Search"></div>
         <p>
       </div>
     </form>

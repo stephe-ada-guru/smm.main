@@ -258,10 +258,6 @@ package body Test_Server is
 
    procedure Test_Search_Initial (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
    is
-      use Ada.Directories;
-      use Ada.Text_IO;
-      use AUnit.Checks;
-      use AUnit.Checks.Text_IO;
       use AWS.Response;
       use AWS.Messages.AUnit;
 
@@ -270,12 +266,10 @@ package body Test_Server is
       URL : constant String := "http://" & Test.Server_IP.all & ":" & Server_Port & "/search";
 
       Good_File_Name : constant String := "../test/search_initial.html";
-      Response       : Data;
+      Response       : Data            := AWS.Client.Get (URL);
 
    begin
       --  Test response to initial page request
-      Response := AWS.Client.Get (URL);
-
       Check ("1 status", Status_Code (Response), AWS.Messages.S200);
 
       declare
@@ -283,6 +277,36 @@ package body Test_Server is
       begin
          Check_File (Computed, Good_File_Name);
       end;
+   end Test_Search_Initial;
+
+   procedure Test_Search_Results (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
+   is
+      use AWS.Response;
+      use AWS.Messages.AUnit;
+
+      Test : Test_Case renames Test_Case (T);
+
+      procedure Check_One
+        (Label              : in String;
+         Query              : in String;
+         Expected_File_Name : in String)
+      is
+         URL      : constant String := "http://" & Test.Server_IP.all & ":" & Server_Port & "/search?" & Query;
+         Response : Data := AWS.Client.Get (URL);
+      begin
+         Check (Label & ".status", Status_Code (Response), AWS.Messages.S200);
+         declare
+            Computed : constant String := Message_Body (Response);
+         begin
+            Check_File (Computed, Expected_File_Name);
+         end;
+      end Check_One;
+
+   begin
+      --  Test response to search submissions
+      Check_One ("1", "text=" & Encode ("""1""") & ",field=" & Encode ("""Artist"""));
+
+      --  FIXME: album, song
    end Test_Search_Initial;
 
    ----------
@@ -303,6 +327,7 @@ package body Test_Server is
       Register_Routine (T, Test_Meta'Access, "Test_Meta");
       Register_Routine (T, Test_Get_File'Access, "Test_Get_File");
       Register_Routine (T, Test_Send_Notes'Access, "Test_Send_Notes");
+      Register_Routine (T, Test_Search_Initial'Access, "Test_Search_Initial");
       Register_Routine (T, Test_Search_Initial'Access, "Test_Search_Initial");
    end Register_Tests;
 

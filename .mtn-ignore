@@ -8,4 +8,6 @@
 ^build/objects$
 ^build/smm-server_driver\.log$
 ^build/smm\.html$
+^build/smm_sqlite\.db$
 ^build/tmp$
+^test/debug\.adb$

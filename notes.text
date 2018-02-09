@@ -19,6 +19,19 @@ d:/Music/remote_cache/smm-server_driver.log
 play-before causes short replay periods
     fixed 1 feb 2018; short periods should dissappear from status eventually
 
+convert to sqlite3 database
+    good support for lists of search results, search indices
+    use gnatcoll; see ../org.stephe_leake.books.windows
+
+    test_convert.adb
+        write config file
+        call convert_to_sqlite.adb
+        dump db to config file
+        diff
+
+    update or delete all tests
+        using convert_to_sqlite might be simplest solution
+
 web: add search page
     http://192.168.1.83:8080/search
     test_server.adb

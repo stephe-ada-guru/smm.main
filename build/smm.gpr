@@ -1,8 +1,9 @@
-with "standard_common";
 with "aunit";
 with "aunit_sal_ext";
 with "aws";
+with "gnatcoll_sqlite";
 with "sal_devel";
+with "standard_common";
 project Smm is
    for Source_Dirs use
      ("../source",
