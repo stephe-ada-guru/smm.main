@@ -22,8 +22,11 @@
 
 pragma License (GPL);
 
+with Ada.Containers.Doubly_Linked_Lists;
 with Ada.Finalization;
+with Ada.Strings.Unbounded;
 private with Ada.Streams.Stream_IO;
+private with Interfaces;
 package SMM.ID3 is
 
    type File is new Ada.Finalization.Limited_Controlled with private;
@@ -45,8 +48,36 @@ package SMM.ID3 is
    function Read (File : in out SMM.ID3.File; Tag : in Tag_String) return String;
    --  Raises SAL.Not_Found if Tag is not found in File.
 
+   type Tag is record
+      ID   : Tag_String;
+      Data : Ada.Strings.Unbounded.Unbounded_String;
+   end record;
+
+   package Tag_Lists is new Ada.Containers.Doubly_Linked_Lists (Tag);
+
+   procedure Create
+     (Name    : in String;
+      Content : in Tag_Lists.List);
+   --  Create a new file containing Content. Mainly useful for writing tests.
+
 private
+
    type File is new Ada.Finalization.Limited_Controlled with record
       Stream : Ada.Streams.Stream_IO.File_Type;
    end record;
+
+   ----------
+   --  Visible for unit tests
+
+   type Size_Type is record
+      Byte_3 : Interfaces.Unsigned_8; -- only lower 7 bits used.
+      Byte_2 : Interfaces.Unsigned_8;
+      Byte_1 : Interfaces.Unsigned_8;
+      Byte_0 : Interfaces.Unsigned_8;
+   end record;
+   for Size_Type'Size use 4 * 8;
+
+   function Size (Item : in Size_Type) return Ada.Streams.Stream_IO.Count;
+   function To_Size (Item : in Ada.Streams.Stream_IO.Count) return Size_Type;
+
 end SMM.ID3;

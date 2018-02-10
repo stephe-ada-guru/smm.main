@@ -1,15 +1,19 @@
 # gnu make file
 
-include common.make
+include rules.make
 
 # ../test/test_one_harness.adb
 # ../test/test_all_harness.adb
 #export Standard_Common_Build := Debug
 #t_one : RUN_ARGS := 1
-t_one : smm-server_driver.exe
+#t_one : smm-server_driver.exe
 t_one : test_one_harness.run
+
 #t_all : export Standard_Common_Build := Debug
 t_all : smm-server_driver.exe test_all_harness.diff
+
+one : sqlite-clean smm_sqlite.db config_to_sqlite.exe
+	./config_to_sqlite.exe tmp/smm.db smm_sqlite.db
 
 DATE := $(shell date +%Y-%m-%d)
 

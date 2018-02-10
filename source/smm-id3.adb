@@ -20,48 +20,41 @@ pragma License (GPL);
 
 with Ada.IO_Exceptions;
 with Interfaces.C;
-with Interfaces;
 package body SMM.ID3 is
-
-   overriding procedure Finalize (File : in out SMM.ID3.File)
-   is
-      use Ada.Streams.Stream_IO;
-   begin
-      if Is_Open (File.Stream) then
-         Close (File.Stream);
-      end if;
-   end Finalize;
-
-   procedure Open (File : in out SMM.ID3.File; Name : in String)
-   is
-      use Ada.Streams.Stream_IO;
-   begin
-      if Is_Open (File.Stream) then
-         raise Ada.IO_Exceptions.Use_Error with "file is already open with '" &
-           Ada.Streams.Stream_IO.Name (File.Stream) & "'";
-      end if;
-
-      Open (File.Stream, In_File, Name);
-   end Open;
-
-   type Size_Type is record
-      Byte_3 : Interfaces.Unsigned_8;
-      Byte_2 : Interfaces.Unsigned_8;
-      Byte_1 : Interfaces.Unsigned_8;
-      Byte_0 : Interfaces.Unsigned_8;
-   end record;
-   for Size_Type'Size use 4 * 8;
 
    function Size (Item : in Size_Type) return Ada.Streams.Stream_IO.Count
    is
       use Ada.Streams.Stream_IO;
    begin
       return
-        Count (Item.Byte_3) * 256 ** 3 +
-        Count (Item.Byte_2) * 256 ** 2 +
-        Count (Item.Byte_1) * 256 +
+        Count (Item.Byte_3) * 128 ** 3 +
+        Count (Item.Byte_2) * 128 ** 2 +
+        Count (Item.Byte_1) * 128 +
         Count (Item.Byte_0);
    end Size;
+
+   function To_Size (Item : in Ada.Streams.Stream_IO.Count) return Size_Type
+   is
+      use Ada.Streams.Stream_IO;
+      use Interfaces;
+      Remaining : Count := Item;
+   begin
+      return Result : Size_Type do
+         Result.Byte_0 := Unsigned_8 (Item mod 128);
+         Remaining := Remaining - Count (Result.Byte_0);
+         Remaining := Remaining / 128;
+
+         Result.Byte_1 := Unsigned_8 (Remaining mod 128);
+         Remaining := Remaining - Count (Result.Byte_1);
+         Remaining := Remaining / 128;
+
+         Result.Byte_2 := Unsigned_8 (Remaining mod 128);
+         Remaining := Remaining - Count (Result.Byte_2);
+         Remaining := Remaining / 128;
+
+         Result.Byte_3 := Unsigned_8 (Remaining);
+      end return;
+   end To_Size;
 
    type File_Header is record
       ID          : Interfaces.C.char_array (1 .. 3);
@@ -83,6 +76,46 @@ package body SMM.ID3 is
    end record;
    Frame_Header_Byte_Size : constant := 10;
    for Frame_Header'Size use Frame_Header_Byte_Size * 8;
+
+   function Size (Item : in Tag) return Ada.Streams.Stream_IO.Count
+   is begin
+      return Ada.Streams.Stream_IO.Count (Frame_Header_Byte_Size + Ada.Strings.Unbounded.Length (Item.Data));
+   end Size;
+
+   function Size (Item : in Tag_Lists.List) return Ada.Streams.Stream_IO.Count
+   is
+      use Ada.Streams.Stream_IO;
+   begin
+      return Result : Count := 0 do
+         for I of Item loop
+            Result := Result + Size (I);
+         end loop;
+      end return;
+   end Size;
+
+   ----------
+   --  Public subprograms
+
+   overriding procedure Finalize (File : in out SMM.ID3.File)
+   is
+      use Ada.Streams.Stream_IO;
+   begin
+      if Is_Open (File.Stream) then
+         Close (File.Stream);
+      end if;
+   end Finalize;
+
+   procedure Open (File : in out SMM.ID3.File; Name : in String)
+   is
+      use Ada.Streams.Stream_IO;
+   begin
+      if Is_Open (File.Stream) then
+         raise Ada.IO_Exceptions.Use_Error with "file is already open with '" &
+           Ada.Streams.Stream_IO.Name (File.Stream) & "'";
+      end if;
+
+      Open (File.Stream, In_File, Name);
+   end Open;
 
    function Read (File : in out SMM.ID3.File; Tag : in Tag_String) return String
    is
@@ -146,5 +179,24 @@ package body SMM.ID3 is
          end;
       end;
    end Read;
+
+   procedure Create
+     (Name    : in String;
+      Content : in Tag_Lists.List)
+   is
+      use Ada.Strings.Unbounded;
+      use Ada.Streams.Stream_IO;
+      File : aliased File_Type;
+   begin
+      Create (File, Out_File, Name);
+      File_Header'Write (Stream (File), File_Header'("ID3", 3, 0, 0, To_Size (Size (Content))));
+      for T of Content loop
+         Frame_Header'Write
+           (Stream (File),
+            Frame_Header'(T.ID, To_Size (Ada.Streams.Stream_IO.Count (Length (T.Data))), 0, 0));
+         String'Write (Stream (File), To_String (T.Data));
+      end loop;
+      Close (File);
+   end Create;
 
 end SMM.ID3;

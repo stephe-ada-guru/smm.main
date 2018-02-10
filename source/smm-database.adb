@@ -90,7 +90,7 @@ package body SMM.Database is
       use GNATCOLL.SQL.Exec;
 
       Statement : constant String :=
-        "INSERT INTO Author (ID, Category, Artist, Album, Title, Last_Downloaded, Prev_Downloaded)" &
+        "INSERT INTO Song (ID, Category, Artist, Album, Title, Last_Downloaded, Prev_Downloaded)" &
         " VALUES (?,?,?,?,?,?,?)";
 
       Params : constant SQL_Parameters (1 .. 7) :=

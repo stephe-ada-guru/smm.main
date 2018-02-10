@@ -10,9 +10,10 @@ branches:
 d:/Music/remote_cache/smm-server_driver.log
 
 (dvc-state-multiple
-    '("../org.stephe_leake.aunit_ext"
-      "../org.stephe_leake.makerules"
-      "../org.stephe_leake.sal"))
+    '((xmtn . "../org.stephe_leake.aunit_ext")
+      (xmtn . "../org.stephe_leake.makerules")
+      (xmtn . "../org.stephe_leake.sal")
+      (xmtn . "../smm.work_1")))
 
 (dvc-propagate-one "." "../smm.main")
 
@@ -23,14 +24,15 @@ convert to sqlite3 database
     good support for lists of search results, search indices
     use gnatcoll; see ../org.stephe_leake.books.windows
 
-    test_convert.adb
-        write config file
-        call convert_to_sqlite.adb
-        dump db to config file
-        diff
+    convert_to_sqlite.adb
+        testing on db/files created by test_server
+
+        also dump db to config file for diff
 
     update or delete all tests
         using convert_to_sqlite might be simplest solution
+
+    implement notes
 
 web: add search page
     http://192.168.1.83:8080/search

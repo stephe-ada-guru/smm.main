@@ -19,12 +19,14 @@
 pragma License (GPL);
 
 with Ada.Command_Line;
+with Ada.Exceptions;
 with Ada.Strings.Unbounded;
 with Ada.Text_IO;
+with GNAT.Traceback.Symbolic;
 with SAL.Config_Files;
 with SAL.Time_Conversions;
 with SMM.Database;
-with SMM.Mp3;
+with SMM.Metadata;
 procedure Config_To_Sqlite
 is
    function "-" (Item : in Ada.Strings.Unbounded.Unbounded_String) return String
@@ -69,17 +71,19 @@ begin
       use SMM;
       use SAL.Config_Files;
 
+      Music_Root : constant String := Read (Config_Db, Root_Key);
+
       I : Iterator_Type := First (Config_Db, Songs_Key);
    begin
       loop
          exit when Is_Null (I);
          declare
-            File_Name : constant String := Read (Config_Db, I, File_Key);
+            File_Name : constant String := Music_Root & Read (Config_Db, I, File_Key);
             Artist    : Unbounded_String;
             Album     : Unbounded_String;
             Title     : Unbounded_String;
          begin
-            SMM.Mp3.Read_Meta (File_Name, Artist, Album, Title);
+            SMM.Metadata.Read_Meta (File_Name, Artist, Album, Title);
 
             SQL_Db.Insert
               (ID              => Integer'Value (Current (I)),
@@ -89,8 +93,20 @@ begin
                Title           => -Title,
                Last_Downloaded => SAL_To_UTC (Read_Last_Downloaded (Config_Db, I)),
                Prev_Downloaded => SAL_To_UTC (Read_Prev_Downloaded (Config_Db, I)));
+
+            Next (I);
          end;
          Next (I);
       end loop;
+   end;
+exception
+when E : others =>
+   declare
+      use Ada.Text_IO;
+      use Ada.Exceptions;
+      use GNAT.Traceback.Symbolic;
+   begin
+      Put_Line (Exception_Name (E) & ": " & Exception_Message (E));
+      Put_Line (Symbolic_Traceback (E));
    end;
 end Config_To_Sqlite;
