@@ -362,7 +362,7 @@ package body SMM.Server is
                Read_Only             => False,
                Case_Insensitive_Keys => True);
 
-            Source_Root := +As_File (Read (Db, SMM.Root_Key, Missing_Key => Raise_Exception));
+            Source_Root := +As_File (Read (Config, SMM.Root_Key, Missing_Key => Raise_Exception));
             Server_Root := Source_Root & "/../server";
 
             Close (Db);

@@ -24,11 +24,6 @@ convert to sqlite3 database
     good support for lists of search results, search indices
     use gnatcoll; see ../org.stephe_leake.books.windows
 
-    convert_to_sqlite.adb
-        testing on db/files created by test_server
-
-        also dump db to config file for diff
-
     update or delete all tests
         using convert_to_sqlite might be simplest solution
 

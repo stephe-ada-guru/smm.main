@@ -25,6 +25,12 @@ with Ada.Text_IO;
 with GNATCOLL.SQL.Sqlite;
 package body SMM.Database is
 
+   function "+" (Item : in String) return Ada.Strings.Unbounded.Unbounded_String
+     renames Ada.Strings.Unbounded.To_Unbounded_String;
+
+   function "-" (Item : in Ada.Strings.Unbounded.Unbounded_String) return String
+     renames Ada.Strings.Unbounded.To_String;
+
    procedure Checked_Execute
      (DB        : in out Database;
       Statement : in     String;
@@ -80,23 +86,53 @@ package body SMM.Database is
    procedure Insert
      (DB              : in out Database;
       ID              : in     Integer;
+      File_Name       : in     String;
       Category        : in     String;
       Artist          : in     String;
       Album           : in     String;
       Title           : in     String;
       Last_Downloaded : in     Time_String;
-      Prev_Downloaded : in     Time_String)
+      Prev_Downloaded : in     Time_String := Jan_1_1958;
+      Play_Before     : in     Integer     := Null_ID;
+      Play_After      : in     Integer     := Null_ID)
    is
+      use Ada.Strings.Unbounded;
       use GNATCOLL.SQL.Exec;
 
-      Statement : constant String :=
-        "INSERT INTO Song (ID, Category, Artist, Album, Title, Last_Downloaded, Prev_Downloaded)" &
-        " VALUES (?,?,?,?,?,?,?)";
+      Statement : Unbounded_String :=
+        +"INSERT INTO Song (ID, File_Name, Category, Artist, Album, Title, Last_Downloaded";
 
-      Params : constant SQL_Parameters (1 .. 7) :=
-        (+ID, +Category, +Artist, +Album, +Title, +Last_Downloaded, +Prev_Downloaded);
+      Values : Unbounded_String := +"VALUES (?,?,?,?,?,?,?";
+
+      Params : SQL_Parameters (1 .. 10) :=
+        (+ID, +File_Name, +Category, +Artist, +Album, +Title, +Last_Downloaded, others => Null_Parameter);
+
+      Last : Integer := 7;
    begin
-      Checked_Execute (DB, Statement, Params);
+      if Prev_Downloaded /= Jan_1_1958 then
+         Last          := Last + 1;
+         Statement     := Statement & ", Prev_Downloaded";
+         Values        := Values & ",?";
+         Params (Last) := +Prev_Downloaded;
+      end if;
+
+      if Play_Before /= Null_ID then
+         Last          := Last + 1;
+         Statement     := Statement & ", Play_Before";
+         Values        := Values & ",?";
+         Params (Last) := +Play_Before;
+      end if;
+
+      if Play_After /= Null_ID then
+         Last          := Last + 1;
+         Statement     := Statement & ", Play_After";
+         Values        := Values & ",?";
+         Params (Last) := +Play_After;
+      end if;
+
+      Statement := Statement & ") " & Values & ")";
+
+      Checked_Execute (DB, -Statement, Params (1 .. Last));
    end Insert;
 
    function UTC_Image (Item : in Ada.Calendar.Time) return Time_String
@@ -105,5 +141,67 @@ package body SMM.Database is
    begin
       return Ada.Calendar.Formatting.Image (Item);
    end UTC_Image;
+
+   function Has_Element (Position : Cursor) return Boolean
+   is begin
+      return Position.Cursor.Has_Row;
+   end Has_Element;
+
+   function First (DB : in Database'Class) return Cursor
+   is
+      Statement : constant String :=
+        "SELECT ID, File_Name, Category, Artist, Album, Title, Last_Downloaded, Prev_Downloaded," &
+        " Play_Before, Play_After FROM Song ORDER BY ID";
+   begin
+      return Result : Cursor do
+         GNATCOLL.SQL.Exec.Fetch (Result.Cursor, DB.Connection, Statement);
+
+         if not DB.Connection.Success then
+            raise Entry_Error with DB.Connection.Error;
+         end if;
+      end return;
+   end First;
+
+   function Current (Position : in Cursor) return Song_Type
+   is
+      --  FIXME: debugging
+      Play_Before : Integer;
+   begin
+      if not Position.Cursor.Has_Row then
+         raise No_Data;
+      end if;
+      --  FIXME: debugging
+      if Position.Cursor.Is_Null (8) then
+         Play_Before := Null_ID;
+      else
+         Play_Before := Integer'Value (Position.Cursor.Value (8));
+      end if;
+
+      return
+        (ID              => Integer'Value (Position.Cursor.Value (0)),
+         File_Name       => +Position.Cursor.Value (1),
+         Category        => +Position.Cursor.Value (2),
+         Artist          => +Position.Cursor.Value (3),
+         Album           => +Position.Cursor.Value (4),
+         Title           => +Position.Cursor.Value (5),
+         Last_Downloaded => Position.Cursor.Value (6),
+         Prev_Downloaded =>
+           (if Position.Cursor.Is_Null (7)
+            then Jan_1_1958
+            else Position.Cursor.Value (7)),
+         Play_Before => Play_Before,
+           --  (if Position.Cursor.Is_Null (8)
+           --   then Null_ID
+           --   else Integer'Value (Position.Cursor.Value (8))),
+         Play_After =>
+           (if Position.Cursor.Is_Null (9)
+            then Null_ID
+            else Integer'Value (Position.Cursor.Value (9))));
+   end Current;
+
+   procedure Next (Position : in out Cursor)
+   is begin
+      Position.Cursor.Next;
+   end Next;
 
 end SMM.Database;

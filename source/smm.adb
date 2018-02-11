@@ -106,9 +106,6 @@ package body SMM is
       return "0.0";
    end To_String;
 
-   Last_Downloaded_Key : constant String := "Last_Downloaded";
-   Prev_Downloaded_Key : constant String := "Prev_Downloaded";
-
    function Read_Time
      (Db  : in SAL.Config_Files.Configuration_Type;
       I   : in SAL.Config_Files.Iterator_Type;

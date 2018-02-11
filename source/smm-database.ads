@@ -20,6 +20,7 @@ pragma License (GPL);
 
 with Ada.Calendar;
 with Ada.Finalization;
+with Ada.Strings.Unbounded;
 with GNATCOLL.SQL.Exec;
 package SMM.Database is
 
@@ -34,6 +35,8 @@ package SMM.Database is
    --  A time before any valid database Modified time, used for a
    --  default time in various places.
 
+   Null_ID : constant Integer := -1;
+
    type Database is new Ada.Finalization.Limited_Controlled with private;
 
    overriding procedure Finalize (DB : in out Database);
@@ -44,20 +47,53 @@ package SMM.Database is
    procedure Insert
      (DB              : in out Database;
       ID              : in     Integer;
+      File_Name       : in     String;
       Category        : in     String;
       Artist          : in     String;
       Album           : in     String;
       Title           : in     String;
       Last_Downloaded : in     Time_String;
-      Prev_Downloaded : in     Time_String);
+      Prev_Downloaded : in     Time_String := Jan_1_1958;
+      Play_Before     : in     Integer     := Null_ID;
+      Play_After      : in     Integer     := Null_ID);
 
    function UTC_Image (Item : in Ada.Calendar.Time) return Time_String;
+
+   ----------
+   --  Iterate over db contents, in ID order
+
+   type Song_Type is record
+      ID              : Integer;
+      File_Name       : Ada.Strings.Unbounded.Unbounded_String;
+      Category        : Ada.Strings.Unbounded.Unbounded_String;
+      Artist          : Ada.Strings.Unbounded.Unbounded_String;
+      Album           : Ada.Strings.Unbounded.Unbounded_String;
+      Title           : Ada.Strings.Unbounded.Unbounded_String;
+      Last_Downloaded : Time_String;
+      Prev_Downloaded : Time_String;
+      Play_Before     : Integer;
+      Play_After      : Integer;
+   end record;
+
+   type Cursor is tagged private;
+
+   function Has_Element (Position : in Cursor) return Boolean;
+
+   function First (DB : in Database'Class) return Cursor;
+
+   function Current (Position : in Cursor) return Song_Type;
+
+   procedure Next (Position : in out Cursor);
 
 private
 
    type Database is new Ada.Finalization.Limited_Controlled with
    record
       Connection : GNATCOLL.SQL.Exec.Database_Connection;
+   end record;
+
+   type Cursor is tagged record
+      Cursor : GNATCOLL.SQL.Exec.Forward_Cursor;
    end record;
 
 end SMM.Database;

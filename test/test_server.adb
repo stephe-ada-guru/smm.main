@@ -369,11 +369,12 @@ package body Test_Server is
 
          Create (Db_File, Out_File, Db_File_Name);
 
-         Put_Line (Db_File, "Root = " & SMM.As_Directory (Current_Directory & "/tmp/source"));
          Put_Line (Db_File, "Songs. 1.File = artist_1/album_1/1 - song_1.mp3");
          Put_Line (Db_File, "Songs. 1.Category = vocal");
+         Put_Line (Db_File, "Songs. 1.Play_Before = 2");
          Put_Line (Db_File, "Songs. 2.File = artist_1/album_1/2 - song_2.mp3");
          Put_Line (Db_File, "Songs. 2.Category = vocal");
+         Put_Line (Db_File, "Songs. 2.Play_After = 1");
          Put_Line (Db_File, "Songs. 3.File = artist_1/album_1/03 The Dance #1.mp3");
          Put_Line (Db_File, "Songs. 3.Category = instrumental");
          Put_Line (Db_File, "Songs. 4.File = artist_2/album_1/1 - song_1.mp3");

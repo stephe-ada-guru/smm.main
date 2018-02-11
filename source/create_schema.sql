@@ -9,7 +9,8 @@
 -- All times stored in the database are in UTC (Greenwich time zone).
 
 CREATE TABLE Song
-(ID       INTEGER PRIMARY KEY,
+(ID              INTEGER PRIMARY KEY,
+ File_Name       TEXT,
  Category        TEXT,
  Artist          TEXT,  
  Album           TEXT,   

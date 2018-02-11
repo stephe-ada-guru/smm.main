@@ -49,15 +49,16 @@ package SMM is
    --  User friendly date representation
 
    --  database keys
-   Category_Key    : constant String := "Category";
-   File_Key        : constant String := "File";
-   --  Last_Downloaded_Key : use Read_Last_Downloaded
-   --  Prev_Downloaded_Key : use Read_Prev_Downloaded
+   Category_Key        : constant String := "Category";
+   File_Key            : constant String := "File";
+   Last_Downloaded_Key : constant String := "Last_Downloaded";
+   Prev_Downloaded_Key : constant String := "Prev_Downloaded";
+   Play_After_Key      : constant String := "Play_After";
+   Play_Before_Key     : constant String := "Play_Before";
+
    Songs_Key       : constant String := "Songs";
    Root_Key        : constant String := "Root";
    Playlist_Key    : constant String := "Playlists";
-   Play_After_Key  : constant String := "Play_After";
-   Play_Before_Key : constant String := "Play_Before";
 
    function Read_Last_Downloaded
      (Db : in SAL.Config_Files.Configuration_Type;
