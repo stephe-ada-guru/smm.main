@@ -33,6 +33,8 @@ with Ada.Strings.Fixed;
 with Ada.Strings.Unbounded;
 with Ada.Text_IO;
 with SAL.Config_Files.Integer;
+with SMM.Database;
+with SMM.Song_Lists;
 package body SMM.Server is
 
    function "+" (Item : in String) return Ada.Strings.Unbounded.Unbounded_String
@@ -49,7 +51,7 @@ package body SMM.Server is
 
    Source_Root : Ada.Strings.Unbounded.Unbounded_String; -- Root of music files; does not end in /
    Server_Root : Ada.Strings.Unbounded.Unbounded_String; -- Root of server html, css files; does not end in /
-   Db_Filename : Ada.Strings.Unbounded.Unbounded_String;
+   DB_Filename : Ada.Strings.Unbounded.Unbounded_String;
 
    ----------
    --  Specific request handlers
@@ -60,8 +62,8 @@ package body SMM.Server is
       use Ada.Exceptions;
       use Ada.Strings.Unbounded;
       use AWS.URL;
-      use SAL.Config_Files;
-      use Song_Lists;
+      use SMM.Database;
+      use SMM.Song_Lists.Song_Lists;
 
       Category   : constant String     := Parameter (URI, "category");
       Count      : constant Count_Type := Count_Type'Value (Parameter (URI, "count"));
@@ -75,37 +77,26 @@ package body SMM.Server is
       Over_Select_Ratio       : constant Float  :=
         (if Over_Select_Ratio_Param'Length > 0 then Float'Value (Over_Select_Ratio_Param) else 2.0);
 
-      Db       : SAL.Config_Files.Configuration_Type;
+      DB       : SMM.Database.Database;
       Songs    : List;
       Response : Unbounded_String;
    begin
-      Open
-        (Db,
-         -Db_Filename,
-         Missing_File          => Raise_Exception,
-         Duplicate_Key         => Raise_Exception,
-         Read_Only             => False,
-         Case_Insensitive_Keys => True);
+      Open (DB, -DB_Filename);
 
-      Least_Recent_Songs
-        (Db, Category, Songs,
+      SMM.Song_Lists.Least_Recent_Songs
+        (DB, Category, Songs,
          Song_Count        => Count,
          New_Song_Count    => New_Count,
          Over_Select_Ratio => Over_Select_Ratio,
          Seed              => Seed);
 
       for I of Songs loop
-         Response :=  Response & Normalize (Read (Db, I, File_Key)) & ASCII.CR & ASCII.LF;
+         Response := Response & Normalize (File_Name (I)) & ASCII.CR & ASCII.LF;
       end loop;
-
-      Close (Db);
 
       return AWS.Response.Build ("text/plain", Response);
    exception
    when E : others =>
-      if Is_Open (Db) then
-         Close (Db);
-      end if;
       return AWS.Response.Acknowledge
         (Status_Code  => AWS.Messages.S500,
          Message_Body => "exception " & Exception_Name (E) & ": " & Exception_Message (E));
@@ -152,7 +143,7 @@ package body SMM.Server is
       use Ada.Directories;
       use Ada.Exceptions;
       use AWS.URL;
-      use SAL.Config_Files;
+      use SMM.Database;
 
       Filename  : constant String := -Source_Root & Path (URI) & File (URI);
       Ext       : constant String := Extension (Filename);
@@ -164,10 +155,10 @@ package body SMM.Server is
          elsif Ext = "pdf" then "application/pdf"
          else "");
 
-      Db              : Configuration_Type;
+      DB              : SMM.Database.Database;
       Result          : AWS.Response.Data;
-      I               : SAL.Config_Files.Iterator_Type;
-      Prev_Downloaded : SAL.Time_Conversions.Extended_ASIST_Time_String_Type;
+      I               : Cursor;
+      Prev_Downloaded : Time_String;
 
    begin
       if Mime_Type'Length = 0 then
@@ -178,28 +169,22 @@ package body SMM.Server is
 
       if Exists (Filename) then
          if Ext = "mp3" then
-            Open
-              (Db,
-               -Db_Filename,
-               Missing_File          => Raise_Exception,
-               Duplicate_Key         => Raise_Exception,
-               Read_Only             => False,
-               Case_Insensitive_Keys => True);
+            Open (DB, -DB_Filename);
 
             --  Find does not want leading / on filename
-            I := Find (Db, Filename (Length (Source_Root) + 2 .. Filename'Last));
+            I := Find_File_Name (DB, Filename (Length (Source_Root) + 2 .. Filename'Last));
 
-            if I = Null_Iterator then
+            if not I.Has_Element then
                return AWS.Response.Acknowledge
                  (Status_Code  => AWS.Messages.S500,
                   Message_Body => "file not found");
             end if;
 
-            Write_Last_Downloaded (Db, I, SAL.Time_Conversions.To_TAI_Time (Ada.Calendar.Clock));
+            I.Write_Last_Downloaded (DB, Ada.Calendar.Clock);
 
-            Prev_Downloaded := SAL.Time_Conversions.To_Extended_ASIST_String (Read_Prev_Downloaded (Db, I));
+            Prev_Downloaded := I.Prev_Downloaded;
 
-            Close (Db);
+            Finalize (DB);
          end if;
 
          Result := AWS.Response.File (Mime_Type, Filename);
@@ -218,9 +203,6 @@ package body SMM.Server is
         (Status_Code  => AWS.Messages.S404,
          Message_Body => "<p>file '" & Filename & "' not found.");
    when E : others =>
-      if Is_Open (Db) then
-         Close (Db);
-      end if;
       return AWS.Response.Acknowledge
         (Status_Code  => AWS.Messages.S500,
          Message_Body => "exception " & Exception_Name (E) & ": " & Exception_Message (E));
@@ -344,7 +326,6 @@ package body SMM.Server is
       declare
          use Ada.Command_Line;
          use SAL.Config_Files;
-         Db : SAL.Config_Files.Configuration_Type;
       begin
          case Argument_Count is
          when 1 | 2 =>
@@ -352,20 +333,10 @@ package body SMM.Server is
 
             Enable_Log := Argument_Count = 2;
 
-            Db_Filename := +Read (Config, "DB_Filename", Missing_Key => Raise_Exception);
-
-            Open
-              (Db,
-               Read (Config, "DB_Filename", Missing_Key => Raise_Exception),
-               Missing_File          => Raise_Exception,
-               Duplicate_Key         => Raise_Exception,
-               Read_Only             => False,
-               Case_Insensitive_Keys => True);
+            DB_Filename := +Read (Config, "DB_Filename", Missing_Key => Raise_Exception);
 
             Source_Root := +As_File (Read (Config, SMM.Root_Key, Missing_Key => Raise_Exception));
             Server_Root := Source_Root & "/../server";
-
-            Close (Db);
 
          when others =>
             Usage;
@@ -392,6 +363,8 @@ package body SMM.Server is
 
          --  AWS default server port is AWS.Default.Server_Port (= 8080)
          Server_Port (Obj, Read (Config, "Server_Port", Default => 8080, Missing_Key => Ignore));
+
+         Close (Config);
 
          if Enable_Log then
             declare

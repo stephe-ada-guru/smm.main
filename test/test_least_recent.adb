@@ -18,14 +18,18 @@
 
 pragma License (GPL);
 
-with AUnit.Assertions;
+with AUnit.Checks;
+with Ada.Calendar;
 with Ada.Directories;
 with Ada.Text_IO;
-with AUnit.Checks;
-with SAL.Config_Files;
-with SAL.Time_Conversions;
-with SMM;
+with SMM.Database;
+with SMM.Song_Lists;
+with Test_Utils;
 package body Test_Least_Recent is
+
+   DB : SMM.Database.Database;
+
+   One_Second_Time_String : constant SMM.Database.Time_String := "1958-01-01 00:00:01";
 
    procedure Cleanup
    is begin
@@ -36,88 +40,83 @@ package body Test_Least_Recent is
       null;
    end Cleanup;
 
-   procedure Create_Test_Db (Db : out SAL.Config_Files.Configuration_Type)
+   procedure Create_Test_Db
    is
       use Ada.Directories;
-      use Ada.Text_IO;
-      Db_File : File_Type;
-      Db_File_Name : constant String := "tmp/smm.db";
+      use SMM.Database;
+
+      DB_File_Name : constant String := "tmp/smm.db";
+
+      procedure Insert
+        (ID              : in Integer;
+         File_Name       : in String;
+         Last_Downloaded : in Duration;
+         Category        : in String := "vocal")
+      is begin
+         DB.Insert
+           (ID              => ID,
+            File_Name       => File_Name,
+            Category        => Category,
+            Artist          => "none",
+            Album           => "none",
+            Title           => "none",
+            Last_Downloaded =>
+              (if Last_Downloaded = 0.0
+               then Default_Time_String
+               else One_Second_Time_String));
+      end Insert;
+
    begin
       Cleanup;
 
       Create_Directory ("tmp");
 
-      Create (Db_File, Out_File, Db_File_Name);
+      Test_Utils.Create_Empty_DB (DB_File_Name);
 
-      Put_Line (Db_File, "Root = c:/Projects/smm/");
-      Put_Line (Db_File, "Songs. 1.File = I1.mp3");
-      Put_Line (Db_File, "Songs. 1.Last_Downloaded = 1.0");
-      Put_Line (Db_File, "Songs. 1.Category = instrumental");
-      Put_Line (Db_File, "Songs. 2.File = I2.mp3");
-      Put_Line (Db_File, "Songs. 2.Last_Downloaded = 1.0");
-      Put_Line (Db_File, "Songs. 2.Category = instrumental");
-      Put_Line (Db_File, "Songs. 3.File = I3.mp3");
-      Put_Line (Db_File, "Songs. 3.Last_Downloaded = 1.0");
-      Put_Line (Db_File, "Songs. 3.Category = instrumental");
-      Put_Line (Db_File, "Songs. 4.File = I4.mp3");
-      Put_Line (Db_File, "Songs. 4.Last_Downloaded = 0.0");
-      Put_Line (Db_File, "Songs. 4.Category = instrumental");
-      Put_Line (Db_File, "Songs. 5.File = I5.mp3");
-      Put_Line (Db_File, "Songs. 5.Last_Downloaded = 0.0");
-      Put_Line (Db_File, "Songs. 5.Category = instrumental");
-      Put_Line (Db_File, "Songs. 6.File = I6.mp3");
-      Put_Line (Db_File, "Songs. 6.Last_Downloaded = 0.0");
-      Put_Line (Db_File, "Songs. 6.Category = instrumental");
-      Put_Line (Db_File, "Songs. 7.File = I7.mp3");
-      Put_Line (Db_File, "Songs. 7.Last_Downloaded = 0.0");
-      Put_Line (Db_File, "Songs. 7.Category = instrumental");
-      Put_Line (Db_File, "Songs. 8.File = V2.mp3");
-      Put_Line (Db_File, "Songs. 8.Last_Downloaded = 1.0");
-      Put_Line (Db_File, "Songs. 9.File = V3.mp3");
-      Put_Line (Db_File, "Songs. 9.Last_Downloaded = 1.0");
-      Put_Line (Db_File, "Songs. 10.File = V4.mp3");
-      Put_Line (Db_File, "Songs. 10.Last_Downloaded = 0.0");
-      Put_Line (Db_File, "Songs. 11.File = V5.mp3");
-      Put_Line (Db_File, "Songs. 11.Last_Downloaded = 0.0");
-      Put_Line (Db_File, "Songs. 12.File = V6.mp3");
-      Put_Line (Db_File, "Songs. 12.Last_Downloaded = 0.0");
-      Close (Db_File);
+      Open (DB, DB_File_Name);
 
-      SAL.Config_Files.Open
-        (Db,
-         Db_File_Name,
-         Missing_File  => SAL.Config_Files.Raise_Exception,
-         Duplicate_Key => SAL.Config_Files.Raise_Exception,
-         Read_Only     => False);
+      Insert (1, "I1.mp3", 1.0, "instrumental");
+      Insert (2, "I2.mp3", 1.0, "instrumental");
+      Insert (3, "I3.mp3", 1.0, "instrumental");
+      Insert (4, "I4.mp3", 0.0, "instrumental");
+      Insert (5, "I5.mp3", 0.0, "instrumental");
+      Insert (6, "I6.mp3", 0.0, "instrumental");
+      Insert (7, "I7.mp3", 0.0, "instrumental");
+      Insert (8, "V2.mp3", 1.0);
+      Insert (9, "V3.mp3", 1.0);
+      Insert (10, "V4.mp3", 0.0);
+      Insert (11, "V5.mp3", 0.0);
+      Insert (12, "V6.mp3", 0.0);
    end Create_Test_Db;
 
    procedure Check
      (Label    : in String;
-      Db       : in SAL.Config_Files.Configuration_Type;
-      Computed : in SMM.Song_Lists.Cursor;
+      Computed : in SMM.Song_Lists.Song_Lists.Cursor;
       Expected : in String)
    is
-      use type SMM.Song_Lists.Cursor;
+      use SMM.Database;
+      use SMM.Song_Lists.Song_Lists;
+      use AUnit.Checks;
    begin
-      AUnit.Assertions.Assert (SMM.Song_Lists.No_Element /= Computed, Label & " null iterator");
-      AUnit.Checks.Check (Label, SAL.Config_Files.Read (Db, SMM.Song_Lists.Element (Computed), "file"), Expected);
+      Check (Label & ".list has_element", Has_Element (Computed), True);
+      Check (Label & ".not null_id", Element (Computed) /= Null_ID, True);
+      Check (Label & ".file_name", Find_ID (DB, Element (Computed)).File_Name, Expected);
    end Check;
 
    procedure Mark_Downloaded
-     (Db    : in out SAL.Config_Files.Configuration_Type;
-      Songs : in out SMM.Song_Lists.List;
-      Time  : in     SAL.Time_Conversions.Time_Type)
+     (Songs : in out SMM.Song_Lists.Song_Lists.List;
+      Time  : in     Duration)
    is
-      use SMM.Song_Lists;
-      I : Cursor;
+      use SMM.Database;
+      use SMM.Song_Lists.Song_Lists;
+      I : SMM.Song_Lists.Song_Lists.Cursor;
    begin
       loop
          I := First (Songs);
          exit when I = No_Element;
-         SMM.Write_Last_Downloaded (Db, Element (I), Time);
+         Find_ID (DB, Element (I)).Write_Last_Downloaded (DB, Ada.Calendar.Time_Of (1958, 1, 1, Time));
          Songs.Delete_First;
       end loop;
-      SAL.Config_Files.Flush (Db); --  for debugging
    end Mark_Downloaded;
 
    ----------
@@ -127,17 +126,18 @@ package body Test_Least_Recent is
    is
       pragma Unreferenced (T);
       use AUnit.Checks;
-      use SMM.Song_Lists;
-      Db    : SAL.Config_Files.Configuration_Type;
+      use SMM.Song_Lists.Song_Lists;
       Songs : List;
       I     : Cursor;
    begin
+      Create_Test_Db;
 
-      Create_Test_Db (Db);
-
-      SMM.Least_Recent_Songs
-        (Db, "instrumental", Songs,
-         Song_Count => 2, New_Song_Count => 2, Over_Select_Ratio => 2.0, Seed => 1);
+      SMM.Song_Lists.Least_Recent_Songs
+        (DB, "instrumental", Songs,
+         Song_Count        => 2,
+         New_Song_Count    => 2,
+         Over_Select_Ratio => 2.0,
+         Seed              => 1);
 
       Check ("song count", Integer (Songs.Length), 2);
 
@@ -145,28 +145,29 @@ package body Test_Least_Recent is
       --  with compiler version. These are correct for GNAT GPL 2014.
       --  Possible results are any song I1 .. I7.
       I := First (Songs);
-      Check ("1 1", Db, I, "I2.mp3");
+      Check ("1 1", I, "I2.mp3");
       Next (I);
 
-      Check ("1 2", Db, I, "I3.mp3");
+      Check ("1 2", I, "I3.mp3");
 
-      Mark_Downloaded (Db, Songs, 2.0);
+      Mark_Downloaded (Songs, 2.0);
 
-      SMM.Least_Recent_Songs
-        (Db, "instrumental", Songs,
+      SMM.Song_Lists.Least_Recent_Songs
+        (DB, "instrumental", Songs,
          Song_Count => 2, New_Song_Count => 2, Over_Select_Ratio => 2.0, Seed => 2);
 
       Check ("song count", Integer (Songs.Length), 2);
 
       --  Possible results are two from I1 .. I7, excluding the two
-      --  from first call; and two from first call.
+      --  from first call.
       I := First (Songs);
-      Check ("2 1", Db, I, "I2.mp3");
+      Check ("2 1", I, "I2.mp3");
       Next (I);
 
-      Check ("2 2", Db, I, "I4.mp3");
+      Check ("2 2", I, "I4.mp3");
 
    end Nominal;
+
    ----------
    --  Public bodies
 
@@ -174,7 +175,7 @@ package body Test_Least_Recent is
    is
       pragma Unreferenced (T);
    begin
-      return new String'("../../test/test_least_recent.adb");
+      return new String'("test_least_recent.adb");
    end Name;
 
    overriding procedure Register_Tests (T : in out Test_Case)

@@ -31,9 +31,11 @@ package SMM.Database is
    subtype Time_String is String (1 .. 19);
    --  UTC time in 'YYYY-MM-DD HH:MM:SS' format
 
-   Jan_1_1958 : aliased constant Time_String := "1958-01-01 00:00:00";
+   Jan_1_1958 : constant Time_String := "1958-01-01 00:00:00";
    --  A time before any valid database Modified time, used for a
    --  default time in various places.
+
+   Default_Time_String : Time_String renames Jan_1_1958;
 
    Null_ID : constant Integer := -1;
 
@@ -53,7 +55,7 @@ package SMM.Database is
       Album           : in     String;
       Title           : in     String;
       Last_Downloaded : in     Time_String;
-      Prev_Downloaded : in     Time_String := Jan_1_1958;
+      Prev_Downloaded : in     Time_String := Default_Time_String;
       Play_Before     : in     Integer     := Null_ID;
       Play_After      : in     Integer     := Null_ID);
 
@@ -81,9 +83,27 @@ package SMM.Database is
 
    function First (DB : in Database'Class) return Cursor;
 
-   function Current (Position : in Cursor) return Song_Type;
+   function Find_File_Name (DB : in Database'Class; File_Name : in String) return Cursor;
+   function Find_ID (DB : in Database'Class; ID : in Integer) return Cursor;
 
    procedure Next (Position : in out Cursor);
+
+   function Element (Position : in Cursor) return Song_Type;
+
+   function ID (Position : in Cursor) return Integer;
+   function File_Name (Position : in Cursor) return String;
+   function Category (Position : in Cursor) return String;
+   function Last_Downloaded (Position : in Cursor) return Time_String;
+   function Prev_Downloaded (Position : in Cursor) return Time_String;
+   function Play_Before (Position : in Cursor) return Integer;
+
+   function Play_After_Is_Present (Position : in Cursor) return Boolean;
+   function Play_Before_Is_Present (Position : in Cursor) return Boolean;
+
+   procedure Write_Last_Downloaded
+     (Position : in Cursor;
+      DB       : in Database'Class;
+      Time     : in Ada.Calendar.Time);
 
 private
 
@@ -93,6 +113,7 @@ private
    end record;
 
    type Cursor is tagged record
+      --  FIXME: need finalization to release cursor?
       Cursor : GNATCOLL.SQL.Exec.Forward_Cursor;
    end record;
 

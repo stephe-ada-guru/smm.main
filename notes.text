@@ -26,8 +26,17 @@ convert to sqlite3 database
 
     update or delete all tests
         using convert_to_sqlite might be simplest solution
+        test_copy: no db
+        test_first_pass_no|with_last: now done in phone app, no db
+
+        test_least_recent: passing
+
+        test_download: on server, uses db
 
     implement notes
+
+smm-song_lists.adb: --  FIXME: provide DB iterator sorted on last_downloaded.
+smm-database.ads:       --  FIXME: need finalization to release cursor?
 
 web: add search page
     http://192.168.1.83:8080/search

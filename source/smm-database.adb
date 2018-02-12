@@ -32,9 +32,9 @@ package body SMM.Database is
      renames Ada.Strings.Unbounded.To_String;
 
    procedure Checked_Execute
-     (DB        : in out Database;
-      Statement : in     String;
-      Params    : in     GNATCOLL.SQL.Exec.SQL_Parameters := GNATCOLL.SQL.Exec.No_Parameters)
+     (DB        : in Database'Class;
+      Statement : in String;
+      Params    : in GNATCOLL.SQL.Exec.SQL_Parameters := GNATCOLL.SQL.Exec.No_Parameters)
    is begin
       GNATCOLL.SQL.Exec.Execute (DB.Connection, Statement, Params);
 
@@ -50,6 +50,21 @@ package body SMM.Database is
          end;
       end if;
    end Checked_Execute;
+
+   function Checked_Fetch
+     (DB        : in Database'Class;
+      Statement : in String;
+      Params    : in GNATCOLL.SQL.Exec.SQL_Parameters := GNATCOLL.SQL.Exec.No_Parameters)
+     return Cursor
+   is begin
+      return Result : Cursor do
+         GNATCOLL.SQL.Exec.Fetch (Result.Cursor, DB.Connection, Statement, Params);
+
+         if not DB.Connection.Success then
+            raise Entry_Error with DB.Connection.Error;
+         end if;
+      end return;
+   end Checked_Fetch;
 
    ----------
    --  Public subprograms
@@ -92,7 +107,7 @@ package body SMM.Database is
       Album           : in     String;
       Title           : in     String;
       Last_Downloaded : in     Time_String;
-      Prev_Downloaded : in     Time_String := Jan_1_1958;
+      Prev_Downloaded : in     Time_String := Default_Time_String;
       Play_Before     : in     Integer     := Null_ID;
       Play_After      : in     Integer     := Null_ID)
    is
@@ -109,7 +124,7 @@ package body SMM.Database is
 
       Last : Integer := 7;
    begin
-      if Prev_Downloaded /= Jan_1_1958 then
+      if Prev_Downloaded /= Default_Time_String then
          Last          := Last + 1;
          Statement     := Statement & ", Prev_Downloaded";
          Values        := Values & ",?";
@@ -142,6 +157,25 @@ package body SMM.Database is
       return Ada.Calendar.Formatting.Image (Item);
    end UTC_Image;
 
+   ----------
+   --  Iterators
+
+   All_Fields : constant String :=
+     "ID, File_Name, Category, Artist, Album, Title, Last_Downloaded, Prev_Downloaded, Play_Before, Play_After";
+
+   --  Field indices
+   use all type GNATCOLL.SQL.Exec.Field_Index;
+   ID_Field              : constant GNATCOLL.SQL.Exec.Field_Index := GNATCOLL.SQL.Exec.Field_Index'First;
+   File_Name_Field       : constant GNATCOLL.SQL.Exec.Field_Index := ID_Field + 1;
+   Category_Field        : constant GNATCOLL.SQL.Exec.Field_Index := File_Name_Field + 1;
+   Artist_Field          : constant GNATCOLL.SQL.Exec.Field_Index := Category_Field + 1;
+   Album_Field           : constant GNATCOLL.SQL.Exec.Field_Index := Artist_Field + 1;
+   Title_Field           : constant GNATCOLL.SQL.Exec.Field_Index := Album_Field + 1;
+   Last_Downloaded_Field : constant GNATCOLL.SQL.Exec.Field_Index := Title_Field + 1;
+   Prev_Downloaded_Field : constant GNATCOLL.SQL.Exec.Field_Index := Last_Downloaded_Field + 1;
+   Play_Before_Field     : constant GNATCOLL.SQL.Exec.Field_Index := Prev_Downloaded_Field + 1;
+   Play_After_Field      : constant GNATCOLL.SQL.Exec.Field_Index := Play_Before_Field + 1;
+
    function Has_Element (Position : Cursor) return Boolean
    is begin
       return Position.Cursor.Has_Row;
@@ -149,59 +183,123 @@ package body SMM.Database is
 
    function First (DB : in Database'Class) return Cursor
    is
-      Statement : constant String :=
-        "SELECT ID, File_Name, Category, Artist, Album, Title, Last_Downloaded, Prev_Downloaded," &
-        " Play_Before, Play_After FROM Song ORDER BY ID";
+      Statement : constant String := "SELECT " & All_Fields & " FROM Song ORDER BY ID";
    begin
-      return Result : Cursor do
-         GNATCOLL.SQL.Exec.Fetch (Result.Cursor, DB.Connection, Statement);
-
-         if not DB.Connection.Success then
-            raise Entry_Error with DB.Connection.Error;
-         end if;
-      end return;
+      return Checked_Fetch (DB, Statement);
    end First;
 
-   function Current (Position : in Cursor) return Song_Type
+   function Find_File_Name (DB : in Database'Class; File_Name : in String) return Cursor
    is
-      --  FIXME: debugging
-      Play_Before : Integer;
+      use GNATCOLL.SQL.Exec;
+      Statement : constant String := "SELECT " & All_Fields & " FROM Song WHERE File_Name = ?";
    begin
-      if not Position.Cursor.Has_Row then
-         raise No_Data;
-      end if;
-      --  FIXME: debugging
-      if Position.Cursor.Is_Null (8) then
-         Play_Before := Null_ID;
-      else
-         Play_Before := Integer'Value (Position.Cursor.Value (8));
-      end if;
+      return Checked_Fetch (DB, Statement, Params => (1 => +File_Name));
+   end Find_File_Name;
 
-      return
-        (ID              => Integer'Value (Position.Cursor.Value (0)),
-         File_Name       => +Position.Cursor.Value (1),
-         Category        => +Position.Cursor.Value (2),
-         Artist          => +Position.Cursor.Value (3),
-         Album           => +Position.Cursor.Value (4),
-         Title           => +Position.Cursor.Value (5),
-         Last_Downloaded => Position.Cursor.Value (6),
-         Prev_Downloaded =>
-           (if Position.Cursor.Is_Null (7)
-            then Jan_1_1958
-            else Position.Cursor.Value (7)),
-         Play_Before => Play_Before,
-           --  (if Position.Cursor.Is_Null (8)
-           --   then Null_ID
-           --   else Integer'Value (Position.Cursor.Value (8))),
-         Play_After =>
-           (if Position.Cursor.Is_Null (9)
-            then Null_ID
-            else Integer'Value (Position.Cursor.Value (9))));
-   end Current;
+   function Find_ID (DB : in Database'Class; ID : in Integer) return Cursor
+   is
+      use GNATCOLL.SQL.Exec;
+      Statement : constant String := "SELECT " & All_Fields & " FROM Song WHERE ID = ?";
+   begin
+      return Checked_Fetch (DB, Statement, Params => (1 => +ID));
+   end Find_ID;
 
    procedure Next (Position : in out Cursor)
    is begin
       Position.Cursor.Next;
    end Next;
+
+   function Element (Position : in Cursor) return Song_Type
+   is begin
+      if not Position.Cursor.Has_Row then
+         raise No_Data;
+      end if;
+
+      return
+        (ID              => Integer'Value (Position.Cursor.Value (ID_Field)),
+         File_Name       => +Position.Cursor.Value (File_Name_Field),
+         Category        => +Position.Cursor.Value (Category_Field),
+         Artist          => +Position.Cursor.Value (Artist_Field),
+         Album           => +Position.Cursor.Value (Album_Field),
+         Title           => +Position.Cursor.Value (Title_Field),
+         Last_Downloaded =>
+           (if Position.Cursor.Is_Null (Last_Downloaded_Field)
+            then Default_Time_String
+            else Position.Cursor.Value (Last_Downloaded_Field)),
+         Prev_Downloaded =>
+           (if Position.Cursor.Is_Null (Prev_Downloaded_Field)
+            then Default_Time_String
+            else Position.Cursor.Value (Prev_Downloaded_Field)),
+         Play_Before =>
+           (if Position.Cursor.Is_Null (Play_Before_Field)
+            then Null_ID
+            else Integer'Value (Position.Cursor.Value (Play_Before_Field))),
+         Play_After =>
+           (if Position.Cursor.Is_Null (Play_After_Field)
+            then Null_ID
+            else Integer'Value (Position.Cursor.Value (Play_After_Field))));
+   end Element;
+
+   function ID (Position : in Cursor) return Integer
+   is begin
+      return Integer'Value (Position.Cursor.Value (ID_Field));
+   end ID;
+
+   function File_Name (Position : in Cursor) return String
+   is begin
+      return Position.Cursor.Value (File_Name_Field);
+   end File_Name;
+
+   function Category (Position : in Cursor) return String
+   is begin
+      return Position.Cursor.Value (Category_Field);
+   end Category;
+
+   function Last_Downloaded (Position : in Cursor) return Time_String
+   is begin
+      return
+        (if Position.Cursor.Is_Null (Last_Downloaded_Field)
+         then Default_Time_String
+         else Position.Cursor.Value (Last_Downloaded_Field));
+   end Last_Downloaded;
+
+   function Prev_Downloaded (Position : in Cursor) return Time_String
+   is begin
+      return
+        (if Position.Cursor.Is_Null (Prev_Downloaded_Field)
+         then Default_Time_String
+         else Position.Cursor.Value (Prev_Downloaded_Field));
+   end Prev_Downloaded;
+
+   function Play_Before (Position : in Cursor) return Integer
+   is begin
+      return
+        (if Position.Cursor.Is_Null (Play_Before_Field)
+         then Null_ID
+         else Integer'Value (Position.Cursor.Value (Play_Before_Field)));
+   end Play_Before;
+
+   function Play_After_Is_Present (Position : in Cursor) return Boolean
+   is begin
+      return not Position.Cursor.Is_Null (Play_After_Field);
+   end Play_After_Is_Present;
+
+   function Play_Before_Is_Present (Position : in Cursor) return Boolean
+   is begin
+      return not Position.Cursor.Is_Null (Play_Before_Field);
+   end Play_Before_Is_Present;
+
+   procedure Write_Last_Downloaded
+     (Position : in Cursor;
+      DB       : in Database'Class;
+      Time     : in Ada.Calendar.Time)
+   is
+      use GNATCOLL.SQL.Exec;
+   begin
+      Checked_Execute
+        (DB,
+         Statement => "UPDATE Song SET Last_Downloaded = ?, Prev_Downloaded = ? WHERE ID =?",
+         Params    => (+UTC_Image (Time), +Position.Last_Downloaded, +Position.ID));
+   end Write_Last_Downloaded;
 
 end SMM.Database;

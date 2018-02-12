@@ -2,7 +2,7 @@
 --
 --  Utilities for unit tests
 --
---  Copyright (C) 2007, 2009, 2016 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007, 2009, 2016, 2018 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -23,6 +23,10 @@ package Test_Utils is
 
    procedure Cleanup;
    --  Delete tmp/
+
+   procedure Create_Empty_DB (DB_File_Name : in String);
+   --  If DB_File_Name exists, deletes it. Then spawns sqlite3, creates
+   --  schema.
 
    procedure Create_Test_File (Path : in String);
    --  File contains one line, containing "body: " & Path.

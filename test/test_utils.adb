@@ -2,7 +2,7 @@
 --
 --  see spec
 --
---  Copyright (C) 2007 - 2009, 2015 - 2016 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007 - 2009, 2015 - 2016, 2018 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -21,6 +21,7 @@ pragma License (GPL);
 with AUnit.Assertions;
 with Ada.Directories;
 with Ada.Text_IO;
+with GNAT.OS_Lib;
 package body Test_Utils is
 
    procedure Cleanup
@@ -31,6 +32,25 @@ package body Test_Utils is
       --  already deleted
       null;
    end Cleanup;
+
+   procedure Create_Empty_DB (DB_File_Name : in String)
+   is
+      Success : Boolean;
+      Args : constant GNAT.OS_Lib.Argument_List :=
+        (1 => new String'("-init"),
+         2 => new String'("../source/create_schema.sql"),
+         3 => new String'(DB_File_Name),
+         4 => new String'(".quit"));
+   begin
+      if Ada.Directories.Exists (DB_File_Name) then
+         Ada.Directories.Delete_File (DB_File_Name);
+      end if;
+
+      GNAT.OS_Lib.Spawn ("sqlite3", Args, Success);
+      if not Success then
+         raise Program_Error with "sqlite3 failed to create db";
+      end if;
+   end Create_Empty_DB;
 
    procedure Create_Test_File (Path : in String)
    is
