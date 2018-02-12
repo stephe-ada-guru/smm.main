@@ -2,7 +2,7 @@
 --
 --  see spec
 --
---  Copyright (C) 2008 - 2009, 2011 - 2017 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2009, 2011 - 2018 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -18,30 +18,30 @@
 
 pragma License (GPL);
 
-with Ada.IO_Exceptions;
 with Ada.Calendar;
 with Ada.Directories; use Ada.Directories;
+with Ada.IO_Exceptions;
 with Ada.Text_IO;     use Ada.Text_IO;
-with SAL.Config_Files;
-with SAL.Time_Conversions;
+with SMM.Database;
+with SMM.Song_Lists;
 procedure SMM.Download
-  (Db                : in out SAL.Config_Files.Configuration_Type;
-   Category          : in     String;
-   Destination       : in     String;
-   Song_Count        : in     Ada.Containers.Count_Type;
-   New_Song_Count    : in     Ada.Containers.Count_Type;
-   Over_Select_Ratio : in     Float;
-   Seed              : in     Integer := 0)
+  (DB                : in SMM.Database.Database;
+   Source_Root       : in String;
+   Category          : in String;
+   Destination       : in String;
+   Song_Count        : in Ada.Containers.Count_Type;
+   New_Song_Count    : in Ada.Containers.Count_Type;
+   Over_Select_Ratio : in Float;
+   Download_Time     : in SMM.Database.Time_String := SMM.Database.UTC_Image (Ada.Calendar.Clock);
+   Seed              : in Integer                  := 0)
 is
    use Ada.Containers;
-   use Song_Lists;
+   use SMM.Song_Lists;
+   use SMM.Song_Lists.Song_Lists;
    Songs        : List;
    I            : Cursor;
    Count        : Integer         := 0;
-   Source_Root  : constant String := SAL.Config_Files.Read (Db, Root_Key);
    Category_Dir : constant String := Destination & Category & '/';
-
-   Download_Time : constant SAL.Time_Conversions.Time_Type := SAL.Time_Conversions.To_TAI_Time (Ada.Calendar.Clock);
 
    Playlist_File_Name : constant String := Destination & Category & ".m3u";
    Playlist_File      : File_Type;
@@ -100,7 +100,7 @@ begin
       end;
    end if;
 
-   Least_Recent_Songs (Db, Category, Songs, Song_Count, New_Song_Count, Over_Select_Ratio, Seed => Seed);
+   Least_Recent_Songs (DB, Category, Songs, Song_Count, New_Song_Count, Over_Select_Ratio, Seed => Seed);
 
    Put_Line ("downloading" & Count_Type'Image (Songs.Length) & " songs");
 
@@ -108,21 +108,23 @@ begin
    loop
       exit when I = No_Element;
       declare
-         use type SAL.Time_Conversions.Time_Type;
-         Relative   : constant String := SAL.Config_Files.Read (Db, Element (I), File_Key);
+         use SMM.Database;
+         Cursor : constant SMM.Database.Cursor := SMM.Database.Find_ID (DB, Element (I));
+
+         Relative   : constant String := Cursor.File_Name;
          Source     : constant String := Source_Root & Relative;
          Target     : constant String := Category_Dir & Relative;
          Target_Dir : constant String := Containing_Directory (Target);
 
-         Last_Downloaded : constant SAL.Time_Conversions.Time_Type := Read_Last_Downloaded (Db, Element (I));
-         Prev_Downloaded : constant SAL.Time_Conversions.Time_Type := Read_Prev_Downloaded (Db, Element (I));
+         Last_Downloaded : constant Time_String := Cursor.Last_Downloaded;
+         Prev_Downloaded : constant Time_String := Cursor.Prev_Downloaded;
       begin
          if not Exists (Source) then
             --  Bad file name in db file
             Put_Line (Standard_Error, "File not found: '" & Source & "'");
 
          else
-            Put_Line (To_String (Last_Downloaded) & ", " & To_String (Prev_Downloaded) & " : " & Relative);
+            Put_Line (Last_Downloaded & ", " & Prev_Downloaded & " : " & Relative);
 
             if not Exists (Target_Dir) then
                begin
@@ -148,7 +150,7 @@ begin
 
             Put_Line (Playlist_File, Relative_Name (Destination, Target));
 
-            Write_Last_Downloaded (Db, Element (I), Download_Time);
+            Cursor.Write_Last_Downloaded (DB, Download_Time);
          end if;
 
          Next (I);

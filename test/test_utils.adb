@@ -65,6 +65,43 @@ package body Test_Utils is
       raise Name_Error with "'" & Path & "' cannot be created";
    end Create_Test_File;
 
+   procedure Insert
+     (DB              : in SMM.Database.Database;
+      ID              : in Integer;
+      File_Name       : in String;
+      Last_Downloaded : in Duration;
+      Category        : in String := "vocal")
+   is
+      One_Second_Time_String : constant SMM.Database.Time_String := "1958-01-01 00:00:01";
+   begin
+      DB.Insert
+        (ID              => ID,
+         File_Name       => File_Name,
+         Category        => Category,
+         Artist          => "none",
+         Album           => "none",
+         Title           => "none",
+         Last_Downloaded =>
+           (if Last_Downloaded = 0.0
+            then SMM.Database.Default_Time_String
+            else One_Second_Time_String));
+   end Insert;
+
+   function "&" (Left, Right : in SMM.ID3.Tag) return SMM.ID3.Tag_Lists.List
+   is begin
+      return Result : SMM.ID3.Tag_Lists.List do
+         Result.Append (Left);
+         Result.Append (Right);
+      end return;
+   end "&";
+
+   function "&" (List : in SMM.ID3.Tag_Lists.List; Item : in SMM.ID3.Tag) return SMM.ID3.Tag_Lists.List
+   is begin
+      return Result : SMM.ID3.Tag_Lists.List := List do
+         Result.Append (Item);
+      end return;
+   end "&";
+
    procedure Check_Exists (Path : in String; Expected_Exists : in Boolean)
    is
       use Ada.Directories;

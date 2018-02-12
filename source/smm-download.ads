@@ -2,7 +2,7 @@
 --
 --  See below
 --
---  Copyright (C) 2012, 2015 - 2017 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2012, 2015 - 2018 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -18,20 +18,25 @@
 
 pragma License (GPL);
 
+with Ada.Calendar;
+with SMM.Database;
 procedure SMM.Download
-  (Db                : in out SAL.Config_Files.Configuration_Type;
-   Category          : in     String;
-   Destination       : in     String;
-   Song_Count        : in     Ada.Containers.Count_Type;
-   New_Song_Count    : in     Ada.Containers.Count_Type;
-   Over_Select_Ratio : in     Float;
-   Seed              : in     Integer := 0);
-
+  (DB                : in SMM.Database.Database;
+   Source_Root       : in String;
+   Category          : in String;
+   Destination       : in String;
+   Song_Count        : in Ada.Containers.Count_Type;
+   New_Song_Count    : in Ada.Containers.Count_Type;
+   Over_Select_Ratio : in Float;
+   Download_Time     : in SMM.Database.Time_String := SMM.Database.UTC_Image (Ada.Calendar.Clock);
+   Seed              : in Integer                  := 0);
 --  Download Song_Count least-recently-played files, including about
 --  New_Song_Count / 2 new songs (if any) to Destination directory,
 --  add to playlist.
 --
 --  Also download AlbumArt*.jpg, liner_notes.pdf
+--
+--  Source_Root is a directory name (ends in '/').
 --
 --  Destination is an absolute path to the download directory (ends in
 --  '/'). Playlist is in Destination with name <Category>.m3u; songs

@@ -29,8 +29,6 @@ package body Test_Least_Recent is
 
    DB : SMM.Database.Database;
 
-   One_Second_Time_String : constant SMM.Database.Time_String := "1958-01-01 00:00:01";
-
    procedure Cleanup
    is begin
       Ada.Directories.Delete_Tree ("tmp");
@@ -44,27 +42,9 @@ package body Test_Least_Recent is
    is
       use Ada.Directories;
       use SMM.Database;
+      use Test_Utils;
 
       DB_File_Name : constant String := "tmp/smm.db";
-
-      procedure Insert
-        (ID              : in Integer;
-         File_Name       : in String;
-         Last_Downloaded : in Duration;
-         Category        : in String := "vocal")
-      is begin
-         DB.Insert
-           (ID              => ID,
-            File_Name       => File_Name,
-            Category        => Category,
-            Artist          => "none",
-            Album           => "none",
-            Title           => "none",
-            Last_Downloaded =>
-              (if Last_Downloaded = 0.0
-               then Default_Time_String
-               else One_Second_Time_String));
-      end Insert;
 
    begin
       Cleanup;
@@ -75,18 +55,18 @@ package body Test_Least_Recent is
 
       Open (DB, DB_File_Name);
 
-      Insert (1, "I1.mp3", 1.0, "instrumental");
-      Insert (2, "I2.mp3", 1.0, "instrumental");
-      Insert (3, "I3.mp3", 1.0, "instrumental");
-      Insert (4, "I4.mp3", 0.0, "instrumental");
-      Insert (5, "I5.mp3", 0.0, "instrumental");
-      Insert (6, "I6.mp3", 0.0, "instrumental");
-      Insert (7, "I7.mp3", 0.0, "instrumental");
-      Insert (8, "V2.mp3", 1.0);
-      Insert (9, "V3.mp3", 1.0);
-      Insert (10, "V4.mp3", 0.0);
-      Insert (11, "V5.mp3", 0.0);
-      Insert (12, "V6.mp3", 0.0);
+      Insert (DB, 1, "I1.mp3", 1.0, "instrumental");
+      Insert (DB, 2, "I2.mp3", 1.0, "instrumental");
+      Insert (DB, 3, "I3.mp3", 1.0, "instrumental");
+      Insert (DB, 4, "I4.mp3", 0.0, "instrumental");
+      Insert (DB, 5, "I5.mp3", 0.0, "instrumental");
+      Insert (DB, 6, "I6.mp3", 0.0, "instrumental");
+      Insert (DB, 7, "I7.mp3", 0.0, "instrumental");
+      Insert (DB, 8, "V2.mp3", 1.0);
+      Insert (DB, 9, "V3.mp3", 1.0);
+      Insert (DB, 10, "V4.mp3", 0.0);
+      Insert (DB, 11, "V5.mp3", 0.0);
+      Insert (DB, 12, "V6.mp3", 0.0);
    end Create_Test_Db;
 
    procedure Check
@@ -114,7 +94,7 @@ package body Test_Least_Recent is
       loop
          I := First (Songs);
          exit when I = No_Element;
-         Find_ID (DB, Element (I)).Write_Last_Downloaded (DB, Ada.Calendar.Time_Of (1958, 1, 1, Time));
+         Find_ID (DB, Element (I)).Write_Last_Downloaded (DB, UTC_Image (Ada.Calendar.Time_Of (1958, 1, 1, Time)));
          Songs.Delete_First;
       end loop;
    end Mark_Downloaded;

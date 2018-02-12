@@ -99,17 +99,17 @@ package body SMM.Database is
    end Open;
 
    procedure Insert
-     (DB              : in out Database;
-      ID              : in     Integer;
-      File_Name       : in     String;
-      Category        : in     String;
-      Artist          : in     String;
-      Album           : in     String;
-      Title           : in     String;
-      Last_Downloaded : in     Time_String;
-      Prev_Downloaded : in     Time_String := Default_Time_String;
-      Play_Before     : in     Integer     := Null_ID;
-      Play_After      : in     Integer     := Null_ID)
+     (DB              : in Database;
+      ID              : in Integer;
+      File_Name       : in String;
+      Category        : in String;
+      Artist          : in String;
+      Album           : in String;
+      Title           : in String;
+      Last_Downloaded : in Time_String;
+      Prev_Downloaded : in Time_String := Default_Time_String;
+      Play_Before     : in Integer     := Null_ID;
+      Play_After      : in Integer     := Null_ID)
    is
       use Ada.Strings.Unbounded;
       use GNATCOLL.SQL.Exec;
@@ -292,14 +292,14 @@ package body SMM.Database is
    procedure Write_Last_Downloaded
      (Position : in Cursor;
       DB       : in Database'Class;
-      Time     : in Ada.Calendar.Time)
+      Time     : in Time_String)
    is
       use GNATCOLL.SQL.Exec;
    begin
       Checked_Execute
         (DB,
          Statement => "UPDATE Song SET Last_Downloaded = ?, Prev_Downloaded = ? WHERE ID =?",
-         Params    => (+UTC_Image (Time), +Position.Last_Downloaded, +Position.ID));
+         Params    => (+Time, +Position.Last_Downloaded, +Position.ID));
    end Write_Last_Downloaded;
 
 end SMM.Database;

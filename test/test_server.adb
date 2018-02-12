@@ -348,13 +348,6 @@ package body Test_Server is
       function "+" (Item : in String) return Ada.Strings.Unbounded.Unbounded_String renames
         Ada.Strings.Unbounded.To_Unbounded_String;
 
-      function "&" (List : in SMM.ID3.Tag_Lists.List; Item : in SMM.ID3.Tag) return SMM.ID3.Tag_Lists.List
-      is begin
-         return Result : SMM.ID3.Tag_Lists.List := List do
-            Result.Append (Item);
-         end return;
-      end "&";
-
    begin
       if Dir (Dir'Last - 5 .. Dir'Last) /= "\build" then
          raise SAL.Programmer_Error with "current_directory = " & Current_Directory;
@@ -394,21 +387,18 @@ package body Test_Server is
 
          SMM.ID3.Create
            ("tmp/source/artist_1/album_1/1 - song_1.mp3",
-            Empty_List &
               (SMM.ID3.Artist, +"artist_1") &
               (SMM.ID3.Album, +"album_1") &
               (SMM.ID3.Title, +"1 - song_1"));
 
          SMM.ID3.Create
            ("tmp/source/artist_1/album_1/2 - song_2.mp3",
-            Empty_List &
               (SMM.ID3.Artist, +"artist_1") &
               (SMM.ID3.Album, +"album_1") &
               (SMM.ID3.Title, +"2 - song_2"));
 
          SMM.ID3.Create
            ("tmp/source/artist_1/album_1/03 The Dance #1.mp3",
-            Empty_List &
               (SMM.ID3.Artist, +"artist_1") &
               (SMM.ID3.Album, +"album_1") &
               (SMM.ID3.Title, +"03 The Dance #1"));
@@ -420,21 +410,18 @@ package body Test_Server is
 
          SMM.ID3.Create
            ("tmp/source/artist_2/album_1/1 - song_1.mp3",
-            Empty_List &
               (SMM.ID3.Artist, +"artist_2") &
               (SMM.ID3.Album, +"album_1") &
               (SMM.ID3.Title, +"1 - song_1"));
 
          SMM.ID3.Create
            ("tmp/source/artist_2/album_1/2 - song_2.mp3",
-            Empty_List &
               (SMM.ID3.Artist, +"artist_2") &
               (SMM.ID3.Album, +"album_1") &
               (SMM.ID3.Title, +"2 - song_2"));
 
          SMM.ID3.Create
            ("tmp/source/artist_2/album_1/3 - song_3.mp3",
-            Empty_List &
               (SMM.ID3.Artist, +"artist_2") &
               (SMM.ID3.Album, +"album_1") &
               (SMM.ID3.Title, +"3 - song_3"));

@@ -18,11 +18,12 @@
 
 pragma License (GPL);
 
+with AUnit.Checks.Text_IO;
 with Ada.Directories;
 with Ada.Text_IO;
-with AUnit.Checks.Text_IO;
-with SAL.Config_Files;
+with SMM.Database;
 with SMM.Download;
+with SMM.ID3;
 with Test_Utils; use Test_Utils;
 package body Test_Download is
 
@@ -31,17 +32,17 @@ package body Test_Download is
       use Ada.Directories;
       use Ada.Text_IO;
       use AUnit.Checks.Text_IO;
+      use SMM.ID3;
 
       pragma Unreferenced (T);
 
       Start_Dir : constant String := Current_Directory;
 
-      Db_File_Name : constant String := "tmp/smm.db";
+      DB_File_Name : constant String := "tmp/smm.db";
 
-      Db_File  : File_Type;
       Playlist : File_Type;
 
-      Db : SAL.Config_Files.Configuration_Type;
+      DB : SMM.Database.Database;
    begin
       --  Create the test environment; a db with some new, some
       --  already played songs; an existing playlist and corresponding
@@ -51,7 +52,9 @@ package body Test_Download is
 
       Create_Directory ("tmp");
 
-      Create (Db_File, Out_File, Db_File_Name);
+      Create_Empty_DB (DB_File_Name);
+
+      DB.Open (DB_File_Name);
 
       --  We will download 'vocal'; put one instrumental in db with
       --  oldest time, to show it is excluded.
@@ -66,83 +69,63 @@ package body Test_Download is
       --  than songs currently in target dir.
       --
       --  Category defaults to vocal
-      Put_Line (Db_File, "Root = " & SMM.As_Directory (Current_Directory & "/tmp/source"));
-      Put_Line (Db_File, "Songs. 1.File = artist_1/excluded_1.mp3");
-      Put_Line (Db_File, "Songs. 1.Last_Downloaded = 1.0");
-      Put_Line (Db_File, "Songs. 1.Category = instrumental");
-      Put_Line (Db_File, "Songs. 2.File = artist_1/played_1.mp3");
-      Put_Line (Db_File, "Songs. 2.Last_Downloaded = 2.0");
-      Put_Line (Db_File, "Songs. 3.File = artist_1/played_2.mp3");
-      Put_Line (Db_File, "Songs. 3.Last_Downloaded = 2.0");
-      Put_Line (Db_File, "Songs. 4.File = artist_1/new_1.mp3");
-      Put_Line (Db_File, "Songs. 4.Last_Downloaded = 0.0"); -- new
-      Put_Line (Db_File, "Songs. 5.File = artist_1/new_2.mp3");
-      Put_Line (Db_File, "Songs. 5.Last_Downloaded = 0.0"); -- new
-      Put_Line (Db_File, "Songs. 6.File = artist_1/in_target_1.mp3");
-      Put_Line (Db_File, "Songs. 6.Last_Downloaded = 3.0");
-      Put_Line (Db_File, "Songs. 7.File = artist_1/in_target_2.mp3");
-      Put_Line (Db_File, "Songs. 7.Last_Downloaded = 3.0");
-      Put_Line (Db_File, "Songs. 8.File = artist_2/in_target_3.mp3");
-      Put_Line (Db_File, "Songs. 8.Last_Downloaded = 3.0");
-      Put_Line (Db_File, "Songs. 9.File = artist_2/new_3.mp3");
-      Put_Line (Db_File, "Songs. 9.Last_Downloaded = 0.0"); -- new
-      Put_Line (Db_File, "Songs. 10.File = artist_2/new_4.mp3");
-      Put_Line (Db_File, "Songs. 10.Last_Downloaded = 0.0"); -- new
-      Put_Line (Db_File, "Songs. 11.File = artist_2/played_3.mp3");
-      Put_Line (Db_File, "Songs. 11.Last_Downloaded = 2.0");
-      Put_Line (Db_File, "Songs. 12.File = artist_2/played_4.mp3");
-      Put_Line (Db_File, "Songs. 12.Last_Downloaded = 2.0");
-      Put_Line (Db_File, "Songs. 13.File = artist_2/played_5.mp3");
-      Put_Line (Db_File, "Songs. 13.Last_Downloaded = 2.5");
-      Put_Line (Db_File, "Songs. 14.File = artist_2/played_6.mp3");
-      Put_Line (Db_File, "Songs. 14.Last_Downloaded = 2.5");
-      Put_Line (Db_File, "Songs. 15.File = artist_2/played_7.mp3");
-      Put_Line (Db_File, "Songs. 15.Last_Downloaded = 2.5");
-      Put_Line (Db_File, "Songs. 16.File = artist_2/played_8.mp3");
-      Put_Line (Db_File, "Songs. 16.Last_Downloaded = 2.5");
-      Put_Line (Db_File, "Songs. 17.File = artist_3/new_5.mp3");
-      Put_Line (Db_File, "Songs. 17.Last_Downloaded = 0.0"); -- new
-      Put_Line (Db_File, "Songs. 18.File = artist_3/new_6.mp3");
-      Put_Line (Db_File, "Songs. 18.Last_Downloaded = 0.0"); -- new
-      Close (Db_File);
 
+      Insert (DB, 1, "artist_1/excluded_1.mp3", 1.0, "instrumental");
+      Insert (DB, 2, "artist_1/played_1.mp3", 2.0);
+      Insert (DB, 3, "artist_1/played_2.mp3", 2.0);
+      Insert (DB, 4, "artist_1/new_1.mp3", 0.0);
+      Insert (DB, 5, "artist_1/new_2.mp3", 0.0);
+      Insert (DB, 6, "artist_1/in_target_1.mp3", 3.0);
+      Insert (DB, 7, "artist_1/in_target_2.mp3", 3.0);
+      Insert (DB, 8, "artist_2/in_target_3.mp3", 3.0);
+      Insert (DB, 9, "artist_2/new_3.mp3", 0.0);
+      Insert (DB, 10, "artist_2/new_4.mp3", 0.0);
+      Insert (DB, 11, "artist_2/played_3.mp3", 2.0);
+      Insert (DB, 12, "artist_2/played_4.mp3", 2.0);
+      Insert (DB, 13, "artist_2/played_5.mp3", 2.5);
+      Insert (DB, 14, "artist_2/played_6.mp3", 2.5);
+      Insert (DB, 15, "artist_2/played_7.mp3", 2.5);
+      Insert (DB, 16, "artist_2/played_8.mp3", 2.5);
+      Insert (DB, 17, "artist_3/new_5.mp3", 0.0);
+      Insert (DB, 18, "artist_3/new_6.mp3", 0.0);
 
       Create_Directory ("tmp/source");
       Create_Directory ("tmp/source/artist_1");
       Create_Test_File ("tmp/source/artist_1/AlbumArt_artist_1.jpg");
-      Create_Test_File ("tmp/source/artist_1/excluded_1.mp3");
-      Create_Test_File ("tmp/source/artist_1/played_1.mp3");
-      Create_Test_File ("tmp/source/artist_1/played_2.mp3");
-      Create_Test_File ("tmp/source/artist_1/new_1.mp3");
-      Create_Test_File ("tmp/source/artist_1/new_2.mp3");
-      Create_Test_File ("tmp/source/artist_1/in_target_1.mp3");
-      Create_Test_File ("tmp/source/artist_1/in_target_2.mp3");
+
+      Create ("tmp/source/artist_1/excluded_1.mp3", (Artist, +"artist_1") & (Album, +"") & (Title, +"excluded_1"));
+      Create ("tmp/source/artist_1/played_1.mp3", (Artist, +"artist_1") & (Album, +"") & (Title, +"played_1"));
+      Create ("tmp/source/artist_1/played_2.mp3", (Artist, +"artist_1") & (Album, +"") & (Title, +"played_2"));
+      Create ("tmp/source/artist_1/new_1.mp3", (Artist, +"artist_1") & (Album, +"") & (Title, +"new_1"));
+      Create ("tmp/source/artist_1/new_2.mp3", (Artist, +"artist_1") & (Album, +"") & (Title, +"new_2"));
+      Create ("tmp/source/artist_1/in_target_1.mp3", (Artist, +"artist_1") & (Album, +"") & (Title, +"in_target_1"));
+      Create ("tmp/source/artist_1/in_target_2.mp3", (Artist, +"artist_1") & (Album, +"") & (Title, +"in_target_2"));
       Create_Directory ("tmp/source/artist_2");
       Create_Test_File ("tmp/source/artist_2/AlbumArt_artist_2.jpg");
-      Create_Test_File ("tmp/source/artist_2/in_target_3.mp3");
-      Create_Test_File ("tmp/source/artist_2/new_3.mp3");
-      Create_Test_File ("tmp/source/artist_2/new_4.mp3");
-      Create_Test_File ("tmp/source/artist_2/played_3.mp3");
-      Create_Test_File ("tmp/source/artist_2/played_4.mp3");
-      Create_Test_File ("tmp/source/artist_2/played_5.mp3");
-      Create_Test_File ("tmp/source/artist_2/played_6.mp3");
-      Create_Test_File ("tmp/source/artist_2/played_7.mp3");
-      Create_Test_File ("tmp/source/artist_2/played_8.mp3");
+      Create ("tmp/source/artist_2/in_target_3.mp3", (Artist, +"artist_2") & (Album, +"") & (Title, +"in_target_3"));
+      Create ("tmp/source/artist_2/new_3.mp3", (Artist, +"artist_2") & (Album, +"") & (Title, +"new_3"));
+      Create ("tmp/source/artist_2/new_4.mp3", (Artist, +"artist_2") & (Album, +"") & (Title, +"new_4"));
+      Create ("tmp/source/artist_2/played_3.mp3", (Artist, +"artist_2") & (Album, +"") & (Title, +"played_3"));
+      Create ("tmp/source/artist_2/played_4.mp3", (Artist, +"artist_2") & (Album, +"") & (Title, +"played_4"));
+      Create ("tmp/source/artist_2/played_5.mp3", (Artist, +"artist_2") & (Album, +"") & (Title, +"played_5"));
+      Create ("tmp/source/artist_2/played_6.mp3", (Artist, +"artist_2") & (Album, +"") & (Title, +"played_6"));
+      Create ("tmp/source/artist_2/played_7.mp3", (Artist, +"artist_2") & (Album, +"") & (Title, +"played_7"));
+      Create ("tmp/source/artist_2/played_8.mp3", (Artist, +"artist_2") & (Album, +"") & (Title, +"played_8"));
 
       --  Album art is downloaded when a new target directory is created.
       Create_Directory ("tmp/source/artist_3");
       Create_Test_File ("tmp/source/artist_3/AlbumArt_artist_3.jpg");
       Create_Test_File ("tmp/source/artist_3/liner_notes_artist_3.jpg");
-      Create_Test_File ("tmp/source/artist_3/new_5.mp3");
-      Create_Test_File ("tmp/source/artist_3/new_6.mp3");
+      Create ("tmp/source/artist_3/new_5.mp3", (Artist, +"artist_3") & (Album, +"") & (Title, +"new_5"));
+      Create ("tmp/source/artist_3/new_6.mp3", (Artist, +"artist_3") & (Album, +"") & (Title, +"new_6"));
 
       Create_Directory ("tmp/target");
       Create_Directory ("tmp/target/vocal");
       Create_Directory ("tmp/target/vocal/artist_1");
-      Create_Test_File ("tmp/target/vocal/artist_1/in_target_1.mp3");
-      Create_Test_File ("tmp/target/vocal/artist_1/in_target_2.mp3");
+      Create ("tmp/target/vocal/artist_1/in_target_1.mp3", (Artist, +"vocal") & (Album, +"") & (Title, +"artist_1"));
+      Create ("tmp/target/vocal/artist_1/in_target_2.mp3", (Artist, +"vocal") & (Album, +"") & (Title, +"artist_1"));
       Create_Directory ("tmp/target/vocal/artist_2");
-      Create_Test_File ("tmp/target/vocal/artist_2/in_target_3.mp3");
+      Create ("tmp/target/vocal/artist_2/in_target_3.mp3", (Artist, +"vocal") & (Album, +"") & (Title, +"artist_2"));
 
       Create (Playlist, Out_File, "tmp/target/vocal.m3u");
       Put_Line (Playlist, "vocal/artist_1/in_target_1.mp3");
@@ -150,25 +133,20 @@ package body Test_Download is
       Put_Line (Playlist, "vocal/artist_2/in_target_3.mp3");
       Close (Playlist);
 
-      SAL.Config_Files.Open
-        (Db,
-         Db_File_Name,
-         Duplicate_Key         => SAL.Config_Files.Raise_Exception,
-         Read_Only             => False,
-         Case_Insensitive_Keys => True);
-
       SMM.Download
-        (Db,
+        (DB,
+         Source_Root       => "tmp/source/",
          Category          => "vocal",
          Destination       => SMM.As_Directory (Current_Directory & "/tmp/target"),
          Song_Count        => 6,
          New_Song_Count    => 8,
          Over_Select_Ratio => 2.0,
+         Download_Time     => "1960-01-01 00:00:00",
          Seed              => 1);
 
       Set_Directory (Start_Dir);
 
-      SAL.Config_Files.Close (Db);
+      DB.Finalize;
 
       Open (Playlist, In_File, "tmp/target/vocal.m3u");
       --  Previous songs
@@ -177,13 +155,13 @@ package body Test_Download is
       Check (Playlist, "vocal/artist_2/in_target_3.mp3");
       --  New songs and less recent songs in random order - choice and order can
       --  change with compiler version. This is correct for GNAT GPL
-      --  2014. Possible songs here are all except 6, 7, 8
+      --  2017. Possible songs here are all except 6, 7, 8
       Check (Playlist, "vocal/artist_2/played_4.mp3");
       Check (Playlist, "vocal/artist_2/played_8.mp3");
       Check (Playlist, "vocal/artist_1/new_2.mp3");
       Check (Playlist, "vocal/artist_2/played_7.mp3");
       Check (Playlist, "vocal/artist_1/new_1.mp3");
-      Check (Playlist, "vocal/artist_3/new_5.mp3");
+      Check (Playlist, "vocal/artist_3/new_6.mp3");
 
       Check_End (Playlist);
       Close (Playlist);
@@ -202,7 +180,7 @@ package body Test_Download is
 
       Check_File_Count ("tmp/target/vocal/artist_3/", 2);
       Check_File_Exists ("tmp/target/vocal/artist_3/AlbumArt_artist_3.jpg");
-      Check_File_Exists ("tmp/target/vocal/artist_3/new_5.mp3");
+      Check_File_Exists ("tmp/target/vocal/artist_3/new_6.mp3");
    end Nominal;
 
    ----------

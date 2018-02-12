@@ -91,7 +91,7 @@ package body SMM.Server is
          Seed              => Seed);
 
       for I of Songs loop
-         Response := Response & Normalize (File_Name (I)) & ASCII.CR & ASCII.LF;
+         Response := Response & Normalize (DB.Find_ID (I).File_Name) & ASCII.CR & ASCII.LF;
       end loop;
 
       return AWS.Response.Build ("text/plain", Response);
@@ -169,7 +169,7 @@ package body SMM.Server is
 
       if Exists (Filename) then
          if Ext = "mp3" then
-            Open (DB, -DB_Filename);
+            DB.Open (-DB_Filename);
 
             --  Find does not want leading / on filename
             I := Find_File_Name (DB, Filename (Length (Source_Root) + 2 .. Filename'Last));
@@ -180,7 +180,7 @@ package body SMM.Server is
                   Message_Body => "file not found");
             end if;
 
-            I.Write_Last_Downloaded (DB, Ada.Calendar.Clock);
+            I.Write_Last_Downloaded (DB, SMM.Database.UTC_Image (Ada.Calendar.Clock));
 
             Prev_Downloaded := I.Prev_Downloaded;
 

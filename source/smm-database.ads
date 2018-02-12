@@ -47,17 +47,17 @@ package SMM.Database is
    procedure Open (DB : in out Database; File_Name : in String);
 
    procedure Insert
-     (DB              : in out Database;
-      ID              : in     Integer;
-      File_Name       : in     String;
-      Category        : in     String;
-      Artist          : in     String;
-      Album           : in     String;
-      Title           : in     String;
-      Last_Downloaded : in     Time_String;
-      Prev_Downloaded : in     Time_String := Default_Time_String;
-      Play_Before     : in     Integer     := Null_ID;
-      Play_After      : in     Integer     := Null_ID);
+     (DB              : in Database;
+      ID              : in Integer;
+      File_Name       : in String;
+      Category        : in String;
+      Artist          : in String;
+      Album           : in String;
+      Title           : in String;
+      Last_Downloaded : in Time_String;
+      Prev_Downloaded : in Time_String := Default_Time_String;
+      Play_Before     : in Integer     := Null_ID;
+      Play_After      : in Integer     := Null_ID);
 
    function UTC_Image (Item : in Ada.Calendar.Time) return Time_String;
 
@@ -103,7 +103,7 @@ package SMM.Database is
    procedure Write_Last_Downloaded
      (Position : in Cursor;
       DB       : in Database'Class;
-      Time     : in Ada.Calendar.Time);
+      Time     : in Time_String);
 
 private
 

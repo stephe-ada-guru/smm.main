@@ -18,8 +18,14 @@
 
 pragma License (GPL);
 
+with Ada.Strings.Unbounded;
+with SMM.Database;
+with SMM.ID3;
 package Test_Utils is
    pragma Elaborate_Body; -- Ada.Text_IO
+
+   function "+" (Item : in String) return Ada.Strings.Unbounded.Unbounded_String renames
+     Ada.Strings.Unbounded.To_Unbounded_String;
 
    procedure Cleanup;
    --  Delete tmp/
@@ -31,6 +37,18 @@ package Test_Utils is
    procedure Create_Test_File (Path : in String);
    --  File contains one line, containing "body: " & Path.
    --  Path is relative to current process directory.
+
+   procedure Insert
+     (DB              : in SMM.Database.Database;
+      ID              : in Integer;
+      File_Name       : in String;
+      Last_Downloaded : in Duration;
+      Category        : in String := "vocal");
+   --  Insert a database element; other fields are null or "none".
+
+   function "&" (Left, Right : in SMM.ID3.Tag) return SMM.ID3.Tag_Lists.List;
+   function "&" (List : in SMM.ID3.Tag_Lists.List; Item : in SMM.ID3.Tag) return SMM.ID3.Tag_Lists.List;
+   --  For SMM.ID3.Create
 
    procedure Check_Exists (Path : in String; Expected_Exists : in Boolean);
    --  Assertion.
