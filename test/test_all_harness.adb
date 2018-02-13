@@ -18,18 +18,19 @@
 
 pragma License (GPL);
 
-with Ada.Exceptions;
-with Ada.Text_IO;
 with AUnit.Options;
 with AUnit.Reporter.Text;
 with AUnit.Test_Results;
 with AUnit.Test_Suites; use AUnit.Test_Suites;
+with Ada.Exceptions;
+with Ada.Text_IO;
 with GNAT.Traceback.Symbolic;
 with SMM.ID3.Test;
 with Test_Copy;
 with Test_Download;
 with Test_First_Pass_No_Last;
 with Test_First_Pass_With_Last;
+with Test_Import;
 with Test_Least_Recent;
 with Test_Play_Before;
 with Test_Server;
@@ -46,6 +47,7 @@ begin
    Add_Test (Suite, new Test_Download.Test_Case (Verbosity => 0));
    Add_Test (Suite, new Test_First_Pass_No_Last.Test_Case (Verbosity => 0, Debug => 0));
    Add_Test (Suite, new Test_First_Pass_With_Last.Test_Case (Verbosity => 0, Debug => False));
+   Add_Test (Suite, new Test_Import.Test_Case;
    Add_Test (Suite, new Test_Least_Recent.Test_Case);
    Add_Test (Suite, new Test_Play_Before.Test_Case);
    Add_Test (Suite, new Test_Server.Test_Case (Server_Ip => new String'("192.168.1.83"), Debug => 0));

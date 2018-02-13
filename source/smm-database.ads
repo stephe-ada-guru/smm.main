@@ -54,7 +54,7 @@ package SMM.Database is
       Artist          : in String;
       Album           : in String;
       Title           : in String;
-      Last_Downloaded : in Time_String;
+      Last_Downloaded : in Time_String := Default_Time_String;
       Prev_Downloaded : in Time_String := Default_Time_String;
       Play_Before     : in Integer     := Null_ID;
       Play_After      : in Integer     := Null_ID);
@@ -82,6 +82,10 @@ package SMM.Database is
    function Has_Element (Position : in Cursor) return Boolean;
 
    function First (DB : in Database'Class) return Cursor;
+   --  Increasing ID order.
+
+   function Last (DB : in Database'Class) return Cursor;
+   --  Decreasing ID order.
 
    function Find_File_Name (DB : in Database'Class; File_Name : in String) return Cursor;
    function Find_ID (DB : in Database'Class; ID : in Integer) return Cursor;
@@ -95,6 +99,7 @@ package SMM.Database is
    function Category (Position : in Cursor) return String;
    function Last_Downloaded (Position : in Cursor) return Time_String;
    function Prev_Downloaded (Position : in Cursor) return Time_String;
+   function Play_After (Position : in Cursor) return Integer;
    function Play_Before (Position : in Cursor) return Integer;
 
    function Play_After_Is_Present (Position : in Cursor) return Boolean;

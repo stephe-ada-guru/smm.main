@@ -2,7 +2,7 @@
 --
 --  main procedure for SMM application
 --
---  Copyright (C) 2008 - 2013, 2015 - 2017 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2013, 2015 - 2018 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -21,17 +21,17 @@ pragma License (GPL);
 with Ada.Command_Line; use Ada.Command_Line;
 with Ada.Directories;
 with Ada.Exceptions.Traceback;
+with Ada.IO_Exceptions;
 with Ada.Text_IO; use Ada.Text_IO;
 with GNAT.Traceback.Symbolic;
 with SAL.Command_Line_IO;
-with SAL.Config_Files;
 with SMM.Check;
 with SMM.Copy;
+with SMM.Database;
 with SMM.Download;
 with SMM.First_Pass;
 with SMM.History;
 with SMM.Import;
-with SMM.Playlist;
 procedure SMM.Driver
 is
    procedure Put_Usage
@@ -75,9 +75,10 @@ is
       Put_Line ("    list all new songs.");
    end Put_Usage;
 
-   Db_File_Name : access String;
-   Db           : SAL.Config_Files.Configuration_Type;
-   Next_Arg     : Integer := 1;
+   Source_Root  : constant String := Ada.Directories.Current_Directory;
+   DB_File_Name : access String;
+   DB           : SMM.Database.Database;
+   Next_Arg     : Integer         := 1;
 
    Max_Song_Count     : Ada.Containers.Count_Type;
    Min_Download_Count : Ada.Containers.Count_Type;
@@ -85,7 +86,7 @@ is
 
    Home : constant String := Find_Home;
 
-   type Command_Type is (Download_Playlist, Playlist, Copy_Playlist, Import, Check, History);
+   type Command_Type is (Download_Playlist, Copy_Playlist, Import, Check, History);
 
    procedure Get_Command is new SAL.Command_Line_IO.Gen_Get_Discrete_Proc (Command_Type, "command", Next_Arg);
 
@@ -97,10 +98,10 @@ begin
    if Argument (Next_Arg)'Length > 5 and then
      Argument (Next_Arg)(1 .. 5) = "--db="
    then
-      Db_File_Name := new String'(Argument (Next_Arg)(6 .. Argument (Next_Arg)'Last));
-      Next_Arg := Next_Arg + 1;
+      DB_File_Name := new String'(Argument (Next_Arg)(6 .. Argument (Next_Arg)'Last));
+      Next_Arg     := Next_Arg + 1;
    else
-      Db_File_Name := new String'(Home & "/smm.db");
+      DB_File_Name := new String'(Home & "/smm.db");
    end if;
 
    if Argument (Next_Arg)'Length > 12 and then
@@ -150,12 +151,7 @@ begin
       Debug := False;
    end if;
 
-   SAL.Config_Files.Open
-     (Db,
-      Db_File_Name.all,
-      Duplicate_Key         => SAL.Config_Files.Raise_Exception,
-      Read_Only             => False,
-      Case_Insensitive_Keys => True);
+   DB.Open (DB_File_Name.all);
 
    begin
       Get_Command (Command);
@@ -178,39 +174,10 @@ begin
          if Max_Song_Count - Song_Count >= Min_Download_Count then
             Verbosity := Verbosity - 1;
             SMM.Download
-              (Db, Category, Playlist_Dir, Max_Song_Count - Song_Count, New_Song_Count, Over_Select_Ratio => 2.0);
+              (DB, Source_Root, Category, Playlist_Dir, Max_Song_Count - Song_Count, New_Song_Count,
+               Over_Select_Ratio => 2.0);
             Verbosity := Verbosity + 1;
          end if;
-      end;
-
-   when Playlist =>
-      declare
-         Replace   : Boolean         := False;
-         Category  : constant String := Argument (Next_Arg);
-         File_Name : access String;
-      begin
-         Next_Arg := Next_Arg + 1;
-         if Next_Arg <= Argument_Count then
-            if Argument (Next_Arg) = "--replace" then
-               Replace := True;
-            else
-               File_Name := new String'(Ada.Directories.Full_Name (Argument (Next_Arg)));
-               Next_Arg := Next_Arg + 1;
-               if Next_Arg <= Argument_Count and then
-                 Argument (Next_Arg) = "--replace"
-               then
-                  Replace := True;
-               end if;
-            end if;
-         end if;
-
-         if File_Name = null then
-            --  Use Full_Name so directory separators match Containing_Directory
-            File_Name := new String'
-              (As_Directory (SAL.Config_Files.Read (Db, Playlist_Key)) & Category & ".m3u");
-         end if;
-
-         SMM.Playlist (Db, Category, File_Name.all, Replace, Max_Song_Count, New_Song_Count);
       end;
 
    when Copy_Playlist =>
@@ -223,29 +190,25 @@ begin
 
    when Import =>
       declare
-         Category : constant String := Argument (Next_Arg);
-         Root     : constant String := Argument (Next_Arg + 1);
+         Category    : constant String := Argument (Next_Arg);
+         Import_Root : constant String := As_Directory (Argument (Next_Arg + 1));
       begin
          Verbosity := Integer'Max (Verbosity, 1);
-         if Root (Root'Last) /= '/' then
-            SMM.Import (Db, Category, Root & '/');
-         else
-            SMM.Import (Db, Category, Root);
-         end if;
+         SMM.Import (DB, Source_Root, Category, Import_Root);
       end;
 
    when Check =>
-      SMM.Check (Db);
+      SMM.Check (DB, Source_Root);
 
    when History =>
-      SMM.History (Db);
+      SMM.History (DB);
    end case;
 
-   SAL.Config_Files.Close (Db);
-
 exception
+when E : Ada.IO_Exceptions.Name_Error =>
+   Ada.Text_IO.Put_Line (Ada.Exceptions.Exception_Message (E));
+
 when E : others =>
-   SAL.Config_Files.Close (Db);
    Put_Line
      ("exception: " & Ada.Exceptions.Exception_Name (E) & ": " &
         Ada.Exceptions.Exception_Message (E));

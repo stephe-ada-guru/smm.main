@@ -2,7 +2,7 @@
 --
 --  Import new files into SMM db.
 --
---  Copyright (C) 2008 - 2010, 2012, 2014 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2010, 2012, 2014, 2018 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -18,87 +18,40 @@
 
 pragma License (GPL);
 
-with Ada.Containers.Indefinite_Doubly_Linked_Lists;
 with Ada.Directories;
 with Ada.Text_IO;
-with Interfaces;
-with SAL.Config_Files;
+with SMM.Database;
+with SMM.ID3;
 procedure SMM.Import
-  (Db       : in out SAL.Config_Files.Configuration_Type;
-   Category : in String;
-   Dir      : in     String)
+  (DB          : in SMM.Database.Database;
+   Source_Root : in String;
+   Category    : in String;
+   Dir         : in String)
 is
-   Index : Interfaces.Unsigned_32;
-
-   Song_Files : String_Maps.Map;
-   Pos        : String_Maps.Cursor;
-   Inserted   : Boolean;
-
-   package String_Lists is new Ada.Containers.Indefinite_Doubly_Linked_Lists
-     (Element_Type => String,
-      "=" => "=");
-
-   function Build_Extensions return String_Lists.List
-   is
-      use String_Lists;
-      Result : List;
-   begin
-      Result.Append ("mp3");
-      Result.Append ("flac");
-      return Result;
-   end Build_Extensions;
-
-   Extensions : constant String_Lists.List := Build_Extensions;
+   Index : Integer;
 
    procedure Get_Initial_Index
    is
-      use SAL.Config_Files;
-      use type Interfaces.Unsigned_32;
-      I : Iterator_Type;
+      use SMM.Database;
+      I : constant Cursor := Last (DB);
    begin
-      begin
-         I := First (Db, Songs_Key);
-      exception
-      when SAL.Config_File_Error =>
-         --  empty db
+      if I.Has_Element then
+         Index := I.ID + 1;
+      else
+         --  Empty db
          Index := 1;
-         return;
-      end;
-
-      loop
-         exit when Is_Null (I);
-         Index := Interfaces.Unsigned_32'Value (Current (I));
-         Next (I);
-      end loop;
-      Index := Index + 1;
+      end if;
    end Get_Initial_Index;
-
-   procedure Fill_Song_Files
-   is
-      use SAL.Config_Files;
-      I : Iterator_Type := First (Db, Songs_Key);
-   begin
-      loop
-         exit when Is_Null (I);
-         String_Maps.Insert (Song_Files, Normalize (Read (Db, I, File_Key)), I, Pos, Inserted);
-         Next (I);
-      end loop;
-
-   end Fill_Song_Files;
 
    procedure Import_Dir (Root : in String; Dir : in String)
    is
       use Ada.Directories;
-      use SAL.Config_Files;
-      use SAL.Time_Conversions;
+      use SMM.Database;
 
       procedure Process_Dir_Entry (Dir_Entry : in Directory_Entry_Type)
       is
-         use type Interfaces.Unsigned_32;
-         use type String_Lists.Cursor;
-
-         Name        : constant String := Relative_Name (Root, Normalize (Full_Name (Dir_Entry)));
-         Index_Image : constant String := Interfaces.Unsigned_32'Image (Index);
+         Abs_Name : constant String := Full_Name (Dir_Entry);
+         Name     : constant String := Relative_Name (Root, Normalize (Abs_Name));
       begin
          case Kind (Dir_Entry) is
          when Directory =>
@@ -111,27 +64,38 @@ is
             Import_Dir (Root, Name);
 
          when Ordinary_File =>
-            if Extensions.Find (Extension (Name)) /= String_Lists.No_Element then
-               String_Maps.Insert (Song_Files, Name, Null_Iterator, Pos, Inserted);
-               if not Inserted then
-                  if Verbosity > 1 then
-                     Ada.Text_IO.Put_Line ("duplicate: " & Name);
-                  end if;
-               else
+
+            declare
+               File : SMM.ID3.File;
+               Ext : constant String := Extension (Name);
+            begin
+               if Ext = "mp3" then
                   if Verbosity > 0 then
                      Ada.Text_IO.Put_Line ("adding file " & Name);
                   end if;
-                  Write_String (Db, Songs_Key & "." & Index_Image & "." & File_Key, Name);
-                  Write_String (Db, Songs_Key & "." & Index_Image & "." & Category_Key, Category);
-                  Write_Last_Downloaded (Db, Songs_Key & "." & Index_Image, 0.0);
+
+                  File.Open (Abs_Name);
+
+                  DB.Insert
+                    (ID        => Index,
+                     File_Name => Name,
+                     Category  => Category,
+                     Artist    => SMM.ID3.Read (File, SMM.ID3.Artist),
+                     Album     => SMM.ID3.Read (File, SMM.ID3.Album),
+                     Title     => SMM.ID3.Read (File, SMM.ID3.Title));
+
                   Index := Index + 1;
+               else
+                  --  not a recognized music file extension; ignore
+                  null;
                end if;
-            end if;
+            end;
 
          when Special_File =>
             raise SAL.Programmer_Error with "found special file";
          end case;
       end Process_Dir_Entry;
+
    begin
       if Verbosity > 1 then
          Ada.Text_IO.Put_Line ("reading directory " & Root & Dir);
@@ -154,12 +118,5 @@ is
 begin
    Get_Initial_Index;
 
-   Fill_Song_Files;
-
-   if not SAL.Config_Files.Is_Present (Db, Root_Key) then
-      SAL.Config_Files.Write_String (Db, Root_Key, Dir);
-   end if;
-
-   Ada.Directories.Set_Directory (SAL.Config_Files.Read (Db, Root_Key));
-   Import_Dir (SAL.Config_Files.Read (Db, Root_Key), Dir);
+   Import_Dir (Source_Root, Dir);
 end SMM.Import;

@@ -12,17 +12,18 @@ include ../../org.stephe_leake.makerules/texinfo_rules.make
 smm.exe : force
 	gprbuild -p -Psmm.gpr smm-driver
 
-test_all_harness.out : test_all_harness.exe smm-server_driver.exe
+test_all_harness.out : test_all_harness.exe smm-server_driver.exe smm.exe
 
 create_test_db :
 	mkdir -p tmp/source
 	echo "Root = " $(CURDIR) "/tmp/source" > tmp/smm.db
 
-smm_sqlite.db : ../source/create_schema.sql
+smm%.db : ../source/create_schema.sql
 	sqlite3 -init $< $@ ".quit"
 
 sqlite-clean :
-	rm -f smm_sqlite.db
+	rm -f smm*.db
+	rm -f tmp/smm*.db
 
 clean :: sqlite-clean
 	rm -fr tmp

@@ -24,12 +24,13 @@ convert to sqlite3 database
     good support for lists of search results, search indices
     use gnatcoll; see ../org.stephe_leake.books.windows
 
-    smm-driver.exe
-        test import
+    smm.exe
         test check
         test history
 
     t_all
+
+move config file stuff from smm.ads to config_to_sqlite
 
 implement search
 

@@ -51,9 +51,8 @@ package SMM is
    Play_After_Key      : constant String := "Play_After";
    Play_Before_Key     : constant String := "Play_Before";
 
-   Songs_Key       : constant String := "Songs";
-   Root_Key        : constant String := "Root";
-   Playlist_Key    : constant String := "Playlists";
+   Songs_Key : constant String := "Songs";
+   Root_Key  : constant String := "Root";
 
    function Find
      (Db       : in SAL.Config_Files.Configuration_Type;

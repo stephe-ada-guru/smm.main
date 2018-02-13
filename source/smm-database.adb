@@ -21,6 +21,7 @@ pragma License (GPL);
 with Ada.Calendar.Formatting;
 with Ada.Directories;
 with Ada.Exceptions;
+with Ada.IO_Exceptions;
 with Ada.Text_IO;
 with GNATCOLL.SQL.Sqlite;
 package body SMM.Database is
@@ -88,13 +89,13 @@ package body SMM.Database is
       use GNATCOLL.SQL.Exec;
    begin
       if not Ada.Directories.Exists (File_Name) then
-         raise SAL.Config_File_Error with File_Name & " does not exist";
+         raise Ada.IO_Exceptions.Name_Error with File_Name & " does not exist";
       end if;
 
       DB.Connection := GNATCOLL.SQL.Exec.Build_Connection (GNATCOLL.SQL.Sqlite.Setup (File_Name));
 
       if not DB.Connection.Success then
-         raise SAL.Config_File_Error with File_Name & DB.Connection.Error;
+         raise Ada.IO_Exceptions.Use_Error with File_Name & DB.Connection.Error;
       end if;
    end Open;
 
@@ -106,7 +107,7 @@ package body SMM.Database is
       Artist          : in String;
       Album           : in String;
       Title           : in String;
-      Last_Downloaded : in Time_String;
+      Last_Downloaded : in Time_String := Default_Time_String;
       Prev_Downloaded : in Time_String := Default_Time_String;
       Play_Before     : in Integer     := Null_ID;
       Play_After      : in Integer     := Null_ID)
@@ -183,10 +184,17 @@ package body SMM.Database is
 
    function First (DB : in Database'Class) return Cursor
    is
-      Statement : constant String := "SELECT " & All_Fields & " FROM Song ORDER BY ID";
+      Statement : constant String := "SELECT " & All_Fields & " FROM Song ORDER BY ID ASC";
    begin
       return Checked_Fetch (DB, Statement);
    end First;
+
+   function Last (DB : in Database'Class) return Cursor
+   is
+      Statement : constant String := "SELECT " & All_Fields & " FROM Song ORDER BY ID DESC";
+   begin
+      return Checked_Fetch (DB, Statement);
+   end Last;
 
    function Find_File_Name (DB : in Database'Class; File_Name : in String) return Cursor
    is
@@ -270,6 +278,14 @@ package body SMM.Database is
          then Default_Time_String
          else Position.Cursor.Value (Prev_Downloaded_Field));
    end Prev_Downloaded;
+
+   function Play_After (Position : in Cursor) return Integer
+   is begin
+      return
+        (if Position.Cursor.Is_Null (Play_After_Field)
+         then Null_ID
+         else Integer'Value (Position.Cursor.Value (Play_After_Field)));
+   end Play_After;
 
    function Play_Before (Position : in Cursor) return Integer
    is begin

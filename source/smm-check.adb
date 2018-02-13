@@ -21,86 +21,80 @@ pragma License (GPL);
 with Ada.Directories;
 with Ada.Strings.Fixed;
 with Ada.Text_IO; use Ada.Text_IO;
-with SAL.Config_Files;
-procedure SMM.Check (Db : in out SAL.Config_Files.Configuration_Type)
+with SMM.Database;
+procedure SMM.Check
+  (DB          : in out SMM.Database.Database;
+   Source_Root : in     String)
 is
-   Db_Count   : Integer := 0;
+   DB_Count   : Integer := 0;
    Disk_Count : Integer := 0;
 
-   Db_Root : constant String := SAL.Config_Files.Read (Db, Root_Key);
-
-   Song_Files : String_Maps.Map; -- Searchable list of all song titles in db
-
-   procedure Fill_Song_Files
+   procedure Check_Before_After_Exists
    is
-      use String_Maps;
-      use SAL.Config_Files;
-      I        : Iterator_Type := First (Db, Songs_Key);
-      Pos      : String_Maps.Cursor;
-      Inserted : Boolean;
+      use SMM.Database;
+      I : Cursor := First (DB);
    begin
       loop
-         exit when Is_Null (I);
-         String_Maps.Insert (Song_Files, Normalize (Read (Db, I, File_Key)), I, Pos, Inserted);
-         if not Inserted then
-            Put_Line ("db duplicate: " & Key (Pos));
-         end if;
-         Next (I);
-      end loop;
+         exit when not I.Has_Element;
 
-   end Fill_Song_Files;
+         DB_Count := DB_Count + 1;
 
-   procedure Check_Before_After
-   is
-      use SAL.Config_Files;
+         declare
+            File_Name : constant String := Source_Root & I.File_Name;
+         begin
+            if not Ada.Directories.Exists (File_Name) then
+               Put_Line ("db extra: " & File_Name);
+            end if;
+         end;
 
-      I : Iterator_Type := First (Db, Songs_Key);
-   begin
-      loop
-         exit when I = Null_Iterator;
-
-         if Is_Present (Db, I, Play_After_Key) then
+         if I.Play_After_Is_Present then
             declare
-               After_Id  : constant String        := Current (I);
-               Before_Id : constant String        := Read (Db, I, Play_After_Key);
-               Before_J  : constant Iterator_Type := Find (Db, Root_Key => SMM.Songs_Key, Key => Before_Id);
+               After_ID  : constant Integer := I.ID;
+               Before_ID : constant Integer := I.Play_After;
+               Before_J  : constant Cursor  := Find_ID (DB, Before_ID);
             begin
-               if Before_J = Null_Iterator then
-                  Put_Line ("db Play_After bad link: " & Current (I));
-               elsif Is_Present (Db, Before_J, Play_Before_Key) then
-                  if After_Id /= Read (Db, Before_J, Play_Before_Key) then
-                     Put_Line ("db mismatch Play_Before " & Before_Id & "; Play_After " & After_Id);
+               if not Before_J.Has_Element then
+                  Put_Line ("db Play_After bad link:" & Integer'Image (After_ID));
+
+               elsif Before_J.Play_Before_Is_Present then
+                  if After_ID /= Before_J.Play_Before then
+                     Put_Line
+                       ("db mismatch Play_Before" & Integer'Image (Before_ID) &
+                          "; Play_After" & Integer'Image (After_ID));
                   end if;
                else
-                  Put_Line ("db missing Play_Before: " & Before_Id & "; Play_After " & After_Id);
+                  Put_Line
+                    ("db missing Play_Before: " & Integer'Image (Before_ID) &
+                       "; Play_After " & Integer'Image (After_ID));
                end if;
             end;
 
-         elsif Is_Present (Db, I, Play_Before_Key) then
+         elsif I.Play_Before_Is_Present then
             declare
-               Before_Id : constant String        := Read (Db, I, Play_Before_Key);
-               After_J   : constant Iterator_Type := Find (Db, Root_Key => SMM.Songs_Key, Key => Before_Id);
+               Before_ID : constant Integer := I.Play_Before;
+               After_J   : constant Cursor  := Find_ID (DB, Before_ID);
             begin
-               if After_J = Null_Iterator then
-                  Put_Line ("db Play_Before bad link: " & Current (I));
-               elsif Is_Present (Db, After_J, Play_After_Key) then
+               if not After_J.Has_Element then
+                  Put_Line ("db Play_Before bad link:" & Integer'Image (I.ID));
+
+               elsif After_J.Play_After_Is_Present then
                   --  Match checked above
                   null;
                else
-                  Put_Line ("db missing Play_After: " & Current (After_J) & "; Play_Before " & Current (I));
+                  Put_Line
+                    ("db missing Play_After: " & Integer'Image (After_J.ID) &
+                       "; Play_Before" & Integer'Image (I.ID));
                end if;
             end;
          end if;
 
          Next (I);
       end loop;
-   end Check_Before_After;
+   end Check_Before_After_Exists;
 
    procedure Check_Dir (Dir : in String)
    is
       use Ada.Directories;
-      use SAL.Config_Files;
-      use SAL.Time_Conversions;
 
       Found_Mp3           : Boolean := False;
       Found_Liner_Notes   : Boolean := False;
@@ -108,10 +102,10 @@ is
 
       procedure Process_Dir_Entry (Dir_Entry : in Directory_Entry_Type)
       is
-         use String_Maps;
          use Ada.Strings.Fixed;
+         use SMM.Database;
 
-         Name : constant String := Relative_Name (Db_Root, Normalize (Full_Name (Dir_Entry)));
+         Name : constant String := Relative_Name (Source_Root, Normalize (Full_Name (Dir_Entry)));
       begin
          case Kind (Dir_Entry) is
          when Directory =>
@@ -126,12 +120,15 @@ is
          when Ordinary_File =>
             if Extension (Name) = "mp3" then
                Disk_Count := Disk_Count + 1;
-               Found_Mp3 := True;
+               Found_Mp3  := True;
 
-               if No_Element = Song_Files.Find (Name) then
-                  Put_Line ("db missing: " & Name);
-               end if;
-
+               declare
+                  I : constant Cursor := DB.Find_File_Name (Name);
+               begin
+                  if not I.Has_Element  then
+                     Put_Line ("db missing: " & Name);
+                  end if;
+               end;
             elsif 0 < Index (Name, "liner_notes.pdf") then
                Found_Liner_Notes := True;
 
@@ -168,24 +165,11 @@ is
    end Check_Dir;
 
 begin
-   Fill_Song_Files;
+   Check_Before_After_Exists;
 
-   Check_Before_After;
+   Check_Dir (Source_Root);
 
-   Check_Dir (Db_Root);
-
+   Put_Line ("db files:" & Integer'Image (DB_Count));
    Put_Line ("Disk files:" & Integer'Image (Disk_Count));
 
-   for I of Song_Files loop
-      Db_Count := Db_Count + 1;
-      declare
-         File : constant String := SAL.Config_Files.Read (Db, I, File_Key);
-      begin
-         if not Ada.Directories.Exists (File) then
-            Put_Line ("db extra: " & File);
-         end if;
-      end;
-   end loop;
-
-   Put_Line ("db files:" & Integer'Image (Db_Count));
 end SMM.Check;

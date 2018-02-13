@@ -8,7 +8,7 @@
 --
 --  gnu plot manual:    /usr/share/doc/gnuplot/manual/gnuplot.pdf
 --
---  Copyright (C) 2016 - 2017 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2016 - 2018 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -24,16 +24,15 @@
 
 pragma License (GPL);
 
+with Ada.Calendar.Formatting;
 with Ada.Float_Text_IO;
 with Ada.Numerics.Generic_Elementary_Functions;
 with Ada.Text_IO;      use Ada.Text_IO;
-with SAL.Config_Files; use SAL.Config_Files;
 with SAL.Gen_Stats;
 with SAL.Gen_Histogram.Gen_Gnuplot;
-procedure SMM.History (Db : in out SAL.Config_Files.Configuration_Type)
+with SMM.Database;
+procedure SMM.History (DB : in SMM.Database.Database)
 is
-   use SAL.Time_Conversions;
-
    package Float_Elementary is new Ada.Numerics.Generic_Elementary_Functions (Float);
 
    package Float_Stats is new SAL.Gen_Stats (Float, Float_Elementary);
@@ -91,55 +90,51 @@ is
       Dont_Play    => Null_Count_Data,
       Talk         => Null_Count_Data);
 
-   procedure Accumulate (I : in Iterator_Type)
+   procedure Accumulate (I : in SMM.Database.Cursor)
    is
-      String_Category : constant String := Read (Db, I, Category_Key, Missing_Key => Ignore);
-      Category : Categories;
+      Category : constant Categories := Categories'Value (I.Category);
+      Data     : Category_Data_Type renames Category_Data (Category);
    begin
       Total_Songs := Total_Songs + 1;
 
-      if String_Category = "" then
-         Category := Vocal;
-      else
-         Category := Categories'Value (String_Category);
-      end if;
+      case Category_Data (Category).Hist is
+      when True =>
+         declare
+            use Ada.Calendar;
+            use Ada.Calendar.Formatting;
+            use Ada.Float_Text_IO;
 
-      declare
-         Data : Category_Data_Type renames Category_Data (Category);
-      begin
-         case Category_Data (Category).Hist is
-         when True =>
-            declare
-               use Ada.Float_Text_IO;
+            Seconds_Per_Year : constant := 31_536_000.0;
 
-               Last   : constant Time_Type := Read_Last_Downloaded (Db, I);
-               Prev   : constant Time_Type := Read_Prev_Downloaded (Db, I);
-               Period : constant Float     := Float ((Last - Prev) / Seconds_Per_Year);
-            begin
-               if Last = 0.0 then
-                  Data.Never_Downloaded := Data.Never_Downloaded + 1;
-                  Put_Line ("new: " & Read (Db, I, File_Key));
+            Default_Time : constant Time := Value (SMM.Database.Default_Time_String);
 
-               elsif Prev = 0.0 then
-                  Data.Downloaded_Once := Data.Downloaded_Once + 1;
+            Last   : constant Time  := Value (I.Last_Downloaded);
+            Prev   : constant Time  := Value (I.Prev_Downloaded);
+            Period : constant Float := Float (Last - Prev) / Seconds_Per_Year;
+         begin
+            if Last = Default_Time then
+               Data.Never_Downloaded := Data.Never_Downloaded + 1;
+               Put_Line ("new: " & I.File_Name);
 
-               else
-                  Data.Stats.Accumulate (Period);
-                  Data.Histogram.Accumulate (Period);
+            elsif Prev = Default_Time then
+               Data.Downloaded_Once := Data.Downloaded_Once + 1;
 
-                  if To_Bin (Period) > Bin_Max or
-                    To_Bin (Period) = 0
-                  then
-                     Put ("song:" & Current (I) & " period:");
-                     Put (Period, Aft => 2, Exp => 0);
-                     New_Line;
-                  end if;
+            else
+               Data.Stats.Accumulate (Period);
+               Data.Histogram.Accumulate (Period);
+
+               if To_Bin (Period) > Bin_Max or
+                 To_Bin (Period) = 0
+               then
+                  Put ("song:" & Integer'Image (I.ID) & " period:");
+                  Put (Period, Aft => 2, Exp => 0);
+                  New_Line;
                end if;
-            end;
-         when False =>
-            Data.Count := Data.Count + 1;
-         end case;
-      end;
+            end if;
+         end;
+      when False =>
+         Data.Count := Data.Count + 1;
+      end case;
    end Accumulate;
 
    procedure Put_Category (Category : in Categories)
@@ -173,12 +168,12 @@ is
       end case;
    end Put_Category;
 
-   I : Iterator_Type := First (Db, Songs_Key);
+   I : SMM.Database.Cursor := SMM.Database.First (DB);
 begin
    loop
-      exit when Is_Null (I);
+      exit when not I.Has_Element;
       Accumulate (I);
-      Next (I);
+      I.Next;
    end loop;
 
    New_Line;
