@@ -26,11 +26,9 @@ package body Test_Utils is
 
    procedure Cleanup
    is begin
-      Ada.Directories.Delete_Tree ("tmp");
-   exception
-   when Ada.Text_IO.Name_Error =>
-      --  already deleted
-      null;
+      if Ada.Directories.Exists ("tmp") then
+         Ada.Directories.Delete_Tree ("tmp");
+      end if;
    end Cleanup;
 
    procedure Create_Empty_DB (DB_File_Name : in String)
@@ -72,7 +70,7 @@ package body Test_Utils is
       Last_Downloaded : in Duration;
       Category        : in String := "vocal")
    is
-      One_Second_Time_String : constant SMM.Database.Time_String := "1958-01-01 00:00:01";
+      Prefix : constant String := "1958-01-01 00:00:0";
    begin
       DB.Insert
         (ID              => ID,
@@ -81,10 +79,7 @@ package body Test_Utils is
          Artist          => "none",
          Album           => "none",
          Title           => "none",
-         Last_Downloaded =>
-           (if Last_Downloaded = 0.0
-            then SMM.Database.Default_Time_String
-            else One_Second_Time_String));
+         Last_Downloaded => Prefix & Duration'Image (Last_Downloaded) (2 .. 2));
    end Insert;
 
    function "&" (Left, Right : in SMM.ID3.Tag) return SMM.ID3.Tag_Lists.List

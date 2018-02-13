@@ -80,4 +80,6 @@ private
    function Size (Item : in Size_Type) return Ada.Streams.Stream_IO.Count;
    function To_Size (Item : in Ada.Streams.Stream_IO.Count) return Size_Type;
 
+   function Read (Stream : not null access Ada.Streams.Root_Stream_Type'Class; Tag : in Tag_String) return String;
+
 end SMM.ID3;

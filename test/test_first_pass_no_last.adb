@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2007 - 2009, 2012, 2015, 2016 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007 - 2009, 2012, 2015, 2016, 2018 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -146,7 +146,7 @@ package body Test_First_Pass_No_Last is
    is
       pragma Unreferenced (T);
    begin
-      return new String'("../../test/test_first_pass_no_last.adb");
+      return new String'("test_first_pass_no_last.adb");
    end Name;
 
    overriding procedure Register_Tests (T : in out Test_Case)

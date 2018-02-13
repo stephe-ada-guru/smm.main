@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2007 - 2009, 2015 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007 - 2009, 2015, 2018 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -18,68 +18,72 @@
 
 pragma License (GPL);
 
+with Ada.Directories;
 with AUnit.Checks;
-with SAL.Config_Files;
-with SMM;
+with SMM.Database;
+with SMM.Song_Lists;
+with Test_Utils; use Test_Utils;
 package body Test_Play_Before is
 
    procedure Nominal (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
    is
       pragma Unreferenced (T);
 
-      use SMM.Song_Lists;
-      use SAL.Config_Files;
+      use SMM.Song_Lists.Song_Lists;
 
-      Db : Configuration_Type;
+      DB_File_Name : constant String := "tmp/smm.db";
+      DB : SMM.Database.Database;
 
       Songs  : List;
-      Song_I : SMM.Song_Lists.Cursor;
+      Song_I : SMM.Song_Lists.Song_Lists.Cursor;
 
       procedure Check
-        (I        : in out SMM.Song_Lists.Cursor;
+        (I        : in out SMM.Song_Lists.Song_Lists.Cursor;
          Expected : in     String)
       is
          use AUnit.Checks;
       begin
-         Check ("", SAL.Config_Files.Read (Db, Element (I), "File"), Expected);
+         Check ("", DB.Find_ID (Element (I)).File_Name, Expected);
          Next (I);
       end Check;
 
    begin
-      --  Create the test environment; a config file with some
-      --  Play_Before items.
+      --  Create the test environment; a db with some
+      --  Play_Before and Play_After items.
 
-      Open (Db, "tmp/smm.db", Read_Only => False, Duplicate_Key => Raise_Exception);
-      Write (Db, "Songs. 1.File", "intro_1.mp3");
-      Write (Db, "Songs. 1.Play_Before", "2");
-      Write (Db, "Songs. 1.Last_Downloaded", "2.0");
-      Write (Db, "Songs. 2.File", "song_1.mp3");
-      Write (Db, "Songs. 2.Last_Downloaded", "1.0");
-      Write (Db, "Songs. 3.File", "song_3.mp3");
-      Write (Db, "Songs. 3.Last_Downloaded", "3.0");
-      Write (Db, "Songs. 4.File", "intro_5.mp3");
-      Write (Db, "Songs. 4.Play_Before", "5");
-      Write (Db, "Songs. 4.Last_Downloaded", "4.0");
-      Write (Db, "Songs. 5.File", "song_5.mp3");
-      Write (Db, "Songs. 5.Last_Downloaded", "5.0");
+      Cleanup;
 
-      Append (Songs, Find (Db, "Songs", " 1"));
-      Append (Songs, Find (Db, "Songs", " 3"));
-      Append (Songs, Find (Db, "Songs", " 2"));
-      Append (Songs, Find (Db, "Songs", " 4"));
+      Ada.Directories.Create_Directory ("tmp");
 
-      SMM.Play_Before (Db, Songs);
+      Test_Utils.Create_Empty_DB (DB_File_Name);
 
-      Song_I := SMM.Song_Lists.First (Songs);
+      DB.Open (DB_File_Name);
+
+      Insert (DB, 1, "intro_1.mp3", 2.0);
+
+      DB.Write_Play_Before_After (1, 2);
+      --  Sets 1.Play_Before and 2.Play_After
+
+      Insert (DB, 2, "song_1.mp3", 1.0);
+      Insert (DB, 3, "song_3.mp3", 3.0);
+      Insert (DB, 4, "intro_5.mp3", 4.0);
+      DB.Write_Play_Before_After (4, 5);
+      Insert (DB, 5, "song_5.mp3", 5.0);
+
+      Songs.Append (1);
+      Songs.Append (3);
+      Songs.Append (2);
+      Songs.Append (4);
+
+      SMM.Song_Lists.Play_Before (DB, Songs);
+
+      Song_I := First (Songs);
 
       Check (Song_I, "intro_1.mp3");
       Check (Song_I, "song_1.mp3");
       Check (Song_I, "song_3.mp3");
       Check (Song_I, "intro_5.mp3");
       Check (Song_I, "song_5.mp3");
-
-      Close_No_Save (Db);
-
    end Nominal;
 
    ----------

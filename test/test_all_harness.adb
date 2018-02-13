@@ -2,7 +2,7 @@
 --
 --  Run all AUnit tests.
 --
---  Copyright (C) 2009, 2011 - 2013, 2015, 2016 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2009, 2011 - 2013, 2015, 2016, 2018 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -25,6 +25,7 @@ with AUnit.Reporter.Text;
 with AUnit.Test_Results;
 with AUnit.Test_Suites; use AUnit.Test_Suites;
 with GNAT.Traceback.Symbolic;
+with SMM.ID3.Test;
 with Test_Copy;
 with Test_Download;
 with Test_First_Pass_No_Last;
@@ -40,6 +41,7 @@ is
    Status   : AUnit.Status;
 
 begin
+   Add_Test (Suite, new SMM.ID3.Test.Test_Case);
    Add_Test (Suite, new Test_Copy.Test_Case (Verbosity => 0));
    Add_Test (Suite, new Test_Download.Test_Case (Verbosity => 0));
    Add_Test (Suite, new Test_First_Pass_No_Last.Test_Case (Verbosity => 0, Debug => 0));

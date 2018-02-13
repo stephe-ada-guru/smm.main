@@ -24,22 +24,22 @@ with AWS.Client;
 with AWS.Messages.AUnit;
 with AWS.Response.AUnit;
 with AWS.URL;
-with Ada.Calendar;
+with Ada.Calendar.Formatting;
 with Ada.Directories;
+with Ada.IO_Exceptions;
 with Ada.Strings.Fixed;
 with Ada.Strings.Maps;
-with Ada.Strings.Unbounded;
 with Ada.Text_IO;
 with GNAT.OS_Lib;
-with SAL.Config_Files;
-with SAL.Time_Conversions.AUnit;
-with SMM.ID3;
+with SAL.Calendar_More.AUnit;
+with SMM.Database;
+with SMM.ID3.AUnit;
 with Test_Utils;
 package body Test_Server is
 
    CRLF : constant String := ASCII.CR & ASCII.LF;
 
-   Db_File_Name : constant String := "tmp/smm.db";
+   DB_File_Name : constant String := "tmp/smm.db";
 
    Server      : GNAT.OS_Lib.Process_Id;
    Server_Port : constant String := "8081"; --  must match ../build/smm_server_test_1.config Server_Port
@@ -102,13 +102,14 @@ package body Test_Server is
       Response : constant Data   := AWS.Client.Get (URL);
       Msg      : constant String := Message_Body (Response);
 
-      --  Song order depends on random engine
+      --  Song order depends on random engine. This is correct for GNAT GPL
+      --  2017.
       Expected : constant String :=
         "artist_2/album_1/1 - song_1.mp3" & ASCII.CR & ASCII.LF &
           "artist_1/album_1/1 - song_1.mp3" & ASCII.CR & ASCII.LF &
-          "artist_2/album_1/2 - song_2.mp3" & ASCII.CR & ASCII.LF &
           "artist_1/album_1/2 - song_2.mp3" & ASCII.CR & ASCII.LF &
-          "artist_1/album_1/03 The Dance #1.mp3" & ASCII.CR & ASCII.LF;
+          "artist_2/album_1/2 - song_2.mp3" & ASCII.CR & ASCII.LF &
+          "artist_2/album_1/3 - song_3.mp3" & ASCII.CR & ASCII.LF;
    begin
       if Verbose then
          Ada.Text_IO.Put (Msg);
@@ -158,51 +159,69 @@ package body Test_Server is
       use AUnit.Checks;
       use AWS.Response;
       use AWS.Response.AUnit;
+      use SMM.ID3;
+      use Test_Utils;
 
       Test : Test_Case renames Test_Case (T);
 
       procedure Check_One
-        (Directory  : in String;
-         Filename   : in String;
-         Mime       : in String;
-         Song_Index : in Integer := 0)
+        (Directory : in String;
+         Filename  : in String;
+         Mime      : in String;
+         Tags      : in SMM.ID3.Tag_Lists.List := SMM.ID3.Tag_Lists.Empty_List)
       is
-         use SAL.Config_Files;
-         use SAL.Time_Conversions;
-         use SAL.Time_Conversions.AUnit;
+         use SAL.Calendar_More.AUnit;
+         use SMM.ID3.AUnit;
 
          URL : constant String := "http://" & Test.Server_IP.all & ":" & Server_Port & "/" & Directory &
            Encode (Filename);
 
          Response : constant Data   := AWS.Client.Get (URL);
          Msg      : constant String := Message_Body (Response);
-         Db_File  : Configuration_Type;
-         I        : Iterator_Type;
+         DB       : SMM.Database.Database;
+         I        : SMM.Database.Cursor;
       begin
          Check (Filename & ".mode", Mode (Response), Message); --  Not clear why this is "message", not "file"
          Check (Filename & ".mime", Content_Type (Response), Mime);
-         Check (Filename & ".file content", Msg, "body: tmp/source/" & Directory & Filename & CRLF);
-
-         if Song_Index > 0 then
-            Open (Db_File, Db_File_Name, Missing_File => Raise_Exception, Read_Only => True);
-            I := Find (Db_File, SMM.Songs_Key, Integer'Image (Song_Index));
+         if Mime = "audio/mpeg" then
+            Check (Filename & ".file content", Msg, Tags);
+            DB.Open (DB_File_Name);
+            I := DB.Find_File_Name (Directory & Filename);
             Check
               (Filename & ".last_downloaded",
-               SMM.Read_Last_Downloaded (Db_File, I),
-               To_TAI_Time (Ada.Calendar.Clock),
+               Ada.Calendar.Formatting.Value (I.Last_Downloaded),
+               Ada.Calendar.Clock,
                Tolerance => 60.0);
+         else
+            Check (Filename & ".file content", Msg, "body: tmp/source/" & Directory & Filename & CRLF);
          end if;
+
       exception
+      when Ada.IO_Exceptions.Use_Error =>
+         Ada.Text_IO.Put_Line (Filename);
+         raise;
+
       when AUnit.Assertions.Assertion_Error =>
          Ada.Text_IO.Put_Line (Msg);
          raise;
       end Check_One;
 
    begin
-      Check_One ("artist_1/album_1/", "AlbumArt_1.jpg", "image/jpeg");
-      Check_One ("artist_1/album_1/", "1 - song_1.mp3", "audio/mpeg", Song_Index => 1);
+      Check_One
+        ("artist_1/album_1/", "AlbumArt_1.jpg", "image/jpeg");
+
+      Check_One
+        ("artist_1/album_1/", "1 - song_1.mp3", "audio/mpeg",
+           (Artist, +"artist_1") &
+           (Album, +"album_1") &
+           (Title, +"1 - song_1"));
+
       Check_One ("artist_1/album_1/", "liner_notes.pdf", "application/pdf");
-      Check_One ("artist_1/album_1/", "03 The Dance #1.mp3", "audio/mpeg", Song_Index => 7);
+      Check_One
+        ("artist_1/album_1/", "03 The Dance #1.mp3", "audio/mpeg",
+         (Artist, +"artist_1") &
+           (Album, +"album_1") &
+           (Title, +"03 The Dance #1"));
    end Test_Get_File;
 
    procedure Test_Send_Notes (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
@@ -339,15 +358,12 @@ package body Test_Server is
    is
       use Ada.Directories;
       use Ada.Text_IO;
+      use SMM.ID3;
       use SMM.ID3.Tag_Lists;
       use Test_Utils;
 
-      Db_File      : File_Type;
-      Dir          : constant String := Current_Directory;
-
-      function "+" (Item : in String) return Ada.Strings.Unbounded.Unbounded_String renames
-        Ada.Strings.Unbounded.To_Unbounded_String;
-
+      DB  : SMM.Database.Database;
+      Dir : constant String := Current_Directory;
    begin
       if Dir (Dir'Last - 5 .. Dir'Last) /= "\build" then
          raise SAL.Programmer_Error with "current_directory = " & Current_Directory;
@@ -360,24 +376,19 @@ package body Test_Server is
 
          Create_Directory ("tmp");
 
-         Create (Db_File, Out_File, Db_File_Name);
+         Create_Empty_DB (DB_File_Name);
 
-         Put_Line (Db_File, "Songs. 1.File = artist_1/album_1/1 - song_1.mp3");
-         Put_Line (Db_File, "Songs. 1.Category = vocal");
-         Put_Line (Db_File, "Songs. 1.Play_Before = 2");
-         Put_Line (Db_File, "Songs. 2.File = artist_1/album_1/2 - song_2.mp3");
-         Put_Line (Db_File, "Songs. 2.Category = vocal");
-         Put_Line (Db_File, "Songs. 2.Play_After = 1");
-         Put_Line (Db_File, "Songs. 3.File = artist_1/album_1/03 The Dance #1.mp3");
-         Put_Line (Db_File, "Songs. 3.Category = instrumental");
-         Put_Line (Db_File, "Songs. 4.File = artist_2/album_1/1 - song_1.mp3");
-         Put_Line (Db_File, "Songs. 4.Category = vocal");
-         Put_Line (Db_File, "Songs. 5.File = artist_2/album_1/2 - song_2.mp3");
-         Put_Line (Db_File, "Songs. 5.Category = vocal");
-         Put_Line (Db_File, "Songs. 6.File = artist_2/album_1/3 - song_3.mp3");
-         Put_Line (Db_File, "Songs. 6.Category = vocal");
+         DB.Open (DB_File_Name);
 
-         Close (Db_File);
+         Insert (DB, 1, "artist_1/album_1/1 - song_1.mp3", 1.0, "vocal");
+         DB.Write_Play_Before_After (1, 2);
+         Insert (DB, 2, "artist_1/album_1/2 - song_2.mp3", 1.0, "vocal");
+         Insert (DB, 3, "artist_1/album_1/03 The Dance #1.mp3", 1.0, "instrumental");
+         Insert (DB, 4, "artist_2/album_1/1 - song_1.mp3", 1.0, "vocal");
+         Insert (DB, 5, "artist_2/album_1/2 - song_2.mp3", 1.0, "vocal");
+         Insert (DB, 6, "artist_2/album_1/3 - song_3.mp3", 1.0, "vocal");
+
+         DB.Finalize;
 
          Create_Directory ("tmp/source");
          Create_Directory ("tmp/source/artist_1");
@@ -385,46 +396,46 @@ package body Test_Server is
          Create_Test_File ("tmp/source/artist_1/album_1/liner_notes.pdf");
          Create_Test_File ("tmp/source/artist_1/album_1/AlbumArt_1.jpg");
 
-         SMM.ID3.Create
+         Create
            ("tmp/source/artist_1/album_1/1 - song_1.mp3",
-              (SMM.ID3.Artist, +"artist_1") &
-              (SMM.ID3.Album, +"album_1") &
-              (SMM.ID3.Title, +"1 - song_1"));
+            (Artist, +"artist_1") &
+              (Album, +"album_1") &
+              (Title, +"1 - song_1"));
 
-         SMM.ID3.Create
+         Create
            ("tmp/source/artist_1/album_1/2 - song_2.mp3",
-              (SMM.ID3.Artist, +"artist_1") &
-              (SMM.ID3.Album, +"album_1") &
-              (SMM.ID3.Title, +"2 - song_2"));
+            (Artist, +"artist_1") &
+              (Album, +"album_1") &
+              (Title, +"2 - song_2"));
 
-         SMM.ID3.Create
+         Create
            ("tmp/source/artist_1/album_1/03 The Dance #1.mp3",
-              (SMM.ID3.Artist, +"artist_1") &
-              (SMM.ID3.Album, +"album_1") &
-              (SMM.ID3.Title, +"03 The Dance #1"));
+            (Artist, +"artist_1") &
+              (Album, +"album_1") &
+              (Title, +"03 The Dance #1"));
 
          Create_Directory ("tmp/source/artist_2");
          Create_Directory ("tmp/source/artist_2/album_1");
          Create_Test_File ("tmp/source/artist_2/album_1/liner_notes.pdf");
          Create_Test_File ("tmp/source/artist_2/album_1/AlbumArt_1.jpg");
 
-         SMM.ID3.Create
+         Create
            ("tmp/source/artist_2/album_1/1 - song_1.mp3",
-              (SMM.ID3.Artist, +"artist_2") &
-              (SMM.ID3.Album, +"album_1") &
-              (SMM.ID3.Title, +"1 - song_1"));
+            (Artist, +"artist_2") &
+              (Album, +"album_1") &
+              (Title, +"1 - song_1"));
 
-         SMM.ID3.Create
+         Create
            ("tmp/source/artist_2/album_1/2 - song_2.mp3",
-              (SMM.ID3.Artist, +"artist_2") &
-              (SMM.ID3.Album, +"album_1") &
-              (SMM.ID3.Title, +"2 - song_2"));
+            (Artist, +"artist_2") &
+              (Album, +"album_1") &
+              (Title, +"2 - song_2"));
 
-         SMM.ID3.Create
+         Create
            ("tmp/source/artist_2/album_1/3 - song_3.mp3",
-              (SMM.ID3.Artist, +"artist_2") &
-              (SMM.ID3.Album, +"album_1") &
-              (SMM.ID3.Title, +"3 - song_3"));
+            (Artist, +"artist_2") &
+              (Album, +"album_1") &
+              (Title, +"3 - song_3"));
 
          Create_Directory ("tmp/source/Jason Castro [Deluxe] [+Video] [+Digital Booklet]");
          Create_Test_File ("tmp/source/Jason Castro [Deluxe] [+Video] [+Digital Booklet]/liner_notes.pdf");

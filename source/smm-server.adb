@@ -335,7 +335,8 @@ package body SMM.Server is
 
             DB_Filename := +Read (Config, "DB_Filename", Missing_Key => Raise_Exception);
 
-            Source_Root := +As_File (Read (Config, SMM.Root_Key, Missing_Key => Raise_Exception));
+            Source_Root := +As_File
+              (Ada.Directories.Full_Name (Read (Config, SMM.Root_Key, Missing_Key => Raise_Exception)));
             Server_Root := Source_Root & "/../server";
 
          when others =>

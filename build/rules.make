@@ -1,6 +1,6 @@
 # common parts of makefiles
 
-all : smm.exe test_all_harness.diff smm.html
+all : smm.exe smm-server_driver.exe test_all_harness.diff smm.html
 
 tests : test_all_harness.diff
 
@@ -12,7 +12,7 @@ include ../../org.stephe_leake.makerules/texinfo_rules.make
 smm.exe : force
 	gprbuild -p -Psmm.gpr smm-driver
 
-test_all_harness.out : test_all_harness.exe smm.exe
+test_all_harness.out : test_all_harness.exe smm-server_driver.exe
 
 create_test_db :
 	mkdir -p tmp/source

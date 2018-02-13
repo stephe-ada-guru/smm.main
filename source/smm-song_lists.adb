@@ -114,7 +114,7 @@ package body SMM.Song_Lists is
          --  New songs
 
          if Time_List.Length = 1 then
-            --  New db; all songs have zero Last_Downloaded
+            --  New db; all songs have default Last_Downloaded
             Ada.Text_IO.Put_Line ("new db; all new songs");
             Songs := Element (Time_List_I).Songs;
             Finish;

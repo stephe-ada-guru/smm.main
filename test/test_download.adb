@@ -75,17 +75,17 @@ package body Test_Download is
       Insert (DB, 3, "artist_1/played_2.mp3", 2.0);
       Insert (DB, 4, "artist_1/new_1.mp3", 0.0);
       Insert (DB, 5, "artist_1/new_2.mp3", 0.0);
-      Insert (DB, 6, "artist_1/in_target_1.mp3", 3.0);
-      Insert (DB, 7, "artist_1/in_target_2.mp3", 3.0);
-      Insert (DB, 8, "artist_2/in_target_3.mp3", 3.0);
+      Insert (DB, 6, "artist_1/in_target_1.mp3", 4.0);
+      Insert (DB, 7, "artist_1/in_target_2.mp3", 4.0);
+      Insert (DB, 8, "artist_2/in_target_3.mp3", 4.0);
       Insert (DB, 9, "artist_2/new_3.mp3", 0.0);
       Insert (DB, 10, "artist_2/new_4.mp3", 0.0);
       Insert (DB, 11, "artist_2/played_3.mp3", 2.0);
       Insert (DB, 12, "artist_2/played_4.mp3", 2.0);
-      Insert (DB, 13, "artist_2/played_5.mp3", 2.5);
-      Insert (DB, 14, "artist_2/played_6.mp3", 2.5);
-      Insert (DB, 15, "artist_2/played_7.mp3", 2.5);
-      Insert (DB, 16, "artist_2/played_8.mp3", 2.5);
+      Insert (DB, 13, "artist_2/played_5.mp3", 3.0);
+      Insert (DB, 14, "artist_2/played_6.mp3", 3.0);
+      Insert (DB, 15, "artist_2/played_7.mp3", 3.0);
+      Insert (DB, 16, "artist_2/played_8.mp3", 3.0);
       Insert (DB, 17, "artist_3/new_5.mp3", 0.0);
       Insert (DB, 18, "artist_3/new_6.mp3", 0.0);
 
@@ -161,7 +161,7 @@ package body Test_Download is
       Check (Playlist, "vocal/artist_1/new_2.mp3");
       Check (Playlist, "vocal/artist_2/played_7.mp3");
       Check (Playlist, "vocal/artist_1/new_1.mp3");
-      Check (Playlist, "vocal/artist_3/new_6.mp3");
+      Check (Playlist, "vocal/artist_3/new_5.mp3");
 
       Check_End (Playlist);
       Close (Playlist);
@@ -180,7 +180,14 @@ package body Test_Download is
 
       Check_File_Count ("tmp/target/vocal/artist_3/", 2);
       Check_File_Exists ("tmp/target/vocal/artist_3/AlbumArt_artist_3.jpg");
-      Check_File_Exists ("tmp/target/vocal/artist_3/new_6.mp3");
+      Check_File_Exists ("tmp/target/vocal/artist_3/new_5.mp3");
+
+   exception
+   when others =>
+      if Is_Open (Playlist) then
+         Close (Playlist);
+      end if;
+      raise;
    end Nominal;
 
    ----------
@@ -190,7 +197,7 @@ package body Test_Download is
    is
       pragma Unreferenced (T);
    begin
-      return new String'("../../test/test_download.adb");
+      return new String'("test_download.adb");
    end Name;
 
    overriding procedure Register_Tests (T : in out Test_Case)

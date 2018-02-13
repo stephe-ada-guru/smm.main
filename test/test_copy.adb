@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2007 - 2009, 2012, 2013, 2015 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007 - 2009, 2012, 2013, 2015, 2018 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -107,7 +107,7 @@ package body Test_Copy is
    is
       pragma Unreferenced (T);
    begin
-      return new String'("../../test/test_copy.adb");
+      return new String'("test_copy.adb");
    end Name;
 
    overriding procedure Register_Tests (T : in out Test_Case)

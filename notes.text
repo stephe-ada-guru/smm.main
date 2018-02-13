@@ -24,18 +24,16 @@ convert to sqlite3 database
     good support for lists of search results, search indices
     use gnatcoll; see ../org.stephe_leake.books.windows
 
-    update or delete all tests
-        using convert_to_sqlite might be simplest solution
-        test_copy: no db
-        test_first_pass_no|with_last: now done in phone app, no db
+    smm-driver.exe
+        test import
+        test check
+        test history
 
-        test_least_recent: passing
+    t_all
 
-        test_download: passing
+implement search
 
-        Test_Play_Before: uses db, used in least_recent
-
-    implement notes
+implement notes
 
 smm-song_lists.adb: --  FIXME: provide DB iterator sorted on last_downloaded.
 smm-database.ads:       --  FIXME: need finalization to release cursor?

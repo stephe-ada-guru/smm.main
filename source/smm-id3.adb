@@ -93,6 +93,56 @@ package body SMM.ID3 is
       end return;
    end Size;
 
+   function Read (Stream : not null access Ada.Streams.Root_Stream_Type'Class; Tag : in Tag_String) return String
+   is
+      use all type Ada.Streams.Stream_IO.Count;
+      use all type Interfaces.C.char_array;
+      use all type Interfaces.Unsigned_8;
+
+      File_Head  : File_Header;
+      Frame_Head : Frame_Header;
+   begin
+      File_Header'Read (Stream, File_Head);
+
+      if File_Head.ID /= "ID3" or File_Head.Version_Msb /= 3 then
+         raise Ada.IO_Exceptions.Use_Error;
+      end if;
+
+      loop
+         Frame_Header'Read (Stream, Frame_Head);
+
+         if Size (Frame_Head.Size) = 0 then
+            --  Real files seem to terminate the header with many 0 bytes, rather
+            --  then at File_Header.Size.
+            --
+            --  Caller adds appropriate message.
+            raise SAL.Not_Found;
+         end if;
+
+         exit when Frame_Head.ID = Tag;
+
+         --  Skip the contents
+         declare
+            use Ada.Streams;
+            Junk : Stream_Element_Array (1 .. Stream_Element_Offset (Size (Frame_Head.Size)));
+            Last : Stream_Element_Offset;
+         begin
+            Stream.Read (Junk, Last);
+         end;
+      end loop;
+
+      declare
+         Result : String (1 .. Integer (Size (Frame_Head.Size)));
+      begin
+         String'Read (Stream, Result);
+         if Result (1) = ASCII.NUL then
+            return Result (2 .. Result'Last);
+         else
+            return Result;
+         end if;
+      end;
+   end Read;
+
    ----------
    --  Public subprograms
 
@@ -120,8 +170,6 @@ package body SMM.ID3 is
    function Read (File : in out SMM.ID3.File; Tag : in Tag_String) return String
    is
       use Ada.Streams.Stream_IO;
-      use all type Interfaces.C.char_array;
-      use all type Interfaces.Unsigned_8;
    begin
       if not Is_Open (File.Stream) then
          raise Ada.IO_Exceptions.Use_Error with "file not open";
@@ -129,55 +177,15 @@ package body SMM.ID3 is
 
       Reset (File.Stream, In_File);
 
-      declare
-         Stream         : constant Stream_Access := Ada.Streams.Stream_IO.Stream (File.Stream);
-         File_Head      : File_Header;
-         File_Head_Size : Count;
-         Frame_Head     : Frame_Header;
-         Last           : Count;
-      begin
-         File_Header'Read (Stream, File_Head);
+      return Read (Ada.Streams.Stream_IO.Stream (File.Stream), Tag);
+   exception
+   when Ada.IO_Exceptions.Use_Error =>
+      raise Ada.IO_Exceptions.Use_Error with
+        "'" & Ada.Streams.Stream_IO.Name (File.Stream) & "' does not start with an ID3 record";
 
-         if File_Head.ID /= "ID3" then
-            raise Use_Error with "'" & Ada.Streams.Stream_IO.Name (File.Stream) & "' does not start with an ID3 record";
-         end if;
-
-         if File_Head.Version_Msb /= 3 then
-            raise Use_Error with "'" & Ada.Streams.Stream_IO.Name (File.Stream) & "' ID3 version is" &
-              Interfaces.Unsigned_8'Image (File_Head.Version_Msb) & "; expecting 3";
-         end if;
-
-         File_Head_Size := Size (File_Head.Size);
-
-         Last := File_Header_Byte_Size;
-         Set_Index (File.Stream, Last + 1);
-
-         loop
-            Frame_Header'Read (Stream, Frame_Head);
-
-            if Last >= File_Head_Size or Size (Frame_Head.Size) = 0 then
-               --  Real files seem to terminate the header with many 0 bytes, rather
-               --  then at File_Header.Size.
-               raise SAL.Not_Found with "tag '" & Tag & "' not found in '" &
-                 Ada.Streams.Stream_IO.Name (File.Stream) & "'";
-            end if;
-
-            exit when Frame_Head.ID = Tag;
-            Last := Last + Frame_Header_Byte_Size + Size (Frame_Head.Size);
-            Set_Index (File.Stream, Last + 1);
-         end loop;
-
-         declare
-            Result : String (1 .. Integer (Size (Frame_Head.Size)));
-         begin
-            String'Read (Stream, Result);
-            if Result (1) = ASCII.NUL then
-               return Result (2 .. Result'Last);
-            else
-               return Result;
-            end if;
-         end;
-      end;
+   when SAL.Not_Found =>
+      raise SAL.Not_Found with "tag '" & Tag & "' not found in '" &
+        Ada.Streams.Stream_IO.Name (File.Stream) & "'";
    end Read;
 
    procedure Create

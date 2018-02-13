@@ -105,6 +105,11 @@ package SMM.Database is
       DB       : in Database'Class;
       Time     : in Time_String);
 
+   procedure Write_Play_Before_After
+     (DB        : in Database'Class;
+      Before_ID : in Integer;
+      After_ID  : in Integer);
+
 private
 
    type Database is new Ada.Finalization.Limited_Controlled with

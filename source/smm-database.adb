@@ -302,4 +302,22 @@ package body SMM.Database is
          Params    => (+Time, +Position.Last_Downloaded, +Position.ID));
    end Write_Last_Downloaded;
 
+   procedure Write_Play_Before_After
+     (DB        : in Database'Class;
+      Before_ID : in Integer;
+      After_ID  : in Integer)
+   is
+      use GNATCOLL.SQL.Exec;
+   begin
+      Checked_Execute
+        (DB,
+         Statement => "UPDATE Song SET Play_Before = ? WHERE ID =?",
+         Params    => (+After_ID, +Before_ID));
+
+      Checked_Execute
+        (DB,
+         Statement => "UPDATE Song SET Play_After = ? WHERE ID =?",
+         Params    => (+Before_ID, +After_ID));
+   end Write_Play_Before_After;
+
 end SMM.Database;
