@@ -25,7 +25,6 @@ convert to sqlite3 database
     use gnatcoll; see ../org.stephe_leake.books.windows
 
     smm.exe
-        test check
         test history
 
     t_all

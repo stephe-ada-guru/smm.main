@@ -24,6 +24,13 @@ with Ada.Text_IO;
 with GNAT.OS_Lib;
 package body Test_Utils is
 
+   procedure Delete_File (Name : in String)
+   is begin
+      if Ada.Directories.Exists (Name) then
+         Ada.Directories.Delete_File (Name);
+      end if;
+   end Delete_File;
+
    procedure Cleanup
    is begin
       if Ada.Directories.Exists ("tmp") then

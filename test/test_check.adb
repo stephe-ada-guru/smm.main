@@ -18,13 +18,13 @@
 
 pragma License (GPL);
 
-with AUnit.Checks;
+with AUnit.Checks.Text_IO;
 with Ada.Directories;
 with GNAT.OS_Lib;
 with SMM.Database;
 with SMM.ID3;
 with Test_Utils;
-package body Test_Import is
+package body Test_Check is
 
    Dir          : constant String := Ada.Directories.Current_Directory;
    DB_File_Name : constant String := Dir & "/tmp/smm.db";
@@ -36,24 +36,26 @@ package body Test_Import is
    is
       pragma Unreferenced (T);
 
+      use AUnit.Checks;
+      use AUnit.Checks.Text_IO;
       use Ada.Directories;
       use SMM.ID3;
       use Test_Utils;
 
-      DB  : SMM.Database.Database;
+      Source_Dir     : constant String := "/tmp/source/";
+      Out_File_Name  : constant String := "test_check.out";
+      Good_File_Name : constant String := "../test/test_check.good_out";
+      DB             : SMM.Database.Database;
 
       Success : Boolean;
-      Args    : constant GNAT.OS_Lib.Argument_List :=
-        (new String'("--db=" & DB_File_Name),
-         new String'("import"),
-         new String'("test"),
-         new String'("."));
+      Status  : Integer;
    begin
       if Dir (Dir'Last - 5 .. Dir'Last) /= "\build" then
          raise Program_Error with "current_directory = " & Current_Directory;
       end if;
 
       Cleanup;
+      Test_Utils.Delete_File (Out_File_Name);
 
       Create_Directory ("tmp");
 
@@ -63,7 +65,7 @@ package body Test_Import is
       Create_Directory ("tmp/source/artist_1");
       Create_Directory ("tmp/source/artist_1/album_1");
       Create_Test_File ("tmp/source/artist_1/album_1/liner_notes.pdf");
-      Create_Test_File ("tmp/source/artist_1/album_1/AlbumArt_1.jpg");
+      Create_Test_File ("tmp/source/artist_1/album_1/AlbumArt_huge.jpg");
 
       Create
         ("tmp/source/artist_1/album_1/1 - song_1.mp3",
@@ -72,21 +74,13 @@ package body Test_Import is
            (Title, +"1 - song_1"));
 
       Create
-        ("tmp/source/artist_1/album_1/2 - song_2.mp3",
+        ("tmp/source/artist_1/album_1/2 - song_2.mp3", -- not in db
          (Artist, +"artist_1") &
            (Album, +"album_1") &
            (Title, +"2 - song_2"));
 
-      Create
-        ("tmp/source/artist_1/album_1/03 The Dance #1.mp3",
-         (Artist, +"artist_1") &
-           (Album, +"album_1") &
-           (Title, +"03 The Dance #1"));
-
       Create_Directory ("tmp/source/artist_2");
-      Create_Directory ("tmp/source/artist_2/album_1");
-      Create_Test_File ("tmp/source/artist_2/album_1/liner_notes.pdf");
-      Create_Test_File ("tmp/source/artist_2/album_1/AlbumArt_1.jpg");
+      Create_Directory ("tmp/source/artist_2/album_1"); -- missing liner_notes, album art
 
       Create
         ("tmp/source/artist_2/album_1/1 - song_1.mp3",
@@ -98,60 +92,76 @@ package body Test_Import is
         ("tmp/source/artist_2/album_1/2 - song_2.mp3",
          (Artist, +"artist_2") &
            (Album, +"album_1") &
-           (Title, +"2 - song_2"));
+           (Title, +"1 - song_1"));
 
-      Create
-        ("tmp/source/artist_2/album_1/3 - song_3.mp3",
-         (Artist, +"artist_2") &
-           (Album, +"album_1") &
-           (Title, +"3 - song_3"));
-
-      Create_Directory ("tmp/source/Jason Castro [Deluxe] [+Video] [+Digital Booklet]");
-      Create_Test_File ("tmp/source/Jason Castro [Deluxe] [+Video] [+Digital Booklet]/liner_notes.pdf");
-
-      Set_Directory (Dir & "/tmp/source");
-
-      GNAT.OS_Lib.Spawn (Dir & "/smm.exe", Args, Success);
-      if not Success then
-         raise Program_Error with "smm failed";
-      end if;
 
       DB.Open (DB_File_Name);
 
-      declare
-         use AUnit.Checks;
-         use SMM.Database;
+      DB.Insert
+        (ID          => 1,
+         File_Name   => "artist_1/album_1/1 - song_1.mp3",
+         Category    => "test",
+         Artist      => "artist_1",
+         Album       => "album_1",
+         Title       => "1 - song_1",
+         Play_Before => 10); -- missing Play_After
 
-         I : Cursor := DB.First;
-      begin
-         --  smm import traverses directories/files in alphabetical order
+      DB.Insert
+        (ID          => 2,
+         File_Name   => "artist_2/album_1/1 - song_1.mp3",
+         Category    => "test",
+         Artist      => "artist_2",
+         Album       => "album_1",
+         Title       => "1 - song_1",
+         Play_Before => 3); -- mismatched
 
-         Check ("1.ID", I.ID, 1);
-         Check ("1.file_name", I.File_Name, "artist_1/album_1/03 The Dance #1.mp3");
-         I.Next;
+      DB.Insert
+        (ID         => 3,
+         File_Name  => "artist_2/album_1/2 - song_2.mp3",
+         Category   => "test",
+         Artist     => "artist_2",
+         Album      => "album_1",
+         Title      => "2 - song_2",
+         Play_After => 4); -- missing Play_Before
 
-         Check ("2.ID", I.ID, 2);
-         Check ("2.file_name", I.File_Name, "artist_1/album_1/1 - song_1.mp3");
-         I.Next;
+      DB.Insert
+        (ID          => 4,
+         File_Name   => "artist_2/album_1/3 - song_3.mp3", -- not on disk
+         Category    => "test",
+         Artist      => "artist_2",
+         Album       => "album_1",
+         Title       => "3 - song_3",
+         Play_After  => 6); -- not in db
 
-         Check ("3.ID", I.ID, 3);
-         Check ("3.file_name", I.File_Name, "artist_1/album_1/2 - song_2.mp3");
-         I.Next;
+      DB.Insert
+        (ID          => 10, -- non-sequential ID ok
+         File_Name   => "artist_2/album_1/4 - song_4.mp3", -- not on disk
+         Category    => "test",
+         Artist      => "artist_2",
+         Album       => "album_1",
+         Title       => "3 - song_3",
+         Play_Before => 11); -- not in db
 
-         Check ("4.ID", I.ID, 4);
-         Check ("4.file_name", I.File_Name, "artist_2/album_1/1 - song_1.mp3");
-         I.Next;
+      Set_Directory (Dir & Source_Dir);
 
-         Check ("5.ID", I.ID, 5);
-         Check ("5.file_name", I.File_Name, "artist_2/album_1/2 - song_2.mp3");
-         I.Next;
+      GNAT.OS_Lib.Spawn
+        (Program_Name => Dir & "/smm.exe",
+         Args         =>
+           (new String'("--db=" & DB_File_Name),
+            new String'("check")),
+         Output_File  => Out_File_Name,
+         Success      => Success,
+         Return_Code  => Status,
+         Err_To_Out   => True);
 
-         Check ("6.ID", I.ID, 6);
-         Check ("6.file_name", I.File_Name, "artist_2/album_1/3 - song_3.mp3");
-         I.Next;
+      if not Success then
+         raise Program_Error with "smm check failed to execute";
+      end if;
 
-         Check ("all files", I.Has_Element, False);
-      end;
+      Check ("status", Status, 1);
+
+      Set_Directory (Dir);
+      Check_Files ("1", Dir & Source_Dir & Out_File_Name, Good_File_Name);
    end Nominal;
 
    ----------
@@ -161,7 +171,7 @@ package body Test_Import is
    is
       pragma Unreferenced (T);
    begin
-      return new String'("test_import.adb");
+      return new String'("test_check.adb");
    end Name;
 
    overriding procedure Register_Tests (T : in out Test_Case)
@@ -178,4 +188,4 @@ package body Test_Import is
       Ada.Directories.Set_Directory (Dir);
    end Tear_Down_Case;
 
-end Test_Import;
+end Test_Check;

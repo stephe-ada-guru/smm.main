@@ -18,6 +18,7 @@
 
 pragma License (GPL);
 
+with Ada.Command_Line;
 with Ada.Directories;
 with Ada.Strings.Fixed;
 with Ada.Text_IO; use Ada.Text_IO;
@@ -28,6 +29,7 @@ procedure SMM.Check
 is
    DB_Count   : Integer := 0;
    Disk_Count : Integer := 0;
+   Failed     : Integer := 0;
 
    procedure Check_Before_After_Exists
    is
@@ -43,6 +45,7 @@ is
             File_Name : constant String := Source_Root & I.File_Name;
          begin
             if not Ada.Directories.Exists (File_Name) then
+               Failed := Failed + 1;
                Put_Line ("db extra: " & File_Name);
             end if;
          end;
@@ -54,35 +57,45 @@ is
                Before_J  : constant Cursor  := Find_ID (DB, Before_ID);
             begin
                if not Before_J.Has_Element then
+                  Failed := Failed + 1;
                   Put_Line ("db Play_After bad link:" & Integer'Image (After_ID));
 
                elsif Before_J.Play_Before_Is_Present then
                   if After_ID /= Before_J.Play_Before then
+                     Failed := Failed + 1;
                      Put_Line
-                       ("db mismatch Play_Before" & Integer'Image (Before_ID) &
+                       ("db mismatch Play_Before:" & Integer'Image (Before_ID) &
                           "; Play_After" & Integer'Image (After_ID));
                   end if;
                else
+                  Failed := Failed + 1;
                   Put_Line
-                    ("db missing Play_Before: " & Integer'Image (Before_ID) &
-                       "; Play_After " & Integer'Image (After_ID));
+                    ("db missing Play_Before:" & Integer'Image (Before_ID) &
+                       "; Play_After" & Integer'Image (After_ID));
                end if;
             end;
+         end if;
 
-         elsif I.Play_Before_Is_Present then
+         if I.Play_Before_Is_Present then
             declare
                Before_ID : constant Integer := I.Play_Before;
                After_J   : constant Cursor  := Find_ID (DB, Before_ID);
             begin
                if not After_J.Has_Element then
+                  Failed := Failed + 1;
                   Put_Line ("db Play_Before bad link:" & Integer'Image (I.ID));
 
                elsif After_J.Play_After_Is_Present then
-                  --  Match checked above
-                  null;
+                  if Before_ID /= After_J.Play_After then
+                     Failed := Failed + 1;
+                     Put_Line
+                       ("db mismatch Play_Before:" & Integer'Image (Before_ID) &
+                          "; Play_After" & Integer'Image (After_J.Play_After));
+                  end if;
                else
+                  Failed := Failed + 1;
                   Put_Line
-                    ("db missing Play_After: " & Integer'Image (After_J.ID) &
+                    ("db missing Play_After:" & Integer'Image (After_J.ID) &
                        "; Play_Before" & Integer'Image (I.ID));
                end if;
             end;
@@ -171,5 +184,10 @@ begin
 
    Put_Line ("db files:" & Integer'Image (DB_Count));
    Put_Line ("Disk files:" & Integer'Image (Disk_Count));
+   Put_Line ("failed checks:" & Integer'Image (Failed));
+
+   if Failed > 0 then
+      Ada.Command_Line.Set_Exit_Status (Ada.Command_Line.Failure);
+   end if;
 
 end SMM.Check;

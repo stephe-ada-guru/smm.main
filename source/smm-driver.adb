@@ -75,7 +75,7 @@ is
       Put_Line ("    list all new songs.");
    end Put_Usage;
 
-   Source_Root  : constant String := Ada.Directories.Current_Directory;
+   Source_Root  : constant String := As_Directory (Ada.Directories.Current_Directory);
    DB_File_Name : access String;
    DB           : SMM.Database.Database;
    Next_Arg     : Integer         := 1;

@@ -1,6 +1,6 @@
 --  Abstract :
 --
---  Test smm import
+--  Test smm check
 --
 --  Copyright (C) 2018 Stephen Leake.  All Rights Reserved.
 --
@@ -19,7 +19,7 @@
 pragma License (GPL);
 
 with AUnit.Test_Cases;
-package Test_Import is
+package Test_Check is
 
    type Test_Case is new AUnit.Test_Cases.Test_Case with null record;
 
@@ -29,4 +29,4 @@ package Test_Import is
 
    overriding procedure Tear_Down_Case (T : in out Test_Case);
 
-end Test_Import;
+end Test_Check;

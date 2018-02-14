@@ -27,6 +27,8 @@ package Test_Utils is
    function "+" (Item : in String) return Ada.Strings.Unbounded.Unbounded_String renames
      Ada.Strings.Unbounded.To_Unbounded_String;
 
+   procedure Delete_File (Name : in String);
+
    procedure Cleanup;
    --  Delete tmp/
 

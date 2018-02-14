@@ -27,7 +27,7 @@ with GNAT.Traceback.Symbolic;
 with SAL.Config_Files.Integer;
 with SAL.Time_Conversions;
 with SMM.Database;
-with SMM.Metadata;
+with SMM.ID3;
 procedure Config_To_Sqlite
 is
    function "-" (Item : in Ada.Strings.Unbounded.Unbounded_String) return String
@@ -43,6 +43,54 @@ is
    Config    : SAL.Config_Files.Configuration_Type;
    Config_Db : SAL.Config_Files.Configuration_Type;
    SQL_Db    : SMM.Database.Database;
+
+   function Read_Time
+     (Db  : in SAL.Config_Files.Configuration_Type;
+      I   : in SAL.Config_Files.Iterator_Type;
+      Key : in String)
+     return SAL.Time_Conversions.Time_Type
+   is
+      use SAL.Config_Files;
+      use SAL.Time_Conversions;
+   begin
+      if Is_Present (Db, I, Key)  then
+         declare
+            Temp : constant String := Read (Db, I, Key);
+         begin
+            if Temp'Length = Extended_ASIST_Time_String_Type'Last and then Temp (5) = '-' then
+               --  ASIST string
+               return To_TAI_Time (Temp, Absolute => True);
+            else
+               --  Time_type'image; old db, or unit test.
+               return Time_Type'Value (Temp);
+            end if;
+         exception
+         when others =>
+            --  bad format in db file; report it, but keep going
+            Ada.Text_IO.Put_Line
+              (Ada.Text_IO.Standard_Error, "bad time format for " & Current (I) & "." & Key & ": " & Temp);
+            return 0.0;
+         end;
+      else
+         return 0.0;
+      end if;
+   end Read_Time;
+
+   function Read_Last_Downloaded
+     (Db : in SAL.Config_Files.Configuration_Type;
+      I  : in SAL.Config_Files.Iterator_Type)
+     return SAL.Time_Conversions.Time_Type
+   is begin
+      return Read_Time (Db, I, SMM.Last_Downloaded_Key);
+   end Read_Last_Downloaded;
+
+   function Read_Prev_Downloaded
+     (Db : in SAL.Config_Files.Configuration_Type;
+      I  : in SAL.Config_Files.Iterator_Type)
+     return SAL.Time_Conversions.Time_Type
+   is begin
+      return Read_Time (Db, I, SMM.Prev_Downloaded_Key);
+   end Read_Prev_Downloaded;
 
    function SAL_To_UTC (SAL_Time : in SAL.Time_Conversions.Time_Type) return SMM.Database.Time_String
    is begin
@@ -104,20 +152,18 @@ begin
          exit when Is_Null (I);
          declare
             File_Name : constant String := Read (Config_Db, I, File_Key);
-            Artist    : Unbounded_String;
-            Album     : Unbounded_String;
-            Title     : Unbounded_String;
+            File      : SMM.ID3.File;
          begin
-            SMM.Metadata.Read_Meta (Root_Dir & File_Name, Artist, Album, Title);
+            File.Open (Root_Dir & File_Name);
 
             SQL_Db.Insert
-              (ID              => Integer'Value (Current (I)),
-               File_Name       => File_Name,
-               Category        => Read (Config_Db, I, Category_Key),
-               Artist          => -Artist,
-               Album           => -Album,
-               Title           => -Title,
-               Last_Downloaded => SAL_To_UTC (Read_Last_Downloaded (Config_Db, I)),
+              (ID             => Integer'Value (Current (I)),
+               File_Name      => File_Name,
+               Category       => Read (Config_Db, I, Category_Key),
+               Artist         => File.Read (SMM.ID3.Artist),
+               Album          => File.Read (SMM.ID3.Album),
+               Title          => File.Read (SMM.ID3.Title),
+               Last_Downloaded   => SAL_To_UTC (Read_Last_Downloaded (Config_Db, I)),
                Prev_Downloaded =>
                  (if Is_Present (Config_Db, I, Prev_Downloaded_Key)
                   then SAL_To_UTC (Read_Prev_Downloaded (Config_Db, I))
@@ -152,7 +198,7 @@ begin
       Cursor := SMM.Database.First (SQL_Db);
       loop
          declare
-            Song     : constant SMM.Database.Song_Type := Cursor.Current;
+            Song     : constant SMM.Database.Song_Type := Cursor.Element;
             ID_Image : constant String                 := Integer'Image (Song.ID);
          begin
             Write_String (New_Config_Db, Songs_Key & "." & ID_Image & "." & File_Key, -Song.File_Name);

@@ -80,9 +80,9 @@ is
                     (ID        => Index,
                      File_Name => Name,
                      Category  => Category,
-                     Artist    => SMM.ID3.Read (File, SMM.ID3.Artist),
-                     Album     => SMM.ID3.Read (File, SMM.ID3.Album),
-                     Title     => SMM.ID3.Read (File, SMM.ID3.Title));
+                     Artist    => File.Read (SMM.ID3.Artist),
+                     Album     => File.Read (SMM.ID3.Album),
+                     Title     => File.Read (SMM.ID3.Title));
 
                   Index := Index + 1;
                else
