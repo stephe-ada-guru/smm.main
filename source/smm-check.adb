@@ -22,6 +22,7 @@ with Ada.Command_Line;
 with Ada.Directories;
 with Ada.Strings.Fixed;
 with Ada.Text_IO; use Ada.Text_IO;
+with SAL;
 with SMM.Database;
 procedure SMM.Check
   (DB          : in out SMM.Database.Database;

@@ -2,7 +2,7 @@
 --
 --  First pass of playlists.
 --
---  Copyright (C) 2007, 2009, 2012, 2015, 2016 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007, 2009, 2012, 2015, 2016, 2018 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -22,6 +22,7 @@ procedure SMM.First_Pass
   (Category     : in     String;
    Playlist_Dir : in     String;
    SMM_Dir      : in     String;
+   Debug        : in     Boolean;
    File_Count   :    out Integer);
 --  Delete lines in category.m3u that are before song in
 --  SMM_Dir/category.last. Delete files from Playlist_Dir/Category

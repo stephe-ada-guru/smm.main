@@ -21,7 +21,6 @@ pragma License (GPL);
 with AUnit.Checks;
 with Ada.Directories;
 with Ada.Text_IO;
-with SAL;
 with SMM.First_Pass;
 with Test_Utils; use Test_Utils;
 package body Test_First_Pass_No_Last is
@@ -32,7 +31,7 @@ package body Test_First_Pass_No_Last is
       use Ada.Text_IO;
       use AUnit.Checks;
 
-      pragma Unreferenced (T);
+      Test : Test_Case renames Test_Case (T);
 
       Playlist : File_Type;
 
@@ -72,6 +71,7 @@ package body Test_First_Pass_No_Last is
         (Category     => "Vocal",
          Playlist_Dir => SMM.As_Directory (Current_Directory & "/tmp/playlists/"),
          SMM_Dir      => SMM.As_Directory (Current_Directory & "/tmp/smm/"),
+         Debug        => Test.Debug,
          File_Count   => File_Count);
 
       Set_Directory (Start_Dir);
@@ -126,6 +126,7 @@ package body Test_First_Pass_No_Last is
         (Category     => "Vocal",
          Playlist_Dir => SMM.As_Directory (Current_Directory & "/tmp/playlists/"),
          SMM_Dir      => SMM.As_Directory (Current_Directory & "/tmp/smm/"),
+         Debug        => Test.Debug,
          File_Count   => File_Count);
 
       Set_Directory (Start_Dir);
@@ -153,21 +154,8 @@ package body Test_First_Pass_No_Last is
    is
       use Standard.AUnit.Test_Cases.Registration;
    begin
-      case T.Debug is
-      when 0 =>
-         Register_Routine (T, Nominal'Access, "Nominal");
-         Register_Routine (T, Empty_Playlist'Access, "Empty_Playlist");
-
-      when 1 =>
-         Register_Routine (T, Nominal'Access, "Nominal");
-
-      when 2 =>
-         Register_Routine (T, Empty_Playlist'Access, "Empty_Playlist");
-
-      when others =>
-         raise SAL.Programmer_Error;
-      end case;
-
+      Register_Routine (T, Nominal'Access, "Nominal");
+      Register_Routine (T, Empty_Playlist'Access, "Empty_Playlist");
    end Register_Tests;
 
    overriding procedure Set_Up_Case (T : in out Test_Case)

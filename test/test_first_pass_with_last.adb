@@ -27,12 +27,12 @@ package body Test_First_Pass_With_Last is
 
    procedure Nominal (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
    is
-      pragma Unreferenced (T);
-
       use Ada.Directories;
       use Ada.Text_IO;
       use AUnit.Checks;
       use AUnit.Checks.Text_IO;
+
+      Test : Test_Case renames Test_Case (T);
 
       File : File_Type;
 
@@ -71,6 +71,7 @@ package body Test_First_Pass_With_Last is
         (Category     => "Vocal",
          Playlist_Dir => SMM.As_Directory (Current_Directory & "/tmp/playlists/"),
          SMM_Dir      => SMM.As_Directory (Current_Directory & "/tmp/smm/"),
+         Debug        => Test.Debug,
          File_Count   => File_Count);
 
       Set_Directory (Start_Dir);
@@ -95,12 +96,12 @@ package body Test_First_Pass_With_Last is
 
    procedure New_Playlist (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
    is
-      pragma Unreferenced (T);
-
       use Ada.Directories;
       use Ada.Text_IO;
       use AUnit.Checks;
       use AUnit.Checks.Text_IO;
+
+      Test : Test_Case renames Test_Case (T);
 
       File : File_Type;
 
@@ -131,6 +132,7 @@ package body Test_First_Pass_With_Last is
         (Category     => "Vocal",
          Playlist_Dir => SMM.As_Directory (Current_Directory & "/tmp/playlists/"),
          SMM_Dir      => SMM.As_Directory (Current_Directory & "/tmp/smm/"),
+         Debug        => Test.Debug,
          File_Count   => File_Count);
 
       Set_Directory (Start_Dir);
@@ -159,6 +161,7 @@ package body Test_First_Pass_With_Last is
         (Category     => "Vocal",
          Playlist_Dir => SMM.As_Directory (Current_Directory & "/tmp/playlists/"),
          SMM_Dir      => SMM.As_Directory (Current_Directory & "/tmp/smms/"),
+         Debug        => Test.Debug,
          File_Count   => File_Count);
 
       Set_Directory (Start_Dir);
@@ -171,12 +174,12 @@ package body Test_First_Pass_With_Last is
 
    procedure Finished_Playlist (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
    is
-      pragma Unreferenced (T);
-
       use Ada.Directories;
       use Ada.Text_IO;
       use AUnit.Checks;
       use AUnit.Checks.Text_IO;
+
+      Test : Test_Case renames Test_Case (T);
 
       File : File_Type;
 
@@ -212,6 +215,7 @@ package body Test_First_Pass_With_Last is
         (Category     => "Vocal",
          Playlist_Dir => SMM.As_Directory (Current_Directory & "/tmp/playlists/"),
          SMM_Dir      => SMM.As_Directory (Current_Directory & "/tmp/smm/"),
+         Debug        => Test.Debug,
          File_Count   => File_Count);
 
       Set_Directory (Start_Dir);

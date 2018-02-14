@@ -20,6 +20,7 @@ pragma License (GPL);
 
 with Ada.IO_Exceptions;
 with Interfaces.C;
+with SAL;
 package body SMM.ID3 is
 
    function Size (Item : in Size_Type) return Ada.Streams.Stream_IO.Count

@@ -23,6 +23,7 @@ with Ada.Directories;
 with Ada.Environment_Variables;
 with Ada.IO_Exceptions;
 with Ada.Text_IO;
+with SAL;
 package body SMM is
 
    function Find_Home return String
@@ -36,7 +37,7 @@ package body SMM is
       elsif Exists ("APPDATA") then
          return Value ("APPDATA") & "/smm";
       else
-         raise Playlist_Error with "must define either APPDATA or HOME environment variable";
+         raise SAL.Not_Found with "must define either APPDATA or HOME environment variable";
       end if;
    end Find_Home;
 
@@ -91,26 +92,6 @@ package body SMM is
          return Temp;
       end if;
    end As_File;
-
-   function Find
-     (Db       : in SAL.Config_Files.Configuration_Type;
-      Filename : in String)
-     return SAL.Config_Files.Iterator_Type
-   is
-      use SAL.Config_Files;
-      I : Iterator_Type := First (Db, Songs_Key);
-   begin
-      loop
-         exit when Is_Done (I) or else Read (Db, I, File_Key) = Filename;
-         Next (I);
-      end loop;
-
-      if Is_Done (I) then
-         raise SAL.Not_Found with "'" & Filename & "'";
-      else
-         return I;
-      end if;
-   end Find;
 
    procedure Edit_Playlist
      (Playlist_File_Name : in String;

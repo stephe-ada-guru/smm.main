@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2007 - 2009, 2011 - 2013, 2015, 2016 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007 - 2009, 2011 - 2013, 2015, 2016, 2018 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -21,10 +21,12 @@ pragma License (GPL);
 with Ada.Characters.Handling;
 with Ada.Directories; use Ada.Directories;
 with Ada.Text_IO;     use Ada.Text_IO;
+with SAL;
 procedure SMM.First_Pass
   (Category     : in     String;
    Playlist_Dir : in     String;
    SMM_Dir      : in     String;
+   Debug        : in     Boolean;
    File_Count   :    out Integer)
 is
    Playlist_File_Name : constant String := Category & ".m3u";  -- in Playlist_Dir

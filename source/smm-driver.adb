@@ -91,6 +91,7 @@ is
    procedure Get_Command is new SAL.Command_Line_IO.Gen_Get_Discrete_Proc (Command_Type, "command", Next_Arg);
 
    Command : Command_Type;
+   Debug   : Boolean := False;
 
    use type Ada.Containers.Count_Type;
 
@@ -170,7 +171,7 @@ begin
          Song_Count   : Ada.Containers.Count_Type;
       begin
          Verbosity := Verbosity + 1;
-         SMM.First_Pass (Category, Playlist_Dir, SMM_Dir, Integer (Song_Count));
+         SMM.First_Pass (Category, Playlist_Dir, SMM_Dir, Debug, Integer (Song_Count));
          if Max_Song_Count - Song_Count >= Min_Download_Count then
             Verbosity := Verbosity - 1;
             SMM.Download

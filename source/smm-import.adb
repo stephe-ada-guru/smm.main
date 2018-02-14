@@ -20,6 +20,7 @@ pragma License (GPL);
 
 with Ada.Directories;
 with Ada.Text_IO;
+with SAL;
 with SMM.Database;
 with SMM.ID3;
 procedure SMM.Import

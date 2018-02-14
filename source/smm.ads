@@ -19,15 +19,9 @@
 pragma License (GPL);
 
 with Ada.Containers.Indefinite_Doubly_Linked_Lists;
-with Ada.Containers.Indefinite_Hashed_Maps;
-with Ada.Strings.Hash;
-with SAL.Config_Files;
 package SMM is
 
    Verbosity : Integer;
-   Debug     : Boolean; -- if true, don't change disk, just show what would be done
-
-   Playlist_Error : exception;
 
    function Find_Home return String;
 
@@ -43,31 +37,10 @@ package SMM is
    function As_File (Path : in String) return String;
    --  delete trailing '/' if needed.
 
-   --  database keys
-   Category_Key        : constant String := "Category";
-   File_Key            : constant String := "File";
-   Last_Downloaded_Key : constant String := "Last_Downloaded";
-   Prev_Downloaded_Key : constant String := "Prev_Downloaded";
-   Play_After_Key      : constant String := "Play_After";
-   Play_Before_Key     : constant String := "Play_Before";
-
-   Songs_Key : constant String := "Songs";
-   Root_Key  : constant String := "Root";
-
-   function Find
-     (Db       : in SAL.Config_Files.Configuration_Type;
-      Filename : in String)
-     return SAL.Config_Files.Iterator_Type;
-   --  Filename is Artist/Album/title.mp3; file name relative to music root.
+   --  Config file keys
+   Root_Key : constant String := "Root";
 
    package String_Lists is new Ada.Containers.Indefinite_Doubly_Linked_Lists (String);
-
-   package String_Maps is new Ada.Containers.Indefinite_Hashed_Maps
-     (Key_Type        => Standard.String,
-      Element_Type    => SAL.Config_Files.Iterator_Type,
-      Hash            => Ada.Strings.Hash,
-      Equivalent_Keys => Standard."=",
-      "="             => SAL.Config_Files."=");
 
    procedure Edit_Playlist
      (Playlist_File_Name : in String;

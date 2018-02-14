@@ -47,7 +47,7 @@ begin
    Add_Test (Suite, new Test_Copy.Test_Case (Verbosity => 0));
    Add_Test (Suite, new Test_Check.Test_Case);
    Add_Test (Suite, new Test_Download.Test_Case (Verbosity => 0));
-   Add_Test (Suite, new Test_First_Pass_No_Last.Test_Case (Verbosity => 0, Debug => 0));
+   Add_Test (Suite, new Test_First_Pass_No_Last.Test_Case (Verbosity => 0, Debug => False));
    Add_Test (Suite, new Test_First_Pass_With_Last.Test_Case (Verbosity => 0, Debug => False));
    Add_Test (Suite, new Test_Import.Test_Case);
    Add_Test (Suite, new Test_Least_Recent.Test_Case);

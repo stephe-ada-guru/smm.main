@@ -2,7 +2,7 @@
 --
 --  Test playlists.first_pass, with no .last file
 --
---  Copyright (C) 2007 - 2009, 2011, 2015, 2016 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007 - 2009, 2011, 2015, 2016, 2018 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -23,7 +23,7 @@ package Test_First_Pass_No_Last is
 
    type Test_Case
      (Verbosity : Integer;
-      Debug     : Integer)
+      Debug     : Boolean)
       is new Standard.AUnit.Test_Cases.Test_Case with null record;
 
    overriding procedure Register_Tests (T : in out Test_Case);
