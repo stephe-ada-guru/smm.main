@@ -18,14 +18,10 @@
 
 pragma License (GPL);
 
-with Ada.Strings.Unbounded;
 with SMM.Database;
 with SMM.ID3;
 package Test_Utils is
    pragma Elaborate_Body; -- Ada.Text_IO
-
-   function "+" (Item : in String) return Ada.Strings.Unbounded.Unbounded_String renames
-     Ada.Strings.Unbounded.To_Unbounded_String;
 
    procedure Delete_File (Name : in String);
 

@@ -19,7 +19,14 @@
 pragma License (GPL);
 
 with Ada.Containers.Indefinite_Doubly_Linked_Lists;
+with Ada.Strings.Unbounded;
 package SMM is
+
+   function "+" (Item : in String) return Ada.Strings.Unbounded.Unbounded_String
+     renames Ada.Strings.Unbounded.To_Unbounded_String;
+
+   function "-" (Item : in Ada.Strings.Unbounded.Unbounded_String) return String
+     renames Ada.Strings.Unbounded.To_String;
 
    Verbosity : Integer;
 

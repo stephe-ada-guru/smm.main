@@ -26,12 +26,6 @@ with Ada.Text_IO;
 with GNATCOLL.SQL.Sqlite;
 package body SMM.Database is
 
-   function "+" (Item : in String) return Ada.Strings.Unbounded.Unbounded_String
-     renames Ada.Strings.Unbounded.To_Unbounded_String;
-
-   function "-" (Item : in Ada.Strings.Unbounded.Unbounded_String) return String
-     renames Ada.Strings.Unbounded.To_String;
-
    procedure Checked_Execute
      (DB        : in Database'Class;
       Statement : in String;
@@ -68,7 +62,7 @@ package body SMM.Database is
    end Checked_Fetch;
 
    ----------
-   --  Public subprograms
+   --  Public subprograms, declaration order
 
    overriding procedure Finalize (DB : in out Database)
    is
@@ -161,10 +155,7 @@ package body SMM.Database is
    ----------
    --  Iterators
 
-   All_Fields : constant String :=
-     "ID, File_Name, Category, Artist, Album, Title, Last_Downloaded, Prev_Downloaded, Play_Before, Play_After";
-
-   --  Field indices
+   --  Field indices; create_schema.sql declaration order
    use all type GNATCOLL.SQL.Exec.Field_Index;
    ID_Field              : constant GNATCOLL.SQL.Exec.Field_Index := GNATCOLL.SQL.Exec.Field_Index'First;
    File_Name_Field       : constant GNATCOLL.SQL.Exec.Field_Index := ID_Field + 1;
@@ -184,14 +175,14 @@ package body SMM.Database is
 
    function First (DB : in Database'Class) return Cursor
    is
-      Statement : constant String := "SELECT " & All_Fields & " FROM Song ORDER BY ID ASC";
+      Statement : constant String := "SELECT * FROM Song ORDER BY ID ASC";
    begin
       return Checked_Fetch (DB, Statement);
    end First;
 
    function Last (DB : in Database'Class) return Cursor
    is
-      Statement : constant String := "SELECT " & All_Fields & " FROM Song ORDER BY ID DESC";
+      Statement : constant String := "SELECT * FROM Song ORDER BY ID DESC";
    begin
       return Checked_Fetch (DB, Statement);
    end Last;
@@ -199,7 +190,7 @@ package body SMM.Database is
    function Find_File_Name (DB : in Database'Class; File_Name : in String) return Cursor
    is
       use GNATCOLL.SQL.Exec;
-      Statement : constant String := "SELECT " & All_Fields & " FROM Song WHERE File_Name = ?";
+      Statement : constant String := "SELECT * FROM Song WHERE File_Name = ?";
    begin
       return Checked_Fetch (DB, Statement, Params => (1 => +File_Name));
    end Find_File_Name;
@@ -207,10 +198,56 @@ package body SMM.Database is
    function Find_ID (DB : in Database'Class; ID : in Integer) return Cursor
    is
       use GNATCOLL.SQL.Exec;
-      Statement : constant String := "SELECT " & All_Fields & " FROM Song WHERE ID = ?";
+      Statement : constant String := "SELECT * FROM Song WHERE ID = ?";
    begin
       return Checked_Fetch (DB, Statement, Params => (1 => +ID));
    end Find_ID;
+
+   function Image (Item : Field_Values) return String
+   is
+      use Ada.Strings.Unbounded;
+      Result     : Unbounded_String;
+      Need_Comma : Boolean := False;
+   begin
+      for I in Fields loop
+         if Length (Item (Artist)) > 0 then
+            if Need_Comma then
+               Result := Result & ", ";
+            end if;
+
+            Result     := Result & Field_Image (Artist) & " : '" & (-Item (Artist)) & "'";
+            Need_Comma := True;
+         end if;
+      end loop;
+
+      return -Result;
+   end Image;
+
+   function Find_Like
+     (DB    : in Database'Class;
+      Param : in Field_Values)
+     return Cursor
+   is
+      use Ada.Strings.Unbounded;
+      use GNATCOLL.SQL.Exec;
+      Statement : Unbounded_String := +"SELECT * FROM Song WHERE ";
+      Need_And  : Boolean          := False;
+   begin
+      --  Can't put ? inside quotes.
+      for I in Param'Range loop
+         if Length (Param (I)) > 0 then
+            if Need_And then
+               Statement := Statement & " AND ";
+            end if;
+
+            Statement := Statement & Field_Image (I) & " like '%" & Param (I) & "%'";
+
+            Need_And := True;
+         end if;
+      end loop;
+
+      return Checked_Fetch (DB, -Statement);
+   end Find_Like;
 
    procedure Next (Position : in out Cursor)
    is begin

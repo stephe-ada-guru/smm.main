@@ -90,6 +90,23 @@ package SMM.Database is
    function Find_File_Name (DB : in Database'Class; File_Name : in String) return Cursor;
    function Find_ID (DB : in Database'Class; ID : in Integer) return Cursor;
 
+   type Fields is (Artist, Album, Title);
+
+   type Field_Values is array (Fields) of Ada.Strings.Unbounded.Unbounded_String;
+
+   function Image (Item : Field_Values) return String;
+   --  User-friendly image, good for "not found" error messages.
+
+   Field_Image : constant Field_Values :=
+     (Artist => +"artist",
+      Album  => +"album",
+      Title  => +"title");
+
+   function Find_Like
+     (DB    : in Database'Class;
+      Param : in Field_Values)
+     return Cursor;
+
    procedure Next (Position : in out Cursor);
 
    function Element (Position : in Cursor) return Song_Type;

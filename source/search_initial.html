@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Stephe's Music Manager search</title>
+    <!-- FIXME: move style to separate CSS file; include <link> to
+      stylesheet, browser will ask for it in second request -->
+    <style>
+      div.table {display: table}
+      span.caption {display: table-caption; position: relative; left: 50%}
+      div.row {display: table-row}
+      label {display: table-cell;
+             text-align: right;
+             width: 3em}
+      span.label {margin-right: 2px}
+      input[type=text] {display:table-cell; width: 50em}
+    </style>
+  </head>
+  <body>
+    <form action="/search" method=get>
+      <div class="table">
+        <span class="caption">Search fields</span>
+        <div class="row">
+          <label><span class="label">Title</span></label>
+          <input type=text autofocus name="title">
+        </div>
+
+        <div class="row">
+          <label><span class="label">Artist</span></label>
+          <input type=text autofocus name="artist">
+        </div>
+
+        <div class="row">
+          <label><span class="label">Album</span></label>
+          <input type=text autofocus name="album">
+        </div>
+      </div>
+      <div><input type=submit value="Search"></div>
+    </form>
+
+  </body>
+</html>

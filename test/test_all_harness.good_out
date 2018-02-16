@@ -19,7 +19,9 @@ adding file artist_2/album_1/2 - song_2.mp3
 adding file artist_2/album_1/3 - song_3.mp3
 not logging
 listening on 192.168.1.83: 8081
+new db; all new songs
 
+OK smm-database-test.adb : Test_Find_Like
 OK test_id3.adb : Test_Size
 OK test_copy.adb : Nominal
 OK test_check.adb : Nominal
@@ -38,7 +40,7 @@ OK test_server.adb : Test_Get_File
 OK test_server.adb : Test_Send_Notes
 OK test_server.adb : Test_Search_Initial
 
-Total Tests Run:   18
-Successful Tests:  18
+Total Tests Run:   19
+Successful Tests:  19
 Failed Assertions: 0
 Unexpected Errors: 0

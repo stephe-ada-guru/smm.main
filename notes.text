@@ -21,6 +21,24 @@ play-before causes short replay periods
     fixed 1 feb 2018; short periods should dissappear from status eventually
 
 implement search
+    results show artist, album, title; include filename for click to play
+        use template, table
+
+    add to test_server
+
+provide /favicon.ico = music app icon
+    providing icon.png does not work
+
+click on item to play
+
+phone
+    font (and everything else) way to small, can't change in browser settings
+    try px; supposed to scale to local viewing conditions
+    use conditional CSS?
+    add scale control
+
+tablet
+    ok, could be bigger
 
 implement notes
 

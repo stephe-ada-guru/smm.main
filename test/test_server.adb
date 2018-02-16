@@ -159,6 +159,7 @@ package body Test_Server is
       use AUnit.Checks;
       use AWS.Response;
       use AWS.Response.AUnit;
+      use SMM;
       use SMM.ID3;
       use Test_Utils;
 
@@ -285,7 +286,7 @@ package body Test_Server is
 
       URL : constant String := "http://" & Test.Server_IP.all & ":" & Server_Port & "/search";
 
-      Good_File_Name : constant String := "../test/search_initial.html";
+      Good_File_Name : constant String := "../source/search_initial.html";
       Response       : constant Data   := AWS.Client.Get (URL);
 
    begin
@@ -303,33 +304,55 @@ package body Test_Server is
    is
       use AWS.Response;
       use AWS.Messages.AUnit;
+      use AUnit.Assertions;
 
       Test : Test_Case renames Test_Case (T);
 
       procedure Check_One
-        (Label              : in String;
-         Query              : in String;
-         Expected_File_Name : in String)
+        (Query            : in String;
+         Expected_Message : in String)
       is
+         use AUnit.Checks;
+
          URL      : constant String := "http://" & Test.Server_IP.all & ":" & Server_Port & "/search?" & Query;
          Response : constant Data   := AWS.Client.Get (URL);
       begin
-         Check (Label & ".status", Status_Code (Response), AWS.Messages.S200);
          declare
+            use all type AWS.Messages.Status_Code;
             Computed : constant String := Message_Body (Response);
          begin
-            Check_File (Computed, Expected_File_Name);
+            case Status_Code (Response) is
+            when S200 | -- ok
+              S405 -- bad param
+              =>
+               Check ("file", Computed, Expected_Message);
+
+            when others =>
+               Assert (False, Computed);
+            end case;
          end;
       end Check_One;
 
    begin
       --  Test response to search submissions
+      --  FIXME: all wrong; waiting for improved display
       Check_One
-        ("1",
-         "text=" & Encode ("""1""") & ",field=" & Encode ("""Artist"""),
-         "artist_1/album_1/1 - song_1.mp3");
+        ("text=" & Encode ("artist 1") & "&field=" & Encode ("artist"),
+         "artist_1/album_1/1 - song_1.mp3" & ASCII.CR & ASCII.LF &
+           "artist_1/album_1/2 - song_2.mp3" & ASCII.CR & ASCII.LF &
+           "artist_1/album_1/03 The Dance #1.mp3" & ASCII.CR & ASCII.LF);
 
-      --  FIXME: album, song
+      Check_One
+        ("text=" & Encode ("1") & "&field=" & Encode ("artist"),
+         "artist_1/album_1/1 - song_1.mp3" & ASCII.CR & ASCII.LF &
+           "artist_1/album_1/2 - song_2.mp3" & ASCII.CR & ASCII.LF &
+           "artist_1/album_1/03 The Dance #1.mp3" & ASCII.CR & ASCII.LF);
+
+      Check_One
+        ("text=" & Encode ("1") & "&field=" & Encode ("album") &
+           "&text=" & Encode ("1") & "&field=" & Encode ("title"),
+         "artist_1/album_1/1 - song_1.mp3" & ASCII.CR & ASCII.LF);
+
    end Test_Search_Results;
 
    ----------
@@ -358,6 +381,7 @@ package body Test_Server is
    is
       use Ada.Directories;
       use Ada.Text_IO;
+      use SMM;
       use SMM.ID3;
       use SMM.ID3.Tag_Lists;
       use Test_Utils;
@@ -380,13 +404,14 @@ package body Test_Server is
 
          DB.Open (DB_File_Name);
 
-         Insert (DB, 1, "artist_1/album_1/1 - song_1.mp3", 1.0, "vocal");
+         DB.Insert (1, "artist_1/album_1/1 - song_1.mp3", "vocal", "artist 1", "album 1", "1 - song_1");
          DB.Write_Play_Before_After (1, 2);
-         Insert (DB, 2, "artist_1/album_1/2 - song_2.mp3", 1.0, "vocal");
-         Insert (DB, 3, "artist_1/album_1/03 The Dance #1.mp3", 1.0, "instrumental");
-         Insert (DB, 4, "artist_2/album_1/1 - song_1.mp3", 1.0, "vocal");
-         Insert (DB, 5, "artist_2/album_1/2 - song_2.mp3", 1.0, "vocal");
-         Insert (DB, 6, "artist_2/album_1/3 - song_3.mp3", 1.0, "vocal");
+         DB.Insert (2, "artist_1/album_1/2 - song_2.mp3", "vocal", "artist 1", "album 1", "2 - song_2");
+         DB.Insert
+           (3, "artist_1/album_1/03 The Dance #1.mp3", "instrumental", "artist 1", "album 1", "03 The Dance #1");
+         DB.Insert (4, "artist_2/album_1/1 - song_1.mp3", "vocal", "artist 2", "album 1", "1 - song_1");
+         DB.Insert (5, "artist_2/album_1/2 - song_2.mp3", "vocal", "artist 2", "album 1", "2 - song_2");
+         DB.Insert (6, "artist_2/album_1/3 - song_3.mp3", "vocal", "artist 2", "album 1", "3 - song_3");
 
          DB.Finalize;
 
@@ -442,7 +467,7 @@ package body Test_Server is
 
          --  Server-side html, css
          Create_Directory ("tmp/server");
-         Copy_File ("../test/search_initial.html", "tmp/server/search_initial.html");
+         Copy_File ("../source/search_initial.html", "tmp/server/search_initial.html");
 
       end if;
 

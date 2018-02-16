@@ -37,6 +37,7 @@ package body Test_Import is
       pragma Unreferenced (T);
 
       use Ada.Directories;
+      use SMM;
       use SMM.ID3;
       use Test_Utils;
 

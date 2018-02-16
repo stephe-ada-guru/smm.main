@@ -32,6 +32,7 @@ package body Test_Download is
       use Ada.Directories;
       use Ada.Text_IO;
       use AUnit.Checks.Text_IO;
+      use SMM;
       use SMM.ID3;
 
       pragma Unreferenced (T);

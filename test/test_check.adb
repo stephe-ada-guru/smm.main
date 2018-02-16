@@ -39,6 +39,7 @@ package body Test_Check is
       use AUnit.Checks;
       use AUnit.Checks.Text_IO;
       use Ada.Directories;
+      use SMM;
       use SMM.ID3;
       use Test_Utils;
 

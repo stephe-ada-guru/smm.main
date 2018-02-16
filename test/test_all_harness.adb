@@ -25,6 +25,7 @@ with AUnit.Test_Suites; use AUnit.Test_Suites;
 with Ada.Exceptions;
 with Ada.Text_IO;
 with GNAT.Traceback.Symbolic;
+with SMM.Database.Test;
 with SMM.ID3.Test;
 with Test_Copy;
 with Test_Check;
@@ -43,6 +44,7 @@ is
    Status   : AUnit.Status;
 
 begin
+   Add_Test (Suite, new SMM.Database.Test.Test_Case);
    Add_Test (Suite, new SMM.ID3.Test.Test_Case);
    Add_Test (Suite, new Test_Copy.Test_Case (Verbosity => 0));
    Add_Test (Suite, new Test_Check.Test_Case);

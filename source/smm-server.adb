@@ -20,6 +20,7 @@ pragma License (GPL);
 
 with AWS.Config.Set;
 with AWS.Messages;
+with AWS.Parameters;
 with AWS.Response.Set;
 with AWS.Server.Log;
 with AWS.Status;
@@ -81,7 +82,7 @@ package body SMM.Server is
       Songs    : List;
       Response : Unbounded_String;
    begin
-      Open (DB, -DB_Filename);
+      DB.Open (-DB_Filename);
 
       SMM.Song_Lists.Least_Recent_Songs
         (DB, Category, Songs,
@@ -108,7 +109,6 @@ package body SMM.Server is
       use Ada.Strings.Unbounded;
       use AWS.URL;
 
-      --  FIXME: put source_dir in query
       Source_Dir : constant String := -Source_Root & Path (URI);
       Response   : Unbounded_String;
 
@@ -250,16 +250,52 @@ package body SMM.Server is
 
    function Handle_Search (URI : in AWS.URL.Object) return AWS.Response.Data
    is
-      Query : constant String := AWS.URL.Query (URI);
+      use Ada.Strings.Unbounded;
+      use SMM.Database;
+
+      Param : constant AWS.Parameters.List := AWS.URL.Parameters (URI);
+
+      DB           : SMM.Database.Database;
+      Response     : Unbounded_String;
+      Search_Param : SMM.Database.Field_Values;
    begin
-      if Query'Length = 0 then
+      if Param.Is_Empty then
          --  Return search page with no results.
          return AWS.Response.File ("text/html", -Server_Root & "/search_initial.html");
 
       else
-         return AWS.Response.Acknowledge
-           (Status_Code  => AWS.Messages.S500,
-            Message_Body => "search not implemented");
+         --  Query looks like '?title=michael&artist=joni&album=miles'
+         --  all three fields always present, may be empty
+         DB.Open (-DB_Filename);
+
+         for I in Fields loop
+            declare
+               Value : constant String := Param.Get (-Field_Image (I));
+            begin
+               if Value'Length > 0 then
+                  Search_Param (I) := +Value;
+               end if;
+            end;
+         end loop;
+
+         declare
+            I : Cursor := Find_Like (DB, Search_Param);
+         begin
+            if not I.Has_Element then
+               return AWS.Response.Acknowledge
+                 (Status_Code  => AWS.Messages.S404,
+                  Message_Body => "'" & Image (Search_Param) & "' not found");
+            end if;
+
+            loop
+               exit when not I.Has_Element;
+               Response := Response & I.File_Name & ASCII.CR & ASCII.LF;
+
+               I.Next;
+            end loop;
+
+            return AWS.Response.Build ("text/plain", Response);
+         end;
       end if;
    end Handle_Search;
 
@@ -279,6 +315,14 @@ package body SMM.Server is
          if File (URI) = "download" then
             return Handle_Download (URI);
 
+         elsif File (URI) = "favicon.ico" then
+            --  FIXME: this does not work; laptop chrome developer console reports
+            --  "server responded with 404".
+            return AWS.Response.File ("image/png", -Server_Root & "icon.png");
+
+         elsif File (URI) = "file" then
+            return Handle_File (URI);
+
          elsif File (URI) = "meta" then
             return Handle_Meta (URI);
 
@@ -286,7 +330,8 @@ package body SMM.Server is
             return Handle_Search (URI);
 
          else
-            --  FIXME: change to "file", with file name in query
+            --  FIXME: delete after change android app
+
             --  It's a file request.
             return Handle_File (URI);
          end if;
