@@ -33,11 +33,11 @@ package body SMM.ID3.AUnit is
 
       Stream : aliased Stream_Type (Computed'Length);
    begin
-      Stream.Create (Computed'Address);
+      Stream.Create (Computed (Computed'First)'Address);
 
       for Tag of Expected loop
          Stream.Reset;
-         Check (Label & Tag.ID, Read (Stream'Access, Tag.ID), To_String (Tag.Data));
+         Check (Label & "." & Tag.ID, SMM.ID3.Read (Stream'Access, Tag.ID, No_Exception => True), To_String (Tag.Data));
       end loop;
    end Check;
 

@@ -54,6 +54,29 @@ package body SMM.Server is
    Server_Root : Ada.Strings.Unbounded.Unbounded_String; -- Root of server html, css files; does not end in /
    DB_Filename : Ada.Strings.Unbounded.Unbounded_String;
 
+   function Decode_Plus (Item : in String) return String
+   is begin
+      return Result : String := Item do
+         for I in Result'Range loop
+            if Result (I) = '+' then
+               Result (I) := ' ';
+            end if;
+         end loop;
+      end return;
+   end Decode_Plus;
+
+   function Decode_Plus (Param : in AWS.Parameters.List) return AWS.Parameters.List
+   is
+      --  We have patched AWS.URL.Decode to not decode +, since that is not
+      --  appropriate outside the query.
+      Result : AWS.Parameters.List;
+   begin
+      for I in 1 .. Param.Count loop
+         Result.Add (Param.Get_Name (I), Decode_Plus (Param.Get_Value (I)));
+      end loop;
+      return Result;
+   end Decode_Plus;
+
    ----------
    --  Specific request handlers
 
@@ -259,7 +282,7 @@ package body SMM.Server is
       use Ada.Strings.Unbounded;
       use SMM.Database;
 
-      Param : constant AWS.Parameters.List := AWS.URL.Parameters (URI);
+      Param : constant AWS.Parameters.List := Decode_Plus (AWS.URL.Parameters (URI));
 
       DB           : SMM.Database.Database;
       Search_Param : SMM.Database.Field_Values;
@@ -270,7 +293,7 @@ package body SMM.Server is
       begin
          return
            "<div>" &
-           "<a href=""file?name=/" & I.File_Name & """>" & I.Artist & " " & I.Album & " " & I.Title & "</a>" &
+           "<a href=""file?name=/" & I.File_Name & """>" & I.Artist & " | " & I.Album & " | " & I.Title & "</a>" &
            "</div>";
       end Search_Result;
 

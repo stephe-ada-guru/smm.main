@@ -199,11 +199,7 @@ package body Test_Server is
 
       exception
       when Ada.IO_Exceptions.Use_Error =>
-         Ada.Text_IO.Put_Line (Filename);
-         raise;
-
-      when AUnit.Assertions.Assertion_Error =>
-         Ada.Text_IO.Put_Line (Msg);
+         Ada.Text_IO.Put_Line ("USE_ERROR: " & Filename);
          raise;
       end Check_One;
 
@@ -325,7 +321,7 @@ package body Test_Server is
             when S200 | -- ok
               S405 -- bad param
               =>
-               Check ("file", Computed, Expected_Message);
+               Check ("content", Computed, Expected_Message);
 
             when others =>
                Assert (False, Computed);
