@@ -138,14 +138,20 @@ package body SMM.Server is
 
    end Handle_Meta;
 
-   function Handle_File (URI : in AWS.URL.Object) return AWS.Response.Data
+   function Handle_File (URI : in AWS.URL.Object; Name_In_Param : in Boolean) return AWS.Response.Data
    is
       use Ada.Directories;
       use Ada.Exceptions;
       use AWS.URL;
       use SMM.Database;
 
-      Filename  : constant String := -Source_Root & Path (URI) & File (URI);
+      Param : constant AWS.Parameters.List := AWS.URL.Parameters (URI);
+
+      Filename : constant String := -Source_Root &
+        (if Name_In_Param
+         then Param.Get ("name")
+         else Path (URI) & File (URI));
+
       Ext       : constant String := Extension (Filename);
       Mime_Type : constant String :=
         --  MIME types from https://www.iana.org/assignments/media-types/media-types.xhtml
@@ -256,21 +262,35 @@ package body SMM.Server is
       Param : constant AWS.Parameters.List := AWS.URL.Parameters (URI);
 
       DB           : SMM.Database.Database;
-      Response     : Unbounded_String;
       Search_Param : SMM.Database.Field_Values;
+
+      function Search_Result (I : in Cursor) return String
+      is
+         --  FIXME: replace with template
+      begin
+         return
+           "<div>" &
+           "<a href=""file?name=/" & I.File_Name & """>" & I.Artist & " " & I.Album & " " & I.Title & "</a>" &
+           "</div>";
+      end Search_Result;
+
    begin
       if Param.Is_Empty then
          --  Return search page with no results.
          return AWS.Response.File ("text/html", -Server_Root & "/search_initial.html");
 
       else
-         --  Query looks like '?title=michael&artist=joni&album=miles'
-         --  all three fields always present, may be empty
+         --  From search page, query looks like
+         --  '?title=michael&artist=joni&album=miles'; all three fields always
+         --  present, may be empty.
+         --
+         --  Support links from result pages etc; allow fields to be not present.
+
          DB.Open (-DB_Filename);
 
          for I in Fields loop
             declare
-               Value : constant String := Param.Get (-Field_Image (I));
+               Value : constant String := Param.Get (-Field_Image (I)); -- empty string if not present
             begin
                if Value'Length > 0 then
                   Search_Param (I) := +Value;
@@ -279,7 +299,8 @@ package body SMM.Server is
          end loop;
 
          declare
-            I : Cursor := Find_Like (DB, Search_Param);
+            Response : Unbounded_String := +"<!DOCTYPE html>" & ASCII.LF & "<html><head></head><body>";
+            I        : Cursor           := Find_Like (DB, Search_Param);
          begin
             if not I.Has_Element then
                return AWS.Response.Acknowledge
@@ -289,12 +310,13 @@ package body SMM.Server is
 
             loop
                exit when not I.Has_Element;
-               Response := Response & I.File_Name & ASCII.CR & ASCII.LF;
+               Response := Response & Search_Result (I) & ASCII.LF;
 
                I.Next;
             end loop;
 
-            return AWS.Response.Build ("text/plain", Response);
+            Response := Response & "</body></html>";
+            return AWS.Response.Build ("text/html", Response);
          end;
       end if;
    end Handle_Search;
@@ -312,30 +334,33 @@ package body SMM.Server is
    begin
       case Method (Request) is
       when GET =>
-         if File (URI) = "download" then
-            return Handle_Download (URI);
+         declare
+            URI_File : constant String := File (URI);
+         begin
+            if URI_File = "download" then
+               return Handle_Download (URI);
 
-         elsif File (URI) = "favicon.ico" then
-            --  FIXME: this does not work; laptop chrome developer console reports
-            --  "server responded with 404".
-            return AWS.Response.File ("image/png", -Server_Root & "icon.png");
+            elsif URI_File = "favicon.ico" then
+               --  FIXME: this does not work; laptop chrome developer console reports
+               --  "server responded with 404".
+               return AWS.Response.File ("image/png", -Server_Root & "icon.png");
 
-         elsif File (URI) = "file" then
-            return Handle_File (URI);
+            elsif URI_File = "file" then
+               return Handle_File (URI, Name_In_Param => True);
 
-         elsif File (URI) = "meta" then
-            return Handle_Meta (URI);
+            elsif URI_File = "meta" then
+               return Handle_Meta (URI);
 
-         elsif File (URI) = "search" then
-            return Handle_Search (URI);
+            elsif URI_File = "search" then
+               return Handle_Search (URI);
 
-         else
-            --  FIXME: delete after change android app
+            else
+               --  FIXME: delete after change android app
 
-            --  It's a file request.
-            return Handle_File (URI);
-         end if;
-
+               --  It's a file request.
+               return Handle_File (URI, Name_In_Param => False);
+            end if;
+         end;
       when PUT =>
          return Handle_Put_Notes (Request, URI);
 

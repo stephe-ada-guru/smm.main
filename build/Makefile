@@ -4,7 +4,7 @@ include rules.make
 
 # ../test/test_one_harness.adb
 # ../test/test_all_harness.adb
-#export Standard_Common_Build := Debug
+export Standard_Common_Build := Debug
 #t_one : RUN_ARGS := 1
 #t_one : smm-server_driver.exe
 t_one : test_one_harness.run
@@ -12,8 +12,18 @@ t_one : test_one_harness.run
 #t_all : export Standard_Common_Build := Debug
 t_all : smm-server_driver.exe test_all_harness.diff
 
-one : sqlite-clean smm_sqlite.db config_to_sqlite.exe
-	./config_to_sqlite.exe tmp/smm.db smm_sqlite.db
+one-clean :
+	rm -f smm_config.db
+
+one : export Standard_Common_Build := Debug
+one : debug.exe
+	./debug.exe "d:/music/beth nielsen chapman/beth nielsen chapman/that's the easy part.mp3"
+
+run-server : smm-server_driver.exe
+	./smm-server_driver.exe smm_server_test_1.config
+
+convert-main : config_to_sqlite.exe | c:/home/stephe/smm/smm_work_1.db
+	./$< ~/smm/smm_server.config c:/home/stephe/smm/smm_work_1.db
 
 DATE := $(shell date +%Y-%m-%d)
 

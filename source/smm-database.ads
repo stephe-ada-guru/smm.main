@@ -114,6 +114,9 @@ package SMM.Database is
    function ID (Position : in Cursor) return Integer;
    function File_Name (Position : in Cursor) return String;
    function Category (Position : in Cursor) return String;
+   function Artist (Position : in Cursor) return String;
+   function Album (Position : in Cursor) return String;
+   function Title (Position : in Cursor) return String;
    function Last_Downloaded (Position : in Cursor) return Time_String;
    function Prev_Downloaded (Position : in Cursor) return Time_String;
    function Play_After (Position : in Cursor) return Integer;

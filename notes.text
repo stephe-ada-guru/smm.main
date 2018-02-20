@@ -20,11 +20,37 @@ d:/Music/remote_cache/smm-server_driver.log
 play-before causes short replay periods
     fixed 1 feb 2018; short periods should dissappear from status eventually
 
+specify root server dir in config file
+
+check report empty strings in artist, album, title
+
+
+id3
+    open read all id3 frames, store list of id, offset, length
+    read use that list
+    use direct_io, sequential_io to allow seek?
+
 implement search
     results show artist, album, title; include filename for click to play
-        use template, table
 
     add to test_server
+
+
+use template, table
+    need thtml mode?
+
+    template doc 2.7.2 cursor tag
+
+    aws doc 4.5 split pages
+
+on phone, search page text fields are auto-capitalize first word
+
+add aws status page
+    doc 3.2.4
+
+add a Certificate, enforce https
+    doc 3.14
+    d:/Apps/GNAT-gpl_2017/aws-gpl-2017-src/demos/https
 
 provide /favicon.ico = music app icon
     providing icon.png does not work
@@ -80,3 +106,7 @@ change over-select ratio
     set in app preference
 
 Copy playlist don't copy existing
+
+ references
+d:/Apps/GNAT-gpl_2017/aws-gpl-2017-src/docs/aws.pdf
+d:/Apps/GNAT-gpl_2017/aws-gpl-2017-src/docs/templates_parser/index.html

@@ -4,7 +4,8 @@
 --
 --  References:
 --
---  [1] http://id3.org/d3v2.3.0 ID3 2.3.0 spec
+--  [1] http://id3.org/d3v2.3.0            ID3 2.3.0 spec
+--  [2] http://id3.org/id3v2.4.0-structure ID3 2.4.0 spec
 --
 --  Copyright (C) 2018 Stephen Leake All Rights Reserved.
 --
@@ -45,8 +46,16 @@ package SMM.ID3 is
    Artist : constant Tag_String := "TPE1"; -- [1] Lead performer(s)/Soloist(s)
    Title  : constant Tag_String := "TIT2"; -- [1] Title/songname/content description
 
-   function Read (File : in out SMM.ID3.File; Tag : in Tag_String) return String;
-   --  Raises SAL.Not_Found if Tag is not found in File.
+   function Read
+     (File         : in out SMM.ID3.File;
+      Tag          : in     Tag_String;
+      No_Exception : in     Boolean := True)
+     return String;
+   --  If Tag is not found in File: if No_Exception, returns "".
+   --  Otherwise, raises SAL.Not_Found.
+   --
+   --  If File is not in ID3 format: if No_Exception, returns "".
+   --  Otherwise, raises SAL.Invalid_Format.
 
    type Tag is record
       ID   : Tag_String;
@@ -80,6 +89,10 @@ private
    function Size (Item : in Size_Type) return Ada.Streams.Stream_IO.Count;
    function To_Size (Item : in Ada.Streams.Stream_IO.Count) return Size_Type;
 
-   function Read (Stream : not null access Ada.Streams.Root_Stream_Type'Class; Tag : in Tag_String) return String;
+   function Read
+     (Stream       : not null access Ada.Streams.Root_Stream_Type'Class;
+      Tag          : in              Tag_String;
+      No_Exception : in              Boolean)
+     return String;
 
 end SMM.ID3;

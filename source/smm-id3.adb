@@ -18,14 +18,29 @@
 
 pragma License (GPL);
 
+with Ada.Characters.Handling;
+with Ada.Exceptions;
 with Ada.IO_Exceptions;
 with Interfaces.C;
 with SAL;
 package body SMM.ID3 is
 
+   function Is_Alphanumeric (Item : in Tag_String) return Boolean
+   is
+      use Ada.Characters.Handling;
+   begin
+      for I in Item'Range loop
+         if not Is_Alphanumeric (Item (I)) then
+            return False;
+         end if;
+      end loop;
+      return True;
+   end Is_Alphanumeric;
+
    function Size (Item : in Size_Type) return Ada.Streams.Stream_IO.Count
    is
       use Ada.Streams.Stream_IO;
+      --  Size_Type is a syncsafe integer; [2] 6.2
    begin
       return
         Count (Item.Byte_3) * 128 ** 3 +
@@ -33,6 +48,18 @@ package body SMM.ID3 is
         Count (Item.Byte_1) * 128 +
         Count (Item.Byte_0);
    end Size;
+
+   function Old_Size (Item : in Size_Type) return Ada.Streams.Stream_IO.Count
+   is
+      use Ada.Streams.Stream_IO;
+      --  Assume Size is actually a 32 bit integer (older versions of ID3 standard)
+   begin
+      return
+        Count (Item.Byte_3) * 256 ** 3 +
+        Count (Item.Byte_2) * 256 ** 2 +
+        Count (Item.Byte_1) * 256 +
+        Count (Item.Byte_0);
+   end Old_Size;
 
    function To_Size (Item : in Ada.Streams.Stream_IO.Count) return Size_Type
    is
@@ -94,7 +121,11 @@ package body SMM.ID3 is
       end return;
    end Size;
 
-   function Read (Stream : not null access Ada.Streams.Root_Stream_Type'Class; Tag : in Tag_String) return String
+   function Read
+     (Stream       : not null access Ada.Streams.Root_Stream_Type'Class;
+      Tag          : in              Tag_String;
+      No_Exception : in              Boolean)
+     return String
    is
       use all type Ada.Streams.Stream_IO.Count;
       use all type Interfaces.C.char_array;
@@ -105,30 +136,76 @@ package body SMM.ID3 is
    begin
       File_Header'Read (Stream, File_Head);
 
-      if File_Head.ID /= "ID3" or File_Head.Version_Msb /= 3 then
-         raise Ada.IO_Exceptions.Use_Error;
+      if not (File_Head.ID = "ID3" and
+                (File_Head.Version_Msb = 3 or File_Head.Version_Msb = 4))
+      then
+         if No_Exception then
+            return "";
+         else
+            raise SAL.Invalid_Format;
+         end if;
       end if;
 
+      Frame_Header'Read (Stream, Frame_Head);
       loop
-         Frame_Header'Read (Stream, Frame_Head);
 
          if Size (Frame_Head.Size) = 0 then
-            --  Real files seem to terminate the header with many 0 bytes, rather
-            --  then at File_Header.Size.
+            --  We are in padding; no more ID3 headers.
             --
             --  Caller adds appropriate message.
-            raise SAL.Not_Found;
+            if No_Exception then
+               return "";
+            else
+               raise SAL.Not_Found;
+            end if;
          end if;
 
          exit when Frame_Head.ID = Tag;
 
-         --  Skip the contents
+         --  Skip the contents, read the next header.
          declare
             use Ada.Streams;
-            Junk : Stream_Element_Array (1 .. Stream_Element_Offset (Size (Frame_Head.Size)));
+            use Ada.Streams.Stream_IO;
+
+            --  If Version_Msb is 3, some encoders incorrectly use a plain 32 bit
+            --  integer for the frame size, instead of a 28 bit syncsafe integer.
+            --  So first assume syncsafe. and see if the next item is a tag or
+            --  padding. If not, try 32 bit.
+            Size_28 : constant Count := Size (Frame_Head.Size);
+            Size_32 : constant Count := Old_Size (Frame_Head.Size);
+
+            Junk : Stream_Element_Array (1 .. Stream_Element_Offset (Size_28));
             Last : Stream_Element_Offset;
          begin
             Stream.Read (Junk, Last);
+            Frame_Header'Read (Stream, Frame_Head);
+
+            if File_Head.Version_Msb = 4 or
+              Size (Frame_Head.Size) = 0 or
+              Is_Alphanumeric (Frame_Head.ID)
+            then
+               --  Looks ok
+               null;
+            else
+               declare
+                  More_Junk : Stream_Element_Array
+                    (1 .. Stream_Element_Offset (Size_32 - Size_28 - Frame_Header_Byte_Size));
+               begin
+                  Stream.Read (More_Junk, Last);
+                  Frame_Header'Read (Stream, Frame_Head);
+                  if Size (Frame_Head.Size) = 0 or Is_Alphanumeric (Frame_Head.ID) then
+                     --  Looks ok
+                     null;
+                  else
+                     --  give up
+                     if No_Exception then
+                        return "";
+                     else
+                        raise SAL.Invalid_Format with "invalid ID3 tag";
+                     end if;
+                  end if;
+               end;
+            end if;
          end;
       end loop;
 
@@ -168,7 +245,11 @@ package body SMM.ID3 is
       Open (File.Stream, In_File, Name);
    end Open;
 
-   function Read (File : in out SMM.ID3.File; Tag : in Tag_String) return String
+   function Read
+     (File         : in out SMM.ID3.File;
+      Tag          : in     Tag_String;
+      No_Exception : in     Boolean := True)
+     return String
    is
       use Ada.Streams.Stream_IO;
    begin
@@ -178,15 +259,16 @@ package body SMM.ID3 is
 
       Reset (File.Stream, In_File);
 
-      return Read (Ada.Streams.Stream_IO.Stream (File.Stream), Tag);
+      return Read (Ada.Streams.Stream_IO.Stream (File.Stream), Tag, No_Exception);
    exception
-   when Ada.IO_Exceptions.Use_Error =>
-      raise Ada.IO_Exceptions.Use_Error with
-        "'" & Ada.Streams.Stream_IO.Name (File.Stream) & "' does not start with an ID3 record";
-
    when SAL.Not_Found =>
       raise SAL.Not_Found with "tag '" & Tag & "' not found in '" &
         Ada.Streams.Stream_IO.Name (File.Stream) & "'";
+
+   when E : others =>
+      raise SAL.Invalid_Format with
+        "ID3 read '" & Ada.Streams.Stream_IO.Name (File.Stream) & "' failed with '" &
+        Ada.Exceptions.Exception_Name (E) & ": " & Ada.Exceptions.Exception_Message (E);
    end Read;
 
    procedure Create

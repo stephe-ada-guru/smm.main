@@ -21,6 +21,7 @@ pragma License (GPL);
 with Ada.Calendar.Formatting;
 with Ada.Command_Line;
 with Ada.Exceptions;
+with Ada.Strings.Fixed;
 with Ada.Strings.Unbounded;
 with Ada.Text_IO;
 with GNAT.Traceback.Symbolic;
@@ -41,8 +42,8 @@ is
    end Usage;
 
    Config    : SAL.Config_Files.Configuration_Type;
-   Config_Db : SAL.Config_Files.Configuration_Type;
-   SQL_Db    : SMM.Database.Database;
+   Config_DB : SAL.Config_Files.Configuration_Type;
+   SQL_DB    : SMM.Database.Database;
 
    --  database keys
    Category_Key        : constant String := "Category";
@@ -114,6 +115,22 @@ is
       return To_Extended_ASIST_String (SAL_Time);
    end UTC_To_SAL;
 
+   function Get_Root
+     (Server_Config : in SAL.Config_Files.Configuration_Type;
+      DB_Config     : in SAL.Config_Files.Configuration_Type)
+     return String
+   is
+      use SAL.Config_Files;
+   begin
+      if Is_Present (Server_Config, SMM.Root_Key) then
+         return Read (Server_Config, SMM.Root_Key);
+      elsif Is_Present (DB_Config, SMM.Root_Key) then
+         return Read (DB_Config, SMM.Root_Key);
+      else
+         raise SAL.Not_Found with "no root key found";
+      end if;
+   end Get_Root;
+
 begin
    declare
       use Ada.Command_Line;
@@ -130,7 +147,7 @@ begin
          Read_Only             => True,
          Case_Insensitive_Keys => True);
 
-      SMM.Database.Open (SQL_Db, Argument (2));
+      SMM.Database.Open (SQL_DB, Argument (2));
    end;
 
    declare
@@ -138,7 +155,7 @@ begin
       use SMM;
    begin
       Open
-        (Config_Db,
+        (Config_DB,
          Name                  => Read (Config, "DB_Filename", Missing_Key => Raise_Exception),
          Missing_File          => Raise_Exception,
          Duplicate_Key         => Raise_Exception,
@@ -153,40 +170,64 @@ begin
       use SAL.Config_Files;
       use SAL.Config_Files.Integer;
 
-      Root_Dir : constant String := As_Directory (Read (Config, Root_Key, Missing_Key => Raise_Exception));
+      Root_Dir : constant String := As_Directory (Get_Root (Server_Config => Config, DB_Config => Config_DB));
 
-      I : Iterator_Type := First (Config_Db, Songs_Key);
+      I          : Iterator_Type := First (Config_DB, Songs_Key);
+      Warm_Fuzzy : Integer       := 0;
    begin
       loop
          exit when Is_Null (I);
          declare
-            File_Name : constant String := Read (Config_Db, I, File_Key);
+            File_Name : constant String := Read (Config_DB, I, File_Key);
             File      : SMM.ID3.File;
          begin
             File.Open (Root_Dir & File_Name);
 
-            SQL_Db.Insert
+            SQL_DB.Insert
               (ID             => Integer'Value (Current (I)),
                File_Name      => File_Name,
-               Category       => Read (Config_Db, I, Category_Key),
+               Category       => Read (Config_DB, I, Category_Key, Default => "vocal", Missing_Key => Ignore),
                Artist         => File.Read (SMM.ID3.Artist),
                Album          => File.Read (SMM.ID3.Album),
                Title          => File.Read (SMM.ID3.Title),
-               Last_Downloaded   => SAL_To_UTC (Read_Last_Downloaded (Config_Db, I)),
+               Last_Downloaded   => SAL_To_UTC (Read_Last_Downloaded (Config_DB, I)),
                Prev_Downloaded =>
-                 (if Is_Present (Config_Db, I, Prev_Downloaded_Key)
-                  then SAL_To_UTC (Read_Prev_Downloaded (Config_Db, I))
+                 (if Is_Present (Config_DB, I, Prev_Downloaded_Key)
+                  then SAL_To_UTC (Read_Prev_Downloaded (Config_DB, I))
                   else Jan_1_1958),
                Play_Before =>
-                 (if Is_Present (Config_Db, I, Play_Before_Key)
-                  then Read (Config_Db, I, Play_Before_Key)
+                 (if Is_Present (Config_DB, I, Play_Before_Key)
+                  then Read (Config_DB, I, Play_Before_Key)
                   else Null_ID),
                Play_After =>
-                 (if Is_Present (Config_Db, I, Play_After_Key)
-                  then Read (Config_Db, I, Play_After_Key)
+                 (if Is_Present (Config_DB, I, Play_After_Key)
+                  then Read (Config_DB, I, Play_After_Key)
                   else Null_ID));
+         exception
+         when E : SMM.Database.Entry_Error =>
+            declare
+               use Ada.Strings.Fixed;
+            begin
+               if 0 /= Index
+                 (Source => Ada.Exceptions.Exception_Message (E),
+                  Pattern => "UNIQUE constraint failed")
+               then
+                  --  resuming a previously failed import; ignore
+                  null;
+               else
+                  raise;
+               end if;
+            end;
          end;
          Next (I);
+
+         if 0 = Warm_Fuzzy mod 10_000 then
+            Warm_Fuzzy := 0;
+            Ada.Text_IO.New_Line;
+         elsif 0 = Warm_Fuzzy mod 100 then
+            Ada.Text_IO.Put (".");
+         end if;
+         Warm_Fuzzy := Warm_Fuzzy + 1;
       end loop;
    end;
 
@@ -196,44 +237,44 @@ begin
       use SAL.Config_Files.Integer;
       use SMM;
 
-      New_Config_Db : Configuration_Type;
+      New_Config_DB : Configuration_Type;
       Cursor        : SMM.Database.Cursor;
    begin
       Open
-        (New_Config_Db, "smm_config.db",
+        (New_Config_DB, "smm_config.db",
          Duplicate_Key => Raise_Exception,
          Read_Only     => False);
 
-      Cursor := SMM.Database.First (SQL_Db);
+      Cursor := SMM.Database.First (SQL_DB);
       loop
          declare
             Song     : constant SMM.Database.Song_Type := Cursor.Element;
             ID_Image : constant String                 := Integer'Image (Song.ID);
          begin
-            Write_String (New_Config_Db, Songs_Key & "." & ID_Image & "." & File_Key, -Song.File_Name);
-            Write_String (New_Config_Db, Songs_Key & "." & ID_Image & "." & Category_Key, -Song.Category);
+            Write_String (New_Config_DB, Songs_Key & "." & ID_Image & "." & File_Key, -Song.File_Name);
+            Write_String (New_Config_DB, Songs_Key & "." & ID_Image & "." & Category_Key, -Song.Category);
             --  Artist, Album, Title only in File_Name and ID3 content in file.
 
             if Song.Last_Downloaded /= SMM.Database.Jan_1_1958 then
                Write_String
-                 (New_Config_Db,
+                 (New_Config_DB,
                   Songs_Key & "." & ID_Image & "." & Last_Downloaded_Key,
                   UTC_To_SAL (Song.Last_Downloaded));
             end if;
 
             if Song.Prev_Downloaded /= SMM.Database.Jan_1_1958 then
                Write_String
-                 (New_Config_Db,
+                 (New_Config_DB,
                   Songs_Key & "." & ID_Image & "." & Prev_Downloaded_Key,
                   UTC_To_SAL (Song.Prev_Downloaded));
             end if;
 
             if Song.Play_Before /= SMM.Database.Null_ID then
-               Write (New_Config_Db, Songs_Key & "." & ID_Image & "." & Play_Before_Key, Song.Play_Before);
+               Write (New_Config_DB, Songs_Key & "." & ID_Image & "." & Play_Before_Key, Song.Play_Before);
             end if;
 
             if Song.Play_After /= SMM.Database.Null_ID then
-               Write (New_Config_Db, Songs_Key & "." & ID_Image & "." & Play_After_Key, Song.Play_After);
+               Write (New_Config_DB, Songs_Key & "." & ID_Image & "." & Play_After_Key, Song.Play_After);
             end if;
          end;
 

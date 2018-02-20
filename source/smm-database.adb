@@ -300,6 +300,21 @@ package body SMM.Database is
       return Position.Cursor.Value (Category_Field);
    end Category;
 
+   function Artist (Position : in Cursor) return String
+   is begin
+      return Position.Cursor.Value (Artist_Field);
+   end Artist;
+
+   function Album (Position : in Cursor) return String
+   is begin
+      return Position.Cursor.Value (Album_Field);
+   end Album;
+
+   function Title (Position : in Cursor) return String
+   is begin
+      return Position.Cursor.Value (Title_Field);
+   end Title;
+
    function Last_Downloaded (Position : in Cursor) return Time_String
    is begin
       return
