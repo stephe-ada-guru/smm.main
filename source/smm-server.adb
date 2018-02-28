@@ -19,6 +19,7 @@
 pragma License (GPL);
 
 with AWS.Config.Set;
+with AWS.Containers.Tables;
 with AWS.Messages;
 with AWS.Parameters;
 with AWS.Response.Set;
@@ -26,6 +27,7 @@ with AWS.Server.Log;
 with AWS.Status;
 with AWS.URL;
 with Ada.Calendar;
+with Ada.Characters.Handling;
 with Ada.Command_Line;
 with Ada.Directories;
 with Ada.Exceptions;
@@ -38,6 +40,7 @@ with SMM.Database;
 with SMM.Song_Lists;
 package body SMM.Server is
 
+   subtype Unbounded_String is Ada.Strings.Unbounded.Unbounded_String;
    function "+" (Item : in String) return Ada.Strings.Unbounded.Unbounded_String
      renames Ada.Strings.Unbounded.To_Unbounded_String;
    function "-" (Item : in Ada.Strings.Unbounded.Unbounded_String) return String
@@ -45,6 +48,11 @@ package body SMM.Server is
    function "&"
      (Left  : in Ada.Strings.Unbounded.Unbounded_String;
       Right : in String)
+     return Ada.Strings.Unbounded.Unbounded_String
+     renames Ada.Strings.Unbounded."&";
+   function "&"
+     (Left  : in Ada.Strings.Unbounded.Unbounded_String;
+      Right : in Character)
      return Ada.Strings.Unbounded.Unbounded_String
      renames Ada.Strings.Unbounded."&";
    function Length (Item : in Ada.Strings.Unbounded.Unbounded_String) return Integer
@@ -76,6 +84,52 @@ package body SMM.Server is
       end loop;
       return Result;
    end Decode_Plus;
+
+   function Meta_Files (Source_Dir : in String) return AWS.Containers.Tables.Table_Type
+   is
+      use Ada.Directories;
+      use Ada.Strings.Unbounded;
+
+      Result : AWS.Containers.Tables.Table_Type;
+
+      procedure Copy_Aux (Dir_Ent : in Directory_Entry_Type)
+      is
+         Path_Name : constant String := Relative_Name (-Source_Root, Normalize (Full_Name (Dir_Ent)));
+      begin
+         Result.Add
+           (Name => Simple_Name (Path_Name),
+            Value => Path_Name);
+      end Copy_Aux;
+   begin
+      Search
+        (Directory => -Source_Root & "/" & Source_Dir,
+         Pattern   => "AlbumArt*.jpg",
+         Filter    => (Ordinary_File => True, others => False),
+         Process   => Copy_Aux'Access);
+
+      Search
+        (Directory => -Source_Root & "/" & Source_Dir,
+         Pattern   => "liner_notes.pdf",
+         Filter    => (Ordinary_File => True, others => False),
+         Process   => Copy_Aux'Access);
+
+      return Result;
+   exception
+   when Ada.IO_Exceptions.Name_Error =>
+      --  GNAT runtime sets message to "(unknown directory "")"; no file name!
+      raise Ada.IO_Exceptions.Name_Error with "unknown directory '" & Source_Dir & "'";
+   end Meta_Files;
+
+   function Server_Href (Relative_Resource : in String; Label : in String) return String
+   is begin
+      return "<a href=""/" & Relative_Resource & """>" & Label & "</a>";
+   end Server_Href;
+
+   function Server_Img (Relative_Resource : in String; Label : in String) return String
+   is begin
+      --  FIXME: provide image candidate set; html 5.2 4.7.5
+      return "<img src=""/" & Relative_Resource & """ width=100px height= 100px alt=""" & Label & """>";
+   end Server_Img;
 
    ----------
    --  Specific request handlers
@@ -279,7 +333,8 @@ package body SMM.Server is
 
    function Handle_Search (URI : in AWS.URL.Object) return AWS.Response.Data
    is
-      use Ada.Strings.Unbounded;
+      use Ada.Characters.Handling;
+      use Ada.Directories;
       use SMM.Database;
 
       Param : constant AWS.Parameters.List := Decode_Plus (AWS.URL.Parameters (URI));
@@ -290,11 +345,21 @@ package body SMM.Server is
       function Search_Result (I : in Cursor) return String
       is
          --  FIXME: replace with template
+         Meta : constant AWS.Containers.Tables.Table_Type := Meta_Files (Containing_Directory (I.File_Name));
+
+         Result : Unbounded_String := +"<div>" &
+           "<a href=""file?name=/" & I.File_Name & """>" & I.Artist & " | " & I.Album & " | " & I.Title & "</a>";
       begin
-         return
-           "<div>" &
-           "<a href=""file?name=/" & I.File_Name & """>" & I.Artist & " | " & I.Album & " | " & I.Title & "</a>" &
-           "</div>";
+         for J in 1 .. Meta.Count loop
+            if To_Lower (Extension (Meta.Get_Name (J))) = "jpg" then
+               Result := Result & " " & Server_Img (Meta.Get_Value (J), "album art");
+            else
+               Result := Result & " " & Server_Href (Meta.Get_Value (J), Meta.Get_Name (J));
+            end if;
+         end loop;
+
+         Result := Result & "</div>";
+         return -Result;
       end Search_Result;
 
    begin
@@ -328,7 +393,7 @@ package body SMM.Server is
             if not I.Has_Element then
                return AWS.Response.Acknowledge
                  (Status_Code  => AWS.Messages.S404,
-                  Message_Body => "'" & Image (Search_Param) & "' not found");
+                  Message_Body => Image (Search_Param) & " not found");
             end if;
 
             loop
@@ -372,6 +437,7 @@ package body SMM.Server is
                return Handle_File (URI, Name_In_Param => True);
 
             elsif URI_File = "meta" then
+               --  FIXME: move directory to query
                return Handle_Meta (URI);
 
             elsif URI_File = "search" then

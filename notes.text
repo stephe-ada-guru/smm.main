@@ -16,25 +16,26 @@ d:/Music/remote_cache/smm-server_driver.log
       (xmtn . "../smm.work_1")))
 
 (dvc-propagate-one "." "../smm.main")
-
+
 play-before causes short replay periods
     fixed 1 feb 2018; short periods should dissappear from status eventually
+
+
+takver4:8082/search?woodstock => database_error
+    malformed sql; nothing following 'where'
+
+test import on Tuck Andress
+    report missing artist, album, title
 
 specify root server dir in config file
 
 check report empty strings in artist, album, title
+    some .mp3 have data in other IP3 headers
+    get all, select in priority order
 
-
-id3
     open read all id3 frames, store list of id, offset, length
     read use that list
     use direct_io, sequential_io to allow seek?
-
-implement search
-    results show artist, album, title; include filename for click to play
-
-    add to test_server
-
 
 use template, table
     need thtml mode?
@@ -43,7 +44,12 @@ use template, table
 
     aws doc 4.5 split pages
 
-on phone, search page text fields are auto-capitalize first word
+phone download no more reliable when laptop on ethernet
+    need better phone http library (sigh)
+        see if there's a later version
+
+ip address of laptop changed when switched to ethernet
+    check that config ip is in list of hardware IPs
 
 add aws status page
     doc 3.2.4
@@ -62,6 +68,7 @@ phone
     try px; supposed to scale to local viewing conditions
     use conditional CSS?
     add scale control
+    search page text fields are auto-capitalize first word
 
 tablet
     ok, could be bigger
@@ -101,6 +108,8 @@ add "lists" field to db;
 
     parse best lists to populate initially?
 
+    9/11 playlist David Wilcox Airstream Falling For It
+
 change over-select ratio
     get from web request; done
     set in app preference
@@ -108,5 +117,9 @@ change over-select ratio
 Copy playlist don't copy existing
 
  references
+https://www.w3.org/TR/2017/REC-html52-20171214/index.html#contents
+
 d:/Apps/GNAT-gpl_2017/aws-gpl-2017-src/docs/aws.pdf
 d:/Apps/GNAT-gpl_2017/aws-gpl-2017-src/docs/templates_parser/index.html
+
+http://taglib.org/ C ID3 library (simpler than ffmpeg)

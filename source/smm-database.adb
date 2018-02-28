@@ -210,12 +210,12 @@ package body SMM.Database is
       Need_Comma : Boolean := False;
    begin
       for I in Fields loop
-         if Length (Item (Artist)) > 0 then
+         if Length (Item (I)) > 0 then
             if Need_Comma then
                Result := Result & ", ";
             end if;
 
-            Result     := Result & Field_Image (Artist) & " : '" & (-Item (Artist)) & "'";
+            Result     := Result & Field_Image (I) & " : '" & (-Item (I)) & "'";
             Need_Comma := True;
          end if;
       end loop;
