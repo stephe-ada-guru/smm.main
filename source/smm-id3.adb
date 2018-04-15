@@ -105,6 +105,12 @@ package body SMM.ID3 is
    Frame_Header_Byte_Size : constant := 10;
    for Frame_Header'Size use Frame_Header_Byte_Size * 8;
 
+   Null_Header : constant Frame_Header :=
+     (ID      => (others => ASCII.NUL),
+      Size    => (others => 0),
+      Flags_0 => 0,
+      Flags_1 => 0);
+
    function Size (Item : in Tag) return Ada.Streams.Stream_IO.Count
    is begin
       return Ada.Streams.Stream_IO.Count (Frame_Header_Byte_Size + Ada.Strings.Unbounded.Length (Item.Data));
@@ -245,6 +251,15 @@ package body SMM.ID3 is
       Open (File.Stream, In_File, Name);
    end Open;
 
+   procedure Close (File : in out SMM.ID3.File)
+   is
+      use Ada.Streams.Stream_IO;
+   begin
+      if Is_Open (File.Stream) then
+         Close (File.Stream);
+      end if;
+   end Close;
+
    function Read
      (File         : in out SMM.ID3.File;
       Tag          : in     Tag_String;
@@ -289,5 +304,89 @@ package body SMM.ID3 is
       end loop;
       Close (File);
    end Create;
+
+   function All_Tags (File : in SMM.ID3.File) return Tag_Lists.List
+   is
+      use all type Ada.Streams.Stream_IO.Count;
+      use all type Interfaces.C.char_array;
+      use all type Interfaces.Unsigned_8;
+
+      File_Head  : File_Header;
+      Total_Size : Ada.Streams.Stream_IO.Count;
+      Frame_Head : Frame_Header;
+      Stream     : constant access Ada.Streams.Root_Stream_Type'Class := Ada.Streams.Stream_IO.Stream (File.Stream);
+      Result     : Tag_Lists.List;
+
+      function Valid_Header return Boolean
+      is begin
+         return Size (Frame_Head.Size) > 0 and Is_Alphanumeric (Frame_Head.ID);
+      end Valid_Header;
+
+   begin
+      File_Header'Read (Stream, File_Head);
+
+      if not (File_Head.ID = "ID3" and
+                (File_Head.Version_Msb = 3 or File_Head.Version_Msb = 4))
+      then
+         raise SAL.Invalid_Format;
+      end if;
+
+      Total_Size := File_Header_Byte_Size + Size (File_Head.Size);
+
+      Frame_Header'Read (Stream, Frame_Head);
+      loop
+         Result.Append ((ID => Frame_Head.ID, Data => +""));
+         --  FIXME: more later
+
+         --  Skip the contents, read the next header.
+         declare
+            use Ada.Streams;
+            use Ada.Streams.Stream_IO;
+
+            --  If File_Head.Version_Msb is 3, some encoders incorrectly use a
+            --  plain 32 bit integer for the frame size, instead of a 28 bit
+            --  syncsafe integer. So first assume syncsafe. and see if the next
+            --  item is a tag or padding. If not, try 32 bit.
+            Size_28 : constant Count := Size (Frame_Head.Size);
+            Size_32 : constant Count := Old_Size (Frame_Head.Size);
+
+            Junk : Stream_Element_Array (1 .. Stream_Element_Offset (Size_28));
+            Last : Stream_Element_Offset;
+         begin
+            Stream.Read (Junk, Last);
+
+            if Index (File.Stream) >= Total_Size then
+               return Result;
+            end if;
+
+            Frame_Header'Read (Stream, Frame_Head);
+
+            if Frame_Head = Null_Header and File_Head.Version_Msb = 4 then
+               --  We are in padding.
+               return Result;
+
+            elsif Valid_Header then
+               --  Size_28 is correct
+               null;
+
+            else
+               --  Either we are in padding, or Size_28 is wrong. Try Size_32.
+               declare
+                  More_Junk : Stream_Element_Array
+                    (1 .. Stream_Element_Offset (Size_32 - Size_28 - Frame_Header_Byte_Size));
+               begin
+                  Stream.Read (More_Junk, Last);
+                  Frame_Header'Read (Stream, Frame_Head);
+                  if Valid_Header then
+                     null;
+                  else
+                     --  We were in padding
+                     return Result;
+                  end if;
+               end;
+            end if;
+         end;
+      end loop;
+   end All_Tags;
 
 end SMM.ID3;

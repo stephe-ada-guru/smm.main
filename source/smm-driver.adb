@@ -68,7 +68,7 @@ is
       Put_Line ("    scan <dir> for new music; dir must be relative to database root dir");
       New_Line;
       Put_Line ("  check");
-      Put_Line ("    compare music files to db, report any missing.");
+      Put_Line ("    compare music files to db, report any missing files/fields.");
       New_Line;
       Put_Line ("  history");
       Put_Line ("    output histogram (in gnuplot files) of download interval (last to previous).");

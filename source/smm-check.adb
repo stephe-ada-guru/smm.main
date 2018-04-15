@@ -139,7 +139,13 @@ is
                declare
                   I : constant Cursor := DB.Find_File_Name (Name);
                begin
-                  if not I.Has_Element  then
+                  if I.Has_Element then
+                     for J in Fields loop
+                        if I.Field (J)'Length = 0 then
+                           Put_Line (-Field_Image (J) & " missing: " & Name);
+                        end if;
+                     end loop;
+                  else
                      Put_Line ("db missing: " & Name);
                   end if;
                end;

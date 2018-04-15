@@ -111,6 +111,8 @@ package SMM.Database is
 
    function Element (Position : in Cursor) return Song_Type;
 
+   function Field (Position : in Cursor; Item : in Fields) return String;
+
    function ID (Position : in Cursor) return Integer;
    function File_Name (Position : in Cursor) return String;
    function Category (Position : in Cursor) return String;

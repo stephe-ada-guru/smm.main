@@ -362,10 +362,23 @@ package body SMM.Server is
          return -Result;
       end Search_Result;
 
+      function Valid_Query return Boolean
+      is begin
+         for Field in Fields loop
+            if not Param.Exist (-Field_Image (Field)) then
+               return False;
+            end if;
+         end loop;
+         return True;
+      end Valid_Query;
+
    begin
       if Param.Is_Empty then
          --  Return search page with no results.
          return AWS.Response.File ("text/html", -Server_Root & "/search_initial.html");
+
+      elsif not Valid_Query then
+         return AWS.Response.Acknowledge (AWS.Messages.S500, "invalid query params");
 
       else
          --  From search page, query looks like
@@ -450,6 +463,7 @@ package body SMM.Server is
                return Handle_File (URI, Name_In_Param => False);
             end if;
          end;
+
       when PUT =>
          return Handle_Put_Notes (Request, URI);
 

@@ -21,11 +21,27 @@ play-before causes short replay periods
     fixed 1 feb 2018; short periods should dissappear from status eventually
 
 
-takver4:8082/search?woodstock => database_error
-    malformed sql; nothing following 'where'
+smm-show_id3.adb works
+    add text for non-binary
+        based on standard
+        if first letter of id is T, it's null-terminated strings, with a text encoding byte
+    check unsynch flag
+    check extended header, footer flags
+    check text encoding byte at start of string
+
+
+check
+    report missing artist, album, title
+
+    ie  "d:/Music/Macklemore & Ryan Lewis/The Heist [Explicit]/05 - Same Love (feat. Mary Lambert).mp3"
+        "d:/Music/Dobie Gray/Ultimate Collection_ Dobie Gray/07 - Drift Away.mp3"
 
 test import on Tuck Andress
-    report missing artist, album, title
+
+include File_Name field in search, when others empty?
+
+option to query recently downloaded
+    or archive recent playlists, search those
 
 specify root server dir in config file
 
@@ -37,6 +53,9 @@ check report empty strings in artist, album, title
     read use that list
     use direct_io, sequential_io to allow seek?
 
+date queries
+    select * from Song where date(last_downloaded) > date('2018-03-01');
+
 use template, table
     need thtml mode?
 
@@ -44,12 +63,14 @@ use template, table
 
     aws doc 4.5 split pages
 
-phone download no more reliable when laptop on ethernet
-    need better phone http library (sigh)
-        see if there's a later version
+    display year
+
+Smarter search with merged fields for voice input - "play carpenter keep her"
 
 ip address of laptop changed when switched to ethernet
     check that config ip is in list of hardware IPs
+
+if browser is on server, add link/button that opens folder
 
 add aws status page
     doc 3.2.4
@@ -57,6 +78,9 @@ add aws status page
 add a Certificate, enforce https
     doc 3.14
     d:/Apps/GNAT-gpl_2017/aws-gpl-2017-src/demos/https
+
+    http://android-developers.googleblog.com/2018/04/protecting-users-with-tls-by-default-in.html
+
 
 provide /favicon.ico = music app icon
     providing icon.png does not work
@@ -69,6 +93,11 @@ phone
     use conditional CSS?
     add scale control
     search page text fields are auto-capitalize first word
+    set hint for 'go' key
+
+    download no more reliable when laptop on ethernet
+        need better phone http library (sigh)
+            see if there's a later version
 
 tablet
     ok, could be bigger

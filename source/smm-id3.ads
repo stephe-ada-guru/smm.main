@@ -38,6 +38,8 @@ package SMM.ID3 is
    procedure Open (File : in out SMM.ID3.File; Name : in String);
    --  Open for read.
 
+   procedure Close (File : in out SMM.ID3.File);
+
    subtype Tag_String is String (1 .. 4);
    --  See [1] section 4 for tag definitions.
 
@@ -68,6 +70,8 @@ package SMM.ID3 is
      (Name    : in String;
       Content : in Tag_Lists.List);
    --  Create a new file containing Content. Mainly useful for writing tests.
+
+   function All_Tags (File : in SMM.ID3.File) return Tag_Lists.List;
 
 private
 

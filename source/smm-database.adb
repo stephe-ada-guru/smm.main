@@ -168,6 +168,11 @@ package body SMM.Database is
    Play_Before_Field     : constant GNATCOLL.SQL.Exec.Field_Index := Prev_Downloaded_Field + 1;
    Play_After_Field      : constant GNATCOLL.SQL.Exec.Field_Index := Play_Before_Field + 1;
 
+   Field_Fields : constant array (Fields) of GNATCOLL.SQL.Exec.Field_Index :=
+     (Artist => Artist_Field,
+      Album  => Album_Field,
+      Title  => Title_Field);
+
    function Has_Element (Position : Cursor) return Boolean
    is begin
       return Position.Cursor.Has_Row;
@@ -284,6 +289,11 @@ package body SMM.Database is
             then Null_ID
             else Integer'Value (Position.Cursor.Value (Play_After_Field))));
    end Element;
+
+   function Field (Position : in Cursor; Item : in Fields) return String
+   is begin
+      return (Position.Cursor.Value (Field_Fields (Item)));
+   end Field;
 
    function ID (Position : in Cursor) return Integer
    is begin
