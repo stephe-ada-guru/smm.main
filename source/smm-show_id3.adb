@@ -10,16 +10,14 @@ is
    File_Name : constant String := Ada.Command_Line.Argument (1);
    File : SMM.ID3.File;
 
-   Tags : SMM.ID3.Tag_Lists.List;
+   Frames : SMM.ID3.Frame_Lists.List;
 begin
    File.Open (File_Name);
 
-   Tags := File.All_Tags;
+   Frames := File.All_Frames;
 
-   for Tag of Tags loop
-      Put_Line ("ID '" & Tag.ID & "'");
-      --  some tag values are binary, so don't print any here
-      --  FIXME: whitelist of tags known to be text and short?
+   for Frame of Frames loop
+      Put_Line (Frame.ID & " '" & (-Frame.Data) & "'");
    end loop;
 
    File.Close;

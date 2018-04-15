@@ -22,12 +22,7 @@ play-before causes short replay periods
 
 
 smm-show_id3.adb works
-    add text for non-binary
-        based on standard
-        if first letter of id is T, it's null-terminated strings, with a text encoding byte
-    check unsynch flag
-    check extended header, footer flags
-    check text encoding byte at start of string
+    change main code to use All_Frames
 
 
 check
