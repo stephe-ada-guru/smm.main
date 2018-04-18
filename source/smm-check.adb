@@ -45,6 +45,15 @@ is
          declare
             File_Name : constant String := Source_Root & I.File_Name;
          begin
+            if Verbosity > 1 then
+               Put_Line ("./" & I.File_Name); -- match 'find' output
+            end if;
+
+            if Ada.Directories.Extension (File_Name) /= "mp3" then
+               Failed := Failed + 1;
+               Put_Line ("db extension: '" & Ada.Directories.Extension (File_Name) & "'");
+            end if;
+
             if not Ada.Directories.Exists (File_Name) then
                Failed := Failed + 1;
                Put_Line ("db extra: " & File_Name);
@@ -65,7 +74,7 @@ is
                   if After_ID /= Before_J.Play_Before then
                      Failed := Failed + 1;
                      Put_Line
-                       ("db mismatch Play_Before:" & Integer'Image (Before_ID) &
+                       ("db mismatch" & Integer'Image (I.ID) & " Play_Before:" & Integer'Image (Before_ID) &
                           "; Play_After" & Integer'Image (After_ID));
                   end if;
                else
@@ -79,8 +88,9 @@ is
 
          if I.Play_Before_Is_Present then
             declare
-               Before_ID : constant Integer := I.Play_Before;
-               After_J   : constant Cursor  := Find_ID (DB, Before_ID);
+               Before_ID : constant Integer := I.ID;
+               After_ID  : constant Integer := I.Play_Before;
+               After_J   : constant Cursor  := Find_ID (DB, After_ID);
             begin
                if not After_J.Has_Element then
                   Failed := Failed + 1;
@@ -90,7 +100,7 @@ is
                   if Before_ID /= After_J.Play_After then
                      Failed := Failed + 1;
                      Put_Line
-                       ("db mismatch Play_Before:" & Integer'Image (Before_ID) &
+                       ("db mismatch" & Integer'Image (I.ID) & " Play_Before:" & Integer'Image (Before_ID) &
                           "; Play_After" & Integer'Image (After_J.Play_After));
                   end if;
                else

@@ -61,6 +61,104 @@ package body SMM.Database is
       end return;
    end Checked_Fetch;
 
+   procedure Insert_Update
+     (DB              : in Database;
+      Update          : in Boolean;
+      ID              : in Integer;
+      File_Name       : in String      := "";
+      Category        : in String      := "";
+      Artist          : in String      := "";
+      Album           : in String      := "";
+      Title           : in String      := "";
+      Last_Downloaded : in Time_String := Default_Time_String;
+      Prev_Downloaded : in Time_String := Default_Time_String;
+      Play_Before     : in Integer     := Null_ID;
+      Play_After      : in Integer     := Null_ID)
+   is
+      use Ada.Strings.Unbounded;
+      use GNATCOLL.SQL.Exec;
+
+      Statement : Unbounded_String :=
+        +(if Update
+          then "UPDATE Song SET "
+          else "INSERT INTO Song (");
+
+      Values : Unbounded_String := +"VALUES (";
+
+      Params : SQL_Parameters (1 .. 10) := (others => Null_Parameter);
+
+      Need_Comma : Boolean := False;
+      Last       : Integer := 0;
+
+      procedure Add_Param (Name : in String; Value : in String; Default : in String)
+      is begin
+         if Value /= Default then
+            if Need_Comma then
+               Statement := Statement & ", ";
+               Values    := Values & ",";
+            end if;
+            Need_Comma := True;
+            if Update then
+               Statement := Statement & Name & " = ?";
+            else
+               Statement := Statement & Name;
+               Values    := Values & "?";
+            end if;
+            Last := Last + 1;
+            Params (Last) := +Value;
+         end if;
+      end Add_Param;
+
+      procedure Add_Param (Name : in String; Value : in Integer)
+      is begin
+         if Value /= Null_ID then
+            if Need_Comma then
+               Statement := Statement & ", ";
+               Values    := Values & ",";
+            end if;
+            Need_Comma := True;
+            if Update then
+               Statement := Statement & Name & " = ?";
+            else
+               Statement := Statement & Name;
+               Values    := Values & "?";
+            end if;
+            Last := Last + 1;
+            Params (Last) := +Value;
+         end if;
+      end Add_Param;
+
+   begin
+      Add_Param ("File_Name", File_Name, "");
+      Add_Param ("Category", Category, "");
+      Add_Param ("Artist", Artist, "");
+      Add_Param ("Album", Album, "");
+      Add_Param ("Title", Title, "");
+      Add_Param ("Last_Downloaded", Last_Downloaded, Default_Time_String);
+      Add_Param ("Prev_Downloaded", Prev_Downloaded, Default_Time_String);
+      Add_Param ("Play_Before", Play_Before);
+      Add_Param ("Play_After", Play_After);
+
+      if Update then
+         Statement := Statement & " WHERE ID = ?";
+      else
+         if Need_Comma then
+            Statement := Statement & ", ";
+            Need_Comma := True;
+         end if;
+         Statement := Statement & "ID";
+         Values    := Values & ",?";
+      end if;
+      Last          := Last + 1;
+      Params (Last) := +ID;
+
+      if not Update then
+         Statement := Statement & ") " & Values & ")";
+      end if;
+
+      Checked_Execute (DB, -Statement, Params (1 .. Last));
+   end Insert_Update;
+
    ----------
    --  Public subprograms, declaration order
 
@@ -105,44 +203,20 @@ package body SMM.Database is
       Prev_Downloaded : in Time_String := Default_Time_String;
       Play_Before     : in Integer     := Null_ID;
       Play_After      : in Integer     := Null_ID)
-   is
-      use Ada.Strings.Unbounded;
-      use GNATCOLL.SQL.Exec;
-
-      Statement : Unbounded_String :=
-        +"INSERT INTO Song (ID, File_Name, Category, Artist, Album, Title, Last_Downloaded";
-
-      Values : Unbounded_String := +"VALUES (?,?,?,?,?,?,?";
-
-      Params : SQL_Parameters (1 .. 10) :=
-        (+ID, +File_Name, +Category, +Artist, +Album, +Title, +Last_Downloaded, others => Null_Parameter);
-
-      Last : Integer := 7;
-   begin
-      if Prev_Downloaded /= Default_Time_String then
-         Last          := Last + 1;
-         Statement     := Statement & ", Prev_Downloaded";
-         Values        := Values & ",?";
-         Params (Last) := +Prev_Downloaded;
-      end if;
-
-      if Play_Before /= Null_ID then
-         Last          := Last + 1;
-         Statement     := Statement & ", Play_Before";
-         Values        := Values & ",?";
-         Params (Last) := +Play_Before;
-      end if;
-
-      if Play_After /= Null_ID then
-         Last          := Last + 1;
-         Statement     := Statement & ", Play_After";
-         Values        := Values & ",?";
-         Params (Last) := +Play_After;
-      end if;
-
-      Statement := Statement & ") " & Values & ")";
-
-      Checked_Execute (DB, -Statement, Params (1 .. Last));
+   is begin
+      Insert_Update
+        (DB,
+         Update          => False,
+         ID              => ID,
+         File_Name       => File_Name,
+         Category        => Category,
+         Artist          => Artist,
+         Album           => Album,
+         Title           => Title,
+         Last_Downloaded => Last_Downloaded,
+         Prev_Downloaded => Prev_Downloaded,
+         Play_Before     => Play_Before,
+         Play_After      => Play_After);
    end Insert;
 
    function UTC_Image (Item : in Ada.Calendar.Time) return Time_String
@@ -208,6 +282,34 @@ package body SMM.Database is
       return Checked_Fetch (DB, Statement, Params => (1 => +ID));
    end Find_ID;
 
+   procedure Update
+     (DB              : in Database;
+      Position        : in Cursor'Class;
+      File_Name       : in String      := "";
+      Category        : in String      := "";
+      Artist          : in String      := "";
+      Album           : in String      := "";
+      Title           : in String      := "";
+      Last_Downloaded : in Time_String := Default_Time_String;
+      Prev_Downloaded : in Time_String := Default_Time_String;
+      Play_Before     : in Integer     := Null_ID;
+      Play_After      : in Integer     := Null_ID)
+   is begin
+      Insert_Update
+        (DB,
+         Update          => True,
+         ID              => Position.ID,
+         File_Name       => File_Name,
+         Category        => Category,
+         Artist          => Artist,
+         Album           => Album,
+         Title           => Title,
+         Last_Downloaded => Last_Downloaded,
+         Prev_Downloaded => Prev_Downloaded,
+         Play_Before     => Play_Before,
+         Play_After      => Play_After);
+   end Update;
+
    function Image (Item : Field_Values) return String
    is
       use Ada.Strings.Unbounded;
@@ -268,10 +370,22 @@ package body SMM.Database is
       return
         (ID              => Integer'Value (Position.Cursor.Value (ID_Field)),
          File_Name       => +Position.Cursor.Value (File_Name_Field),
-         Category        => +Position.Cursor.Value (Category_Field),
-         Artist          => +Position.Cursor.Value (Artist_Field),
-         Album           => +Position.Cursor.Value (Album_Field),
-         Title           => +Position.Cursor.Value (Title_Field),
+         Category        =>
+           (if Position.Cursor.Is_Null (Category_Field)
+            then +""
+            else +Position.Cursor.Value (Category_Field)),
+         Artist          =>
+           (if Position.Cursor.Is_Null (Artist_Field)
+            then +""
+            else +Position.Cursor.Value (Artist_Field)),
+         Album           =>
+           (if Position.Cursor.Is_Null (Album_Field)
+            then +""
+            else +Position.Cursor.Value (Album_Field)),
+         Title           =>
+           (if Position.Cursor.Is_Null (Title_Field)
+            then +""
+            else +Position.Cursor.Value (Title_Field)),
          Last_Downloaded =>
            (if Position.Cursor.Is_Null (Last_Downloaded_Field)
             then Default_Time_String
@@ -292,7 +406,10 @@ package body SMM.Database is
 
    function Field (Position : in Cursor; Item : in Fields) return String
    is begin
-      return (Position.Cursor.Value (Field_Fields (Item)));
+      return
+        (if Position.Cursor.Is_Null (Field_Fields (Item))
+         then ""
+         else Position.Cursor.Value (Field_Fields (Item)));
    end Field;
 
    function ID (Position : in Cursor) return Integer
@@ -307,22 +424,34 @@ package body SMM.Database is
 
    function Category (Position : in Cursor) return String
    is begin
-      return Position.Cursor.Value (Category_Field);
+      return
+        (if Position.Cursor.Is_Null (Category_Field)
+         then ""
+         else Position.Cursor.Value (Category_Field));
    end Category;
 
    function Artist (Position : in Cursor) return String
    is begin
-      return Position.Cursor.Value (Artist_Field);
+      return
+        (if Position.Cursor.Is_Null (Artist_Field)
+         then ""
+         else Position.Cursor.Value (Artist_Field));
    end Artist;
 
    function Album (Position : in Cursor) return String
    is begin
-      return Position.Cursor.Value (Album_Field);
+      return
+        (if Position.Cursor.Is_Null (Album_Field)
+         then ""
+         else Position.Cursor.Value (Album_Field));
    end Album;
 
    function Title (Position : in Cursor) return String
    is begin
-      return Position.Cursor.Value (Title_Field);
+      return
+        (if Position.Cursor.Is_Null (Title_Field)
+         then ""
+         else Position.Cursor.Value (Title_Field));
    end Title;
 
    function Last_Downloaded (Position : in Cursor) return Time_String

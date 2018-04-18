@@ -1,8 +1,8 @@
 --  Abstract :
 --
---  Import new files into SMM db.
+--  Update metadata
 --
---  Copyright (C) 2008 - 2010, 2012, 2014, 2018 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2018 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -18,41 +18,52 @@
 
 pragma License (GPL);
 
-with Ada.Directories;
+with Ada.Directories; use Ada.Directories;
 with Ada.Text_IO;
 with SAL;
 with SMM.Database;
 with SMM.ID3;
-procedure SMM.Import
+procedure SMM.Update
   (DB          : in SMM.Database.Database;
    Source_Root : in String;
-   Category    : in String;
    Dir         : in String)
 is
-   Index : Integer;
+   --  Dir relative to Source_Root
 
-   procedure Get_Initial_Index
+   procedure Update_File (Name : in String)
    is
-      use SMM.Database;
-      I : constant Cursor := Last (DB);
+      use SMM.ID3;
+      ID3_Frames : Frame_Lists.List;
+      Artist_ID  : ID_String                := SMM.ID3.Artist;
+      I          : constant Database.Cursor := DB.Find_File_Name (Name);
    begin
-      if I.Has_Element then
-         Index := I.ID + 1;
-      else
-         --  Empty db
-         Index := 1;
+      if not I.Has_Element then
+         raise SAL.Not_Found with "not found in db: '" & Name & "'";
       end if;
-   end Get_Initial_Index;
 
-   procedure Import_Dir (Root : in String; Dir : in String)
+      if Verbosity > 0 then
+         Ada.Text_IO.Put_Line ("updating file " & Name);
+      end if;
+
+      Metadata (Source_Root & Name, ID3_Frames, Artist_ID);
+
+      DB.Update
+        (I,
+         Artist => -Find (Artist_ID, ID3_Frames),
+         Album  => -Find (SMM.ID3.Album, ID3_Frames),
+         Title  => -Find (SMM.ID3.Title, ID3_Frames));
+
+   end Update_File;
+
+   procedure Update_Dir (Root : in String; Dir : in String)
    is
-      use Ada.Directories;
       use SMM.Database;
 
       procedure Process_Dir_Entry (Dir_Entry : in Directory_Entry_Type)
       is
          Abs_Name : constant String := Full_Name (Dir_Entry);
          Name     : constant String := Relative_Name (Root, Normalize (Abs_Name));
+         Ext      : constant String := Extension (Name);
       begin
          case Kind (Dir_Entry) is
          when Directory =>
@@ -62,37 +73,16 @@ is
                return;
             end if;
 
-            Import_Dir (Root, Name);
+            Update_Dir (Root, Name);
 
          when Ordinary_File =>
 
-            declare
-               use SMM.ID3;
-               Ext        : constant String := Extension (Name);
-               ID3_Frames : Frame_Lists.List;
-               Artist_ID  : ID_String       := SMM.ID3.Artist;
-            begin
-               if Ext = "mp3" then
-                  if Verbosity > 0 then
-                     Ada.Text_IO.Put_Line ("adding file " & Name);
-                  end if;
-
-                  Metadata (Abs_Name, ID3_Frames, Artist_ID);
-
-                  DB.Insert
-                    (ID        => Index,
-                     File_Name => Name,
-                     Category  => Category,
-                     Artist    => -Find (Artist_ID, ID3_Frames),
-                     Album     => -Find (SMM.ID3.Album, ID3_Frames),
-                     Title     => -Find (SMM.ID3.Title, ID3_Frames));
-
-                  Index := Index + 1;
-               else
-                  --  not a recognized music file extension; ignore
-                  null;
-               end if;
-            end;
+            if Ext = "mp3" then
+               Update_File (Name);
+            else
+               --  not a recognized music file extension; ignore
+               null;
+            end if;
 
          when Special_File =>
             raise SAL.Programmer_Error with "found special file";
@@ -116,10 +106,22 @@ is
       else
          Ada.Text_IO.Put_Line (Root & Dir & " does not exist");
       end if;
-   end Import_Dir;
+   end Update_Dir;
 
 begin
-   Get_Initial_Index;
+   if Exists (Dir) then
+      case Kind (Dir) is
+      when Directory =>
+         Update_Dir (Source_Root, Dir);
 
-   Import_Dir (Source_Root, Dir);
-end SMM.Import;
+      when Ordinary_File =>
+         Update_File (Dir);
+
+      when Special_File =>
+         raise SAL.Programmer_Error;
+      end case;
+
+   else
+      raise SAL.Not_Found with "file not found: '" & Dir & "'";
+   end if;
+end SMM.Update;

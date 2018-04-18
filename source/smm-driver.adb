@@ -32,6 +32,7 @@ with SMM.Download;
 with SMM.First_Pass;
 with SMM.History;
 with SMM.Import;
+with SMM.Update;
 procedure SMM.Driver
 is
    procedure Put_Usage
@@ -67,6 +68,9 @@ is
       Put_Line ("  import <category> <dir>");
       Put_Line ("    scan <dir> for new music; dir must be relative to database root dir");
       New_Line;
+      Put_Line ("  update <file | dir>");
+      Put_Line ("    update metadata for <file>, or all .mp3 files in <dir>.");
+      New_Line;
       Put_Line ("  check");
       Put_Line ("    compare music files to db, report any missing files/fields.");
       New_Line;
@@ -86,7 +90,7 @@ is
 
    Home : constant String := Find_Home;
 
-   type Command_Type is (Download_Playlist, Copy_Playlist, Import, Check, History);
+   type Command_Type is (Download_Playlist, Copy_Playlist, Import, Update, Check, History);
 
    procedure Get_Command is new SAL.Command_Line_IO.Gen_Get_Discrete_Proc (Command_Type, "command", Next_Arg);
 
@@ -197,6 +201,9 @@ begin
          Verbosity := Integer'Max (Verbosity, 1);
          SMM.Import (DB, Source_Root, Category, Import_Root);
       end;
+
+   when Update =>
+      SMM.Update (DB, Source_Root, Argument (Next_Arg));
 
    when Check =>
       SMM.Check (DB, Source_Root);

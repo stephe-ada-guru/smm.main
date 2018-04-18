@@ -45,20 +45,10 @@ package SMM.ID3 is
    --  See [1] section 4, or [3], for frame definitions.
 
    --  Some common Frames
-   Album  : constant ID_String := "TALB"; -- [1] Album/Movie/Show title
-   Artist : constant ID_String := "TPE1"; -- [1] Lead performer(s)/Soloist(s)
-   Title  : constant ID_String := "TIT2"; -- [1] Title/songname/content description
-
-   function Read
-     (File         : in out SMM.ID3.File;
-      ID           : in     ID_String;
-      No_Exception : in     Boolean := True)
-     return String;
-   --  If ID is not found in File: if No_Exception, returns "".
-   --  Otherwise, raises SAL.Not_Found.
-   --
-   --  If File is not in ID3 format: if No_Exception, returns "".
-   --  Otherwise, raises SAL.Invalid_Format.
+   Album      : constant ID_String := "TALB"; -- [1] Album/Movie/Show title
+   Artist     : constant ID_String := "TPE1"; -- [1] Lead performer(s)/Soloist(s)
+   Alt_Artist : constant ID_String := "TPE2"; -- [1] Band/orchestra/accompaniment
+   Title      : constant ID_String := "TIT2"; -- [1] Title/songname/content description
 
    type Frame is record
       ID   : ID_String;
@@ -67,12 +57,17 @@ package SMM.ID3 is
 
    package Frame_Lists is new Ada.Containers.Doubly_Linked_Lists (Frame);
 
-   procedure Create
-     (Name    : in String;
-      Content : in Frame_Lists.List);
-   --  Create a new file containing Content. Mainly useful for writing tests.
+   function Is_Present (ID : in ID_String; Frames : in Frame_Lists.List) return Boolean
+     is (for some F of Frames => ID = F.ID);
+
+   function Find (ID : in ID_String; Frames : in Frame_Lists.List) return Ada.Strings.Unbounded.Unbounded_String;
 
    function All_Frames (File : in SMM.ID3.File) return Frame_Lists.List;
+
+   procedure Metadata
+     (Abs_File_Name : in     String;
+      ID3_Frames    :    out Frame_Lists.List;
+      Artist_ID     :    out ID_String);
 
 private
 
@@ -93,11 +88,5 @@ private
 
    function Size (Item : in Size_Type) return Ada.Streams.Stream_IO.Count;
    function To_Size (Item : in Ada.Streams.Stream_IO.Count) return Size_Type;
-
-   function Read
-     (Stream       : not null access Ada.Streams.Root_Stream_Type'Class;
-      ID           : in              ID_String;
-      No_Exception : in              Boolean)
-     return String;
 
 end SMM.ID3;

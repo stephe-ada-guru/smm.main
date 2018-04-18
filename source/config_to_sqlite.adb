@@ -178,18 +178,40 @@ begin
       loop
          exit when Is_Null (I);
          declare
-            File_Name : constant String := Read (Config_DB, I, File_Key);
-            File      : SMM.ID3.File;
+            use SMM.ID3;
+            File_Name  : constant String := Read (Config_DB, I, File_Key);
+            File       : SMM.ID3.File;
+            ID3_Frames : Frame_Lists.List;
+            Artist_ID  : ID_String       := SMM.ID3.Artist;
          begin
             File.Open (Root_Dir & File_Name);
+
+            ID3_Frames := File.All_Frames;
+            if Is_Present (SMM.ID3.Artist, ID3_Frames) then
+               Artist_ID := SMM.ID3.Artist;
+            else
+               if Is_Present (Alt_Artist, ID3_Frames) then
+                  Artist_ID := Alt_Artist;
+               else
+                  Ada.Text_IO.Put_Line (File_Name & " missing artist");
+               end if;
+            end if;
+
+            if not Is_Present (SMM.ID3.Album, ID3_Frames) then
+               Ada.Text_IO.Put_Line (File_Name & " missing album");
+            end if;
+
+            if not Is_Present (SMM.ID3.Title, ID3_Frames) then
+               Ada.Text_IO.Put_Line (File_Name & " missing title");
+            end if;
 
             SQL_DB.Insert
               (ID             => Integer'Value (Current (I)),
                File_Name      => File_Name,
                Category       => Read (Config_DB, I, Category_Key, Default => "vocal", Missing_Key => Ignore),
-               Artist         => File.Read (SMM.ID3.Artist),
-               Album          => File.Read (SMM.ID3.Album),
-               Title          => File.Read (SMM.ID3.Title),
+               Artist         => -Find (Artist_ID, ID3_Frames),
+               Album          => -Find (SMM.ID3.Album, ID3_Frames),
+               Title          => -Find (SMM.ID3.Title, ID3_Frames),
                Last_Downloaded   => SAL_To_UTC (Read_Last_Downloaded (Config_DB, I)),
                Prev_Downloaded =>
                  (if Is_Present (Config_DB, I, Prev_Downloaded_Key)
@@ -218,6 +240,10 @@ begin
                   raise;
                end if;
             end;
+
+         when Storage_Error =>
+            Ada.Text_IO.Put_Line (File_Name & ": " & "stack overflow");
+            raise;
          end;
          Next (I);
 

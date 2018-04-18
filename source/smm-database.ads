@@ -90,6 +90,20 @@ package SMM.Database is
    function Find_File_Name (DB : in Database'Class; File_Name : in String) return Cursor;
    function Find_ID (DB : in Database'Class; ID : in Integer) return Cursor;
 
+   procedure Update
+     (DB              : in Database;
+      Position        : in Cursor'Class;
+      File_Name       : in String      := "";
+      Category        : in String      := "";
+      Artist          : in String      := "";
+      Album           : in String      := "";
+      Title           : in String      := "";
+      Last_Downloaded : in Time_String := Default_Time_String;
+      Prev_Downloaded : in Time_String := Default_Time_String;
+      Play_Before     : in Integer     := Null_ID;
+      Play_After      : in Integer     := Null_ID);
+   --  Items that are the defaults are not updated.
+
    type Fields is (Artist, Album, Title);
 
    type Field_Values is array (Fields) of Ada.Strings.Unbounded.Unbounded_String;

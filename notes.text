@@ -21,17 +21,24 @@ play-before causes short replay periods
     fixed 1 feb 2018; short periods should dissappear from status eventually
 
 
-smm-show_id3.adb works
-    change main code to use All_Frames
+in db twice:
+    ./bonnie raitt/Road Tested/(Disc 2) 09 - My Opening Farewell (Live).mp3
+    ./free/20th Century Masters_ The Millennium Collection_ Best Of Free/05 - All Right Now.mp3
 
+new commands:
+    show file
+        id, etc
 
-check
-    report missing artist, album, title
+    delete id
 
-    ie  "d:/Music/Macklemore & Ryan Lewis/The Heist [Explicit]/05 - Same Love (feat. Mary Lambert).mp3"
-        "d:/Music/Dobie Gray/Ultimate Collection_ Dobie Gray/07 - Drift Away.mp3"
+    rename id new_file_name
 
-test import on Tuck Andress
+    set_before_after before_id, after_id
+
+    delete_category id category
+
+    add_category id category
+        best, parenthood, 9/11
 
 include File_Name field in search, when others empty?
 
