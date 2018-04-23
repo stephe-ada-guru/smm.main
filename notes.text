@@ -21,9 +21,6 @@ play-before causes short replay periods
     fixed 1 feb 2018; short periods should dissappear from status eventually
 
 
-new server command update?<file>&<field>=<data>[&<field>=<data>]...
-    (setq smm-note-url-base "http://takver4:8081/update?")
-
 new smm commands?:
     or just use sqlite3 command line, smm-server
     on smm.work_1

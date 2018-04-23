@@ -447,6 +447,7 @@ package body SMM.ID3 is
             Frame_Header'(T.ID, To_Size (Ada.Streams.Stream_IO.Count (Length (T.Data))), 0, 0));
          String'Write (Stream (File), To_String (T.Data));
       end loop;
+      String'Write (Stream (File), (1 .. 20 => ' ')); --  padding
       Close (File);
    end Create;
 

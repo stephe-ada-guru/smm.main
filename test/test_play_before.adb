@@ -93,7 +93,7 @@ package body Test_Play_Before is
    is
       pragma Unreferenced (T);
    begin
-      return new String'("Test_Play_Before");
+      return new String'("test_play_before.adb");
    end Name;
 
    overriding procedure Register_Tests (T : in out Test_Case)

@@ -18,7 +18,6 @@
 
 pragma License (GPL);
 
-with AUnit.Assertions;
 with AUnit.Checks.Text_IO;
 with AWS.Client;
 with AWS.Messages.AUnit;
@@ -42,7 +41,8 @@ package body Test_Server is
    DB_File_Name : constant String := "tmp/smm.db";
 
    Server      : GNAT.OS_Lib.Process_Id;
-   Server_Port : constant String := "8081"; --  must match ../build/smm_server_test_1.config Server_Port
+   Server_IP   : constant String := "Takver4"; -- must match ../build/smm_server_test_1.config Server_IP
+   Server_Port : constant String := "8081";    -- "" Server_Port
 
    Verbose : Boolean := False;
 
@@ -95,9 +95,9 @@ package body Test_Server is
       use AUnit.Checks;
       use AWS.Response;
 
-      Test : Test_Case renames Test_Case (T);
+      pragma Unreferenced (T);
 
-      URL      : constant String := "http://" & Test.Server_IP.all &
+      URL      : constant String := "http://" & Server_IP &
         ":" & Server_Port & "/download?category=vocal&count=5&new_count=1&seed=0";
       Response : constant Data   := AWS.Client.Get (URL);
       Msg      : constant String := Message_Body (Response);
@@ -112,6 +112,7 @@ package body Test_Server is
           "artist_2/album_1/3 - song_3.mp3" & ASCII.CR & ASCII.LF;
    begin
       if Verbose then
+         Ada.Text_IO.Put (URL);
          Ada.Text_IO.Put (Msg);
       end if;
       Check ("playlist", Msg, Expected);
@@ -121,7 +122,7 @@ package body Test_Server is
    is
       use AWS.Response;
 
-      Test : Test_Case renames Test_Case (T);
+      pragma Unreferenced (T);
 
       procedure Check
         (Label    : in String;
@@ -130,7 +131,7 @@ package body Test_Server is
       is
          Encoded_Resource : constant String := Encode (Resource);
 
-         URL      : constant String := "http://" & Test.Server_IP.all & ":" & Server_Port & "/" & Encoded_Resource &
+         URL      : constant String := "http://" & Server_IP & ":" & Server_Port & "/" & Encoded_Resource &
            "/meta";
          Response : constant Data   := AWS.Client.Get (URL);
          Msg      : constant String := Message_Body (Response);
@@ -163,7 +164,7 @@ package body Test_Server is
       use SMM.ID3;
       use Test_Utils;
 
-      Test : Test_Case renames Test_Case (T);
+      pragma Unreferenced (T);
 
       procedure Check_One
         (Directory : in String;
@@ -172,7 +173,7 @@ package body Test_Server is
       is
          use SAL.Calendar_More.AUnit;
 
-         URL : constant String := "http://" & Test.Server_IP.all & ":" & Server_Port & "/" & Directory &
+         URL : constant String := "http://" & Server_IP & ":" & Server_Port & "/" & Directory &
            Encode (Filename);
 
          Response : constant Data   := AWS.Client.Get (URL);
@@ -219,10 +220,10 @@ package body Test_Server is
       use AWS.Response;
       use AWS.Messages.AUnit;
 
-      Test : Test_Case renames Test_Case (T);
+      pragma Unreferenced (T);
 
       Note_File_Name : constant String := "tmp/source/remote_cache/vocal.note";
-      URL            : constant String := "http://" & Test.Server_IP.all & ":" & Server_Port &
+      URL            : constant String := "http://" & Server_IP & ":" & Server_Port &
         "/remote_cache/vocal.note";
 
       Note_File : File_Type;
@@ -267,9 +268,9 @@ package body Test_Server is
       use AWS.Response;
       use AWS.Messages.AUnit;
 
-      Test : Test_Case renames Test_Case (T);
+      pragma Unreferenced (T);
 
-      URL : constant String := "http://" & Test.Server_IP.all & ":" & Server_Port & "/search";
+      URL : constant String := "http://" & Server_IP & ":" & Server_Port & "/search";
 
       Good_File_Name : constant String := "../source/search_initial.html";
       Response       : constant Data   := AWS.Client.Get (URL);
@@ -284,61 +285,6 @@ package body Test_Server is
          Check_File (Computed, Good_File_Name);
       end;
    end Test_Search_Initial;
-
-   procedure Test_Search_Results (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
-   is
-      use AWS.Response;
-      use AWS.Messages.AUnit;
-      use AUnit.Assertions;
-
-      Test : Test_Case renames Test_Case (T);
-
-      procedure Check_One
-        (Query            : in String;
-         Expected_Message : in String)
-      is
-         use AUnit.Checks;
-
-         URL      : constant String := "http://" & Test.Server_IP.all & ":" & Server_Port & "/search?" & Query;
-         Response : constant Data   := AWS.Client.Get (URL);
-      begin
-         declare
-            use all type AWS.Messages.Status_Code;
-            Computed : constant String := Message_Body (Response);
-         begin
-            case Status_Code (Response) is
-            when S200 | -- ok
-              S405 -- bad param
-              =>
-               Check ("content", Computed, Expected_Message);
-
-            when others =>
-               Assert (False, Computed);
-            end case;
-         end;
-      end Check_One;
-
-   begin
-      --  Test response to search submissions
-      --  FIXME: all wrong; waiting for improved display
-      Check_One
-        ("text=" & Encode ("artist 1") & "&field=" & Encode ("artist"),
-         "artist_1/album_1/1 - song_1.mp3" & ASCII.CR & ASCII.LF &
-           "artist_1/album_1/2 - song_2.mp3" & ASCII.CR & ASCII.LF &
-           "artist_1/album_1/03 The Dance #1.mp3" & ASCII.CR & ASCII.LF);
-
-      Check_One
-        ("text=" & Encode ("1") & "&field=" & Encode ("artist"),
-         "artist_1/album_1/1 - song_1.mp3" & ASCII.CR & ASCII.LF &
-           "artist_1/album_1/2 - song_2.mp3" & ASCII.CR & ASCII.LF &
-           "artist_1/album_1/03 The Dance #1.mp3" & ASCII.CR & ASCII.LF);
-
-      Check_One
-        ("text=" & Encode ("1") & "&field=" & Encode ("album") &
-           "&text=" & Encode ("1") & "&field=" & Encode ("title"),
-         "artist_1/album_1/1 - song_1.mp3" & ASCII.CR & ASCII.LF);
-
-   end Test_Search_Results;
 
    ----------
    --  Public bodies
@@ -359,7 +305,6 @@ package body Test_Server is
       Register_Routine (T, Test_Get_File'Access, "Test_Get_File");
       Register_Routine (T, Test_Send_Notes'Access, "Test_Send_Notes");
       Register_Routine (T, Test_Search_Initial'Access, "Test_Search_Initial");
-      Register_Routine (T, Test_Search_Results'Access, "Test_Search_Results");
    end Register_Tests;
 
    overriding procedure Set_Up_Case (T : in out Test_Case)
@@ -378,7 +323,7 @@ package body Test_Server is
          raise SAL.Programmer_Error with "current_directory = " & Current_Directory;
       end if;
 
-      Verbose := T.Debug > 0;
+      Verbose := T.Verbosity > 0;
 
       if T.Debug /= 1 then
          Cleanup;

@@ -1,16 +1,3 @@
-downloading 6 songs
-1958-01-01 00:00:02, 1958-01-01 00:00:00 : artist_2/played_4.mp3
-1958-01-01 00:00:03, 1958-01-01 00:00:00 : artist_2/played_8.mp3
-1958-01-01 00:00:00, 1958-01-01 00:00:00 : artist_1/new_2.mp3
-1958-01-01 00:00:03, 1958-01-01 00:00:00 : artist_2/played_7.mp3
-1958-01-01 00:00:00, 1958-01-01 00:00:00 : artist_1/new_1.mp3
-1958-01-01 00:00:00, 1958-01-01 00:00:00 : artist_3/new_5.mp3
-no .last file found; not editing playlist
-deleting directory Vocal/artist_3
-no .last file found; not editing playlist
-deleting directory Vocal/artist_1
-no .last file found; not editing playlist
-no .last file found; not editing playlist
 adding file artist_1/album_1/03 The Dance #1.mp3
 adding file artist_1/album_1/1 - song_1.mp3
 adding file artist_1/album_1/2 - song_2.mp3
@@ -18,29 +5,23 @@ adding file artist_2/album_1/1 - song_1.mp3
 adding file artist_2/album_1/2 - song_2.mp3
 adding file artist_2/album_1/3 - song_3.mp3
 not logging
-listening on 192.168.1.83: 8081
+listening on Takver4: 8081
 new db; all new songs
 
 OK smm-database-test.adb : Test_Find_Like
+OK smm-database-test.adb : Test_Update
 OK test_id3.adb : Test_Size
 OK test_copy.adb : Nominal
-OK test_check.adb : Nominal
-OK test_download.adb : Nominal
-OK test_first_pass_no_last.adb : Nominal
-OK test_first_pass_no_last.adb : Empty_Playlist
-OK test_first_pass_with_last.adb : Nominal
-OK test_first_pass_with_last.adb : New_Playlist
-OK test_first_pass_with_last.adb : Finished_Playlist
 OK test_import.adb : Nominal
 OK test_least_recent.adb : Nominal
-OK Test_Play_Before : Nominal
+OK test_play_before.adb : Nominal
 OK test_server.adb : Test_Playlist
 OK test_server.adb : Test_Meta
 OK test_server.adb : Test_Get_File
 OK test_server.adb : Test_Send_Notes
 OK test_server.adb : Test_Search_Initial
 
-Total Tests Run:   19
-Successful Tests:  19
+Total Tests Run:   12
+Successful Tests:  12
 Failed Assertions: 0
 Unexpected Errors: 0

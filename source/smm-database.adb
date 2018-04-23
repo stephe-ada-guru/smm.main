@@ -19,6 +19,7 @@
 pragma License (GPL);
 
 with Ada.Calendar.Formatting;
+with Ada.Characters.Handling;
 with Ada.Directories;
 with Ada.Exceptions;
 with Ada.IO_Exceptions;
@@ -330,6 +331,18 @@ package body SMM.Database is
 
       return -Result;
    end Image;
+
+   function Valid_Field (Item : in String) return Boolean
+   is
+      Lc_Item : constant String := Ada.Characters.Handling.To_Lower (Item);
+   begin
+      for I of Field_Image loop
+         if Lc_Item = -I then
+            return True;
+         end if;
+      end loop;
+      return False;
+   end Valid_Field;
 
    procedure Update
      (DB       : in Database;

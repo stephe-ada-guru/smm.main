@@ -29,11 +29,7 @@ with Ada.Text_IO;
 with GNAT.Traceback.Symbolic;
 with SMM.Database.Test;
 with SMM.ID3.Test;
-with SAL;
 with Test_Copy;
-with Test_Download;
-with Test_First_Pass_No_Last;
-with Test_First_Pass_With_Last;
 with Test_Import;
 with Test_Least_Recent;
 with Test_Play_Before;
@@ -41,12 +37,15 @@ with Test_Server;
 procedure Test_All_Harness
 is
    --  command line arguments:
-   Usage : constant String := "[<verbose> [test_name [routine_name ]]";
+   Usage : constant String := "[<verbose> [test_name [routine_name [verbosity [debug]]]]";
    --  <verbose> is 1 | 0; 1 lists each enabled test/routine name before running it
    --
    --  test_name, routine_name can be '' to set trace for all routines.
    --
    --  Set_Up_Case is run without checking the filter.
+
+   Verbosity : Integer;
+   Debug     : Integer;
 
    Filter : aliased AUnit.Test_Filters.Verbose.Filter;
 
@@ -74,7 +73,7 @@ begin
       when 2 =>
          Filter.Set_Name (Argument (2));
 
-      when 3 =>
+      when others =>
          declare
             Test_Name    : String renames Argument (2);
             Routine_Name : String renames Argument (3);
@@ -87,21 +86,18 @@ begin
                Filter.Set_Name (Test_Name & " : " & Routine_Name);
             end if;
          end;
-      when others =>
-         raise SAL.Programmer_Error with Usage;
       end case;
+      Verbosity := (if Argument_Count >= 4 then Integer'Value (Argument (4)) else 0);
+      Debug     := (if Argument_Count >= 5 then Integer'Value (Argument (5)) else 0);
    end;
 
    Add_Test (Suite, new SMM.Database.Test.Test_Case);
    Add_Test (Suite, new SMM.ID3.Test.Test_Case);
-   Add_Test (Suite, new Test_Copy.Test_Case (Verbosity => 0));
-   Add_Test (Suite, new Test_Download.Test_Case (Verbosity => 0));
-   Add_Test (Suite, new Test_First_Pass_No_Last.Test_Case (Verbosity => 0, Debug => False));
-   Add_Test (Suite, new Test_First_Pass_With_Last.Test_Case (Verbosity => 0, Debug => False));
+   Add_Test (Suite, new Test_Copy.Test_Case (Verbosity => Verbosity));
    Add_Test (Suite, new Test_Import.Test_Case);
    Add_Test (Suite, new Test_Least_Recent.Test_Case);
    Add_Test (Suite, new Test_Play_Before.Test_Case);
-   Add_Test (Suite, new Test_Server.Test_Case (Server_Ip => new String'("192.168.1.83"), Debug => 0));
+   Add_Test (Suite, new Test_Server.Test_Case (Debug => Debug, Verbosity => Verbosity));
 
    Run (Suite, Options, Result, Status);
 
@@ -117,6 +113,7 @@ begin
 exception
 when E : others =>
    Ada.Command_Line.Set_Exit_Status (Ada.Command_Line.Failure);
+   Ada.Text_IO.Put_Line (Usage);
    Ada.Text_IO.Put_Line (Ada.Exceptions.Exception_Name (E) & ": " & Ada.Exceptions.Exception_Message (E));
    Ada.Text_IO.Put_Line (GNAT.Traceback.Symbolic.Symbolic_Traceback (E));
 end Test_All_Harness;

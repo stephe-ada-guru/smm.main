@@ -2,7 +2,7 @@
 --
 --  Test smm_server, via http.
 --
---  Copyright (C) 2016 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2016, 2018 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -20,8 +20,8 @@ with AUnit.Test_Cases;
 package Test_Server is
 
    type Test_Case
-     (Server_IP : access constant String;
-      Debug     : Integer)
+     (Debug     : Integer;
+      Verbosity : Integer)
      is new AUnit.Test_Cases.Test_Case with null record;
    --  If the development machine has VMWare installed, it creates IP
    --  addresses that are not accessible from outside the machine, so
@@ -32,8 +32,8 @@ package Test_Server is
    --
    --  Debug
    --  0 : normal
-   --  1 : don't spawn server, don't recreate db; verbose test
-   --  2 : spawn server with log; verbose test
+   --  1 : don't spawn server, don't recreate db
+   --  2 : spawn server with log
 
    overriding procedure Register_Tests (T : in out Test_Case);
 

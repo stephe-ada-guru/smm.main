@@ -28,8 +28,6 @@ with SAL.Command_Line_IO;
 with SMM.Check;
 with SMM.Copy;
 with SMM.Database;
-with SMM.Download;
-with SMM.First_Pass;
 with SMM.History;
 with SMM.Import;
 with SMM.Update;
@@ -38,23 +36,12 @@ is
    procedure Put_Usage
    is begin
       Put_Line
-        ("smm [--db=<db_file>] [--verbosity=<int>] [--max-song-count=<int>] [--min-download-count=<int>]" &
-           " [--new-song-count=<int>] [--debug] <operation> [arg]...");
+        ("smm [--db=<db_file>] [--verbosity=<int>] <operation> [arg]...");
       Put_Line ("  <db_file> : defaults to ~/smm/smm.db or $APPDATA/smm or $SMM_HOME");
-      Put_Line ("  max-song-count defaults to 60, min-download-count to 30, new-song-count to max-song/5");
-      Put_Line ("  2 * max-songs are selected and randomized, half are downloaded;");
-      Put_Line ("  about half of new-song-count will be downloaded.");
       New_Line;
       Put_Line ("  categories: {instrumental | vocal | ...}");
       New_Line;
       Put_Line ("  operations:");
-      Put_Line ("  download_playlist <category> <playlist_dir> <smm_dir>");
-      Put_Line ("    manage downloaded files and playlist:");
-      Put_Line ("    1) delete files in playlist_dir/category either not in playlist_dir/category.m3u,");
-      Put_Line ("       or already played (as indicated in smm_dir/category.last)");
-      Put_Line ("    2) download default amount of music to playlist_dir");
-      Put_Line ("    3) delete played files, add new files to playlist, delete smm_dir/category.last");
-      New_Line;
       Put_Line ("  playlist <category> [<file>] [--replace]");
       Put_Line ("    create a playlist in <file> (same songs as 'download' would do)");
       Put_Line ("    <file> default specified in smm.db by Playlists key");
@@ -84,18 +71,13 @@ is
    DB           : SMM.Database.Database;
    Next_Arg     : Integer         := 1;
 
-   Max_Song_Count     : Ada.Containers.Count_Type;
-   Min_Download_Count : Ada.Containers.Count_Type;
-   New_Song_Count     : Ada.Containers.Count_Type;
-
    Home : constant String := Find_Home;
 
-   type Command_Type is (Download_Playlist, Copy_Playlist, Import, Update, Check, History);
+   type Command_Type is (Copy_Playlist, Import, Update, Check, History);
 
    procedure Get_Command is new SAL.Command_Line_IO.Gen_Get_Discrete_Proc (Command_Type, "command", Next_Arg);
 
    Command : Command_Type;
-   Debug   : Boolean := False;
 
    use type Ada.Containers.Count_Type;
 
@@ -118,44 +100,6 @@ begin
       Verbosity := 0;
    end if;
 
-   if Argument (Next_Arg)'Length > 17 and then
-     Argument (Next_Arg)(1 .. 17) = "--max-song-count="
-
-   then
-      Max_Song_Count := Ada.Containers.Count_Type'Value (Argument (Next_Arg)(18 .. Argument (Next_Arg)'Last));
-      Next_Arg       := Next_Arg + 1;
-   else
-      Max_Song_Count := 60;
-   end if;
-
-   if Argument (Next_Arg)'Length > 21 and then
-     Argument (Next_Arg)(1 .. 21) = "--min-download-count="
-
-   then
-      Min_Download_Count := Ada.Containers.Count_Type'Value (Argument (Next_Arg)(22 .. Argument (Next_Arg)'Last));
-      Next_Arg           := Next_Arg + 1;
-   else
-      Min_Download_Count := 30;
-   end if;
-
-   if Argument (Next_Arg)'Length > 17 and then
-     Argument (Next_Arg)(1 .. 17) = "--new-song-count="
-
-   then
-      New_Song_Count := Ada.Containers.Count_Type'Value (Argument (Next_Arg)(22 .. Argument (Next_Arg)'Last));
-      Next_Arg       := Next_Arg + 1;
-   else
-      New_Song_Count := Max_Song_Count / 5;
-   end if;
-
-   if Argument (Next_Arg) = "--debug" then
-
-      Debug    := True;
-      Next_Arg := Next_Arg + 1;
-   else
-      Debug := False;
-   end if;
-
    DB.Open (DB_File_Name.all);
 
    begin
@@ -167,24 +111,6 @@ begin
    end;
 
    case Command is
-   when Download_Playlist =>
-      declare
-         Category     : constant String := Argument (Next_Arg);
-         Playlist_Dir : constant String := As_Directory (Argument (Next_Arg + 1));
-         SMM_Dir      : constant String := As_Directory (Argument (Next_Arg + 2));
-         Song_Count   : Ada.Containers.Count_Type;
-      begin
-         Verbosity := Verbosity + 1;
-         SMM.First_Pass (Category, Playlist_Dir, SMM_Dir, Debug, Integer (Song_Count));
-         if Max_Song_Count - Song_Count >= Min_Download_Count then
-            Verbosity := Verbosity - 1;
-            SMM.Download
-              (DB, Source_Root, Category, Playlist_Dir, Max_Song_Count - Song_Count, New_Song_Count,
-               Over_Select_Ratio => 2.0);
-            Verbosity := Verbosity + 1;
-         end if;
-      end;
-
    when Copy_Playlist =>
       declare
          Playlist_Name : constant String := Argument (Next_Arg);

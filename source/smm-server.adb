@@ -347,7 +347,8 @@ package body SMM.Server is
          Meta : constant AWS.Containers.Tables.Table_Type := Meta_Files (Containing_Directory (I.File_Name));
 
          Result : Unbounded_String := +"<div>" &
-           "<a href=""file?name=/" & I.File_Name & """>" & I.Artist & " | " & I.Album & " | " & I.Title & "</a>";
+           "<a href=""file?name=/" & I.File_Name & """>" & I.Artist & " | " & I.Album & " | " & I.Title &
+           " | " & I.Category & "</a>";
       begin
          for J in 1 .. Meta.Count loop
             if To_Lower (Extension (Meta.Get_Name (J))) = "jpg" then
@@ -361,10 +362,14 @@ package body SMM.Server is
          return -Result;
       end Search_Result;
 
+      Required_Fields : constant array (Fields) of Boolean :=
+        (Artist | Album | Title => True,
+         others => False);
+
       function Valid_Query return Boolean
       is begin
          for Field in Fields loop
-            if not URI_Param.Exist (-Field_Image (Field)) then
+            if Required_Fields (Field) and then not URI_Param.Exist (-Field_Image (Field)) then
                return False;
             end if;
          end loop;
@@ -447,7 +452,19 @@ package body SMM.Server is
               (AWS.Messages.S400, "missing 'file' param: '" & AWS.URL.Parameters (URI) & "'");
          end if;
 
-         --  FIXME: check that other params match Fields
+         for I in 1 .. URI_Param.Count loop
+            declare
+               Field_Name : String renames URI_Param.Get_Name (I);
+            begin
+               if not (Field_Name = "file" or
+                         Valid_Field (Field_Name))
+               then
+                  return AWS.Response.Acknowledge
+                    (AWS.Messages.S400, "bad param name: '" & String'(Field_Name) & "'");
+               end if;
+            end;
+         end loop;
+
          for I in Fields loop
             declare
                Value : constant String := URI_Param.Get (-Field_Image (I)); -- empty string if not present

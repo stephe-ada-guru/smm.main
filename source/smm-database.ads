@@ -140,6 +140,9 @@ package SMM.Database is
       Category => +"category",
       Title    => +"title");
 
+   function Valid_Field (Item : in String) return Boolean;
+   --  True if Item in Field_Image (case insensitive).
+
    procedure Update
      (DB       : in Database;
       Position : in Cursor'Class;
