@@ -243,9 +243,10 @@ package body SMM.Database is
    Play_After_Field      : constant GNATCOLL.SQL.Exec.Field_Index := Play_Before_Field + 1;
 
    Field_Fields : constant array (Fields) of GNATCOLL.SQL.Exec.Field_Index :=
-     (Artist => Artist_Field,
-      Album  => Album_Field,
-      Title  => Title_Field);
+     (Artist   => Artist_Field,
+      Album    => Album_Field,
+      Category => Category_Field,
+      Title    => Title_Field);
 
    function Has_Element (Position : Cursor) return Boolean
    is begin
@@ -329,6 +330,46 @@ package body SMM.Database is
 
       return -Result;
    end Image;
+
+   procedure Update
+     (DB       : in Database;
+      Position : in Cursor'Class;
+      Data     : in Field_Values)
+   is
+      use Ada.Strings.Unbounded;
+      use GNATCOLL.SQL.Exec;
+
+      Statement : Unbounded_String := +"UPDATE Song SET ";
+
+      Params : SQL_Parameters (1 .. 4) := (others => Null_Parameter);
+
+      Need_Comma : Boolean := False;
+      Last       : Integer := 0;
+
+      procedure Add_Param (Name : in String; Value : in String)
+      is begin
+         if Need_Comma then
+            Statement := Statement & ", ";
+         end if;
+         Need_Comma := True;
+
+         Statement := Statement & Name & " = ?";
+         Last := Last + 1;
+         Params (Last) := +Value;
+      end Add_Param;
+   begin
+      for Field in Fields loop
+         if Length (Data (Field)) > 0 then
+            Add_Param (-Field_Image (Field), -Data (Field));
+         end if;
+      end loop;
+
+      Statement     := Statement & " WHERE ID = ?";
+      Last          := Last + 1;
+      Params (Last) := +Position.ID;
+
+      Checked_Execute (DB, -Statement, Params (1 .. Last));
+   end Update;
 
    function Find_Like
      (DB    : in Database'Class;

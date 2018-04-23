@@ -78,6 +78,29 @@ package SMM.Database is
    end record;
 
    type Cursor is tagged private;
+   --  We'd like to be able to do:
+   --
+   --  1)
+   --    declare
+   --       I : Cursor := DB.First;
+   --    begin
+   --       ...
+   --       I.Next;
+   --
+   --  2)
+   --    declare
+   --       I : Cursor
+   --    begin
+   --       ...
+   --       I := DB.Find ...;
+   --       ...
+   --       I.Next;
+   --
+   --  Ada forbids two dispatching parameters, so these functions
+   --  dispatch either on DB or Cursor; the other must be classwide.
+   --
+   --  1) requires dispatching on DB, which means Cursor is classwide;
+   --  that means it must be initialized, which forbids 2).
 
    function Has_Element (Position : in Cursor) return Boolean;
 
@@ -104,7 +127,7 @@ package SMM.Database is
       Play_After      : in Integer     := Null_ID);
    --  Items that are the defaults are not updated.
 
-   type Fields is (Artist, Album, Title);
+   type Fields is (Artist, Album, Category, Title);
 
    type Field_Values is array (Fields) of Ada.Strings.Unbounded.Unbounded_String;
 
@@ -112,9 +135,15 @@ package SMM.Database is
    --  User-friendly image, good for "not found" error messages.
 
    Field_Image : constant Field_Values :=
-     (Artist => +"artist",
-      Album  => +"album",
-      Title  => +"title");
+     (Artist   => +"artist",
+      Album    => +"album",
+      Category => +"category",
+      Title    => +"title");
+
+   procedure Update
+     (DB       : in Database;
+      Position : in Cursor'Class;
+      Data     : in Field_Values);
 
    function Find_Like
      (DB    : in Database'Class;
@@ -159,7 +188,7 @@ private
    end record;
 
    type Cursor is tagged record
-      --  FIXME: need finalization to release cursor?
+      --  GNATCOLL.SQL.Exec Finalize releases cursor
       Cursor : GNATCOLL.SQL.Exec.Forward_Cursor;
    end record;
 

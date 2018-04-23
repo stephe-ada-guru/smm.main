@@ -132,7 +132,7 @@ package body SMM.Server is
    end Server_Img;
 
    ----------
-   --  Specific request handlers
+   --  Specific request handlers, alphabetical
 
    function Handle_Download (URI : in AWS.URL.Object) return AWS.Response.Data
    is
@@ -180,41 +180,6 @@ package body SMM.Server is
          Message_Body => "exception " & Exception_Name (E) & ": " & Exception_Message (E));
    end Handle_Download;
 
-   function Handle_Meta (URI : in AWS.URL.Object) return AWS.Response.Data
-   is
-      use Ada.Directories;
-      use Ada.Strings.Unbounded;
-      use AWS.URL;
-
-      Source_Dir : constant String := -Source_Root & Path (URI);
-      Response   : Unbounded_String;
-
-      procedure Copy_Aux (Dir_Ent : in Directory_Entry_Type)
-      is begin
-         Response := Response &
-           Relative_Name (-Source_Root, Normalize (Full_Name (Dir_Ent))) & ASCII.CR & ASCII.LF;
-      end Copy_Aux;
-   begin
-      Search
-        (Directory => Source_Dir,
-         Pattern   => "AlbumArt*.jpg",
-         Filter    => (Ordinary_File => True, others => False),
-         Process   => Copy_Aux'Access);
-
-      Search
-        (Directory => Source_Dir,
-         Pattern   => "liner_notes.pdf",
-         Filter    => (Ordinary_File => True, others => False),
-         Process   => Copy_Aux'Access);
-
-      return AWS.Response.Build ("text/plain", Response);
-   exception
-   when Ada.IO_Exceptions.Name_Error =>
-      --  GNAT runtime sets message to "(unknown directory "")"; no file name!
-      raise Ada.IO_Exceptions.Name_Error with "unknown directory '" & Path (URI) & "'";
-
-   end Handle_Meta;
-
    function Handle_File (URI : in AWS.URL.Object; Name_In_Param : in Boolean) return AWS.Response.Data
    is
       use Ada.Directories;
@@ -255,7 +220,7 @@ package body SMM.Server is
             DB.Open (-DB_Filename);
 
             --  Find does not want leading / on filename
-            I := Find_File_Name (DB, Filename (Length (Source_Root) + 2 .. Filename'Last));
+            I := DB.Find_File_Name (Filename (Length (Source_Root) + 2 .. Filename'Last));
 
             if not I.Has_Element then
                return AWS.Response.Acknowledge
@@ -290,6 +255,41 @@ package body SMM.Server is
         (Status_Code  => AWS.Messages.S500,
          Message_Body => "exception " & Exception_Name (E) & ": " & Exception_Message (E));
    end Handle_File;
+
+   function Handle_Meta (URI : in AWS.URL.Object) return AWS.Response.Data
+   is
+      use Ada.Directories;
+      use Ada.Strings.Unbounded;
+      use AWS.URL;
+
+      Source_Dir : constant String := -Source_Root & Path (URI);
+      Response   : Unbounded_String;
+
+      procedure Copy_Aux (Dir_Ent : in Directory_Entry_Type)
+      is begin
+         Response := Response &
+           Relative_Name (-Source_Root, Normalize (Full_Name (Dir_Ent))) & ASCII.CR & ASCII.LF;
+      end Copy_Aux;
+   begin
+      Search
+        (Directory => Source_Dir,
+         Pattern   => "AlbumArt*.jpg",
+         Filter    => (Ordinary_File => True, others => False),
+         Process   => Copy_Aux'Access);
+
+      Search
+        (Directory => Source_Dir,
+         Pattern   => "liner_notes.pdf",
+         Filter    => (Ordinary_File => True, others => False),
+         Process   => Copy_Aux'Access);
+
+      return AWS.Response.Build ("text/plain", Response);
+   exception
+   when Ada.IO_Exceptions.Name_Error =>
+      --  GNAT runtime sets message to "(unknown directory "")"; no file name!
+      raise Ada.IO_Exceptions.Name_Error with "unknown directory '" & Path (URI) & "'";
+
+   end Handle_Meta;
 
    function Handle_Put_Notes (Request : in AWS.Status.Data; URI : in AWS.URL.Object) return AWS.Response.Data
    is
@@ -337,10 +337,9 @@ package body SMM.Server is
       use Ada.Directories;
       use SMM.Database;
 
-      Param : constant AWS.Parameters.List := Decode_Plus (AWS.URL.Parameters (URI));
-
-      DB           : SMM.Database.Database;
-      Search_Param : SMM.Database.Field_Values;
+      URI_Param : constant AWS.Parameters.List := Decode_Plus (AWS.URL.Parameters (URI));
+      DB        : SMM.Database.Database;
+      SQL_Param : SMM.Database.Field_Values;
 
       function Search_Result (I : in Cursor) return String
       is
@@ -365,7 +364,7 @@ package body SMM.Server is
       function Valid_Query return Boolean
       is begin
          for Field in Fields loop
-            if not Param.Exist (-Field_Image (Field)) then
+            if not URI_Param.Exist (-Field_Image (Field)) then
                return False;
             end if;
          end loop;
@@ -373,12 +372,12 @@ package body SMM.Server is
       end Valid_Query;
 
    begin
-      if Param.Is_Empty then
+      if URI_Param.Is_Empty then
          --  Return search page with no results.
          return AWS.Response.File ("text/html", -Server_Root & "/search_initial.html");
 
       elsif not Valid_Query then
-         return AWS.Response.Acknowledge (AWS.Messages.S500, "invalid query params");
+         return AWS.Response.Acknowledge (AWS.Messages.S400, "invalid query params '" & AWS.URL.Parameters (URI) & "'");
 
       else
          --  From search page, query looks like
@@ -387,40 +386,94 @@ package body SMM.Server is
          --
          --  Support links from result pages etc; allow fields to be not present.
 
-         DB.Open (-DB_Filename);
-
          for I in Fields loop
             declare
-               Value : constant String := Param.Get (-Field_Image (I)); -- empty string if not present
+               Value : constant String := URI_Param.Get (-Field_Image (I)); -- empty string if not present
             begin
                if Value'Length > 0 then
-                  Search_Param (I) := +Value;
+                  SQL_Param (I) := +Value;
                end if;
             end;
          end loop;
 
          declare
             Response : Unbounded_String := +"<!DOCTYPE html>" & ASCII.LF & "<html><head></head><body>";
-            I        : Cursor           := Find_Like (DB, Search_Param);
          begin
-            if not I.Has_Element then
-               return AWS.Response.Acknowledge
-                 (Status_Code  => AWS.Messages.S404,
-                  Message_Body => Image (Search_Param) & " not found");
-            end if;
+            DB.Open (-DB_Filename);
 
-            loop
-               exit when not I.Has_Element;
-               Response := Response & Search_Result (I) & ASCII.LF;
+            declare
+               I : Cursor := DB.Find_Like (SQL_Param);
+            begin
+               if not I.Has_Element then
+                  return AWS.Response.Acknowledge
+                    (Status_Code  => AWS.Messages.S404,
+                     Message_Body => Image (SQL_Param) & " not found");
+               end if;
 
-               I.Next;
-            end loop;
+               loop
+                  exit when not I.Has_Element;
+                  Response := Response & Search_Result (I) & ASCII.LF;
+
+                  I.Next;
+               end loop;
+            end; --  Free cursor
 
             Response := Response & "</body></html>";
             return AWS.Response.Build ("text/html", Response);
          end;
       end if;
    end Handle_Search;
+
+   function Handle_Update (URI : in AWS.URL.Object) return AWS.Response.Data
+   is
+      use SMM.Database;
+
+      URI_Param : constant AWS.Parameters.List := Decode_Plus (AWS.URL.Parameters (URI));
+      DB        : SMM.Database.Database;
+      SQL_Param : SMM.Database.Field_Values;
+
+   begin
+      if URI_Param.Is_Empty then
+         return AWS.Response.Acknowledge
+           (AWS.Messages.S400, "invalid query params: '" & AWS.URL.Parameters (URI) & "'");
+
+      else
+         --  From Emacs notes buffer page, query looks like
+         --  'update?file=<file_name>&<field>=<data>'
+         --  only update field if present.
+
+         if not URI_Param.Exist ("file") then
+            return AWS.Response.Acknowledge
+              (AWS.Messages.S400, "missing 'file' param: '" & AWS.URL.Parameters (URI) & "'");
+         end if;
+
+         --  FIXME: check that other params match Fields
+         for I in Fields loop
+            declare
+               Value : constant String := URI_Param.Get (-Field_Image (I)); -- empty string if not present
+            begin
+               if Value'Length > 0 then
+                  SQL_Param (I) := +Value;
+               end if;
+            end;
+         end loop;
+
+         DB.Open (-DB_Filename);
+
+         declare
+            File_Name : constant String := URI_Param.Get ("file");
+            I         : constant Cursor := DB.Find_File_Name (File_Name);
+         begin
+            if I.Has_Element then
+               DB.Update (I, SQL_Param);
+            else
+               return AWS.Response.Acknowledge (AWS.Messages.S400, "file not in db: '" & File_Name & "'");
+            end if;
+         end;
+
+         return AWS.Response.Acknowledge (AWS.Messages.S200, "file updated");
+      end if;
+   end Handle_Update;
 
    ----------
    --  Top level
@@ -467,9 +520,22 @@ package body SMM.Server is
       when PUT =>
          return Handle_Put_Notes (Request, URI);
 
+      when POST =>
+         declare
+            URI_File : constant String := File (URI);
+         begin
+            if URI_File = "update" then
+               return Handle_Update (URI);
+            else
+               return Acknowledge
+                 (Status_Code  => AWS.Messages.S400, -- bad request
+                  Message_Body => "unrecognized POST path '" & URI_File & "'");
+            end if;
+         end;
+
       when others =>
          return Acknowledge
-           (Status_Code  => AWS.Messages.S500,
+           (Status_Code  => AWS.Messages.S400, -- bad request
             Message_Body => "unrecognized request " & Request_Method'Image (Method (Request)));
       end case;
    exception

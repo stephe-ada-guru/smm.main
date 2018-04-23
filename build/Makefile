@@ -10,7 +10,7 @@ export Standard_Common_Build := Debug
 t_one : test_one_harness.run
 
 #t_all : export Standard_Common_Build := Debug
-t_all : smm-server_driver.exe test_all_harness.diff
+t_all : smm-server_driver.exe test_all_harness.run
 
 one-clean :
 	rm -f smm_config.db
@@ -20,7 +20,7 @@ one : debug.exe
 	./debug.exe "d:/music/beth nielsen chapman/beth nielsen chapman/that's the easy part.mp3"
 
 run-server : smm-server_driver.exe
-	./smm-server_driver.exe smm_server_test_1.config
+	./smm-server_driver.exe smm_server_devel.config
 
 convert-main : config_to_sqlite.exe | c:/home/stephe/smm/smm_work_1.db
 	./$< ~/smm/smm_server.config c:/home/stephe/smm/smm_work_1.db

@@ -44,8 +44,8 @@ package Test_Utils is
       Category        : in String := "vocal");
    --  Insert a database element; other fields are null or "none".
 
-   function "&" (Left, Right : in SMM.ID3.Tag) return SMM.ID3.Tag_Lists.List;
-   function "&" (List : in SMM.ID3.Tag_Lists.List; Item : in SMM.ID3.Tag) return SMM.ID3.Tag_Lists.List;
+   function "&" (Left, Right : in SMM.ID3.Frame) return SMM.ID3.Frame_Lists.List;
+   function "&" (List : in SMM.ID3.Frame_Lists.List; Item : in SMM.ID3.Frame) return SMM.ID3.Frame_Lists.List;
    --  For SMM.ID3.Create
 
    procedure Check_Exists (Path : in String; Expected_Exists : in Boolean);

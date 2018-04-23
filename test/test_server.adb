@@ -33,7 +33,7 @@ with Ada.Text_IO;
 with GNAT.OS_Lib;
 with SAL.Calendar_More.AUnit;
 with SMM.Database;
-with SMM.ID3.AUnit;
+with SMM.ID3;
 with Test_Utils;
 package body Test_Server is
 
@@ -168,11 +168,9 @@ package body Test_Server is
       procedure Check_One
         (Directory : in String;
          Filename  : in String;
-         Mime      : in String;
-         Tags      : in SMM.ID3.Tag_Lists.List := SMM.ID3.Tag_Lists.Empty_List)
+         Mime      : in String)
       is
          use SAL.Calendar_More.AUnit;
-         use SMM.ID3.AUnit;
 
          URL : constant String := "http://" & Test.Server_IP.all & ":" & Server_Port & "/" & Directory &
            Encode (Filename);
@@ -185,7 +183,6 @@ package body Test_Server is
          Check (Filename & ".mode", Mode (Response), Message); --  Not clear why this is "message", not "file"
          Check (Filename & ".mime", Content_Type (Response), Mime);
          if Mime = "audio/mpeg" then
-            Check (Filename & ".file content", Msg, Tags);
             DB.Open (DB_File_Name);
             I := DB.Find_File_Name (Directory & Filename);
             Check
@@ -207,18 +204,10 @@ package body Test_Server is
       Check_One
         ("artist_1/album_1/", "AlbumArt_1.jpg", "image/jpeg");
 
-      Check_One
-        ("artist_1/album_1/", "1 - song_1.mp3", "audio/mpeg",
-           (Artist, +"artist_1") &
-           (Album, +"album_1") &
-           (Title, +"1 - song_1"));
+      Check_One ("artist_1/album_1/", "1 - song_1.mp3", "audio/mpeg");
 
       Check_One ("artist_1/album_1/", "liner_notes.pdf", "application/pdf");
-      Check_One
-        ("artist_1/album_1/", "03 The Dance #1.mp3", "audio/mpeg",
-         (Artist, +"artist_1") &
-           (Album, +"album_1") &
-           (Title, +"03 The Dance #1"));
+      Check_One ("artist_1/album_1/", "03 The Dance #1.mp3", "audio/mpeg");
    end Test_Get_File;
 
    procedure Test_Send_Notes (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
@@ -379,7 +368,7 @@ package body Test_Server is
       use Ada.Text_IO;
       use SMM;
       use SMM.ID3;
-      use SMM.ID3.Tag_Lists;
+      use SMM.ID3.Frame_Lists;
       use Test_Utils;
 
       DB  : SMM.Database.Database;

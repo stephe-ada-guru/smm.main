@@ -13,7 +13,7 @@ d:/Music/remote_cache/smm-server_driver.log
     '((xmtn . "../org.stephe_leake.aunit_ext")
       (xmtn . "../org.stephe_leake.makerules")
       (xmtn . "../org.stephe_leake.sal")
-      (xmtn . "../smm.work_1")))
+      (xmtn . "../smm.main")))
 
 (dvc-propagate-one "." "../smm.main")
 
@@ -21,11 +21,12 @@ play-before causes short replay periods
     fixed 1 feb 2018; short periods should dissappear from status eventually
 
 
-in db twice:
-    ./bonnie raitt/Road Tested/(Disc 2) 09 - My Opening Farewell (Live).mp3
-    ./free/20th Century Masters_ The Millennium Collection_ Best Of Free/05 - All Right Now.mp3
+new server command update?<file>&<field>=<data>[&<field>=<data>]...
+    (setq smm-note-url-base "http://takver4:8081/update?")
 
-new commands:
+new smm commands?:
+    or just use sqlite3 command line, smm-server
+    on smm.work_1
     show file
         id, etc
 
@@ -138,6 +139,10 @@ add "lists" field to db;
     html links to music server
 
     parse best lists to populate initially?
+
+    parenthood:
+        doodle-li-doin'
+        Chris De Burgh/Into The Light/For Rosanna.mp3
 
     9/11 playlist David Wilcox Airstream Falling For It
 

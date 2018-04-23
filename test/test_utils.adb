@@ -89,17 +89,17 @@ package body Test_Utils is
          Last_Downloaded => Prefix & Duration'Image (Last_Downloaded) (2 .. 2));
    end Insert;
 
-   function "&" (Left, Right : in SMM.ID3.Tag) return SMM.ID3.Tag_Lists.List
+   function "&" (Left, Right : in SMM.ID3.Frame) return SMM.ID3.Frame_Lists.List
    is begin
-      return Result : SMM.ID3.Tag_Lists.List do
+      return Result : SMM.ID3.Frame_Lists.List do
          Result.Append (Left);
          Result.Append (Right);
       end return;
    end "&";
 
-   function "&" (List : in SMM.ID3.Tag_Lists.List; Item : in SMM.ID3.Tag) return SMM.ID3.Tag_Lists.List
+   function "&" (List : in SMM.ID3.Frame_Lists.List; Item : in SMM.ID3.Frame) return SMM.ID3.Frame_Lists.List
    is begin
-      return Result : SMM.ID3.Tag_Lists.List := List do
+      return Result : SMM.ID3.Frame_Lists.List := List do
          Result.Append (Item);
       end return;
    end "&";

@@ -20,46 +20,32 @@ pragma License (GPL);
 
 with AUnit.Options;
 with AUnit.Reporter.Text;
-with AUnit.Simple_Test_Cases;
-with AUnit.Test_Filters;
+with AUnit.Test_Filters.Verbose;
 with AUnit.Test_Results;
 with AUnit.Test_Suites; use AUnit.Test_Suites;
-with Ada.Command_Line; use Ada.Command_Line;
+with Ada.Command_Line;
 with Ada.Exceptions;
 with Ada.Text_IO;
 with GNAT.Traceback.Symbolic;
-with Test_Server;
+with SMM.Database.Test;
 procedure Test_One_Harness
 is
-   --  command line arguments: [routine_name [debug_level]]
+   --  command line arguments:
+   Usage : constant String := "[<verbose> [test_name [routine_name [debug]]]";
+   --  <verbose> is 1 | 0; 1 lists each enabled test/routine name before running it
    --
-   --  routine_name can be '' to set debug for all routines.
-   --
-   --  AUnit design forces this awkward order of declarations.
+   --  test_name, routine_name can be '' to set trace for all routines.
 
-   Debug : constant Integer := (if Argument_Count > 1 then Integer'Value (Argument (2)) else 0);
+   Debug : Integer;
+   pragma Unreferenced (Debug);
 
-   Tc : constant AUnit.Simple_Test_Cases.Test_Case_Access := new Test_Server.Test_Case
-     (Server_IP => new String'("192.168.1.83"),
-      Debug => Debug);
-
-   function New_Name_Filter (Routine_Name : in String) return AUnit.Test_Filters.Test_Filter_Access
-   is
-      use AUnit.Test_Filters;
-   begin
-      return Filter : constant Test_Filter_Access := new Name_Filter do
-         Set_Name (Name_Filter (Filter.all), Tc.Name.all & " : " & Routine_Name);
-      end return;
-   end New_Name_Filter;
+   Filter : aliased AUnit.Test_Filters.Verbose.Filter;
 
    Options : constant AUnit.Options.AUnit_Options :=
      (Global_Timer     => False,
       Test_Case_Timer  => False,
       Report_Successes => True,
-      Filter           =>
-        (if Argument_Count > 0 and then Argument (1) /= ""
-         then New_Name_Filter (Argument (1))
-         else null));
+      Filter           => Filter'Unchecked_Access);
 
    Suite    : constant Access_Test_Suite := new Test_Suite;
    Reporter : AUnit.Reporter.Text.Text_Reporter;
@@ -67,15 +53,58 @@ is
    Status   : AUnit.Status;
 
 begin
-   Add_Test (Suite, Tc);
+   declare
+      use Ada.Command_Line;
+   begin
+      Filter.Verbose := Argument_Count > 0 and then Argument (1) = "1";
+
+      case Argument_Count is
+      when 0 | 1 =>
+         null;
+
+      when 2 =>
+         Filter.Set_Name (Argument (2));
+
+      when others =>
+         declare
+            Test_Name    : String renames Argument (2);
+            Routine_Name : String renames Argument (3);
+         begin
+            if Test_Name = "" then
+               Filter.Set_Name (Routine_Name);
+            elsif Routine_Name = "" then
+               Filter.Set_Name (Test_Name);
+            else
+               Filter.Set_Name (Test_Name & " : " & Routine_Name);
+            end if;
+         end;
+      end case;
+
+      Debug := (if Argument_Count >= 4 then Integer'Value (Argument (4)) else 0);
+   end;
+
+   Add_Test (Suite, new SMM.Database.Test.Test_Case);
 
    Run (Suite, Options, Result, Status);
 
    --  Provide command line option -v to set verbose mode
    AUnit.Reporter.Text.Report (Reporter, Result);
 
+   case Status is
+   when AUnit.Success =>
+      Ada.Command_Line.Set_Exit_Status (Ada.Command_Line.Success);
+   when AUnit.Failure =>
+      Ada.Command_Line.Set_Exit_Status (Ada.Command_Line.Failure);
+   end case;
+
 exception
 when E : others =>
-   Ada.Text_IO.Put_Line (Ada.Exceptions.Exception_Name (E) & ": " & Ada.Exceptions.Exception_Message (E));
-   Ada.Text_IO.Put_Line (GNAT.Traceback.Symbolic.Symbolic_Traceback (E));
+   Ada.Command_Line.Set_Exit_Status (Ada.Command_Line.Failure);
+   Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, Usage);
+   Ada.Text_IO.Put_Line
+     (Ada.Text_IO.Standard_Error,
+      Ada.Exceptions.Exception_Name (E) & ": " & Ada.Exceptions.Exception_Message (E));
+   Ada.Text_IO.Put_Line
+     (Ada.Text_IO.Standard_Error,
+      GNAT.Traceback.Symbolic.Symbolic_Traceback (E));
 end Test_One_Harness;

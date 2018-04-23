@@ -60,9 +60,39 @@ package body SMM.Database.Test is
    begin
       Check_One
         ("1",
-         (Artist => +"2", Album => +"", Title => +"3"),
+         (Artist => +"2", Title => +"3", others => +""),
          (1 => 6));
    end Test_Find_Like;
+
+   procedure Test_Update (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+
+      procedure Check_One
+        (Label     : in String;
+         File_Name : in String;
+         Param     : in Field_Values)
+      is
+         use Ada.Strings.Unbounded;
+         use AUnit.Checks;
+
+         I : Cursor  := Find_File_Name (DB, File_Name);
+      begin
+         DB.Update (I, Param);
+         I := Find_File_Name (DB, File_Name); -- must refresh to see effect of update
+         for J in Param'Range loop
+            if Length (Param (J)) > 0 then
+               Check (Label & "." & (-Field_Image (J)), I.Field (J), -Param (J));
+            end if;
+         end loop;
+      end Check_One;
+
+   begin
+      Check_One
+        ("1",
+         "artist_1/album_1/1 - song_1.mp3",
+         (Category => +"dont_play", others => +""));
+   end Test_Update;
 
    ----------
    --  Public bodies
@@ -79,6 +109,7 @@ package body SMM.Database.Test is
       use Standard.AUnit.Test_Cases.Registration;
    begin
       Register_Routine (T, Test_Find_Like'Access, "Test_Find_Like");
+      Register_Routine (T, Test_Update'Access, "Test_Update");
    end Register_Tests;
 
    overriding procedure Set_Up_Case (T : in out Test_Case)

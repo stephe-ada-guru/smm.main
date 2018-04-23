@@ -417,4 +417,37 @@ package body SMM.ID3 is
       end if;
    end Metadata;
 
+   procedure Create
+     (Name    : in String;
+      Content : in Frame_Lists.List)
+   is
+      use Ada.Strings.Unbounded;
+      use Ada.Streams.Stream_IO;
+      File : aliased File_Type;
+
+      function Size (Item : in Frame) return Ada.Streams.Stream_IO.Count
+      is begin
+         return Ada.Streams.Stream_IO.Count (Frame_Header_Byte_Size + Ada.Strings.Unbounded.Length (Item.Data));
+      end Size;
+
+      function Size (Item : in Frame_Lists.List) return Ada.Streams.Stream_IO.Count
+      is begin
+         return Result : Ada.Streams.Stream_IO.Count := 0 do
+            for I of Item loop
+               Result := Result + Size (I);
+            end loop;
+         end return;
+      end Size;
+   begin
+      Create (File, Out_File, Name);
+      File_Header'Write (Stream (File), File_Header'("ID3", 3, 0, 0, To_Size (Size (Content))));
+      for T of Content loop
+         Frame_Header'Write
+           (Stream (File),
+            Frame_Header'(T.ID, To_Size (Ada.Streams.Stream_IO.Count (Length (T.Data))), 0, 0));
+         String'Write (Stream (File), To_String (T.Data));
+      end loop;
+      Close (File);
+   end Create;
+
 end SMM.ID3;

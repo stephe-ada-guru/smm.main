@@ -20,15 +20,17 @@ pragma License (GPL);
 
 with AUnit.Options;
 with AUnit.Reporter.Text;
+with AUnit.Test_Filters.Verbose;
 with AUnit.Test_Results;
 with AUnit.Test_Suites; use AUnit.Test_Suites;
+with Ada.Command_Line;
 with Ada.Exceptions;
 with Ada.Text_IO;
 with GNAT.Traceback.Symbolic;
 with SMM.Database.Test;
 with SMM.ID3.Test;
+with SAL;
 with Test_Copy;
-with Test_Check;
 with Test_Download;
 with Test_First_Pass_No_Last;
 with Test_First_Pass_With_Last;
@@ -38,16 +40,61 @@ with Test_Play_Before;
 with Test_Server;
 procedure Test_All_Harness
 is
+   --  command line arguments:
+   Usage : constant String := "[<verbose> [test_name [routine_name ]]";
+   --  <verbose> is 1 | 0; 1 lists each enabled test/routine name before running it
+   --
+   --  test_name, routine_name can be '' to set trace for all routines.
+   --
+   --  Set_Up_Case is run without checking the filter.
+
+   Filter : aliased AUnit.Test_Filters.Verbose.Filter;
+
+   Options : constant AUnit.Options.AUnit_Options :=
+     (Global_Timer     => False,
+      Test_Case_Timer  => False,
+      Report_Successes => True,
+      Filter           => Filter'Unchecked_Access);
+
    Suite    : constant Access_Test_Suite := new Test_Suite;
    Reporter : AUnit.Reporter.Text.Text_Reporter;
    Result   : AUnit.Test_Results.Result;
    Status   : AUnit.Status;
 
 begin
+   declare
+      use Ada.Command_Line;
+   begin
+      Filter.Verbose := Argument_Count > 0 and then Argument (1) = "1";
+
+      case Argument_Count is
+      when 0 | 1 =>
+         null;
+
+      when 2 =>
+         Filter.Set_Name (Argument (2));
+
+      when 3 =>
+         declare
+            Test_Name    : String renames Argument (2);
+            Routine_Name : String renames Argument (3);
+         begin
+            if Test_Name = "" then
+               Filter.Set_Name (Routine_Name);
+            elsif Routine_Name = "" then
+               Filter.Set_Name (Test_Name);
+            else
+               Filter.Set_Name (Test_Name & " : " & Routine_Name);
+            end if;
+         end;
+      when others =>
+         raise SAL.Programmer_Error with Usage;
+      end case;
+   end;
+
    Add_Test (Suite, new SMM.Database.Test.Test_Case);
    Add_Test (Suite, new SMM.ID3.Test.Test_Case);
    Add_Test (Suite, new Test_Copy.Test_Case (Verbosity => 0));
-   Add_Test (Suite, new Test_Check.Test_Case);
    Add_Test (Suite, new Test_Download.Test_Case (Verbosity => 0));
    Add_Test (Suite, new Test_First_Pass_No_Last.Test_Case (Verbosity => 0, Debug => False));
    Add_Test (Suite, new Test_First_Pass_With_Last.Test_Case (Verbosity => 0, Debug => False));
@@ -56,13 +103,20 @@ begin
    Add_Test (Suite, new Test_Play_Before.Test_Case);
    Add_Test (Suite, new Test_Server.Test_Case (Server_Ip => new String'("192.168.1.83"), Debug => 0));
 
-   Run (Suite, AUnit.Options.Default_Options, Result, Status);
+   Run (Suite, Options, Result, Status);
 
-   --  Provide command line option -v to set verbose mode
    AUnit.Reporter.Text.Report (Reporter, Result);
+
+   case Status is
+   when AUnit.Success =>
+      Ada.Command_Line.Set_Exit_Status (Ada.Command_Line.Success);
+   when AUnit.Failure =>
+      Ada.Command_Line.Set_Exit_Status (Ada.Command_Line.Failure);
+   end case;
 
 exception
 when E : others =>
+   Ada.Command_Line.Set_Exit_Status (Ada.Command_Line.Failure);
    Ada.Text_IO.Put_Line (Ada.Exceptions.Exception_Name (E) & ": " & Ada.Exceptions.Exception_Message (E));
    Ada.Text_IO.Put_Line (GNAT.Traceback.Symbolic.Symbolic_Traceback (E));
 end Test_All_Harness;

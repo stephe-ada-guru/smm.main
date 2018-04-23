@@ -69,6 +69,11 @@ package SMM.ID3 is
       ID3_Frames    :    out Frame_Lists.List;
       Artist_ID     :    out ID_String);
 
+   procedure Create
+     (Name    : in String;
+      Content : in Frame_Lists.List);
+   --  Create a file with Content. Mostly useful for unit tests.
+
 private
 
    type File is new Ada.Finalization.Limited_Controlled with record

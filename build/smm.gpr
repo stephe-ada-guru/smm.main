@@ -1,5 +1,5 @@
 with "aunit";
-with "aunit_sal_ext";
+with "aunit_ext";
 with "aws";
 with "gnatcoll_sqlite";
 with "sal_devel";
