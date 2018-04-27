@@ -1,0 +1,10 @@
+/* Cascading Style Sheet for smm-server Songs data. */
+
+/* Must be in utf-8-unix to be parsed by Firefox, Chrome */
+
+thead {background: grey;}
+tr {vertical-align: top; }
+.album_art_list {height: 100px; width: 130px; overflow-y: scroll; } /* width +20px for scroll bar */
+.categories_list {height: 100px; overflow-y: scroll; }
+.liner_notes_header {text-align:middle; width: 35px; overflow-x: wrap; }
+/* end of file */

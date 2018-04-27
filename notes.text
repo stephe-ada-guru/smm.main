@@ -28,13 +28,7 @@ play-before causes short replay periods
 
 
 web search results
-    data in nested tables
-    presentation in CSS
-
-    try svg+xml for *.svg
-    https://www.lifewire.com/file-extensions-and-mime-types-3469109
-
-    fix favicon.ico
+    albumart show actual size in text, use right click to see full image
 
 web UI for "add category"
     or "edit category"?
@@ -133,7 +127,12 @@ change over-select ratio
 Copy playlist don't copy existing
 
  references
+Chrome "refresh" does not reload *.css; clear browsing data
+
 https://inkscape.org/en/release/0.92.3/windows/64-bit/msi/dl/
+
+https://zurb.com/playground/responsive-tables
+https://css-tricks.com/complete-guide-table-element/
 
 https://www.w3.org/TR/2017/REC-html52-20171214/index.html#contents
 

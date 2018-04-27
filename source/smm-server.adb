@@ -206,11 +206,12 @@ package body SMM.Server is
       Mime_Type : constant String :=
         --  MIME types from https://www.iana.org/assignments/media-types/media-types.xhtml
         --  also GNAT/share/examples/aws/web_elements/mime.types
-        (if    Ext = "jpg" then "image/jpeg"
+        (if    Ext = "css" then "text/css"
+         elsif Ext = "jpg" then "image/jpeg"
          elsif Ext = "mp3" then "audio/mpeg"
          elsif Ext = "pdf" then "application/pdf"
          elsif Ext = "png" then "image/png"
-         elsif Ext = "svg" then "image/svg"
+         elsif Ext = "svg" then "image/svg+xml"
          else "");
 
       DB              : SMM.Database.Database;
@@ -358,37 +359,40 @@ package body SMM.Server is
          Meta : constant AWS.Containers.Tables.Table_Type := Meta_Files (Containing_Directory (I.File_Name));
 
          Result : Unbounded_String := +"<tr>" &
-           "<td class=audio_file><a href=""/" & AWS.URL.Encode (I.File_Name, SMM.File_Name_Encode_Set) &
+           "<td class=""audio_file""><a href=""/" & AWS.URL.Encode (I.File_Name, SMM.File_Name_Encode_Set) &
            --  WORKAROUND: firefox 59.0.2 doesn't like .svg
            """>" & Server_Img ("server_data/play_icon.png", "song", "15px", "15px") & "</a></td>" &
-           "<td class=artist>" & I.Artist & "</td>" &
-           "<td class=album>" & I.Album & "</td>" &
-           "<td class=title>" & I.Title & "</td>";
+           "<td class=""artist"">" & I.Artist & "</td>" &
+           "<td class=""album"">" & I.Album & "</td>";
       begin
-         Result := Result & "<td class=categories> <table>";
-         for Item of I.Categories loop
-            Result := Result & "<tr><td class=category>" & Item & "</td></tr>";
-         end loop;
-         Result := Result & "</table></td>";
-
-         Result := Result & "<td class=meta_data><table>";
+         Result := Result & "<td><div class=""album_art_list""><table>";
          for J in 1 .. Meta.Count loop
             if To_Lower (Extension (Meta.Get_Name (J))) = "jpg" then
-               Result := Result & "<tr><td class=album_art>" & Server_Img
+               Result := Result & "<tr><td class=""album_art"">" & Server_Img
                  (Meta.Get_Value (J), "album art", "100px", "100px") &
                  "</td></tr>";
-
-            elsif To_Lower (Meta.Get_Name (J)) = "liner_notes.pdf" then
-               Result := Result & "<tr><td class=liner_notes>" & Server_Href
-                 (Meta.Get_Value (J), Server_Img ("server_data/liner_notes_icon.png", "liner notes", "30px", "40px")) &
-                 "</td></tr>";
-            else
-               raise SAL.Programmer_Error with "unrecognized album metadata '" & String'(Meta.Get_Name (J)) & "'";
             end if;
          end loop;
-         Result := Result & "</table></td>";
+         Result := Result & ASCII.LF & "</table></div></td>";
 
-         Result := Result & "</tr>";
+         Result := Result & "<td class=""liner_notes"">";
+         for J in 1 .. Meta.Count loop
+            if To_Lower (Meta.Get_Name (J)) = "liner_notes.pdf" then
+               Result := Result & Server_Href
+                 (Meta.Get_Value (J), Server_Img ("server_data/liner_notes_icon.png", "liner notes", "30px", "40px"));
+            end if;
+         end loop;
+         Result := Result & "</td>";
+
+         Result := Result & "<td class=""title"">" & I.Title & "</td>";
+
+         Result := Result & "<td><div class=""categories_list""><table>";
+         for Item of I.Categories loop
+            Result := Result & "<tr><td class=""category"">" & Item & "</td></tr>";
+         end loop;
+         Result := Result & "</table></div></td>";
+
+         Result := Result & "</tr>" & ASCII.LF;
          return -Result;
       end Search_Result;
 
@@ -434,8 +438,16 @@ package body SMM.Server is
          declare
             Response : Unbounded_String := +"<!DOCTYPE html>" & ASCII.LF &
               "<html>" & "<meta http-equiv=""Content-Type"" content=""text/html; charset=utf-8"">" & ASCII.LF &
-              "<head></head><body>" & ASCII.LF &
-              "<table>" & ASCII.LF;
+              "<head>" & ASCII.LF &
+              "<link type=""text/css"" rel=""stylesheet"" href=""/server_data/songs.css""/>" &
+              "</head><body>" & ASCII.LF &
+              "<table class=""songs"">" & ASCII.LF &
+              "<thead>" &
+              "<tr><th>play</th><th>artist</th><th>album</th><th>album art</th>" &
+              "<th class=""liner_notes_header"">liner notes</th>" &
+              "<th>title</th><th>categories</th>" &
+              "</thead>" & ASCII.LF &
+              "<tbody>" & ASCII.LF;
          begin
             DB.Open (-DB_Filename);
 
@@ -456,7 +468,7 @@ package body SMM.Server is
                end loop;
             end; --  Free cursor
 
-            Response := Response & "</table>" & ASCII.LF & "</body></html>";
+            Response := Response & "</tbody>" & ASCII.LF & "</table>" & ASCII.LF & "</body></html>";
             return AWS.Response.Build ("text/html", Response);
          end;
       end if;
@@ -591,9 +603,8 @@ package body SMM.Server is
                return Handle_Download (URI);
 
             elsif URI_File = "favicon.ico" then
-               --  FIXME: this does not work; laptop chrome developer console reports
-               --  "server responded with 404".
-               return AWS.Response.File ("image/png", -Server_Root & "icon.png");
+               --  FIXME: does not show up in firefox address bar
+               return AWS.Response.File ("image/png", "/server_data/app_icon.png");
 
             elsif URI_File = "file" then
                return Handle_File (URI, Name_In_Param => True);

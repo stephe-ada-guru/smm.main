@@ -36,7 +36,15 @@ histogram : ~/bin/smm.exe
 check : smm.exe
 	cd d:/Music; $(CURDIR)/smm check > missing.log
 
-install : ~/bin/smm.exe ~/bin/smm-server_driver.exe
+install : server-data ~/bin/smm.exe ~/bin/smm-server_driver.exe
+
+server-data :: /d/Music/server_data/app_icon.png
+server-data :: /d/Music/server_data/liner_notes_icon.png
+server-data :: /d/Music/server_data/play_icon.png
+server-data :: /d/Music/server_data/songs.css
+
+/d/Music/server_data/% : ../source/%
+	cp $^ $@
 
 # don't strip, so stack traceback is useful on errors
 ~/bin/% : %
