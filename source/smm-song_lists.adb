@@ -93,10 +93,9 @@ package body SMM.Song_Lists is
             --  Note that we can't exit on finding Count songs; there
             --  may be more later that were downloaded less recently.
             --  DB is sorted on ID.
-            --  FIXME: provide DB iterator sorted on last_downloaded.
             exit when not All_Songs_I.Has_Element;
 
-            if Category = All_Songs_I.Category and
+            if All_Songs_I.Category_Contains (Category) and
               (not All_Songs_I.Play_After_Is_Present) -- only play this when Play_Before is included.
             then
                Insert (DB, All_Songs_I.ID, Time_List);

@@ -23,8 +23,10 @@ with Ada.Characters.Handling;
 with Ada.Directories;
 with Ada.Exceptions;
 with Ada.IO_Exceptions;
+with Ada.Strings.Fixed;
 with Ada.Text_IO;
 with GNATCOLL.SQL.Sqlite;
+with SAL;
 package body SMM.Database is
 
    procedure Checked_Execute
@@ -384,6 +386,41 @@ package body SMM.Database is
       Checked_Execute (DB, -Statement, Params (1 .. Last));
    end Update;
 
+   procedure Category_Append
+     (DB       : in Database;
+      Position : in Cursor'Class;
+      Item     : in String)
+   is
+      use Ada.Strings.Unbounded;
+      Old : constant String := Position.Category;
+   begin
+      DB.Update (Position, Data => (Category => +Old & "," & Item, others => +""));
+   end Category_Append;
+
+   procedure Category_Delete
+     (DB       : in Database;
+      Position : in Cursor'Class;
+      Item     : in String)
+   is
+      use Ada.Strings.Unbounded;
+      use Ada.Strings.Fixed;
+      Old   : constant String  := Position.Category;
+      First : constant Integer := Index (Source => Old, Pattern => Item);
+      Last  : Integer := Index (Source => Old, Pattern => ",", From => First + 1);
+   begin
+      if First = 0 then
+         raise SAL.Not_Found;
+      elsif Last = 0 then
+         Last := Old'Last;
+      end if;
+
+      DB.Update
+        (Position,
+         Data =>
+           (Category => +Old (Old'First .. First - 1) & Old (Last + 1 .. Old'Last),
+            others => +""));
+   end Category_Delete;
+
    function Find_Like
      (DB    : in Database'Class;
       Param : in Field_Values)
@@ -539,6 +576,22 @@ package body SMM.Database is
          then Null_ID
          else Integer'Value (Position.Cursor.Value (Play_Before_Field)));
    end Play_Before;
+
+   function Category_Contains (Position : in Cursor; Item : in String) return Boolean
+   is
+      use Ada.Strings.Fixed;
+   begin
+      return 0 /= Index (Source => Position.Category, Pattern => Item);
+   end Category_Contains;
+
+   function Category_First (Position : in Cursor) return String
+   is
+      use Ada.Strings.Fixed;
+      Data : constant String := Position.Category;
+      Last : constant Integer := Index (Source => Data, Pattern => ",");
+   begin
+      return Data (Data'First .. (if Last = 0 then Data'Last else Last - 1));
+   end Category_First;
 
    function Play_After_Is_Present (Position : in Cursor) return Boolean
    is begin

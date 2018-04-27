@@ -126,6 +126,7 @@ package SMM.Database is
       Play_Before     : in Integer     := Null_ID;
       Play_After      : in Integer     := Null_ID);
    --  Items that are the defaults are not updated.
+   --  Cursor must be refetched to reflect changes.
 
    type Fields is (Artist, Album, Category, Title);
 
@@ -147,6 +148,16 @@ package SMM.Database is
      (DB       : in Database;
       Position : in Cursor'Class;
       Data     : in Field_Values);
+   --  Cursor must be refetched to reflect changes.
+
+   procedure Category_Append
+     (DB       : in Database;
+      Position : in Cursor'Class;
+      Item     : in String);
+   procedure Category_Delete
+     (DB       : in Database;
+      Position : in Cursor'Class;
+      Item     : in String);
 
    function Find_Like
      (DB    : in Database'Class;
@@ -169,6 +180,13 @@ package SMM.Database is
    function Prev_Downloaded (Position : in Cursor) return Time_String;
    function Play_After (Position : in Cursor) return Integer;
    function Play_Before (Position : in Cursor) return Integer;
+
+   function Category_Contains (Position : in Cursor; Item : in String) return Boolean;
+   --  "Category" is a comma separated list of labels; return True if
+   --  Item equals one of those labels.
+
+   function Category_First (Position : in Cursor) return String;
+   --  First item in category list.
 
    function Play_After_Is_Present (Position : in Cursor) return Boolean;
    function Play_Before_Is_Present (Position : in Cursor) return Boolean;

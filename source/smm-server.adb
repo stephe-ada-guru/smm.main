@@ -492,6 +492,52 @@ package body SMM.Server is
       end if;
    end Handle_Update;
 
+   function Handle_Append_Category (URI : in AWS.URL.Object) return AWS.Response.Data
+   is
+      use SMM.Database;
+
+      URI_Param : constant AWS.Parameters.List := Decode_Plus (AWS.URL.Parameters (URI));
+      DB        : SMM.Database.Database;
+      SQL_Param : SMM.Database.Field_Values;
+
+   begin
+      if URI_Param.Is_Empty then
+         return AWS.Response.Acknowledge
+           (AWS.Messages.S400, "invalid query params: '" & AWS.URL.Parameters (URI) & "'");
+
+      else
+         --  From Emacs notes buffer page, query looks like
+         --  'append_category?file=<file_name>&category=<data>'
+
+         if not URI_Param.Exist ("file") then
+            return AWS.Response.Acknowledge
+              (AWS.Messages.S400, "missing 'file' param: '" & AWS.URL.Parameters (URI) & "'");
+         end if;
+
+         if not URI_Param.Exist ("category") then
+            return AWS.Response.Acknowledge
+              (AWS.Messages.S400, "missing 'category' param: '" & AWS.URL.Parameters (URI) & "'");
+         end if;
+
+         SQL_Param (Category) := +URI_Param.Get ("category");
+
+         DB.Open (-DB_Filename);
+
+         declare
+            File_Name : constant String := URI_Param.Get ("file");
+            I         : constant Cursor := DB.Find_File_Name (File_Name);
+         begin
+            if I.Has_Element then
+               DB.Update (I, SQL_Param);
+            else
+               return AWS.Response.Acknowledge (AWS.Messages.S400, "file not in db: '" & File_Name & "'");
+            end if;
+         end;
+
+         return AWS.Response.Acknowledge (AWS.Messages.S200, "file updated");
+      end if;
+   end Handle_Append_Category;
+
    ----------
    --  Top level
 
@@ -543,6 +589,8 @@ package body SMM.Server is
          begin
             if URI_File = "update" then
                return Handle_Update (URI);
+            elsif URI_File = "append_category" then
+               return Handle_Append_Category (URI);
             else
                return Acknowledge
                  (Status_Code  => AWS.Messages.S400, -- bad request

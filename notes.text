@@ -15,21 +15,29 @@ d:/Music/remote_cache/smm-server_driver.log
       (xmtn . "../org.stephe_leake.sal")
       (xmtn . "../smm.main")))
 
-(dvc-propagate-one "." "../smm.main")
+(dvc-propagate-multiple
+ '(("../org.stephe_leake.sal" . "../org.stephe_leake.sal.stephe-1")
+   ("../smm.main"             . "../smm.work_1")))
 
 play-before causes short replay periods
     fixed 1 feb 2018; short periods should dissappear from status eventually
 
 
+web search results
+    data in nested tables
+    presentation in CSS
+
+web UI for "add category"
+    or "edit category"?
+    on find results page?
+
+
 new smm commands?:
     or just use sqlite3 command line, smm-server
     on smm.work_1
-    show file
-        id, etc
-
-    delete id
 
     rename id new_file_name
+        delete (Disk 1) etc
 
     set_before_after before_id, after_id
 

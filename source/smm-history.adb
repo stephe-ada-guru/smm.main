@@ -92,7 +92,7 @@ is
 
    procedure Accumulate (I : in SMM.Database.Cursor)
    is
-      Category : constant Categories := Categories'Value (I.Category);
+      Category : constant Categories := Categories'Value (I.Category_First);
       Data     : Category_Data_Type renames Category_Data (Category);
    begin
       Total_Songs := Total_Songs + 1;
