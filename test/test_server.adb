@@ -27,7 +27,6 @@ with Ada.Calendar.Formatting;
 with Ada.Directories;
 with Ada.IO_Exceptions;
 with Ada.Strings.Fixed;
-with Ada.Strings.Maps;
 with Ada.Text_IO;
 with GNAT.OS_Lib;
 with SAL.Calendar_More.AUnit;
@@ -48,8 +47,7 @@ package body Test_Server is
 
    function Encode (Item : in String) return String
    is begin
-      --  Mimic Android OkHttp encoding, which does not encode [ ].
-      return AWS.URL.Encode (Item, Ada.Strings.Maps.To_Set (" #+;/:$,""{}|\^`'"));
+      return AWS.URL.Encode (Item, SMM.File_Name_Encode_Set);
    end Encode;
 
    procedure Check_File
@@ -173,7 +171,7 @@ package body Test_Server is
       is
          use SAL.Calendar_More.AUnit;
 
-         URL : constant String := "http://" & Server_IP & ":" & Server_Port & "/" & Directory &
+         URL : constant String := "http://" & Server_IP & ":" & Server_Port & "/file?name=/" & Encode (Directory) &
            Encode (Filename);
 
          Response : constant Data   := AWS.Client.Get (URL);
@@ -181,6 +179,10 @@ package body Test_Server is
          DB       : SMM.Database.Database;
          I        : SMM.Database.Cursor;
       begin
+         if Verbose then
+            Ada.Text_IO.Put_Line (Msg);
+         end if;
+
          Check (Filename & ".mode", Mode (Response), Message); --  Not clear why this is "message", not "file"
          Check (Filename & ".mime", Content_Type (Response), Mime);
          if Mime = "audio/mpeg" then
@@ -202,8 +204,7 @@ package body Test_Server is
       end Check_One;
 
    begin
-      Check_One
-        ("artist_1/album_1/", "AlbumArt_1.jpg", "image/jpeg");
+      Check_One ("artist_1/album_1/", "AlbumArt_1.jpg", "image/jpeg");
 
       Check_One ("artist_1/album_1/", "1 - song_1.mp3", "audio/mpeg");
 

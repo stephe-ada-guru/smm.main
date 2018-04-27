@@ -19,8 +19,12 @@
 pragma License (GPL);
 
 with Ada.Containers.Indefinite_Doubly_Linked_Lists;
+with Ada.Strings.Maps;
 with Ada.Strings.Unbounded;
 package SMM is
+
+   File_Name_Encode_Set : Ada.Strings.Maps.Character_Set := Ada.Strings.Maps.To_Set (" &#+;:$,""{}|\^`'");
+   --  Mimic Android OkHttp encoding, which does not encode [ ].
 
    function "+" (Item : in String) return Ada.Strings.Unbounded.Unbounded_String
      renames Ada.Strings.Unbounded.To_Unbounded_String;

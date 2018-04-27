@@ -19,6 +19,10 @@ d:/Music/remote_cache/smm-server_driver.log
  '(("../org.stephe_leake.sal" . "../org.stephe_leake.sal.stephe-1")
    ("../smm.main"             . "../smm.work_1")))
 
+(dvc-propagate-multiple
+ '(("../org.stephe_leake.sal.stephe-1" . "../org.stephe_leake.sal")
+   ("../smm.work_1"                    . "../smm.main")))
+
 play-before causes short replay periods
     fixed 1 feb 2018; short periods should dissappear from status eventually
 
@@ -26,6 +30,11 @@ play-before causes short replay periods
 web search results
     data in nested tables
     presentation in CSS
+
+    try svg+xml for *.svg
+    https://www.lifewire.com/file-extensions-and-mime-types-3469109
+
+    fix favicon.ico
 
 web UI for "add category"
     or "edit category"?
@@ -52,14 +61,6 @@ option to query recently downloaded
     or archive recent playlists, search those
 
 specify root server dir in config file
-
-check report empty strings in artist, album, title
-    some .mp3 have data in other IP3 headers
-    get all, select in priority order
-
-    open read all id3 frames, store list of id, offset, length
-    read use that list
-    use direct_io, sequential_io to allow seek?
 
 date queries
     select * from Song where date(last_downloaded) > date('2018-03-01');
@@ -91,9 +92,6 @@ add a Certificate, enforce https
 
 
 provide /favicon.ico = music app icon
-    providing icon.png does not work
-
-click on item to play
 
 phone
     font (and everything else) way to small, can't change in browser settings
@@ -110,30 +108,7 @@ phone
 tablet
     ok, could be bigger
 
-implement notes
-
-smm-song_lists.adb: --  FIXME: provide DB iterator sorted on last_downloaded.
-smm-database.ads:       --  FIXME: need finalization to release cursor?
-
-web: add search page
-    http://192.168.1.83:8080/search
-    test_server.adb
-        add tests:
-        initial html
-            split out CSS file
-
-        query result html
-
-    grep smm.db?
-    smm.find with wildcards?
-    switch to SQL db?
-
-    compare all versions of "butterfly"
-        play songs from web
-
-web: use https
-
-web: process notes page
+web: process notes UI
 
 add artists field for collection albums
 
@@ -158,6 +133,8 @@ change over-select ratio
 Copy playlist don't copy existing
 
  references
+https://inkscape.org/en/release/0.92.3/windows/64-bit/msi/dl/
+
 https://www.w3.org/TR/2017/REC-html52-20171214/index.html#contents
 
 d:/Apps/GNAT-gpl_2017/aws-gpl-2017-src/docs/aws.pdf

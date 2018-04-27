@@ -125,10 +125,15 @@ package body SMM.Server is
       return "<a href=""/" & Relative_Resource & """>" & Label & "</a>";
    end Server_Href;
 
-   function Server_Img (Relative_Resource : in String; Label : in String) return String
+   function Server_Img
+     (Relative_Resource : in String;
+      Label             : in String;
+      Width             : in String;
+      Height            : in String)
+     return String
    is begin
-      --  FIXME: provide image candidate set; html 5.2 4.7.5
-      return "<img src=""/" & Relative_Resource & """ width=100px height= 100px alt=""" & Label & """>";
+      --  FIXME: fetch actual width, height, change params to max. provide image candidate set; html 5.2 4.7.5
+      return "<img src=""/" & Relative_Resource & """ width=" & Width & " height=" & Height & " alt=""" & Label & """>";
    end Server_Img;
 
    ----------
@@ -182,6 +187,9 @@ package body SMM.Server is
 
    function Handle_File (URI : in AWS.URL.Object; Name_In_Param : in Boolean) return AWS.Response.Data
    is
+      --  If Name_In_Param, assume it's from Android app updating playlist;
+      --  record download time.
+
       use Ada.Directories;
       use Ada.Exceptions;
       use AWS.URL;
@@ -201,6 +209,8 @@ package body SMM.Server is
         (if    Ext = "jpg" then "image/jpeg"
          elsif Ext = "mp3" then "audio/mpeg"
          elsif Ext = "pdf" then "application/pdf"
+         elsif Ext = "png" then "image/png"
+         elsif Ext = "svg" then "image/svg"
          else "");
 
       DB              : SMM.Database.Database;
@@ -216,7 +226,9 @@ package body SMM.Server is
       end if;
 
       if Exists (Filename) then
-         if Ext = "mp3" then
+         Result := AWS.Response.File (Mime_Type, Filename);
+
+         if Ext = "mp3" and Name_In_Param then
             DB.Open (-DB_Filename);
 
             --  Find does not want leading / on filename
@@ -233,10 +245,10 @@ package body SMM.Server is
             Prev_Downloaded := I.Prev_Downloaded;
 
             Finalize (DB);
+
+            AWS.Response.Set.Add_Header (Result, "X-prev_downloaded", Prev_Downloaded);
          end if;
 
-         Result := AWS.Response.File (Mime_Type, Filename);
-         AWS.Response.Set.Add_Header (Result, "X-prev_downloaded", Prev_Downloaded);
          return Result;
 
       else
@@ -343,22 +355,40 @@ package body SMM.Server is
 
       function Search_Result (I : in Cursor) return String
       is
-         --  FIXME: replace with template
          Meta : constant AWS.Containers.Tables.Table_Type := Meta_Files (Containing_Directory (I.File_Name));
 
-         Result : Unbounded_String := +"<div>" &
-           "<a href=""file?name=/" & I.File_Name & """>" & I.Artist & " | " & I.Album & " | " & I.Title &
-           " | " & I.Category & "</a>";
+         Result : Unbounded_String := +"<tr>" &
+           "<td class=audio_file><a href=""/" & AWS.URL.Encode (I.File_Name, SMM.File_Name_Encode_Set) &
+           --  WORKAROUND: firefox 59.0.2 doesn't like .svg
+           """>" & Server_Img ("server_data/play_icon.png", "song", "15px", "15px") & "</a></td>" &
+           "<td class=artist>" & I.Artist & "</td>" &
+           "<td class=album>" & I.Album & "</td>" &
+           "<td class=title>" & I.Title & "</td>";
       begin
+         Result := Result & "<td class=categories> <table>";
+         for Item of I.Categories loop
+            Result := Result & "<tr><td class=category>" & Item & "</td></tr>";
+         end loop;
+         Result := Result & "</table></td>";
+
+         Result := Result & "<td class=meta_data><table>";
          for J in 1 .. Meta.Count loop
             if To_Lower (Extension (Meta.Get_Name (J))) = "jpg" then
-               Result := Result & " " & Server_Img (Meta.Get_Value (J), "album art");
+               Result := Result & "<tr><td class=album_art>" & Server_Img
+                 (Meta.Get_Value (J), "album art", "100px", "100px") &
+                 "</td></tr>";
+
+            elsif To_Lower (Meta.Get_Name (J)) = "liner_notes.pdf" then
+               Result := Result & "<tr><td class=liner_notes>" & Server_Href
+                 (Meta.Get_Value (J), Server_Img ("server_data/liner_notes_icon.png", "liner notes", "30px", "40px")) &
+                 "</td></tr>";
             else
-               Result := Result & " " & Server_Href (Meta.Get_Value (J), Meta.Get_Name (J));
+               raise SAL.Programmer_Error with "unrecognized album metadata '" & String'(Meta.Get_Name (J)) & "'";
             end if;
          end loop;
+         Result := Result & "</table></td>";
 
-         Result := Result & "</div>";
+         Result := Result & "</tr>";
          return -Result;
       end Search_Result;
 
@@ -402,7 +432,10 @@ package body SMM.Server is
          end loop;
 
          declare
-            Response : Unbounded_String := +"<!DOCTYPE html>" & ASCII.LF & "<html><head></head><body>";
+            Response : Unbounded_String := +"<!DOCTYPE html>" & ASCII.LF &
+              "<html>" & "<meta http-equiv=""Content-Type"" content=""text/html; charset=utf-8"">" & ASCII.LF &
+              "<head></head><body>" & ASCII.LF &
+              "<table>" & ASCII.LF;
          begin
             DB.Open (-DB_Filename);
 
@@ -423,7 +456,7 @@ package body SMM.Server is
                end loop;
             end; --  Free cursor
 
-            Response := Response & "</body></html>";
+            Response := Response & "</table>" & ASCII.LF & "</body></html>";
             return AWS.Response.Build ("text/html", Response);
          end;
       end if;
@@ -573,9 +606,7 @@ package body SMM.Server is
                return Handle_Search (URI);
 
             else
-               --  FIXME: delete after change android app
-
-               --  It's a file request.
+               --  It's a file request; mp3, liner_notes, image
                return Handle_File (URI, Name_In_Param => False);
             end if;
          end;

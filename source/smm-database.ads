@@ -173,6 +173,7 @@ package SMM.Database is
    function ID (Position : in Cursor) return Integer;
    function File_Name (Position : in Cursor) return String;
    function Category (Position : in Cursor) return String;
+   function Categories (Position : in Cursor) return String_Lists.List;
    function Artist (Position : in Cursor) return String;
    function Album (Position : in Cursor) return String;
    function Title (Position : in Cursor) return String;

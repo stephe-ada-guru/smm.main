@@ -10,6 +10,7 @@ new db; all new songs
 
 OK smm-database-test.adb : Test_Find_Like
 OK smm-database-test.adb : Test_Update
+OK smm-database-test.adb : Test_Categories
 OK test_id3.adb : Test_Size
 OK test_copy.adb : Nominal
 OK test_import.adb : Nominal
@@ -21,7 +22,7 @@ OK test_server.adb : Test_Get_File
 OK test_server.adb : Test_Send_Notes
 OK test_server.adb : Test_Search_Initial
 
-Total Tests Run:   12
-Successful Tests:  12
+Total Tests Run:   13
+Successful Tests:  13
 Failed Assertions: 0
 Unexpected Errors: 0

@@ -521,6 +521,24 @@ package body SMM.Database is
          else Position.Cursor.Value (Category_Field));
    end Category;
 
+   function Categories (Position : in Cursor) return String_Lists.List
+   is
+      use Ada.Strings.Fixed;
+      Data  : constant String := Position.Category;
+      First : Integer := Data'First;
+      Last  : Integer;
+   begin
+      return Result : String_Lists.List do
+         loop
+            Last := Index (Source => Data, Pattern => ",", From => First);
+            exit when Last = 0;
+            Result.Append (Data (First .. Last - 1));
+            First := Last + 1;
+         end loop;
+         Result.Append (Data (First .. Data'Last));
+      end return;
+   end Categories;
+
    function Artist (Position : in Cursor) return String
    is begin
       return
