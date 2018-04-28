@@ -14,14 +14,17 @@ branches:
     o.s_l.m_p.work                     - available
 
  current tasks
+update playlist downloads one extra song
+
+download notification doesn't use default app
+
 navigation messages getting thru, but music does not get notified
     phone interrupts music properly
-
-change to use media session, MediaController?
-    car display seems ok
-    fix car controls
+    car controls worked, once
 
 use alternate port for unit tests
+
+liner_notes entry in menu should be visible but disabled if not available
 
 turn off debug?
     compile via Makefile, install release
