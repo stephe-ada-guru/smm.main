@@ -6,5 +6,5 @@ tr {vertical-align: top; }
 .album_art_list {height: 300px; width: 310px; overflow-y: scroll; } /* width +10px for Android scroll bar */
 .categories_list {height: 300px; overflow-y: scroll; }
 .liner_notes_header {text-align:middle; width: 105px; overflow-x: wrap; }
-.text {font-size: x-large; }
+.text {font-size: xx-large; }
 /* end of file */

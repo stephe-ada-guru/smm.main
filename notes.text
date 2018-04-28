@@ -42,10 +42,6 @@ web search results
             phone  Chrome : 3                   360     520     portrait (* 3 360) = 1080
             tablet Chrome : 2                   1024    648     landscape
 
-            Server_Img:  provide image candidate set instead of Scale_Px; html 5.2 4.7.5
-                scroll bar much narrower on Android
-
-
 web UI for "add category"
     or "edit category"?
     button on search results page

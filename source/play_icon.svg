@@ -15,7 +15,10 @@
    version="1.1"
    id="svg8"
    inkscape:version="0.92.3 (2405546, 2018-03-11)"
-   sodipodi:docname="play_icon.svg">
+   sodipodi:docname="play_icon.svg"
+   inkscape:export-filename="D:\Music\server_data\play_icon-57x57.png"
+   inkscape:export-xdpi="285"
+   inkscape:export-ydpi="285">
   <defs
      id="defs2" />
   <sodipodi:namedview
@@ -25,17 +28,18 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.35"
-     inkscape:cx="400"
+     inkscape:zoom="1"
+     inkscape:cx="164.74188"
      inkscape:cy="560"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
-     inkscape:window-width="746"
+     inkscape:window-width="788"
      inkscape:window-height="1401"
-     inkscape:window-x="2206"
-     inkscape:window-y="0"
-     inkscape:window-maximized="0" />
+     inkscape:window-x="2904"
+     inkscape:window-y="17"
+     inkscape:window-maximized="0"
+     showguides="false" />
   <metadata
      id="metadata5">
     <rdf:RDF>
@@ -44,7 +48,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -56,8 +60,8 @@
        sodipodi:type="star"
        id="path3713"
        sodipodi:sides="3"
-       sodipodi:cx="22.678571"
-       sodipodi:cy="38.464285"
+       sodipodi:cx="22.678572"
+       sodipodi:cy="38.464287"
        sodipodi:r1="45.357143"
        sodipodi:r2="22.678572"
        sodipodi:arg1="0"
@@ -66,10 +70,11 @@
        inkscape:rounded="0"
        inkscape:randomized="0"
        d="M 68.035715,38.464287 34.017857,58.104507 0,77.744725 0,38.464286 0,-0.81615163 34.017859,18.824068 Z"
-       inkscape:transform-center-x="-11.339285"
+       inkscape:transform-center-x="-0.84666667"
        style="stroke-width:0.26458332"
-       inkscape:export-filename="D:\Music\server_data\play_icon.png"
+       inkscape:export-filename="D:\Music\server_data\play_icon-19x19.png"
        inkscape:export-xdpi="96"
-       inkscape:export-ydpi="96" />
+       inkscape:export-ydpi="96"
+       transform="matrix(0.07466667,0,0,0.06466323,0,291.97277)" />
   </g>
 </svg>

@@ -133,11 +133,24 @@ package body SMM.Server is
      return String
    is begin
       --  FIXME: fetch actual width, height; show in label, change params to max.
-      --  provide image candidate set instead of Scale_Px; html 5.2 4.7.5
       return "<img src=""/" & Relative_Resource & """" &
         " onload=""Scale_Px(event," & Integer'Image (Width) & "," & Integer'Image (Height) & ")""" &
         " alt=""" & Label & """>";
    end Server_Img;
+
+   function Server_Img_Set
+     (Root      : in String;
+      Ext       : in String;
+      Size_Low  : in String;
+      Size_Med  : in String;
+      Size_High : in String;
+      Label     : in String)
+     return String
+   is begin
+      return "<img src=""/" & Root & "-" & Size_Low & Ext & """" &
+        "srcset=""/" & Root & "-" & Size_Med & Ext & " 2x, /" & Root & "-" & Size_High & Ext & " 3x""" &
+        " alt=""" & Label & """>";
+   end Server_Img_Set;
 
    ----------
    --  Specific request handlers, alphabetical
@@ -365,7 +378,7 @@ package body SMM.Server is
          Result : Unbounded_String := +"<tr>" &
            "<td class=""audio_file""><a href=""/" & AWS.URL.Encode (I.File_Name, SMM.File_Name_Encode_Set) &
            --  WORKAROUND: firefox 59.0.2 doesn't like .svg
-           """>" & Server_Img ("server_data/play_icon.png", "song", 15, 15) & "</a></td>" &
+           """>" & Server_Img_Set ("server_data/play_icon", ".png", "19x19", "76x76", "171x171", "play") & "</a></td>" &
            "<td class=""text"">" & I.Artist & "</td>" &
            "<td class=""text"">" & I.Album & "</td>";
       begin
@@ -383,7 +396,8 @@ package body SMM.Server is
          for J in 1 .. Meta.Count loop
             if To_Lower (Meta.Get_Name (J)) = "liner_notes.pdf" then
                Result := Result & Server_Href
-                 (Meta.Get_Value (J), Server_Img ("server_data/liner_notes_icon.png", "liner notes", 30, 40));
+                 (Meta.Get_Value (J), Server_Img_Set
+                    ("server_data/liner_notes_icon", ".png", "28x37", "112x148", "252x333", "liner notes"));
             end if;
          end loop;
          Result := Result & "</td>";

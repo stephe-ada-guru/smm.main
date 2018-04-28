@@ -19,7 +19,8 @@ one : export Standard_Common_Build := Debug
 one : debug.exe
 	./debug.exe "d:/music/beth nielsen chapman/beth nielsen chapman/that's the easy part.mp3"
 
-# This server can't be seen from external devices (not clear why); use ~/bin/music-server-work_1.sh
+# This server can't be seen from phone, tablet (not clear why); use
+# ~/bin/music-server-work_1.sh
 run-server : smm-server_driver.exe
 	./smm-server_driver.exe smm_server_devel.config
 
@@ -39,13 +40,29 @@ check : smm.exe
 
 install : server-data ~/bin/smm.exe ~/bin/smm-server_driver.exe
 
-server-data :: /d/Music/server_data/app_icon.png
-server-data :: /d/Music/server_data/liner_notes_icon.png
-server-data :: /d/Music/server_data/play_icon.png
-server-data :: /d/Music/server_data/songs-ldpi.css
-server-data :: /d/Music/server_data/songs-mdpi.css
-server-data :: /d/Music/server_data/songs-hdpi.css
-server-data :: /d/Music/server_data/songs.js
+.PHONY : server-data play-icons
+
+SERVER_DATA := /d/Music/server_data
+
+server-data :: $(SERVER_DATA)/app_icon.png
+server-data :: $(SERVER_DATA)/liner_notes_icon-28x37.png
+server-data :: $(SERVER_DATA)/liner_notes_icon-112x148.png
+server-data :: $(SERVER_DATA)/liner_notes_icon-252x333.png
+server-data :: $(SERVER_DATA)/play_icon-19x19.png
+server-data :: $(SERVER_DATA)/play_icon-76x76.png
+server-data :: $(SERVER_DATA)/play_icon-171x171.png
+server-data :: $(SERVER_DATA)/songs-ldpi.css
+server-data :: $(SERVER_DATA)/songs-mdpi.css
+server-data :: $(SERVER_DATA)/songs-hdpi.css
+server-data :: $(SERVER_DATA)/songs.js
+
+# svg image is 0.2"x0.2"; correct size for desktop screen, 96 dpi = 19x19 pixels.
+# tablet : * 4 = 76
+# phone  : * 9 = 171
+# Similarly for liner_notes
+# command line inkscape doesn't work (it ignores scaling options)
+# command line imageMagick delegates to inkscape for svg
+# use GUI inkscape
 
 /d/Music/server_data/% : ../source/%
 	cp $^ $@

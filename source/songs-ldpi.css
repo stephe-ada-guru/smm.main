@@ -4,7 +4,7 @@
 thead {background: grey;}
 tr {vertical-align: top; }
 .album_art_list {height: 100px; width: 130px; overflow-y: scroll; } /* width +30px for scroll bar on Windows */
-.categories_list {font-size: medium; height: 100px; overflow-y: scroll; }
+.categories_list {height: 100px; overflow-y: scroll; }
 .liner_notes_header {text-align:middle; width: 35px; overflow-x: wrap; }
 .text {font-size: medium; } /* same as default */
 /* end of file */
