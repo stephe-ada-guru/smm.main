@@ -30,10 +30,27 @@ play-before causes short replay periods
 web search results
     albumart show actual size in text, use right click to see full image
 
+    detect phone screen, use larger sizes
+        css @media (resolution:, min-resolution:, max-resolution:) { }
+            https://developer.mozilla.org/en-US/docs/Web/CSS/@media/resolution
+
+        javascript window.*
+            https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio
+                            devicePixelRatio    width   height
+            desktop Firefox: 1                  1280    1440    half screen
+            laptop Firefox: 1.25
+            phone  Chrome : 3                   360     520     portrait (* 3 360) = 1080
+            tablet Chrome : 2                   1024    648     landscape
+
+            Server_Img:  provide image candidate set instead of Scale_Px; html 5.2 4.7.5
+                scroll bar much narrower on Android
+
+
 web UI for "add category"
     or "edit category"?
-    on find results page?
-
+    button on search results page
+    only category is editable
+        artist, album, title from id3 tag
 
 new smm commands?:
     or just use sqlite3 command line, smm-server
@@ -134,6 +151,7 @@ https://inkscape.org/en/release/0.92.3/windows/64-bit/msi/dl/
 https://zurb.com/playground/responsive-tables
 https://css-tricks.com/complete-guide-table-element/
 
+https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio
 https://www.w3.org/TR/2017/REC-html52-20171214/index.html#contents
 
 d:/Apps/GNAT-gpl_2017/aws-gpl-2017-src/docs/aws.pdf

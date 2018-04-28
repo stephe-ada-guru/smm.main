@@ -19,6 +19,7 @@ one : export Standard_Common_Build := Debug
 one : debug.exe
 	./debug.exe "d:/music/beth nielsen chapman/beth nielsen chapman/that's the easy part.mp3"
 
+# This server can't be seen from external devices (not clear why); use ~/bin/music-server-work_1.sh
 run-server : smm-server_driver.exe
 	./smm-server_driver.exe smm_server_devel.config
 
@@ -41,7 +42,10 @@ install : server-data ~/bin/smm.exe ~/bin/smm-server_driver.exe
 server-data :: /d/Music/server_data/app_icon.png
 server-data :: /d/Music/server_data/liner_notes_icon.png
 server-data :: /d/Music/server_data/play_icon.png
-server-data :: /d/Music/server_data/songs.css
+server-data :: /d/Music/server_data/songs-ldpi.css
+server-data :: /d/Music/server_data/songs-mdpi.css
+server-data :: /d/Music/server_data/songs-hdpi.css
+server-data :: /d/Music/server_data/songs.js
 
 /d/Music/server_data/% : ../source/%
 	cp $^ $@

@@ -128,12 +128,15 @@ package body SMM.Server is
    function Server_Img
      (Relative_Resource : in String;
       Label             : in String;
-      Width             : in String;
-      Height            : in String)
+      Width             : in Integer;
+      Height            : in Integer)
      return String
    is begin
-      --  FIXME: fetch actual width, height, change params to max. provide image candidate set; html 5.2 4.7.5
-      return "<img src=""/" & Relative_Resource & """ width=" & Width & " height=" & Height & " alt=""" & Label & """>";
+      --  FIXME: fetch actual width, height; show in label, change params to max.
+      --  provide image candidate set instead of Scale_Px; html 5.2 4.7.5
+      return "<img src=""/" & Relative_Resource & """" &
+        " onload=""Scale_Px(event," & Integer'Image (Width) & "," & Integer'Image (Height) & ")""" &
+        " alt=""" & Label & """>";
    end Server_Img;
 
    ----------
@@ -208,6 +211,7 @@ package body SMM.Server is
         --  also GNAT/share/examples/aws/web_elements/mime.types
         (if    Ext = "css" then "text/css"
          elsif Ext = "jpg" then "image/jpeg"
+         elsif Ext = "js"  then "text/javascript"
          elsif Ext = "mp3" then "audio/mpeg"
          elsif Ext = "pdf" then "application/pdf"
          elsif Ext = "png" then "image/png"
@@ -361,15 +365,15 @@ package body SMM.Server is
          Result : Unbounded_String := +"<tr>" &
            "<td class=""audio_file""><a href=""/" & AWS.URL.Encode (I.File_Name, SMM.File_Name_Encode_Set) &
            --  WORKAROUND: firefox 59.0.2 doesn't like .svg
-           """>" & Server_Img ("server_data/play_icon.png", "song", "15px", "15px") & "</a></td>" &
-           "<td class=""artist"">" & I.Artist & "</td>" &
-           "<td class=""album"">" & I.Album & "</td>";
+           """>" & Server_Img ("server_data/play_icon.png", "song", 15, 15) & "</a></td>" &
+           "<td class=""text"">" & I.Artist & "</td>" &
+           "<td class=""text"">" & I.Album & "</td>";
       begin
          Result := Result & "<td><div class=""album_art_list""><table>";
          for J in 1 .. Meta.Count loop
             if To_Lower (Extension (Meta.Get_Name (J))) = "jpg" then
                Result := Result & "<tr><td class=""album_art"">" & Server_Img
-                 (Meta.Get_Value (J), "album art", "100px", "100px") &
+                 (Meta.Get_Value (J), "album art", 100, 100) &
                  "</td></tr>";
             end if;
          end loop;
@@ -379,16 +383,16 @@ package body SMM.Server is
          for J in 1 .. Meta.Count loop
             if To_Lower (Meta.Get_Name (J)) = "liner_notes.pdf" then
                Result := Result & Server_Href
-                 (Meta.Get_Value (J), Server_Img ("server_data/liner_notes_icon.png", "liner notes", "30px", "40px"));
+                 (Meta.Get_Value (J), Server_Img ("server_data/liner_notes_icon.png", "liner notes", 30, 40));
             end if;
          end loop;
          Result := Result & "</td>";
 
-         Result := Result & "<td class=""title"">" & I.Title & "</td>";
+         Result := Result & "<td class=""text"">" & I.Title & "</td>";
 
          Result := Result & "<td><div class=""categories_list""><table>";
          for Item of I.Categories loop
-            Result := Result & "<tr><td class=""category"">" & Item & "</td></tr>";
+            Result := Result & "<tr><td class=""text"">" & Item & "</td></tr>";
          end loop;
          Result := Result & "</table></div></td>";
 
@@ -439,15 +443,17 @@ package body SMM.Server is
             Response : Unbounded_String := +"<!DOCTYPE html>" & ASCII.LF &
               "<html>" & "<meta http-equiv=""Content-Type"" content=""text/html; charset=utf-8"">" & ASCII.LF &
               "<head>" & ASCII.LF &
-              "<link type=""text/css"" rel=""stylesheet"" href=""/server_data/songs.css""/>" &
+              "<script src=""/server_data/songs.js""></script>" & ASCII.LF &
+              "<script src=""/server_data/debug_head.js""></script>" & ASCII.LF &
               "</head><body>" & ASCII.LF &
               "<table class=""songs"">" & ASCII.LF &
-              "<thead>" &
+              "<thead class=""text"">" &
               "<tr><th>play</th><th>artist</th><th>album</th><th>album art</th>" &
               "<th class=""liner_notes_header"">liner notes</th>" &
               "<th>title</th><th>categories</th>" &
               "</thead>" & ASCII.LF &
-              "<tbody>" & ASCII.LF;
+              "<tbody>" & ASCII.LF &
+              "<script src=""/server_data/debug_body.js""></script>";
          begin
             DB.Open (-DB_Filename);
 
