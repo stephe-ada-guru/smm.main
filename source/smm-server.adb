@@ -59,7 +59,9 @@ package body SMM.Server is
      renames Ada.Strings.Unbounded.Length;
 
    Source_Root : Ada.Strings.Unbounded.Unbounded_String; -- Root of music files; does not end in /
-   Server_Root : Ada.Strings.Unbounded.Unbounded_String; -- Root of server html, css files; does not end in /
+   Server_Data : Ada.Strings.Unbounded.Unbounded_String;
+   --  Relative to Source_Root; contains server html, css, js files; does not end in /
+
    DB_Filename : Ada.Strings.Unbounded.Unbounded_String;
 
    function Decode_Plus (Item : in String) return String
@@ -376,33 +378,36 @@ package body SMM.Server is
          Meta : constant AWS.Containers.Tables.Table_Type := Meta_Files (Containing_Directory (I.File_Name));
 
          Result : Unbounded_String := +"<tr>" &
-           "<td class=""audio_file""><a href=""/" & AWS.URL.Encode (I.File_Name, SMM.File_Name_Encode_Set) &
-           --  WORKAROUND: firefox 59.0.2 doesn't like .svg
-           """>" & Server_Img_Set ("server_data/play_icon", ".png", "19x19", "76x76", "171x171", "play") & "</a></td>" &
-           "<td class=""text"">" & I.Artist & "</td>" &
-           "<td class=""text"">" & I.Album & "</td>";
+           "<td><a href=""/" & AWS.URL.Encode (I.File_Name, SMM.File_Name_Encode_Set) &
+           """>" & Server_Img_Set (-Server_Data & "/play_icon", ".png", "19x19", "76x76", "171x171", "play") &
+           "</a></td>" &
+           "<td><table class=""subtable""><tbody>" &
+           "<tr><td class=""text"" style=""background-color: GhostWhite"">" & I.Artist & "</td></tr>" &
+           "<tr><td class=""text"">" & I.Last_Downloaded (1 .. 10) & " / " &
+           I.Prev_Downloaded (1 .. 10) & "</td></tr>" & --  Just the date
+           "</tbody></table></td>" &
+           "<td><table class=""subtable""><tbody>" &
+           "<tr><td class=""text"">" & I.Album & "</td>" &
+           "<tr><td class=""text"" style=""background-color: GhostWhite"">" & I.Title & "</td>" &
+           "</tr></tbody></table></td>";
       begin
          Result := Result & "<td><div class=""album_art_list""><table>";
          for J in 1 .. Meta.Count loop
             if To_Lower (Extension (Meta.Get_Name (J))) = "jpg" then
-               Result := Result & "<tr><td class=""album_art"">" & Server_Img
-                 (Meta.Get_Value (J), "album art", 100, 100) &
-                 "</td></tr>";
+               Result := Result & "<tr><td>" & Server_Img (Meta.Get_Value (J), "album art", 100, 100) & "</td></tr>";
             end if;
          end loop;
          Result := Result & ASCII.LF & "</table></div></td>";
 
-         Result := Result & "<td class=""liner_notes"">";
+         Result := Result & "<td>";
          for J in 1 .. Meta.Count loop
             if To_Lower (Meta.Get_Name (J)) = "liner_notes.pdf" then
                Result := Result & Server_Href
                  (Meta.Get_Value (J), Server_Img_Set
-                    ("server_data/liner_notes_icon", ".png", "28x37", "112x148", "252x333", "liner notes"));
+                    (-Server_Data & "/liner_notes_icon", ".png", "28x37", "112x148", "252x333", "liner notes"));
             end if;
          end loop;
          Result := Result & "</td>";
-
-         Result := Result & "<td class=""text"">" & I.Title & "</td>";
 
          Result := Result & "<td><div class=""categories_list""><table>";
          for Item of I.Categories loop
@@ -431,7 +436,7 @@ package body SMM.Server is
    begin
       if URI_Param.Is_Empty then
          --  Return search page with no results.
-         return AWS.Response.File ("text/html", -Server_Root & "/search_initial.html");
+         return AWS.Response.File ("text/html", (-Source_Root) & "/" & (-Server_Data) & "/search.html");
 
       elsif not Valid_Query then
          return AWS.Response.Acknowledge (AWS.Messages.S400, "invalid query params '" & AWS.URL.Parameters (URI) & "'");
@@ -455,20 +460,30 @@ package body SMM.Server is
 
          declare
             Response : Unbounded_String := +"<!DOCTYPE html>" & ASCII.LF &
-              "<html>" & "<meta http-equiv=""Content-Type"" content=""text/html; charset=utf-8"">" & ASCII.LF &
+              "<html lang=""en"">" &
+              "<meta http-equiv=""Content-Type"" content=""text/html; charset=utf-8"">" & ASCII.LF &
               "<head>" & ASCII.LF &
-              "<script src=""/server_data/songs.js""></script>" & ASCII.LF &
-              "<script src=""/server_data/debug_head.js""></script>" & ASCII.LF &
-              "<link type=""text/css"" rel=""stylesheet"" href=""/server_data/songs.css""/>" &
+              "<script src=""/" & (-Server_Data) & "/songs.js""></script>" & ASCII.LF &
+              "<script src=""/" & (-Server_Data) & "/debug_head.js""></script>" & ASCII.LF &
+              "<link type=""text/css"" rel=""stylesheet"" href=""/" & (-Server_Data) & "/songs.css""/>" &
               "</head><body>" & ASCII.LF &
-              "<table class=""songs"">" & ASCII.LF &
-              "<thead class=""text"">" &
-              "<tr><th>play</th><th>artist</th><th>album</th><th>album art</th>" &
-              "<th class=""liner_notes_header"">liner notes</th>" &
-              "<th>title</th><th>categories</th>" &
-              "</thead>" & ASCII.LF &
+              "<table>" & ASCII.LF &
+              "<thead><tr>" &
+              "<th class=""text"">play</th>" &
+              "<th><table><thead>" &
+              "<tr><th class=""text"" style=""border-bottom: solid white;"">artist</th></tr>" &
+              "<tr><th class=""text"">last/prev downloaded</th>" &
+              "</tr></thead></table></th>" &
+              "<th><table><thead>" &
+              "<tr><th class=""text"" style=""border-bottom: solid white;"">album</th></tr>" &
+              "<tr><th class=""text"">title</th></tr>" &
+              "</thead></table></th>" &
+              "<th class=""text"">album art</th>" &
+              "<th class=""liner_notes_header text"">liner notes</th>" &
+              "<th class=""text"">categories</th>" &
+              "</tr></thead>" & ASCII.LF &
               "<tbody>" & ASCII.LF &
-              "<script src=""/server_data/debug_body.js""></script>";
+              "<script src=""/" & (-Server_Data) & "/debug_body.js""></script>";
          begin
             DB.Open (-DB_Filename);
 
@@ -625,7 +640,7 @@ package body SMM.Server is
 
             elsif URI_File = "favicon.ico" then
                --  FIXME: does not show up in firefox address bar
-               return AWS.Response.File ("image/png", "/server_data/app_icon.png");
+               return AWS.Response.File ("image/png", "/" & (-Server_Data) & "/app_icon.png");
 
             elsif URI_File = "file" then
                return Handle_File (URI, Name_In_Param => True);
@@ -704,7 +719,7 @@ package body SMM.Server is
 
             Source_Root := +As_File
               (Ada.Directories.Full_Name (Read (Config, SMM.Root_Key, Missing_Key => Raise_Exception)));
-            Server_Root := Source_Root & "/../server";
+            Server_Data := +Read (Config, "Server_Data", "server_data");
 
          when others =>
             Usage;

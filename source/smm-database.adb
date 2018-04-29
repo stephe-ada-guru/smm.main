@@ -430,21 +430,23 @@ package body SMM.Database is
       use GNATCOLL.SQL.Exec;
       Statement : Unbounded_String := +"SELECT * FROM Song WHERE ";
       Need_And  : Boolean          := False;
+      Params    : GNATCOLL.SQL.Exec.SQL_Parameters (1 .. 3);
+      Last      : Integer          := 0;
    begin
-      --  Can't put ? inside quotes.
       for I in Param'Range loop
          if Length (Param (I)) > 0 then
             if Need_And then
                Statement := Statement & " AND ";
             end if;
 
-            Statement := Statement & Field_Image (I) & " like '%" & Param (I) & "%'";
-
-            Need_And := True;
+            Statement     := Statement & Field_Image (I) & " like ?";
+            Last          := Last + 1;
+            Params (Last) := +("%" & Param (I) & "%");
+            Need_And      := True;
          end if;
       end loop;
 
-      return Checked_Fetch (DB, -Statement);
+      return Checked_Fetch (DB, -Statement, Params (1 .. Last));
    end Find_Like;
 
    procedure Next (Position : in out Cursor)

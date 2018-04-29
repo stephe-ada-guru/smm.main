@@ -42,7 +42,7 @@ install : server-data ~/bin/smm.exe ~/bin/smm-server_driver.exe
 
 .PHONY : server-data play-icons
 
-SERVER_DATA := /d/Music/server_data
+SERVER_DATA := /d/Music/server_data_work_1
 
 server-data :: $(SERVER_DATA)/app_icon.png
 server-data :: $(SERVER_DATA)/liner_notes_icon-28x37.png
@@ -51,6 +51,8 @@ server-data :: $(SERVER_DATA)/liner_notes_icon-252x333.png
 server-data :: $(SERVER_DATA)/play_icon-19x19.png
 server-data :: $(SERVER_DATA)/play_icon-76x76.png
 server-data :: $(SERVER_DATA)/play_icon-171x171.png
+server-data :: $(SERVER_DATA)/search.html
+server-data :: $(SERVER_DATA)/search.css
 server-data :: $(SERVER_DATA)/songs.css
 server-data :: $(SERVER_DATA)/songs.js
 
@@ -62,7 +64,7 @@ server-data :: $(SERVER_DATA)/songs.js
 # command line imageMagick delegates to inkscape for svg
 # use GUI inkscape
 
-/d/Music/server_data/% : ../source/%
+$(SERVER_DATA)/% : ../source/%
 	cp $^ $@
 
 # don't strip, so stack traceback is useful on errors

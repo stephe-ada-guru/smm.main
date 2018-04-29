@@ -1,0 +1,36 @@
+/* css for search.html */
+div.table {display: table; }
+span.caption {display: table-caption; position: relative; left: 10%; }
+div.row {display: table-row; }
+input[type=search] {display:table-cell; width: 50em; }
+label {display: table-cell;
+       text-align: right;
+       width: 3em; }
+span.label {margin-right: 2px; }
+
+@media screen and (min-resolution: 288dpi) {
+    /* devicePixelRatio >= 3; phone */
+    .caption {font-size: xx-large; }
+    input[type=search] {font-size: xx-large; }
+    input[type=submit] {font-size: xx-large; }
+    label {font-size: xx-large; }
+}
+
+@media screen and (min-resolution: 192dpi) and (max-resolution: 287dpi) {
+    /* 2 <= devicePixelRatio < 3; tablet */
+    .caption {font-size: larger; }
+    input[type=search] {font-size: larger; }
+    input[type=submit] {font-size: larger; }
+    label {font-size: larger; }
+}
+
+@media screen and (max-resolution: 191dpi) {
+    /* 0 < devicePixelRatio < 2; laptop, desktop */
+    .caption {font-size: medium; }
+    input[type=search] {font-size: medum; }
+    input[type=submit] {font-size: medum; }
+    label {font-size: medium; }
+}
+
+/* end of file */
+    

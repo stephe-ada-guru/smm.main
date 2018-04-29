@@ -27,6 +27,8 @@ play-before causes short replay periods
     fixed 1 feb 2018; short periods should dissappear from status eventually
 
 
+show last/prev downloaded as days ago
+
 albumart show actual size in text, use right click to see full image
 
 
@@ -35,6 +37,9 @@ web UI for "add category"
     button on search results page
     only category is editable
         artist, album, title from id3 tag
+
+    enable barry miles woodstock
+    R. Carlos Nakai category = meditation; add instrumental
 
 new smm commands?:
     or just use sqlite3 command line, smm-server
