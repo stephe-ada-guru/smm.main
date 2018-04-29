@@ -27,20 +27,8 @@ play-before causes short replay periods
     fixed 1 feb 2018; short periods should dissappear from status eventually
 
 
-web search results
-    albumart show actual size in text, use right click to see full image
+albumart show actual size in text, use right click to see full image
 
-    detect phone screen, use larger sizes
-        css @media (resolution:, min-resolution:, max-resolution:) { }
-            https://developer.mozilla.org/en-US/docs/Web/CSS/@media/resolution
-
-        javascript window.*
-            https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio
-                            devicePixelRatio    width   height
-            desktop Firefox: 1                  1280    1440    half screen
-            laptop Firefox: 1.25
-            phone  Chrome : 3                   360     520     portrait (* 3 360) = 1080
-            tablet Chrome : 2                   1024    648     landscape
 
 web UI for "add category"
     or "edit category"?

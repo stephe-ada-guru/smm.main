@@ -459,6 +459,7 @@ package body SMM.Server is
               "<head>" & ASCII.LF &
               "<script src=""/server_data/songs.js""></script>" & ASCII.LF &
               "<script src=""/server_data/debug_head.js""></script>" & ASCII.LF &
+              "<link type=""text/css"" rel=""stylesheet"" href=""/server_data/songs.css""/>" &
               "</head><body>" & ASCII.LF &
               "<table class=""songs"">" & ASCII.LF &
               "<thead class=""text"">" &

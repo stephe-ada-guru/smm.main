@@ -35,76 +35,62 @@
      guidetolerance="10"
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
-     inkscape:window-width="690"
-     inkscape:window-height="480"
+     inkscape:window-width="781"
+     inkscape:window-height="617"
      id="namedview3775"
      showgrid="false"
-     inkscape:zoom="0.4484375"
-     inkscape:cx="653.37979"
-     inkscape:cy="240"
-     inkscape:window-x="2264"
-     inkscape:window-y="257"
+     inkscape:zoom="1"
+     inkscape:cx="117.18846"
+     inkscape:cy="152.37459"
+     inkscape:window-x="2901"
+     inkscape:window-y="15"
      inkscape:window-maximized="0"
      inkscape:current-layer="svg3773" />
   <!-- Created with SVG-edit - http://svg-edit.googlecode.com/ -->
   <g
      id="g3771"
-     inkscape:export-filename="D:\Music\server_data\liner_notes_icon.png"
-     inkscape:export-xdpi="96"
-     inkscape:export-ydpi="96">
+     inkscape:export-filename="D:\Music\server_data\liner_notes_icon-252x333.png"
+     inkscape:export-xdpi="860.03894"
+     inkscape:export-ydpi="860.03894"
+     transform="matrix(0.18755975,0,0,0.15750174,-28.269844,432.40598)">
     <title
        id="title3764">Layer 1</title>
     <rect
-       fill="#000000"
-       stroke="#000000"
-       stroke-width="5"
        x="155"
        y="74"
        width="145"
        height="231"
        id="svg_1"
-       fill-opacity="0" />
+       style="fill:#000000;fill-opacity:0;stroke:#000000;stroke-width:5" />
     <line
-       fill="none"
-       stroke="#000000"
-       stroke-width="5"
-       fill-opacity="0"
        x1="185.5"
        y1="146"
        x2="261.5"
        y2="146"
-       id="svg_3" />
+       id="svg_3"
+       style="fill:none;fill-opacity:0;stroke:#000000;stroke-width:5" />
     <line
-       fill="none"
-       stroke="#000000"
-       stroke-width="5"
-       fill-opacity="0"
        x1="185.5"
        y1="166"
        x2="261.5"
        y2="166"
-       id="svg_6" />
+       id="svg_6"
+       style="fill:none;fill-opacity:0;stroke:#000000;stroke-width:5" />
     <line
-       fill="none"
-       stroke="#000000"
-       stroke-width="5"
-       fill-opacity="0"
        x1="185.5"
        y1="183"
        x2="261.5"
        y2="183"
-       id="svg_7" />
+       id="svg_7"
+       style="fill:none;fill-opacity:0;stroke:#000000;stroke-width:5" />
     <rect
-       fill="#cccccc"
-       stroke="#000000"
-       stroke-width="5"
-       stroke-dasharray="null"
        stroke-linejoin="null"
        stroke-linecap="null"
        x="185"
        y="209"
        width="77"
        height="53"
-       id="svg_8" />
+       id="svg_8"
+       style="fill:#cccccc;stroke:#000000;stroke-width:5;stroke-dasharray:none" />
   </g>
 </svg>

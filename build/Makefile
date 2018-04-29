@@ -51,9 +51,7 @@ server-data :: $(SERVER_DATA)/liner_notes_icon-252x333.png
 server-data :: $(SERVER_DATA)/play_icon-19x19.png
 server-data :: $(SERVER_DATA)/play_icon-76x76.png
 server-data :: $(SERVER_DATA)/play_icon-171x171.png
-server-data :: $(SERVER_DATA)/songs-ldpi.css
-server-data :: $(SERVER_DATA)/songs-mdpi.css
-server-data :: $(SERVER_DATA)/songs-hdpi.css
+server-data :: $(SERVER_DATA)/songs.css
 server-data :: $(SERVER_DATA)/songs.js
 
 # svg image is 0.2"x0.2"; correct size for desktop screen, 96 dpi = 19x19 pixels.

@@ -1,0 +1,36 @@
+/* Cascading Style Sheet for smm-server Songs data, on low dpi devices (laptop, desktop). */
+/* must be utf-8-unix */
+
+thead {background: grey;}
+tr {vertical-align: top; }
+
+/* Select sizes according to pixel density. devicePixelRatio gives */
+/* 'px' scaling; it isn't strong enough on Android; we effectively */
+/* square it. And it doesn't apply to fonts in the first place. */
+
+/* "resolution" in dpi is 96 * devicePixelRatio */
+
+@media screen and (min-resolution: 288dpi) {
+    /* devicePixelRatio >= 3; phone */
+    .album_art_list {height: 300px; width: 310px; overflow-y: scroll; } /* width +10px for Android scroll bar */
+    .categories_list {height: 300px; overflow-y: scroll; }
+    .liner_notes_header {text-align:middle; width: 105px; overflow-x: wrap; }
+    .text {font-size: xx-large; }
+}
+
+@media screen and (min-resolution: 192dpi) and (max-resolution: 287dpi) {
+    /* 2 <= devicePixelRatio < 3; tablet */
+    .album_art_list {height: 200px; width: 210px; overflow-y: scroll; } /* width +10px for Android scroll bar */
+    .categories_list {height: 200px; overflow-y: scroll; }
+    .liner_notes_header {text-align:middle; width: 70px; overflow-x: wrap; }
+    .text {font-size: larger; }
+}
+
+@media screen and (max-resolution: 191dpi) {
+    /* 0 < devicePixelRatio < 2; laptop, desktop */
+    .album_art_list {height: 100px; width: 130px; overflow-y: scroll; } /* width +30px for scroll bar on Windows */
+    .categories_list {height: 100px; overflow-y: scroll; }
+    .liner_notes_header {text-align:middle; width: 35px; overflow-x: wrap; }
+    .text {font-size: medium; } /* same as default */
+}
+/* end of file */
