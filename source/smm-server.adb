@@ -26,6 +26,7 @@ with AWS.Response.Set;
 with AWS.Server.Log;
 with AWS.Status;
 with AWS.URL;
+with Ada.Calendar.Formatting;
 with Ada.Calendar;
 with Ada.Characters.Handling;
 with Ada.Command_Line;
@@ -36,6 +37,7 @@ with Ada.Strings.Fixed;
 with Ada.Strings.Unbounded;
 with Ada.Text_IO;
 with SAL.Config_Files.Integer;
+with SAL.Time_Conversions;
 with SMM.Database;
 with SMM.Song_Lists;
 package body SMM.Server is
@@ -154,8 +156,65 @@ package body SMM.Server is
         " alt=""" & Label & """>";
    end Server_Img_Set;
 
+   function Days_Ago (Date : in Database.Time_String) return String
+   is
+      use Ada.Calendar;
+      use Ada.Calendar.Formatting;
+      use SAL.Time_Conversions;
+      Date_1 : constant Time := Value (Date);
+      Today  : constant Time := Ada.Calendar.Clock;
+   begin
+      return Integer'Image (Integer ((Today - Date_1) / Seconds_Per_Day));
+   end Days_Ago;
+
    ----------
    --  Specific request handlers, alphabetical
+
+   function Handle_Append_Category (URI : in AWS.URL.Object) return AWS.Response.Data
+   is
+      use SMM.Database;
+
+      URI_Param : constant AWS.Parameters.List := Decode_Plus (AWS.URL.Parameters (URI));
+      DB        : SMM.Database.Database;
+      SQL_Param : SMM.Database.Field_Values;
+
+   begin
+      if URI_Param.Is_Empty then
+         return AWS.Response.Acknowledge
+           (AWS.Messages.S400, "invalid query params: '" & AWS.URL.Parameters (URI) & "'");
+
+      else
+         --  From Emacs notes buffer page, query looks like
+         --  'append_category?file=<file_name>&category=<data>'
+
+         if not URI_Param.Exist ("file") then
+            return AWS.Response.Acknowledge
+              (AWS.Messages.S400, "missing 'file' param: '" & AWS.URL.Parameters (URI) & "'");
+         end if;
+
+         if not URI_Param.Exist ("category") then
+            return AWS.Response.Acknowledge
+              (AWS.Messages.S400, "missing 'category' param: '" & AWS.URL.Parameters (URI) & "'");
+         end if;
+
+         SQL_Param (Category) := +URI_Param.Get ("category");
+
+         DB.Open (-DB_Filename);
+
+         declare
+            File_Name : constant String := URI_Param.Get ("file");
+            I         : constant Cursor := DB.Find_File_Name (File_Name);
+         begin
+            if I.Has_Element then
+               DB.Update (I, SQL_Param);
+            else
+               return AWS.Response.Acknowledge (AWS.Messages.S400, "file not in db: '" & File_Name & "'");
+            end if;
+         end;
+
+         return AWS.Response.Acknowledge (AWS.Messages.S200, "file updated");
+      end if;
+   end Handle_Append_Category;
 
    function Handle_Download (URI : in AWS.URL.Object) return AWS.Response.Data
    is
@@ -383,8 +442,8 @@ package body SMM.Server is
            "</a></td>" &
            "<td><table class=""subtable""><tbody>" &
            "<tr><td class=""text"" style=""background-color: GhostWhite"">" & I.Artist & "</td></tr>" &
-           "<tr><td class=""text"">" & I.Last_Downloaded (1 .. 10) & " / " &
-           I.Prev_Downloaded (1 .. 10) & "</td></tr>" & --  Just the date
+           "<tr><td class=""text"">" & Days_Ago (I.Last_Downloaded) & " / " &
+           Days_Ago (I.Prev_Downloaded) & "</td></tr>" &
            "</tbody></table></td>" &
            "<td><table class=""subtable""><tbody>" &
            "<tr><td class=""text"">" & I.Album & "</td>" &
@@ -470,16 +529,16 @@ package body SMM.Server is
               "<table>" & ASCII.LF &
               "<thead><tr>" &
               "<th class=""text"">play</th>" &
-              "<th><table><thead>" &
+              "<th><table style=""width: 100%;""><thead>" &
               "<tr><th class=""text"" style=""border-bottom: solid white;"">artist</th></tr>" &
-              "<tr><th class=""text"">last/prev downloaded</th>" &
+              "<tr><th class=""text"" style=""width: 5em;"">last/prev downloaded</th>" &
               "</tr></thead></table></th>" &
-              "<th><table><thead>" &
+              "<th><table style=""width: 100%;""><thead>" &
               "<tr><th class=""text"" style=""border-bottom: solid white;"">album</th></tr>" &
               "<tr><th class=""text"">title</th></tr>" &
               "</thead></table></th>" &
               "<th class=""text"">album art</th>" &
-              "<th class=""liner_notes_header text"">liner notes</th>" &
+              "<th class=""text"" style=""width: 1em;"">liner notes</th>" &
               "<th class=""text"">categories</th>" &
               "</tr></thead>" & ASCII.LF &
               "<tbody>" & ASCII.LF &
@@ -572,52 +631,6 @@ package body SMM.Server is
          return AWS.Response.Acknowledge (AWS.Messages.S200, "file updated");
       end if;
    end Handle_Update;
-
-   function Handle_Append_Category (URI : in AWS.URL.Object) return AWS.Response.Data
-   is
-      use SMM.Database;
-
-      URI_Param : constant AWS.Parameters.List := Decode_Plus (AWS.URL.Parameters (URI));
-      DB        : SMM.Database.Database;
-      SQL_Param : SMM.Database.Field_Values;
-
-   begin
-      if URI_Param.Is_Empty then
-         return AWS.Response.Acknowledge
-           (AWS.Messages.S400, "invalid query params: '" & AWS.URL.Parameters (URI) & "'");
-
-      else
-         --  From Emacs notes buffer page, query looks like
-         --  'append_category?file=<file_name>&category=<data>'
-
-         if not URI_Param.Exist ("file") then
-            return AWS.Response.Acknowledge
-              (AWS.Messages.S400, "missing 'file' param: '" & AWS.URL.Parameters (URI) & "'");
-         end if;
-
-         if not URI_Param.Exist ("category") then
-            return AWS.Response.Acknowledge
-              (AWS.Messages.S400, "missing 'category' param: '" & AWS.URL.Parameters (URI) & "'");
-         end if;
-
-         SQL_Param (Category) := +URI_Param.Get ("category");
-
-         DB.Open (-DB_Filename);
-
-         declare
-            File_Name : constant String := URI_Param.Get ("file");
-            I         : constant Cursor := DB.Find_File_Name (File_Name);
-         begin
-            if I.Has_Element then
-               DB.Update (I, SQL_Param);
-            else
-               return AWS.Response.Acknowledge (AWS.Messages.S400, "file not in db: '" & File_Name & "'");
-            end if;
-         end;
-
-         return AWS.Response.Acknowledge (AWS.Messages.S200, "file updated");
-      end if;
-   end Handle_Append_Category;
 
    ----------
    --  Top level

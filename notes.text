@@ -27,9 +27,9 @@ play-before causes short replay periods
     fixed 1 feb 2018; short periods should dissappear from status eventually
 
 
-show last/prev downloaded as days ago
-
-albumart show actual size in text, use right click to see full image
+albumart show actual size if smaller than cell size
+    https://stackoverflow.com/questions/2517854/getting-image-size-of-jpeg-from-its-binary#2517888
+    libjpeg source c:/Projects/jpeg-9c/rdjpgcom.c
 
 
 web UI for "add category"
