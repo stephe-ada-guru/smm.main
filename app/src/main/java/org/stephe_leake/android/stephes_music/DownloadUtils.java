@@ -371,7 +371,7 @@ public class DownloadUtils
          .host(serverIP)
          .port(8080)
          .addPathSegment("file")
-         .addQueryParameter("name", resource)
+         .addQueryParameter("name", "/" + resource)
          .build();
 
       try
