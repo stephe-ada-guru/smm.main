@@ -2,7 +2,7 @@
 div.table {display: table; }
 span.caption {display: table-caption; position: relative; left: 10%; }
 div.row {display: table-row; }
-input[type=search] {display:table-cell; width: 50em; }
+input[type=search] {display:table-cell; width: 30em; }
 label {display: table-cell;
        text-align: right;
        width: 3em; }

@@ -33,6 +33,12 @@ web UI for "add category"
     only category is editable
         artist, album, title from id3 tag
 
+    https://datatables.net/index
+        click on cell changes it to an input
+            apparently edits the DOM to accomplish that
+
+        https://www.w3schools.com/jsref/event_onclick.asp
+
     enable barry miles woodstock
     R. Carlos Nakai category = meditation; add instrumental
     do music notes
@@ -65,6 +71,7 @@ date queries
 sort table
     https://kryogenix.org/code/browser/sorttable/
     http://tablesorter.com/docs/
+    https://datatables.net/index
 
 Smarter search with merged fields for voice input - "play carpenter keep her"
 
