@@ -214,4 +214,12 @@ private
       Cursor : GNATCOLL.SQL.Exec.Forward_Cursor;
    end record;
 
+   ----------
+   --  Visible for child packages
+
+   procedure Checked_Execute
+     (DB        : in Database'Class;
+      Statement : in String;
+      Params    : in GNATCOLL.SQL.Exec.SQL_Parameters := GNATCOLL.SQL.Exec.No_Parameters);
+
 end SMM.Database;

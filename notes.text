@@ -27,19 +27,24 @@ play-before causes short replay periods
     fixed 1 feb 2018; short periods should dissappear from status eventually
 
 
-albumart show actual size if smaller than cell size
-    https://stackoverflow.com/questions/2517854/getting-image-size-of-jpeg-from-its-binary#2517888
-    libjpeg source c:/Projects/jpeg-9c/rdjpgcom.c
-
-
 web UI for "add category"
     or "edit category"?
     button on search results page
     only category is editable
         artist, album, title from id3 tag
 
+    https://datatables.net/index
+        click on cell changes it to an input
+            apparently edits the DOM to accomplish that
+
+        https://www.w3schools.com/jsref/event_onclick.asp
+
     enable barry miles woodstock
     R. Carlos Nakai category = meditation; add instrumental
+    do music notes
+
+create nested tables via javascript
+    ada send flat table
 
 new smm commands?:
     or just use sqlite3 command line, smm-server
@@ -60,19 +65,13 @@ include File_Name field in search, when others empty?
 option to query recently downloaded
     or archive recent playlists, search those
 
-specify root server dir in config file
-
 date queries
     select * from Song where date(last_downloaded) > date('2018-03-01');
 
-use template, table
-    need thtml mode?
-
-    template doc 2.7.2 cursor tag
-
-    aws doc 4.5 split pages
-
-    display year
+sort table
+    https://kryogenix.org/code/browser/sorttable/
+    http://tablesorter.com/docs/
+    https://datatables.net/index
 
 Smarter search with merged fields for voice input - "play carpenter keep her"
 
