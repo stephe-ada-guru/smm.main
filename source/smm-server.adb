@@ -39,6 +39,7 @@ with Ada.Text_IO;
 with SAL.Config_Files.Integer;
 with SAL.Time_Conversions;
 with SMM.Database;
+with SMM.JPEG;
 with SMM.Song_Lists;
 package body SMM.Server is
 
@@ -135,11 +136,16 @@ package body SMM.Server is
       Width             : in Integer;
       Height            : in Integer)
      return String
-   is begin
-      --  FIXME: fetch actual width, height; show in label, change params to max.
-      return "<img src=""/" & Relative_Resource & """" &
-        " onload=""Scale_Px(event," & Integer'Image (Width) & "," & Integer'Image (Height) & ")""" &
-        " alt=""" & Label & """>";
+   is
+      Size : constant SMM.JPEG.Size_Type := SMM.JPEG.Size (-Source_Root & "/" & Relative_Resource);
+   begin
+      if Size.X <= Width and Size.Y <= Height then
+         return "<img src=""/" & Relative_Resource & """ alt=""" & Label & """>";
+      else
+         return "<img src=""/" & Relative_Resource & """" &
+           " onload=""Scale_Px(event," & Integer'Image (Width) & "," & Integer'Image (Height) & ")""" &
+           " alt=""" & Label & """>";
+      end if;
    end Server_Img;
 
    function Server_Img_Set

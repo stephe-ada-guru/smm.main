@@ -28,8 +28,8 @@ package body SMM.ID3.Test is
 
    procedure Check
      (Label    : in String;
-      Computed : in SMM.ID3.Size_Type;
-      Expected : in SMM.ID3.Size_Type)
+      Computed : in Size_Type;
+      Expected : in Size_Type)
    is
       use SAL.Interfaces_More.AUnit;
    begin
@@ -50,7 +50,7 @@ package body SMM.ID3.Test is
 
       procedure Check_One
         (Label          : in String;
-         Item           : in SMM.ID3.Size_Type;
+         Item           : in Size_Type;
          Expected_Count : in Ada.Streams.Stream_IO.Count)
       is
          use Ada.Streams.Stream_IO;
@@ -83,7 +83,7 @@ package body SMM.ID3.Test is
    is
       pragma Unreferenced (T);
    begin
-      return new String'("test_id3.adb");
+      return new String'("smm-id3-test.adb");
    end Name;
 
    overriding procedure Register_Tests (T : in out Test_Case)
