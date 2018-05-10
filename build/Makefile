@@ -38,11 +38,11 @@ histogram : ~/bin/smm.exe
 check : smm.exe
 	cd d:/Music; $(CURDIR)/smm check > missing.log
 
-install : server-data ~/bin/smm.exe ~/bin/smm-server_driver.exe
+install : server-data c:/home/stephe/bin/smm.exe c:/home/stephe/bin/smm-server_driver.exe
 
 .PHONY : server-data play-icons
 
-SERVER_DATA := /d/Music/server_data_work_1
+SERVER_DATA := /d/Music/server_data
 
 server-data :: $(SERVER_DATA)/app_icon.png
 server-data :: $(SERVER_DATA)/liner_notes_icon-28x37.png
@@ -68,7 +68,7 @@ $(SERVER_DATA)/% : ../source/%
 	cp $^ $@
 
 # don't strip, so stack traceback is useful on errors
-~/bin/% : %
+c:/home/stephe/bin/% : %
 	cp $^ $@
 
 trace :
