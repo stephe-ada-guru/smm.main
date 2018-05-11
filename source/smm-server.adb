@@ -21,6 +21,7 @@ pragma License (GPL);
 with AWS.Config.Set;
 with AWS.Containers.Tables;
 with AWS.Messages;
+with AWS.MIME;
 with AWS.Parameters;
 with AWS.Response.Set;
 with AWS.Server.Log;
@@ -580,6 +581,21 @@ package body SMM.Server is
       DB        : SMM.Database.Database;
       SQL_Param : SMM.Database.Field_Values;
       Key_Field : Unbounded_String;
+      Ref       : Unbounded_String;
+      Cancel    : Boolean                      := False;
+
+      function Redirect_Search return AWS.Response.Data
+      is
+         use AWS.Response;
+      begin
+         return Result : Data do
+            Set.Location     (Result, AWS.URL.Decode (-Ref));
+            Set.Status_Code  (Result, AWS.Messages.S303);
+            Set.Content_Type (Result, AWS.MIME.Text_HTML);
+            Set.Message_Body (Result, "back to search");
+         end return;
+      end Redirect_Search;
+
    begin
       if URI_Param.Is_Empty then
          return AWS.Response.Acknowledge
@@ -591,8 +607,10 @@ package body SMM.Server is
          --  only update field if present.
 
          --  From Web search results page, query looks like
-         --  'update?id=<id>&<field>=<data>'
-         --  only update field if present.
+         --
+         --  'update?ref=<search uri>id=<id>&<field>=<data>'
+         --
+         --  Only update field if present. If a "cancel" param is present, don't update anything.
 
          if URI_Param.Exist ("id") then
             Key_Field := +"id";
@@ -607,13 +625,28 @@ package body SMM.Server is
             declare
                Field_Name : String renames URI_Param.Get_Name (I);
             begin
-               if not (Field_Name = -Key_Field or Valid_Field (Field_Name))
-               then
+               if Field_Name = "cancel" then
+                  Cancel := True;
+               elsif Field_Name = -Key_Field then
+                  null;
+               elsif Field_Name = "ref" then
+                  Ref := +URI_Param.Get_Value (I);
+               elsif Valid_Field (Field_Name) then
+                  null;
+               else
                   return AWS.Response.Acknowledge
                     (AWS.Messages.S400, "bad param name: '" & String'(Field_Name) & "'");
                end if;
             end;
          end loop;
+
+         if Cancel then
+            if Length (Ref) = 0 then
+               return AWS.Response.Acknowledge (AWS.Messages.S200, "canceled");
+            else
+               return Redirect_Search;
+            end if;
+         end if;
 
          for I in Fields loop
             declare
@@ -645,7 +678,11 @@ package body SMM.Server is
             end if;
          end;
 
-         return AWS.Response.Acknowledge (AWS.Messages.S200, "updated");
+         if Length (Ref) = 0 then
+            return AWS.Response.Acknowledge (AWS.Messages.S200, "updated");
+         else
+            return Redirect_Search;
+         end if;
       end if;
    end Handle_Update;
 

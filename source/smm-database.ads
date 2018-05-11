@@ -150,15 +150,6 @@ package SMM.Database is
       Data     : in Field_Values);
    --  Cursor must be refetched to reflect changes.
 
-   procedure Category_Append
-     (DB       : in Database;
-      Position : in Cursor'Class;
-      Item     : in String);
-   procedure Category_Delete
-     (DB       : in Database;
-      Position : in Cursor'Class;
-      Item     : in String);
-
    function Find_Like
      (DB    : in Database'Class;
       Param : in Field_Values)
@@ -174,7 +165,6 @@ package SMM.Database is
    function ID_String (Position : in Cursor) return String;
    function File_Name (Position : in Cursor) return String;
    function Category (Position : in Cursor) return String;
-   function Categories (Position : in Cursor) return String_Lists.List;
    function Artist (Position : in Cursor) return String;
    function Album (Position : in Cursor) return String;
    function Title (Position : in Cursor) return String;

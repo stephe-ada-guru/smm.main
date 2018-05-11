@@ -99,34 +99,6 @@ package body SMM.Database.Test is
          (Category => +"dont_play, ballad", others => +""));
    end Test_Update;
 
-   procedure Test_Categories (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
-   is
-      pragma Unreferenced (T);
-
-      use Ada.Strings.Unbounded;
-      use AUnit.Checks;
-
-      I : Cursor;
-   begin
-      I := Find_File_Name (DB, "artist_1/album_1/2 - song_2.mp3");
-      Check ("1.1", I.Category_Contains ("vocal"), True);
-      Check ("1.2", I.Category_Contains ("dont_play"), False);
-
-      DB.Category_Append (I, "9/11");
-      I := Find_File_Name (DB, "artist_1/album_1/2 - song_2.mp3");
-      Check ("2.0", I.Category, "vocal,9/11");
-      Check ("2.1", I.Category_Contains ("vocal"), True);
-      Check ("2.2", I.Category_Contains ("9/11"), True);
-      Check ("2.3", I.Category_First, "vocal");
-
-      DB.Category_Delete (I, "vocal");
-      I := Find_File_Name (DB, "artist_1/album_1/2 - song_2.mp3");
-      Check ("3.1", I.Category, "9/11");
-      Check ("3.2", I.Category_Contains ("vocal"), False);
-      Check ("3.3", I.Category_Contains ("9/11"), True);
-      Check ("3.4", I.Category_First, "9/11");
-   end Test_Categories;
-
    ----------
    --  Public bodies
 
@@ -143,7 +115,6 @@ package body SMM.Database.Test is
    begin
       Register_Routine (T, Test_Find_Like'Access, "Test_Find_Like");
       Register_Routine (T, Test_Update'Access, "Test_Update");
-      Register_Routine (T, Test_Categories'Access, "Test_Categories");
    end Register_Tests;
 
    overriding procedure Set_Up_Case (T : in out Test_Case)

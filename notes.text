@@ -27,37 +27,19 @@ play-before causes short replay periods
     fixed 1 feb 2018; short periods should dissappear from status eventually
 
 
+do music notes
+
+group search results by album
+    only show album metadata once
+
 web UI for "edit category"
-    need cancel button
-
-    save should go back to search result, showing updated value
-        capture original URL query
-
-    want to hide the id, but still have it submitted
-        set 'formaction' attribute for category input element?
-        define "submit()" method, don't use default?
-
     R. Carlos Nakai category = meditation; add instrumental
-    do music notes
+        tedious; need select all?
 
 create nested tables via javascript
     ada send flat table
 
-new smm commands?:
-    or just use sqlite3 command line, smm-server
-    on smm.work_1
-
-    rename id new_file_name
-        delete (Disk 1) etc
-
-    set_before_after before_id, after_id
-
-    delete_category id category
-
-    add_category id category
-        best, parenthood, 9/11
-
-include File_Name field in search, when others empty?
+Smarter search with merged fields for voice input - "play carpenter keep her"
 
 option to query recently downloaded
     or archive recent playlists, search those
@@ -70,10 +52,13 @@ sort table
     http://tablesorter.com/docs/
     https://datatables.net/index
 
-Smarter search with merged fields for voice input - "play carpenter keep her"
-
 ip address of laptop changed when switched to ethernet
     check that config ip is in list of hardware IPs
+    or get 'takver4' to work
+
+real category edit widget
+    possible values from a db table Categories
+    allow add new category
 
 if browser is on server, add link/button that opens folder
 
