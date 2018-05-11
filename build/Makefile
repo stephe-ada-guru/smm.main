@@ -21,7 +21,7 @@ one : debug.exe
 
 # This server can't be seen from phone, tablet (not clear why); use
 # ~/bin/music-server-work_1.sh
-run-server : smm-server_driver.exe
+run-server : server-data smm-server_driver.exe
 	./smm-server_driver.exe smm_server_devel.config
 
 convert-main : config_to_sqlite.exe | c:/home/stephe/smm/smm_work_1.db

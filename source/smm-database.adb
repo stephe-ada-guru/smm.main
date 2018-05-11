@@ -386,41 +386,6 @@ package body SMM.Database is
       Checked_Execute (DB, -Statement, Params (1 .. Last));
    end Update;
 
-   procedure Category_Append
-     (DB       : in Database;
-      Position : in Cursor'Class;
-      Item     : in String)
-   is
-      use Ada.Strings.Unbounded;
-      Old : constant String := Position.Category;
-   begin
-      DB.Update (Position, Data => (Category => +Old & "," & Item, others => +""));
-   end Category_Append;
-
-   procedure Category_Delete
-     (DB       : in Database;
-      Position : in Cursor'Class;
-      Item     : in String)
-   is
-      use Ada.Strings.Unbounded;
-      use Ada.Strings.Fixed;
-      Old   : constant String  := Position.Category;
-      First : constant Integer := Index (Source => Old, Pattern => Item);
-      Last  : Integer := Index (Source => Old, Pattern => ",", From => First + 1);
-   begin
-      if First = 0 then
-         raise SAL.Not_Found;
-      elsif Last = 0 then
-         Last := Old'Last;
-      end if;
-
-      DB.Update
-        (Position,
-         Data =>
-           (Category => +Old (Old'First .. First - 1) & Old (Last + 1 .. Old'Last),
-            others => +""));
-   end Category_Delete;
-
    function Find_Like
      (DB    : in Database'Class;
       Param : in Field_Values)
@@ -510,6 +475,11 @@ package body SMM.Database is
       return Integer'Value (Position.Cursor.Value (ID_Field));
    end ID;
 
+   function ID_String (Position : in Cursor) return String
+   is begin
+      return Position.Cursor.Value (ID_Field);
+   end ID_String;
+
    function File_Name (Position : in Cursor) return String
    is begin
       return Position.Cursor.Value (File_Name_Field);
@@ -522,24 +492,6 @@ package body SMM.Database is
          then ""
          else Position.Cursor.Value (Category_Field));
    end Category;
-
-   function Categories (Position : in Cursor) return String_Lists.List
-   is
-      use Ada.Strings.Fixed;
-      Data  : constant String := Position.Category;
-      First : Integer := Data'First;
-      Last  : Integer;
-   begin
-      return Result : String_Lists.List do
-         loop
-            Last := Index (Source => Data, Pattern => ",", From => First);
-            exit when Last = 0;
-            Result.Append (Data (First .. Last - 1));
-            First := Last + 1;
-         end loop;
-         Result.Append (Data (First .. Data'Last));
-      end return;
-   end Categories;
 
    function Artist (Position : in Cursor) return String
    is begin

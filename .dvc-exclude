@@ -1,3 +1,5 @@
+build/Makefile
 build/prj.el
 build/smm.prj
+source/search.html
 Test/test_one_harness.adb

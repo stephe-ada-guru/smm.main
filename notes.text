@@ -27,40 +27,19 @@ play-before causes short replay periods
     fixed 1 feb 2018; short periods should dissappear from status eventually
 
 
-web UI for "add category"
-    or "edit category"?
-    button on search results page
-    only category is editable
-        artist, album, title from id3 tag
+do music notes
 
-    https://datatables.net/index
-        click on cell changes it to an input
-            apparently edits the DOM to accomplish that
+group search results by album
+    only show album metadata once
 
-        https://www.w3schools.com/jsref/event_onclick.asp
-
-    enable barry miles woodstock
+web UI for "edit category"
     R. Carlos Nakai category = meditation; add instrumental
-    do music notes
+        tedious; need select all?
 
 create nested tables via javascript
     ada send flat table
 
-new smm commands?:
-    or just use sqlite3 command line, smm-server
-    on smm.work_1
-
-    rename id new_file_name
-        delete (Disk 1) etc
-
-    set_before_after before_id, after_id
-
-    delete_category id category
-
-    add_category id category
-        best, parenthood, 9/11
-
-include File_Name field in search, when others empty?
+Smarter search with merged fields for voice input - "play carpenter keep her"
 
 option to query recently downloaded
     or archive recent playlists, search those
@@ -73,10 +52,13 @@ sort table
     http://tablesorter.com/docs/
     https://datatables.net/index
 
-Smarter search with merged fields for voice input - "play carpenter keep her"
-
 ip address of laptop changed when switched to ethernet
     check that config ip is in list of hardware IPs
+    or get 'takver4' to work
+
+real category edit widget
+    possible values from a db table Categories
+    allow add new category
 
 if browser is on server, add link/button that opens folder
 
@@ -141,6 +123,7 @@ https://css-tricks.com/complete-guide-table-element/
 
 https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio
 https://www.w3.org/TR/2017/REC-html52-20171214/index.html#contents
+https://www.w3schools.com/jsref/
 
 d:/Apps/GNAT-gpl_2017/aws-gpl-2017-src/docs/aws.pdf
 d:/Apps/GNAT-gpl_2017/aws-gpl-2017-src/docs/templates_parser/index.html
