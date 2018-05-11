@@ -801,7 +801,9 @@ package body SMM.Server is
          use AWS.Config;
          Ws_Config : constant Object := AWS.Server.Config (Ws);
       begin
-         Put_Line ("listening on " & Server_Host (Ws_Config) & ":" & Integer'Image (Server_Port (Ws_Config)));
+         Put_Line
+           ("listening on " & Server_Host (Ws_Config) & ":" & Integer'Image (Server_Port (Ws_Config)) &
+            " source_root: '" & (-Source_Root) & "' server_data: '" & (-Server_Data) & "'");
       end;
 
       AWS.Server.Wait;
