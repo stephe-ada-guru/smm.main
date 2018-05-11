@@ -171,6 +171,7 @@ package SMM.Database is
    function Field (Position : in Cursor; Item : in Fields) return String;
 
    function ID (Position : in Cursor) return Integer;
+   function ID_String (Position : in Cursor) return String;
    function File_Name (Position : in Cursor) return String;
    function Category (Position : in Cursor) return String;
    function Categories (Position : in Cursor) return String_Lists.List;

@@ -474,11 +474,8 @@ package body SMM.Server is
          end loop;
          Result := Result & "</td>";
 
-         Result := Result & "<td><div class=""categories_list""><table>";
-         for Item of I.Categories loop
-            Result := Result & "<tr><td class=""text"">" & Item & "</td></tr>";
-         end loop;
-         Result := Result & "</table></div></td>";
+         Result := Result & "<td><div class=""categories_list text"" onclick=""EditCategory(event)"" id=""" &
+           I.ID_String & """>" & I.Category & "</div></td>";
 
          Result := Result & "</tr>" & ASCII.LF;
          return -Result;
@@ -582,7 +579,7 @@ package body SMM.Server is
       URI_Param : constant AWS.Parameters.List := Decode_Plus (AWS.URL.Parameters (URI));
       DB        : SMM.Database.Database;
       SQL_Param : SMM.Database.Field_Values;
-
+      Key_Field : Unbounded_String;
    begin
       if URI_Param.Is_Empty then
          return AWS.Response.Acknowledge
@@ -593,17 +590,24 @@ package body SMM.Server is
          --  'update?file=<file_name>&<field>=<data>'
          --  only update field if present.
 
-         if not URI_Param.Exist ("file") then
+         --  From Web search results page, query looks like
+         --  'update?id=<id>&<field>=<data>'
+         --  only update field if present.
+
+         if URI_Param.Exist ("id") then
+            Key_Field := +"id";
+         elsif URI_Param.Exist ("file") then
+            Key_Field := +"file";
+         else
             return AWS.Response.Acknowledge
-              (AWS.Messages.S400, "missing 'file' param: '" & AWS.URL.Parameters (URI) & "'");
+              (AWS.Messages.S400, "missing 'id' or 'file' param: '" & AWS.URL.Parameters (URI) & "'");
          end if;
 
          for I in 1 .. URI_Param.Count loop
             declare
                Field_Name : String renames URI_Param.Get_Name (I);
             begin
-               if not (Field_Name = "file" or
-                         Valid_Field (Field_Name))
+               if not (Field_Name = -Key_Field or Valid_Field (Field_Name))
                then
                   return AWS.Response.Acknowledge
                     (AWS.Messages.S400, "bad param name: '" & String'(Field_Name) & "'");
@@ -624,17 +628,24 @@ package body SMM.Server is
          DB.Open (-DB_Filename);
 
          declare
-            File_Name : constant String := URI_Param.Get ("file");
-            I         : constant Cursor := DB.Find_File_Name (File_Name);
+            I : constant Cursor :=
+              (if -Key_Field = "id"
+               then DB.Find_ID (Integer'Value (URI_Param.Get ("id")))
+               else DB.Find_File_Name (URI_Param.Get ("file")));
          begin
             if I.Has_Element then
                DB.Update (I, SQL_Param);
             else
-               return AWS.Response.Acknowledge (AWS.Messages.S400, "file not in db: '" & File_Name & "'");
+               return AWS.Response.Acknowledge
+                 (AWS.Messages.S400, "not found in db: '" &
+                    (if -Key_Field = "id"
+                     then URI_Param.Get ("id")
+                     else URI_Param.Get ("file"))
+                    & "'");
             end if;
          end;
 
-         return AWS.Response.Acknowledge (AWS.Messages.S200, "file updated");
+         return AWS.Response.Acknowledge (AWS.Messages.S200, "updated");
       end if;
    end Handle_Update;
 

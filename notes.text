@@ -27,19 +27,16 @@ play-before causes short replay periods
     fixed 1 feb 2018; short periods should dissappear from status eventually
 
 
-web UI for "add category"
-    or "edit category"?
-    button on search results page
-    only category is editable
-        artist, album, title from id3 tag
+web UI for "edit category"
+    need cancel button
 
-    https://datatables.net/index
-        click on cell changes it to an input
-            apparently edits the DOM to accomplish that
+    save should go back to search result, showing updated value
+        capture original URL query
 
-        https://www.w3schools.com/jsref/event_onclick.asp
+    want to hide the id, but still have it submitted
+        set 'formaction' attribute for category input element?
+        define "submit()" method, don't use default?
 
-    enable barry miles woodstock
     R. Carlos Nakai category = meditation; add instrumental
     do music notes
 
@@ -141,6 +138,7 @@ https://css-tricks.com/complete-guide-table-element/
 
 https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio
 https://www.w3.org/TR/2017/REC-html52-20171214/index.html#contents
+https://www.w3schools.com/jsref/
 
 d:/Apps/GNAT-gpl_2017/aws-gpl-2017-src/docs/aws.pdf
 d:/Apps/GNAT-gpl_2017/aws-gpl-2017-src/docs/templates_parser/index.html

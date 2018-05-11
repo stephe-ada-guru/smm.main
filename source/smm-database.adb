@@ -510,6 +510,11 @@ package body SMM.Database is
       return Integer'Value (Position.Cursor.Value (ID_Field));
    end ID;
 
+   function ID_String (Position : in Cursor) return String
+   is begin
+      return Position.Cursor.Value (ID_Field);
+   end ID_String;
+
    function File_Name (Position : in Cursor) return String
    is begin
       return Position.Cursor.Value (File_Name_Field);
