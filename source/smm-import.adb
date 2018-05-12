@@ -68,9 +68,9 @@ is
 
             declare
                use SMM.ID3;
-               Ext        : constant String := Extension (Name);
+               Ext        : constant String   := Extension (Name);
                ID3_Frames : Frame_Lists.List;
-               Artist_ID  : ID_String       := SMM.ID3.Artist;
+               Artist_ID  : SMM.ID3.ID_String := SMM.ID3.Artist;
             begin
                if Ext = "mp3" then
                   if Verbosity > 0 then

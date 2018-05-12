@@ -177,52 +177,6 @@ package body SMM.Server is
    ----------
    --  Specific request handlers, alphabetical
 
-   function Handle_Append_Category (URI : in AWS.URL.Object) return AWS.Response.Data
-   is
-      use SMM.Database;
-
-      URI_Param : constant AWS.Parameters.List := Decode_Plus (AWS.URL.Parameters (URI));
-      DB        : SMM.Database.Database;
-      SQL_Param : SMM.Database.Field_Values;
-
-   begin
-      if URI_Param.Is_Empty then
-         return AWS.Response.Acknowledge
-           (AWS.Messages.S400, "invalid query params: '" & AWS.URL.Parameters (URI) & "'");
-
-      else
-         --  From Emacs notes buffer page, query looks like
-         --  'append_category?file=<file_name>&category=<data>'
-
-         if not URI_Param.Exist ("file") then
-            return AWS.Response.Acknowledge
-              (AWS.Messages.S400, "missing 'file' param: '" & AWS.URL.Parameters (URI) & "'");
-         end if;
-
-         if not URI_Param.Exist ("category") then
-            return AWS.Response.Acknowledge
-              (AWS.Messages.S400, "missing 'category' param: '" & AWS.URL.Parameters (URI) & "'");
-         end if;
-
-         SQL_Param (Category) := +URI_Param.Get ("category");
-
-         DB.Open (-DB_Filename);
-
-         declare
-            File_Name : constant String := URI_Param.Get ("file");
-            I         : constant Cursor := DB.Find_File_Name (File_Name);
-         begin
-            if I.Has_Element then
-               DB.Update (I, SQL_Param);
-            else
-               return AWS.Response.Acknowledge (AWS.Messages.S400, "file not in db: '" & File_Name & "'");
-            end if;
-         end;
-
-         return AWS.Response.Acknowledge (AWS.Messages.S200, "file updated");
-      end if;
-   end Handle_Append_Category;
-
    function Handle_Download (URI : in AWS.URL.Object) return AWS.Response.Data
    is
       use Ada.Containers;
@@ -353,6 +307,40 @@ package body SMM.Server is
         (Status_Code  => AWS.Messages.S500,
          Message_Body => "exception " & Exception_Name (E) & ": " & Exception_Message (E));
    end Handle_File;
+
+   function Handle_ID (URI : in AWS.URL.Object) return AWS.Response.Data
+   is
+      use SMM.Database;
+
+      URI_Param : constant AWS.Parameters.List := AWS.URL.Parameters (URI);
+      DB        : SMM.Database.Database;
+   begin
+      if URI_Param.Is_Empty then
+         return AWS.Response.Acknowledge (AWS.Messages.S400, "no params; usage id?file=<file_name>");
+
+      else
+         --  From Emacs notes buffer page, query looks like
+         --  'id?file=<file_name>'
+
+         if not URI_Param.Exist ("file") then
+            return AWS.Response.Acknowledge
+              (AWS.Messages.S400, "missing 'file' param: '" & AWS.URL.Parameters (URI) & "'");
+         end if;
+
+         DB.Open (-DB_Filename);
+
+         declare
+            File_Name : constant String := URI_Param.Get ("file");
+            I         : constant Cursor := DB.Find_File_Name (File_Name);
+         begin
+            if I.Has_Element then
+               return AWS.Response.Build ("text/plain", Integer'Image (I.ID));
+            else
+               return AWS.Response.Acknowledge (AWS.Messages.S400, "file not in db: '" & File_Name & "'");
+            end if;
+         end;
+      end if;
+   end Handle_ID;
 
    function Handle_Meta (URI : in AWS.URL.Object) return AWS.Response.Data
    is
@@ -706,14 +694,16 @@ package body SMM.Server is
                return Handle_Download (URI);
 
             elsif URI_File = "favicon.ico" then
-               --  FIXME: does not show up in firefox address bar
-               return AWS.Response.File ("image/png", "/" & (-Server_Data) & "/app_icon.png");
+               return AWS.Response.File ("image/x-icon", (-Source_Root) & "/" & (-Server_Data) & "/app.ico");
 
             elsif URI_File = "file" then
+               --  record download time in db
                return Handle_File (URI, Name_In_Param => True);
 
+            elsif URI_File = "id" then
+               return Handle_ID (URI);
+
             elsif URI_File = "meta" then
-               --  FIXME: move directory to query
                return Handle_Meta (URI);
 
             elsif URI_File = "search" then
@@ -734,8 +724,6 @@ package body SMM.Server is
          begin
             if URI_File = "update" then
                return Handle_Update (URI);
-            elsif URI_File = "append_category" then
-               return Handle_Append_Category (URI);
             else
                return Acknowledge
                  (Status_Code  => AWS.Messages.S400, -- bad request

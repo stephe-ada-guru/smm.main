@@ -44,7 +44,7 @@ install : server-data c:/home/stephe/bin/smm.exe c:/home/stephe/bin/smm-server_d
 
 SERVER_DATA := /d/Music/server_data
 
-server-data :: $(SERVER_DATA)/app_icon.png
+server-data :: $(SERVER_DATA)/app.ico
 server-data :: $(SERVER_DATA)/liner_notes_icon-28x37.png
 server-data :: $(SERVER_DATA)/liner_notes_icon-112x148.png
 server-data :: $(SERVER_DATA)/liner_notes_icon-252x333.png

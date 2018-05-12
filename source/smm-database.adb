@@ -26,7 +26,6 @@ with Ada.IO_Exceptions;
 with Ada.Strings.Fixed;
 with Ada.Text_IO;
 with GNATCOLL.SQL.Sqlite;
-with SAL;
 package body SMM.Database is
 
    procedure Checked_Execute

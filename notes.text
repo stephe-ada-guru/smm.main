@@ -27,19 +27,23 @@ play-before causes short replay periods
     fixed 1 feb 2018; short periods should dissappear from status eventually
 
 
-do music notes
+Smarter search with merged fields for voice input - "play carpenter keep her"
+
+put search dialog above search results
+    back button goes to edit
 
 group search results by album
     only show album metadata once
 
-web UI for "edit category"
-    R. Carlos Nakai category = meditation; add instrumental
-        tedious; need select all?
+do best lists
 
-create nested tables via javascript
+https://www.w3schools.com/w3css/tryit.asp?filename=tryw3css_templates_band&stacked=h
+    Carousel slideshow for albumart?
+
+create nested tables via javascript?
     ada send flat table
 
-Smarter search with merged fields for voice input - "play carpenter keep her"
+support tab, arrow key navigation
 
 option to query recently downloaded
     or archive recent playlists, search those
