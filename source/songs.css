@@ -1,6 +1,12 @@
 /* Cascading Style Sheet for smm-server Songs data, on low dpi devices (laptop, desktop). */
 /* must be utf-8-unix */
 
+div.table {display: table; }
+span.caption {display: table-caption; position: relative; left: 10%; }
+div.row {display: table-row; }
+input[type=search] {display:table-cell; width: 30em; }
+label {display: table-cell; text-align: right; margin-right: 2px; }
+
 thead {background: lightgrey; }
 th {padding: 0.2em; }
 td {text-align: center; }
@@ -14,6 +20,10 @@ tr {vertical-align: top; }
 
 @media screen and (min-resolution: 288dpi) {
     /* devicePixelRatio >= 3; phone */
+    input[type=search] {font-size: xx-large; }
+    input[type=submit] {font-size: xx-large; }
+    label {font-size: xx-large; }
+
     .album_art_list {height: 300px; width: 310px; overflow-y: scroll; } /* width +10px for Android scroll bar */
     .categories_list {height: 300px; overflow-y: scroll; }
     .text {font-size: xx-large; }
@@ -21,6 +31,10 @@ tr {vertical-align: top; }
 
 @media screen and (min-resolution: 192dpi) and (max-resolution: 287dpi) {
     /* 2 <= devicePixelRatio < 3; tablet */
+    input[type=search] {font-size: larger; }
+    input[type=submit] {font-size: larger; }
+    label {font-size: larger; }
+
     .album_art_list {height: 200px; width: 210px; overflow-y: scroll; } /* width +10px for Android scroll bar */
     .categories_list {height: 200px; overflow-y: scroll; }
     .text {font-size: larger; }
@@ -28,6 +42,10 @@ tr {vertical-align: top; }
 
 @media screen and (max-resolution: 191dpi) {
     /* 0 < devicePixelRatio < 2; laptop, desktop */
+    input[type=search] {font-size: medium; }
+    input[type=submit] {font-size: medium; }
+    label {font-size: medium; }
+
     .album_art_list {height: 100px; width: 130px; overflow-y: scroll; } /* width +30px for scroll bar on Windows */
     .categories_list {height: 100px; overflow-y: scroll; }
     .text {font-size: medium; } /* same as default */

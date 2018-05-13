@@ -30,7 +30,7 @@ package body SMM.Database.Test is
 
    type ID_Array is array (Natural range <>) of Integer;
 
-   procedure Test_Find_Like (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
+   procedure Test_Find_Like_1 (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
    is
       pragma Unreferenced (T);
 
@@ -41,17 +41,18 @@ package body SMM.Database.Test is
       is
          use AUnit.Checks;
 
-         I : constant Cursor  := Find_Like (DB, Param);
+         I           : Cursor  := Find_Like (DB, Param);
          Found_Count : Integer := 0;
-         J : Integer := Expected'First;
+         J           : Integer := Expected'First;
       begin
          loop
             exit when not I.Has_Element or J > Expected'Last;
 
             Found_Count := Found_Count + 1;
 
-            Check (Label & ".id", I.ID, Expected (J));
+            Check (Label & Integer'Image (J) & ".id", I.ID, Expected (J));
             J := J + 1;
+            Next (I);
          end loop;
 
          Check (Label & "found_count", Found_Count, Expected'Last);
@@ -62,7 +63,41 @@ package body SMM.Database.Test is
         ("1",
          (Artist => +"2", Title => +"3", others => +""),
          (1 => 6));
-   end Test_Find_Like;
+   end Test_Find_Like_1;
+
+   procedure Test_Find_Like_2 (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+
+      procedure Check_One
+        (Label    : in String;
+         Search   : in String;
+         Expected : in ID_Array)
+      is
+         use AUnit.Checks;
+
+         I           : Cursor  := Find_Like (DB, Search);
+         Found_Count : Integer := 0;
+         J           : Integer := Expected'First;
+      begin
+         loop
+            exit when not I.Has_Element or J > Expected'Last;
+
+            Found_Count := Found_Count + 1;
+
+            Check (Label & Integer'Image (J) & ".id", I.ID, Expected (J));
+            J := J + 1;
+            Next (I);
+         end loop;
+
+         Check (Label & ".found_count", Found_Count, Expected'Length);
+      end Check_One;
+
+   begin
+      Check_One ("1", "artist_2 song_3", (1 => 6));
+      Check_One ("2", "artist song", (1, 2, 4, 5, 6));
+      Check_One ("3", "The Dance", (1 => 3));
+   end Test_Find_Like_2;
 
    procedure Test_Update (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
    is
@@ -113,7 +148,8 @@ package body SMM.Database.Test is
    is
       use Standard.AUnit.Test_Cases.Registration;
    begin
-      Register_Routine (T, Test_Find_Like'Access, "Test_Find_Like");
+      Register_Routine (T, Test_Find_Like_1'Access, "Test_Find_Like_1");
+      Register_Routine (T, Test_Find_Like_2'Access, "Test_Find_Like_2");
       Register_Routine (T, Test_Update'Access, "Test_Update");
    end Register_Tests;
 

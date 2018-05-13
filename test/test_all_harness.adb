@@ -42,7 +42,7 @@ is
    --
    --  test_name, routine_name can be '' to set trace for all routines.
    --
-   --  Set_Up_Case is run without checking the filter.
+   --  Set_Up_Case for all test_names is run without checking the filter.
 
    Verbosity : Integer;
    Debug     : Integer;

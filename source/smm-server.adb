@@ -425,7 +425,29 @@ package body SMM.Server is
 
       URI_Param : constant AWS.Parameters.List := Decode_Plus (AWS.URL.Parameters (URI));
       DB        : SMM.Database.Database;
-      SQL_Param : SMM.Database.Field_Values;
+
+      Response : Unbounded_String := +"<!DOCTYPE html>" & ASCII.LF &
+        "<html lang=""en"">" &
+        "<meta http-equiv=""Content-Type"" content=""text/html; charset=utf-8"">" & ASCII.LF &
+        "<head>" & ASCII.LF &
+        "<script src=""/" & (-Server_Data) & "/songs.js""></script>" & ASCII.LF &
+        "<link type=""text/css"" rel=""stylesheet"" href=""/" & (-Server_Data) & "/songs.css""/>" &
+        "</head><body>" & ASCII.LF &
+        "<form action=""/search"" method=get>" &
+        "<label>General Search</label>" &
+        "<input type=submit value=""Search"">" &
+        "<input type=search autofocus name=""search"" value=""" & URI_Param.Get ("search") & """>" &
+        "</form>"  & ASCII.LF &
+        "<hr><form action=""/search"" method=get><div class=""table"">" &
+        "<span class=""caption"">Detailed Search</span>" &
+        "<div class=""row""><label>Title </label>" &
+        "<input type=search autofocus name=""title"" value=""" & URI_Param.Get ("title") & """></div>" &
+        "<div class=""row""><label>Artist </label>" &
+        "<input type=search autofocus name=""artist"" value=""" & URI_Param.Get ("artist") & """></div>" &
+        "<div class=""row""><label>Album </label>" &
+        "<input type=search autofocus name=""album"" value=""" & URI_Param.Get ("album") & """></div>" &
+        "</div><input type=submit value=""Search"">" &
+        "</form><hr>" & ASCII.LF;
 
       function Search_Result (I : in Cursor) return String
       is
@@ -470,57 +492,51 @@ package body SMM.Server is
          return -Result;
       end Search_Result;
 
-      Required_Fields : constant array (Fields) of Boolean :=
-        (Artist | Album | Title => True,
-         others => False);
-
-      function Valid_Query return Boolean
+      function To_SQL_Param (Param : in AWS.Parameters.List) return SMM.Database.Field_Values
       is begin
-         for Field in Fields loop
-            if Required_Fields (Field) and then not URI_Param.Exist (-Field_Image (Field)) then
-               return False;
-            end if;
-         end loop;
-         return True;
-      end Valid_Query;
+         return Result : SMM.Database.Field_Values do
+            for I in Fields loop
+               declare
+                  Value : constant String := Param.Get (-Field_Image (I)); -- empty string if not present
+               begin
+                  if Value'Length > 0 then
+                     Result (I) := +Value;
+                  end if;
+               end;
+            end loop;
+         end return;
+      end To_SQL_Param;
 
    begin
+      --  From search page, query looks like one of:
+      --
+      --  ?search=michael+joni+miles
+      --
+      --  ?title=michael&artist=joni&album=miles
+
       if URI_Param.Is_Empty then
          --  Return search page with no results.
-         return AWS.Response.File ("text/html", (-Source_Root) & "/" & (-Server_Data) & "/search.html");
+         Response := Response  & "</body></html>";
+         return AWS.Response.Build ("text/html", Response);
 
-      elsif not Valid_Query then
-         return AWS.Response.Acknowledge (AWS.Messages.S400, "invalid query params '" & AWS.URL.Parameters (URI) & "'");
-
-      else
-         --  From search page, query looks like
-         --  '?title=michael&artist=joni&album=miles'; all three fields always
-         --  present, may be empty.
-         --
-         --  Support links from result pages etc; allow fields to be not present.
-
-         for I in Fields loop
-            declare
-               Value : constant String := URI_Param.Get (-Field_Image (I)); -- empty string if not present
-            begin
-               if Value'Length > 0 then
-                  SQL_Param (I) := +Value;
-               end if;
-            end;
-         end loop;
+      elsif URI_Param.Exist ("search") or
+        URI_Param.Exist ("title") or URI_Param.Exist ("artist") or URI_Param.Exist ("album")
+      then
+         DB.Open (-DB_Filename);
 
          declare
-            Response : Unbounded_String := +"<!DOCTYPE html>" & ASCII.LF &
-              "<html lang=""en"">" &
-              "<meta http-equiv=""Content-Type"" content=""text/html; charset=utf-8"">" & ASCII.LF &
-              "<head>" & ASCII.LF &
-              "<script src=""/" & (-Server_Data) & "/songs.js""></script>" & ASCII.LF &
-              "<script src=""/" & (-Server_Data) & "/debug_head.js""></script>" & ASCII.LF &
-              "<link type=""text/css"" rel=""stylesheet"" href=""/" & (-Server_Data) & "/songs.css""/>" &
-              "</head><body>" & ASCII.LF &
-              "<table>" & ASCII.LF &
-              "<thead><tr>" &
-              "<th class=""text"">play</th>" &
+            I : Cursor :=
+              (if URI_Param.Exist ("search")
+               then DB.Find_Like (URI_Param.Get ("search"))
+               else DB.Find_Like (To_SQL_Param (URI_Param)));
+         begin
+            if not I.Has_Element then
+               Response := Response  & "<p>no matching entries found</p></body></html>";
+               return AWS.Response.Build ("text/html", Response);
+            end if;
+
+            Response := Response & "<table><thead>" & ASCII.LF &
+              "<tr><th class=""text"">play</th>" &
               "<th><table style=""width: 100%;""><thead>" &
               "<tr><th class=""text"" style=""border-bottom: solid white;"">artist</th></tr>" &
               "<tr><th class=""text"" style=""width: 5em;"">last/prev downloaded</th>" &
@@ -533,31 +549,21 @@ package body SMM.Server is
               "<th class=""text"" style=""width: 1em;"">liner notes</th>" &
               "<th class=""text"">categories</th>" &
               "</tr></thead>" & ASCII.LF &
-              "<tbody>" & ASCII.LF &
-              "<script src=""/" & (-Server_Data) & "/debug_body.js""></script>";
-         begin
-            DB.Open (-DB_Filename);
+              "<tbody>" & ASCII.LF;
 
-            declare
-               I : Cursor := DB.Find_Like (SQL_Param);
-            begin
-               if not I.Has_Element then
-                  return AWS.Response.Acknowledge
-                    (Status_Code  => AWS.Messages.S404,
-                     Message_Body => Image (SQL_Param) & " not found");
-               end if;
+            loop
+               exit when not I.Has_Element;
+               Response := Response & Search_Result (I) & ASCII.LF;
 
-               loop
-                  exit when not I.Has_Element;
-                  Response := Response & Search_Result (I) & ASCII.LF;
+               I.Next;
+            end loop;
+         end; --  Free cursor
 
-                  I.Next;
-               end loop;
-            end; --  Free cursor
+         Response := Response & "</tbody>" & ASCII.LF & "</table>" & ASCII.LF & "</body></html>";
+         return AWS.Response.Build ("text/html", Response);
 
-            Response := Response & "</tbody>" & ASCII.LF & "</table>" & ASCII.LF & "</body></html>";
-            return AWS.Response.Build ("text/html", Response);
-         end;
+      else
+         return AWS.Response.Acknowledge (AWS.Messages.S400, "invalid query params '" & AWS.URL.Parameters (URI) & "'");
       end if;
    end Handle_Search;
 

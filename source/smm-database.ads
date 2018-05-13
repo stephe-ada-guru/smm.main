@@ -128,7 +128,8 @@ package SMM.Database is
    --  Items that are the defaults are not updated.
    --  Cursor must be refetched to reflect changes.
 
-   type Fields is (Artist, Album, Category, Title);
+   type Fields is (Artist, Album, Title, Category);
+   subtype Search_Fields is Fields range Artist .. Title;
 
    type Field_Values is array (Fields) of Ada.Strings.Unbounded.Unbounded_String;
 
@@ -154,6 +155,12 @@ package SMM.Database is
      (DB    : in Database'Class;
       Param : in Field_Values)
      return Cursor;
+
+   function Find_Like
+     (DB     : in Database'Class;
+      Search : in String)
+     return Cursor;
+   --  Match Search against Artist, Album, Title.
 
    procedure Next (Position : in out Cursor);
 

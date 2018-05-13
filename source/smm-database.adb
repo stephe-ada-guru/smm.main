@@ -58,7 +58,7 @@ package body SMM.Database is
          GNATCOLL.SQL.Exec.Fetch (Result.Cursor, DB.Connection, Statement, Params);
 
          if not DB.Connection.Success then
-            raise Entry_Error with DB.Connection.Error;
+            raise Entry_Error with "'" & Statement & "' " & DB.Connection.Error;
          end if;
       end return;
    end Checked_Fetch;
@@ -411,6 +411,57 @@ package body SMM.Database is
       end loop;
 
       return Checked_Fetch (DB, -Statement, Params (1 .. Last));
+   end Find_Like;
+
+   function Find_Like
+     (DB     : in Database'Class;
+      Search : in String)
+     return Cursor
+   is
+      use Ada.Strings.Unbounded;
+      use GNATCOLL.SQL.Exec;
+      Spaces      : array (1 .. 20) of Integer;
+      Spaces_Last : Integer := Spaces'First - 1;
+      First       : Integer := Spaces'First;
+
+      Statement   : Unbounded_String := +"SELECT * FROM Song WHERE";
+      Need_And    : Boolean          := False;
+      Params      : GNATCOLL.SQL.Exec.SQL_Parameters (1 .. 60);
+      Params_Last : Integer          := Params'First - 1;
+   begin
+      for I in Search'Range loop
+         if Search (I) = ' ' then
+            Spaces_Last := Spaces_Last + 1;
+            Spaces (Spaces_Last) := I;
+         end if;
+      end loop;
+
+      for I in 1 .. Spaces_Last + 1 loop
+         if Need_And then
+            Statement := Statement & " and";
+         end if;
+
+         declare
+            Need_Or : Boolean := False;
+
+            Word : constant String := Search (First .. (if I > Spaces_Last then Search'Last else Spaces (I) - 1));
+         begin
+            for J in Search_Fields'Range loop
+               Statement            := Statement & (if Need_Or then " or " else " (") & Field_Image (J) & " like ?";
+               Params_Last          := Params_Last + 1;
+               Params (Params_Last) := +("%" & Word & "%");
+               Need_Or              := True;
+            end loop;
+            Statement := Statement & ")";
+         end;
+
+         if I <= Spaces_Last then
+            First := Spaces (I) + 1;
+         end if;
+         Need_And := True;
+      end loop;
+
+      return Checked_Fetch (DB, -Statement, Params (1 .. Params_Last));
    end Find_Like;
 
    procedure Next (Position : in out Cursor)

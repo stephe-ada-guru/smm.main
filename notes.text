@@ -27,13 +27,10 @@ play-before causes short replay periods
     fixed 1 feb 2018; short periods should dissappear from status eventually
 
 
-Smarter search with merged fields for voice input - "play carpenter keep her"
-
-put search dialog above search results
-    back button goes to edit
-
 group search results by album
     only show album metadata once
+
+use w3.css to set search input width?
 
 do best lists
 

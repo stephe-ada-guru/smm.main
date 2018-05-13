@@ -51,8 +51,6 @@ server-data :: $(SERVER_DATA)/liner_notes_icon-252x333.png
 server-data :: $(SERVER_DATA)/play_icon-19x19.png
 server-data :: $(SERVER_DATA)/play_icon-76x76.png
 server-data :: $(SERVER_DATA)/play_icon-171x171.png
-server-data :: $(SERVER_DATA)/search.html
-server-data :: $(SERVER_DATA)/search.css
 server-data :: $(SERVER_DATA)/songs.css
 server-data :: $(SERVER_DATA)/songs.js
 
