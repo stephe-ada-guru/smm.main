@@ -386,8 +386,9 @@ package body SMM.Database is
    end Update;
 
    function Find_Like
-     (DB    : in Database'Class;
-      Param : in Field_Values)
+     (DB       : in Database'Class;
+      Param    : in Field_Values;
+      Order_By : in Search_Fields)
      return Cursor
    is
       use Ada.Strings.Unbounded;
@@ -410,12 +411,15 @@ package body SMM.Database is
          end if;
       end loop;
 
+      Statement := Statement & " ORDER BY " & Field_Image (Order_By);
+
       return Checked_Fetch (DB, -Statement, Params (1 .. Last));
    end Find_Like;
 
    function Find_Like
-     (DB     : in Database'Class;
-      Search : in String)
+     (DB       : in Database'Class;
+      Search   : in String;
+      Order_By : in Search_Fields)
      return Cursor
    is
       use Ada.Strings.Unbounded;
@@ -460,6 +464,8 @@ package body SMM.Database is
          end if;
          Need_And := True;
       end loop;
+
+      Statement := Statement & " ORDER BY " & Field_Image (Order_By);
 
       return Checked_Fetch (DB, -Statement, Params (1 .. Params_Last));
    end Find_Like;

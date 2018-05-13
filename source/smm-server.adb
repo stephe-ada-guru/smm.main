@@ -35,7 +35,7 @@ with Ada.Directories;
 with Ada.Exceptions;
 with Ada.IO_Exceptions;
 with Ada.Strings.Fixed;
-with Ada.Strings.Unbounded;
+with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with Ada.Text_IO;
 with SAL.Config_Files.Integer;
 with SAL.Time_Conversions;
@@ -44,29 +44,11 @@ with SMM.JPEG;
 with SMM.Song_Lists;
 package body SMM.Server is
 
-   subtype Unbounded_String is Ada.Strings.Unbounded.Unbounded_String;
-   function "+" (Item : in String) return Ada.Strings.Unbounded.Unbounded_String
-     renames Ada.Strings.Unbounded.To_Unbounded_String;
-   function "-" (Item : in Ada.Strings.Unbounded.Unbounded_String) return String
-     renames Ada.Strings.Unbounded.To_String;
-   function "&"
-     (Left  : in Ada.Strings.Unbounded.Unbounded_String;
-      Right : in String)
-     return Ada.Strings.Unbounded.Unbounded_String
-     renames Ada.Strings.Unbounded."&";
-   function "&"
-     (Left  : in Ada.Strings.Unbounded.Unbounded_String;
-      Right : in Character)
-     return Ada.Strings.Unbounded.Unbounded_String
-     renames Ada.Strings.Unbounded."&";
-   function Length (Item : in Ada.Strings.Unbounded.Unbounded_String) return Integer
-     renames Ada.Strings.Unbounded.Length;
-
-   Source_Root : Ada.Strings.Unbounded.Unbounded_String; -- Root of music files; does not end in /
-   Server_Data : Ada.Strings.Unbounded.Unbounded_String;
+   Source_Root : Unbounded_String; -- Root of music files; does not end in /
+   Server_Data : Unbounded_String;
    --  Relative to Source_Root; contains server html, css, js files; does not end in /
 
-   DB_Filename : Ada.Strings.Unbounded.Unbounded_String;
+   DB_Filename : Unbounded_String;
 
    function Decode_Plus (Item : in String) return String
    is begin
@@ -94,7 +76,6 @@ package body SMM.Server is
    function Meta_Files (Source_Dir : in String) return AWS.Containers.Tables.Table_Type
    is
       use Ada.Directories;
-      use Ada.Strings.Unbounded;
 
       Result : AWS.Containers.Tables.Table_Type;
 
@@ -135,17 +116,18 @@ package body SMM.Server is
      (Relative_Resource : in String;
       Label             : in String;
       Width             : in Integer;
-      Height            : in Integer)
+      Height            : in Integer;
+      Class             : in String)
      return String
    is
       Size : constant SMM.JPEG.Size_Type := SMM.JPEG.Size (-Source_Root & "/" & Relative_Resource);
    begin
       if Size.X <= Width and Size.Y <= Height then
-         return "<img src=""/" & Relative_Resource & """ alt=""" & Label & """>";
+         return "<img src=""/" & Relative_Resource & """ alt=""" & Label & """ class=""" & Class & """>";
       else
          return "<img src=""/" & Relative_Resource & """" &
            " onload=""Scale_Px(event," & Integer'Image (Width) & "," & Integer'Image (Height) & ")""" &
-           " alt=""" & Label & """>";
+           " alt=""" & Label & """ class=""" & Class & """>";
       end if;
    end Server_Img;
 
@@ -155,12 +137,13 @@ package body SMM.Server is
       Size_Low  : in String;
       Size_Med  : in String;
       Size_High : in String;
-      Label     : in String)
+      Label     : in String;
+      Class     : in String := "")
      return String
    is begin
       return "<img src=""/" & Root & "-" & Size_Low & Ext & """" &
-        "srcset=""/" & Root & "-" & Size_Med & Ext & " 2x, /" & Root & "-" & Size_High & Ext & " 3x""" &
-        " alt=""" & Label & """>";
+        " srcset=""/" & Root & "-" & Size_Med & Ext & " 2x, /" & Root & "-" & Size_High & Ext & " 3x""" &
+        " alt=""" & Label & """" & (if Class = "" then "" else " class=""" & Class & """") & ">";
    end Server_Img_Set;
 
    function Days_Ago (Date : in Database.Time_String) return String
@@ -171,7 +154,11 @@ package body SMM.Server is
       Date_1 : constant Time := Value (Date);
       Today  : constant Time := Ada.Calendar.Clock;
    begin
-      return Integer'Image (Integer ((Today - Date_1) / Seconds_Per_Day));
+      if Date = SMM.Database.Default_Time_String then
+         return "-";
+      else
+         return Integer'Image (Integer ((Today - Date_1) / Seconds_Per_Day));
+      end if;
    end Days_Ago;
 
    ----------
@@ -181,7 +168,6 @@ package body SMM.Server is
    is
       use Ada.Containers;
       use Ada.Exceptions;
-      use Ada.Strings.Unbounded;
       use AWS.URL;
       use SMM.Database;
       use SMM.Song_Lists.Song_Lists;
@@ -345,7 +331,6 @@ package body SMM.Server is
    function Handle_Meta (URI : in AWS.URL.Object) return AWS.Response.Data
    is
       use Ada.Directories;
-      use Ada.Strings.Unbounded;
       use AWS.URL;
 
       Source_Dir : constant String := -Source_Root & Path (URI);
@@ -431,8 +416,9 @@ package body SMM.Server is
         "<meta http-equiv=""Content-Type"" content=""text/html; charset=utf-8"">" & ASCII.LF &
         "<head>" & ASCII.LF &
         "<script src=""/" & (-Server_Data) & "/songs.js""></script>" & ASCII.LF &
-        "<link type=""text/css"" rel=""stylesheet"" href=""/" & (-Server_Data) & "/songs.css""/>" &
-        "</head><body>" & ASCII.LF &
+        "<link type=""text/css"" rel=""stylesheet"" href=""/" & (-Server_Data) & "/songs.css""/>" & ASCII.LF &
+        "</head><body>" &
+
         "<form action=""/search"" method=get>" &
         "<label>General Search</label>" &
         "<input type=submit value=""Search"">" &
@@ -449,47 +435,74 @@ package body SMM.Server is
         "</div><input type=submit value=""Search"">" &
         "</form><hr>" & ASCII.LF;
 
+      Current_Album : Unbounded_String;
+
       function Search_Result (I : in Cursor) return String
       is
-         Meta : constant AWS.Containers.Tables.Table_Type := Meta_Files (Containing_Directory (I.File_Name));
+         --  Some albums are single artist, some are not; we always list the
+         --  artist with each title.
 
-         Result : Unbounded_String := +"<tr>" &
+         Title_Header : constant Unbounded_String := +"<thead>" &
+           "<tr><th class=""text"">play</th>" &
+           "<th class=""text"">artist</th>" &
+           "<th class=""text"">title</th>" &
+           "<th class=""text"">last/prev downloaded</th>" &
+           "<th class=""text"">categories</th></tr></thead>" & ASCII.LF;
+
+         Title_Row : constant Unbounded_String := +"<tr>" &
            "<td><a href=""/" & AWS.URL.Encode (I.File_Name, SMM.File_Name_Encode_Set) &
            """>" & Server_Img_Set (-Server_Data & "/play_icon", ".png", "19x19", "76x76", "171x171", "play") &
            "</a></td>" &
-           "<td><table class=""subtable""><tbody>" &
-           "<tr><td class=""text"" style=""background-color: GhostWhite"">" & I.Artist & "</td></tr>" &
-           "<tr><td class=""text"">" & Days_Ago (I.Last_Downloaded) & " / " &
-           Days_Ago (I.Prev_Downloaded) & "</td></tr>" &
-           "</tbody></table></td>" &
-           "<td><table class=""subtable""><tbody>" &
-           "<tr><td class=""text"">" & I.Album & "</td>" &
-           "<tr><td class=""text"" style=""background-color: GhostWhite"">" & I.Title & "</td>" &
-           "</tr></tbody></table></td>";
+           "<td class=""text"">" & I.Artist & "</td>" &
+           "<td class=""text"">" & I.Title & "</td>" &
+           "<td class=""text"">" & Days_Ago (I.Last_Downloaded) & " / " & Days_Ago (I.Prev_Downloaded) & "</td>" &
+           "<td><div class=""categories_list text"" onclick=""EditCategory(event)"" id=""" &
+           I.ID_String & """>" & I.Category & "</div></td></tr>" & ASCII.LF;
+
+         Result : Unbounded_String;
       begin
-         Result := Result & "<td><div class=""album_art_list""><table>";
-         for J in 1 .. Meta.Count loop
-            if To_Lower (Extension (Meta.Get_Name (J))) = "jpg" then
-               Result := Result & "<tr><td>" & Server_Img (Meta.Get_Value (J), "album art", 100, 100) & "</td></tr>";
+         if I.Album'Length > 0 and then I.Album = -Current_Album then
+            return -Title_Row;
+
+         else
+            if Length (Current_Album) > 0 then
+               --  Terminate previous album title table and album item
+               Result := Result & "</tbody></table></li><hr>";
             end if;
-         end loop;
-         Result := Result & ASCII.LF & "</table></div></td>";
 
-         Result := Result & "<td>";
-         for J in 1 .. Meta.Count loop
-            if To_Lower (Meta.Get_Name (J)) = "liner_notes.pdf" then
-               Result := Result & Server_Href
-                 (Meta.Get_Value (J), Server_Img_Set
-                    (-Server_Data & "/liner_notes_icon", ".png", "28x37", "112x148", "252x333", "liner notes"));
+            if I.Album'Length = 0 then
+               Current_Album := +"no album";
+            else
+               Current_Album := +I.Album;
             end if;
-         end loop;
-         Result := Result & "</td>";
 
-         Result := Result & "<td><div class=""categories_list text"" onclick=""EditCategory(event)"" id=""" &
-           I.ID_String & """>" & I.Category & "</div></td>";
+            declare
+               Album_Item : Unbounded_String := +"<li>" &
+                 "<span class=""text album_row"">" & I.Album & "</span>";
 
-         Result := Result & "</tr>" & ASCII.LF;
-         return -Result;
+               Meta : constant AWS.Containers.Tables.Table_Type := Meta_Files (Containing_Directory (I.File_Name));
+            begin
+               for J in 1 .. Meta.Count loop
+                  if To_Lower (Extension (Meta.Get_Name (J))) = "jpg" then
+                     Album_Item := Album_Item & Server_Img
+                       (Meta.Get_Value (J), "album art", 100, 100, Class => "album_art_item album_row");
+                  end if;
+               end loop;
+
+               for J in 1 .. Meta.Count loop
+                  if To_Lower (Meta.Get_Name (J)) = "liner_notes.pdf" then
+                     Album_Item := Album_Item & Server_Href
+                       (Meta.Get_Value (J), Server_Img_Set
+                          (-Server_Data & "/liner_notes_icon", ".png", "28x37", "112x148", "252x333", "liner notes",
+                           Class => "album_art_item album_row"));
+                  end if;
+               end loop;
+               Album_Item := Album_Item & ASCII.LF;
+
+               Result := Result & Album_Item & "<table>" & Title_Header & "<tbody>" & Title_Row;
+               return -Result;
+            end;
+         end if;
       end Search_Result;
 
       function To_SQL_Param (Param : in AWS.Parameters.List) return SMM.Database.Field_Values
@@ -527,30 +540,15 @@ package body SMM.Server is
          declare
             I : Cursor :=
               (if URI_Param.Exist ("search")
-               then DB.Find_Like (URI_Param.Get ("search"))
-               else DB.Find_Like (To_SQL_Param (URI_Param)));
+               then DB.Find_Like (URI_Param.Get ("search"), Order_By => Album)
+               else DB.Find_Like (To_SQL_Param (URI_Param), Order_By => Album));
          begin
             if not I.Has_Element then
                Response := Response  & "<p>no matching entries found</p></body></html>";
                return AWS.Response.Build ("text/html", Response);
             end if;
 
-            Response := Response & "<table><thead>" & ASCII.LF &
-              "<tr><th class=""text"">play</th>" &
-              "<th><table style=""width: 100%;""><thead>" &
-              "<tr><th class=""text"" style=""border-bottom: solid white;"">artist</th></tr>" &
-              "<tr><th class=""text"" style=""width: 5em;"">last/prev downloaded</th>" &
-              "</tr></thead></table></th>" &
-              "<th><table style=""width: 100%;""><thead>" &
-              "<tr><th class=""text"" style=""border-bottom: solid white;"">album</th></tr>" &
-              "<tr><th class=""text"">title</th></tr>" &
-              "</thead></table></th>" &
-              "<th class=""text"">album art</th>" &
-              "<th class=""text"" style=""width: 1em;"">liner notes</th>" &
-              "<th class=""text"">categories</th>" &
-              "</tr></thead>" & ASCII.LF &
-              "<tbody>" & ASCII.LF;
-
+            Response := Response & "<ul>";
             loop
                exit when not I.Has_Element;
                Response := Response & Search_Result (I) & ASCII.LF;
@@ -559,7 +557,10 @@ package body SMM.Server is
             end loop;
          end; --  Free cursor
 
-         Response := Response & "</tbody>" & ASCII.LF & "</table>" & ASCII.LF & "</body></html>";
+         --  Terminate last album title table and album item
+         Response := Response & "</tbody></table></li><hr>";
+
+         Response := Response & "</ul></body></html>";
          return AWS.Response.Build ("text/html", Response);
 
       else

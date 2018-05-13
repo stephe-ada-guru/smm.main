@@ -152,13 +152,15 @@ package SMM.Database is
    --  Cursor must be refetched to reflect changes.
 
    function Find_Like
-     (DB    : in Database'Class;
-      Param : in Field_Values)
+     (DB       : in Database'Class;
+      Param    : in Field_Values;
+      Order_By : in Search_Fields)
      return Cursor;
 
    function Find_Like
-     (DB     : in Database'Class;
-      Search : in String)
+     (DB       : in Database'Class;
+      Search   : in String;
+      Order_By : in Search_Fields)
      return Cursor;
    --  Match Search against Artist, Album, Title.
 

@@ -28,9 +28,17 @@ play-before causes short replay periods
 
 
 group search results by album
-    only show album metadata once
+    check if all titles have same artist; move to album row
+
+smm update
+    strip "d:/Music" from file name
+
+play icon too big on desktop
 
 use w3.css to set search input width?
+
+use tabs for general/detailed search
+    https://www.w3schools.com/howto/howto_js_tabs.asp
 
 do best lists
 
@@ -45,13 +53,18 @@ support tab, arrow key navigation
 option to query recently downloaded
     or archive recent playlists, search those
 
-date queries
-    select * from Song where date(last_downloaded) > date('2018-03-01');
+click on album/artist => search for that
 
 sort table
     https://kryogenix.org/code/browser/sorttable/
     http://tablesorter.com/docs/
     https://datatables.net/index
+
+    collapse main index?
+    if sort on album, show metadata only once
+
+date queries
+    select * from Song where date(last_downloaded) > date('2018-03-01');
 
 ip address of laptop changed when switched to ethernet
     check that config ip is in list of hardware IPs
