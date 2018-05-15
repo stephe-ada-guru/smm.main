@@ -28,16 +28,16 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1"
-     inkscape:cx="164.74188"
-     inkscape:cy="560"
+     inkscape:zoom="5.6568542"
+     inkscape:cx="15.24188"
+     inkscape:cy="93.997865"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
      inkscape:window-width="788"
      inkscape:window-height="1401"
-     inkscape:window-x="2904"
-     inkscape:window-y="17"
+     inkscape:window-x="2695"
+     inkscape:window-y="6"
      inkscape:window-maximized="0"
      showguides="false" />
   <metadata
@@ -70,11 +70,12 @@
        inkscape:rounded="0"
        inkscape:randomized="0"
        d="M 68.035715,38.464287 34.017857,58.104507 0,77.744725 0,38.464286 0,-0.81615163 34.017859,18.824068 Z"
-       inkscape:transform-center-x="-0.84666667"
+       inkscape:transform-center-x="-0.58162432"
        style="stroke-width:0.26458332"
-       inkscape:export-filename="D:\Music\server_data\play_icon-19x19.png"
-       inkscape:export-xdpi="96"
-       inkscape:export-ydpi="96"
-       transform="matrix(0.07466667,0,0,0.06466323,0,291.97277)" />
+       inkscape:export-filename="D:\Music\server_data_work_1\play_icon-phone.png"
+       inkscape:export-xdpi="861.86462"
+       inkscape:export-ydpi="861.86462"
+       transform="matrix(0.05129286,0,0,0.04501628,0.04677218,293.50022)"
+       inkscape:transform-center-y="1.2345309e-006" />
   </g>
 </svg>

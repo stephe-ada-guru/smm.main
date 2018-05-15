@@ -27,20 +27,21 @@ play-before causes short replay periods
     fixed 1 feb 2018; short periods should dissappear from status eventually
 
 
-group search results by album
-    check if all titles have same artist; move to album row
-
-smm update
-    strip "d:/Music" from file name
-
-play icon too big on desktop
-
-use w3.css to set search input width?
+do best lists
 
 use tabs for general/detailed search
     https://www.w3schools.com/howto/howto_js_tabs.asp
 
-do best lists
+use w3.css to set search input width?
+
+http://www.css-validator.org/
+
+http://jshint.com/install/
+https://www.jslint.com/function.html
+http://esprima.org/demo/validate.html#
+
+https://qunitjs.com/
+
 
 https://www.w3schools.com/w3css/tryit.asp?filename=tryw3css_templates_band&stacked=h
     Carousel slideshow for albumart?

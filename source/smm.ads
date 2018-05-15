@@ -40,7 +40,7 @@ package SMM is
    --  convert '\' to '/'
 
    function Relative_Name (Root : in String; Full_Name : in String) return String;
-   --  Ensure Root is As_Directory.
+   --  If Full_Name starts with Root, return relative part. Otherwise return Full_Name.
 
    function As_Directory (Path : in String) return String;
    --  normalize, append '/' if needed.

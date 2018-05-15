@@ -129,7 +129,7 @@ begin
       end;
 
    when Update =>
-      SMM.Update (DB, Source_Root, Argument (Next_Arg));
+      SMM.Update (DB, Source_Root, Relative_Name (Source_Root, Argument (Next_Arg)));
 
    when Check =>
       SMM.Check (DB, Source_Root);

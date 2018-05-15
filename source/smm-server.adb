@@ -442,16 +442,9 @@ package body SMM.Server is
          --  Some albums are single artist, some are not; we always list the
          --  artist with each title.
 
-         Title_Header : constant Unbounded_String := +"<thead>" &
-           "<tr><th class=""text"">play</th>" &
-           "<th class=""text"">artist</th>" &
-           "<th class=""text"">title</th>" &
-           "<th class=""text"">last/prev downloaded</th>" &
-           "<th class=""text"">categories</th></tr></thead>" & ASCII.LF;
-
          Title_Row : constant Unbounded_String := +"<tr>" &
            "<td><a href=""/" & AWS.URL.Encode (I.File_Name, SMM.File_Name_Encode_Set) &
-           """>" & Server_Img_Set (-Server_Data & "/play_icon", ".png", "19x19", "76x76", "171x171", "play") &
+           """>" & Server_Img_Set (-Server_Data & "/play_icon", ".png", "desktop", "tablet", "phone", "play") &
            "</a></td>" &
            "<td class=""text"">" & I.Artist & "</td>" &
            "<td class=""text"">" & I.Title & "</td>" &
@@ -478,14 +471,14 @@ package body SMM.Server is
 
             declare
                Album_Item : Unbounded_String := +"<li>" &
-                 "<span class=""text album_row"">" & I.Album & "</span>";
+                 "<div class=""album_row""><span class=""text"">" & I.Album & "</span>";
 
                Meta : constant AWS.Containers.Tables.Table_Type := Meta_Files (Containing_Directory (I.File_Name));
             begin
                for J in 1 .. Meta.Count loop
                   if To_Lower (Extension (Meta.Get_Name (J))) = "jpg" then
                      Album_Item := Album_Item & Server_Img
-                       (Meta.Get_Value (J), "album art", 100, 100, Class => "album_art_item album_row");
+                       (Meta.Get_Value (J), "album art", 100, 100, Class => "album_art_item");
                   end if;
                end loop;
 
@@ -493,13 +486,13 @@ package body SMM.Server is
                   if To_Lower (Meta.Get_Name (J)) = "liner_notes.pdf" then
                      Album_Item := Album_Item & Server_Href
                        (Meta.Get_Value (J), Server_Img_Set
-                          (-Server_Data & "/liner_notes_icon", ".png", "28x37", "112x148", "252x333", "liner notes",
-                           Class => "album_art_item album_row"));
+                          (-Server_Data & "/liner_notes_icon", ".png", "desktop", "tablet", "phone", "liner notes",
+                           Class => "album_art_item"));
                   end if;
                end loop;
-               Album_Item := Album_Item & ASCII.LF;
+               Album_Item := Album_Item & "</div>" & ASCII.LF;
 
-               Result := Result & Album_Item & "<table>" & Title_Header & "<tbody>" & Title_Row;
+               Result := Result & Album_Item & "<table><tbody>" & Title_Row;
                return -Result;
             end;
          end if;

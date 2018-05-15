@@ -7,12 +7,12 @@ div.row {display: table-row; }
 input[type=search] {display:table-cell; width: 30em; }
 label {display: table-cell; text-align: right; margin-right: 2px; }
 
-.album_art_item {border: medium solid rgba(0, 0, 0, 0.0); }
-.album_row {vertical-align: middle; }
+.album_art_item {border: medium solid rgba(0, 0, 0, 0.0); vertical-align: middle; }
 
-thead {background: lightgrey; }
-th {padding: 0.2em; }
-td {text-align: center; }
+.album_row {overflow-x: scroll; white-space: nowrap; }
+/* to get scrolling in Firefox, must be a 'div', not a 'span'. sigh */
+
+td:nth-child(even) {background-color: lightgrey; }
 
 /* Select sizes according to pixel density. devicePixelRatio gives */
 /* 'px' scaling; it isn't strong enough on Android; we effectively */

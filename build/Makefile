@@ -45,18 +45,18 @@ install : server-data c:/home/stephe/bin/smm.exe c:/home/stephe/bin/smm-server_d
 SERVER_DATA := /d/Music/server_data
 
 server-data :: $(SERVER_DATA)/app.ico
-server-data :: $(SERVER_DATA)/liner_notes_icon-28x37.png
-server-data :: $(SERVER_DATA)/liner_notes_icon-112x148.png
-server-data :: $(SERVER_DATA)/liner_notes_icon-252x333.png
-server-data :: $(SERVER_DATA)/play_icon-19x19.png
-server-data :: $(SERVER_DATA)/play_icon-76x76.png
-server-data :: $(SERVER_DATA)/play_icon-171x171.png
+server-data :: $(SERVER_DATA)/liner_notes_icon-desktop.png
+server-data :: $(SERVER_DATA)/liner_notes_icon-tablet.png
+server-data :: $(SERVER_DATA)/liner_notes_icon-phone.png
+server-data :: $(SERVER_DATA)/play_icon-desktop.png
+server-data :: $(SERVER_DATA)/play_icon-tablet.png
+server-data :: $(SERVER_DATA)/play_icon-phone.png
 server-data :: $(SERVER_DATA)/songs.css
 server-data :: $(SERVER_DATA)/songs.js
 
-# svg image is 0.2"x0.2"; correct size for desktop screen, 96 dpi = 19x19 pixels.
-# tablet : * 4 = 76
-# phone  : * 9 = 171
+# svg image is correct size for desktop screen, 96 dpi
+# tablet : * 4 = 384 dpi
+# phone  : * 9 = 864 dpi
 # Similarly for liner_notes
 # command line inkscape doesn't work (it ignores scaling options)
 # command line imageMagick delegates to inkscape for svg

@@ -63,7 +63,8 @@ package body SMM is
       if Dir_Root = Full_Name (Full_Name'First .. Full_Name'First + Dir_Root'Length - 1) then
          return Full_Name (Full_Name'First + Dir_Root'Length .. Full_Name'Last);
       else
-         raise SAL.Programmer_Error with Full_Name & " not relative to root " & Dir_Root;
+         --  Assume it's already relative.
+         return Full_Name;
       end if;
    end Relative_Name;
 
