@@ -427,11 +427,13 @@ package body SMM.Server is
         "<hr><form action=""/search"" method=get><div class=""table"">" &
         "<span class=""caption"">Detailed Search</span>" &
         "<div class=""row""><label>Title </label>" &
-        "<input type=search autofocus name=""title"" value=""" & URI_Param.Get ("title") & """></div>" &
+        "<input type=search name=""title"" value=""" & URI_Param.Get ("title") & """></div>" &
         "<div class=""row""><label>Artist </label>" &
-        "<input type=search autofocus name=""artist"" value=""" & URI_Param.Get ("artist") & """></div>" &
+        "<input type=search name=""artist"" value=""" & URI_Param.Get ("artist") & """></div>" &
         "<div class=""row""><label>Album </label>" &
-        "<input type=search autofocus name=""album"" value=""" & URI_Param.Get ("album") & """></div>" &
+        "<input type=search name=""album"" value=""" & URI_Param.Get ("album") & """></div>" &
+        "<div class=""row""><label>Category </label>" &
+        "<input type=search name=""category"" value=""" & URI_Param.Get ("category") & """></div>" &
         "</div><input type=submit value=""Search"">" &
         "</form><hr>" & ASCII.LF;
 
@@ -449,8 +451,9 @@ package body SMM.Server is
            "<td class=""text"">" & I.Artist & "</td>" &
            "<td class=""text"">" & I.Title & "</td>" &
            "<td class=""text"">" & Days_Ago (I.Last_Downloaded) & " / " & Days_Ago (I.Prev_Downloaded) & "</td>" &
-           "<td><div class=""categories_list text"" onclick=""EditCategory(event)"" id=""" &
-           I.ID_String & """>" & I.Category & "</div></td></tr>" & ASCII.LF;
+           "<td><div class=""categories_list text"" onclick=""EditCategory(event)""" &
+           " tabindex=""0"" onkeydown=""EditCategory(event)""" &
+           " id=""" & I.ID_String & """>" & I.Category & "</div></td></tr>" & ASCII.LF;
 
          Result : Unbounded_String;
       begin
@@ -518,7 +521,7 @@ package body SMM.Server is
       --
       --  ?search=michael+joni+miles
       --
-      --  ?title=michael&artist=joni&album=miles
+      --  ?title=michael&artist=joni&album=miles&category=
 
       if URI_Param.Is_Empty then
          --  Return search page with no results.
@@ -526,7 +529,8 @@ package body SMM.Server is
          return AWS.Response.Build ("text/html", Response);
 
       elsif URI_Param.Exist ("search") or
-        URI_Param.Exist ("title") or URI_Param.Exist ("artist") or URI_Param.Exist ("album")
+        URI_Param.Exist ("title") or URI_Param.Exist ("artist") or URI_Param.Exist ("album") or
+        URI_Param.Exist ("category")
       then
          DB.Open (-DB_Filename);
 

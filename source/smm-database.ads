@@ -129,7 +129,6 @@ package SMM.Database is
    --  Cursor must be refetched to reflect changes.
 
    type Fields is (Artist, Album, Title, Category);
-   subtype Search_Fields is Fields range Artist .. Title;
 
    type Field_Values is array (Fields) of Ada.Strings.Unbounded.Unbounded_String;
 
@@ -154,15 +153,15 @@ package SMM.Database is
    function Find_Like
      (DB       : in Database'Class;
       Param    : in Field_Values;
-      Order_By : in Search_Fields)
+      Order_By : in Fields)
      return Cursor;
 
    function Find_Like
      (DB       : in Database'Class;
       Search   : in String;
-      Order_By : in Search_Fields)
+      Order_By : in Fields)
      return Cursor;
-   --  Match Search against Artist, Album, Title.
+   --  Match Search against Artist, Album, Title, Category.
 
    procedure Next (Position : in out Cursor);
 

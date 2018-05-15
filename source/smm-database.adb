@@ -388,7 +388,7 @@ package body SMM.Database is
    function Find_Like
      (DB       : in Database'Class;
       Param    : in Field_Values;
-      Order_By : in Search_Fields)
+      Order_By : in Fields)
      return Cursor
    is
       use Ada.Strings.Unbounded;
@@ -419,7 +419,7 @@ package body SMM.Database is
    function Find_Like
      (DB       : in Database'Class;
       Search   : in String;
-      Order_By : in Search_Fields)
+      Order_By : in Fields)
      return Cursor
    is
       use Ada.Strings.Unbounded;
@@ -450,7 +450,7 @@ package body SMM.Database is
 
             Word : constant String := Search (First .. (if I > Spaces_Last then Search'Last else Spaces (I) - 1));
          begin
-            for J in Search_Fields'Range loop
+            for J in Fields'Range loop
                Statement            := Statement & (if Need_Or then " or " else " (") & Field_Image (J) & " like ?";
                Params_Last          := Params_Last + 1;
                Params (Params_Last) := +("%" & Word & "%");

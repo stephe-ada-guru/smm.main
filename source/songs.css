@@ -24,6 +24,7 @@ td:nth-child(even) {background-color: lightgrey; }
     /* devicePixelRatio >= 3; phone */
     input[type=search] {font-size: xx-large; }
     input[type=submit] {font-size: xx-large; }
+    input[type=text] {font-size: xx-large; }
     label {font-size: xx-large; }
 
     .text {font-size: xx-large; }
@@ -33,6 +34,7 @@ td:nth-child(even) {background-color: lightgrey; }
     /* 2 <= devicePixelRatio < 3; tablet */
     input[type=search] {font-size: larger; }
     input[type=submit] {font-size: larger; }
+    input[type=text] {font-size: larger; }
     label {font-size: larger; }
 
     .text {font-size: larger; }
@@ -42,6 +44,7 @@ td:nth-child(even) {background-color: lightgrey; }
     /* 0 < devicePixelRatio < 2; laptop, desktop */
     input[type=search] {font-size: medium; }
     input[type=submit] {font-size: medium; }
+    input[type=text] {font-size: medium; }
     label {font-size: medium; }
 
     .text {font-size: medium; } /* same as default */
