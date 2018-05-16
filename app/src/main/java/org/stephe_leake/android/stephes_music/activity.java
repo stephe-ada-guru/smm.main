@@ -51,17 +51,18 @@ public class activity extends android.app.Activity
    // constants
    private static final int maxProgress = 1000;
 
-   private static final int MENU_PREFERENCES           = 1;
-   private static final int MENU_QUIT                  = 2;
-   private static final int MENU_RESET_PLAYLIST        = 3;
-   private static final int MENU_SHARE                 = 4;
-   private static final int MENU_COPY                  = 5;
-   private static final int MENU_LINER                 = 6;
-   private static final int MENU_UPDATE_PLAYLIST       = 7;
-   private static final int MENU_DOWNLOAD_NEW_PLAYLIST = 8;
-   private static final int MENU_JUMP_TO_SONG          = 9;
-   private static final int MENU_SHOW_DOWNLOAD_LOG     = 10;
-   private static final int MENU_SHOW_ERROR_LOG        = 11;
+   // Alphabetical order here; display order set in onCreateOptionsMenu
+   private static final int MENU_COPY                  = 1;
+   private static final int MENU_DOWNLOAD_NEW_PLAYLIST = 2;
+   private static final int MENU_LINER                 = 3;
+   private static final int MENU_PREFERENCES           = 4;
+   private static final int MENU_QUIT                  = 5;
+   private static final int MENU_RESET_PLAYLIST        = 6;
+   private static final int MENU_SEARCH                = 7;
+   private static final int MENU_SHARE                 = 8;
+   private static final int MENU_SHOW_DOWNLOAD_LOG     = 9;
+   private static final int MENU_SHOW_ERROR_LOG        = 10;
+   private static final int MENU_UPDATE_PLAYLIST       = 11;
 
    private static final int RESULT_PREFERENCES    = 1;
    private static final int RESULT_STORAGE_ACCESS = 2;
@@ -449,14 +450,14 @@ public class activity extends android.app.Activity
    {
       super.onCreateOptionsMenu(menu);
       menu.add(0, MENU_QUIT, 0, R.string.menu_quit);
+      menu.add(0, MENU_SEARCH, 0, R.string.menu_search);
       menu.add(0, MENU_SHARE, 0, R.string.menu_share);
       menu.add(0, MENU_LINER, 0, R.string.menu_liner);
       menu.add(0, MENU_COPY, 0, R.string.menu_copy);
-      menu.add(0, MENU_RESET_PLAYLIST, 0, R.string.menu_reset_playlist);
       menu.add(0, MENU_UPDATE_PLAYLIST, 0, R.string.menu_update_playlist);
+      menu.add(0, MENU_RESET_PLAYLIST, 0, R.string.menu_reset_playlist);
       menu.add(0, MENU_SHOW_DOWNLOAD_LOG, 0, R.string.menu_show_download_log);
       menu.add(0, MENU_SHOW_ERROR_LOG, 0, R.string.menu_show_error_log);
-      menu.add(0, MENU_JUMP_TO_SONG, 0, R.string.menu_jump_to_song);
       menu.add(0, MENU_PREFERENCES, 0, R.string.menu_preferences);
       menu.add(0, MENU_DOWNLOAD_NEW_PLAYLIST, 0, R.string.menu_download_new_playlist);
       return true; // display menu
@@ -469,7 +470,7 @@ public class activity extends android.app.Activity
       // after onCreateOptionsMenu!
       super.onPrepareOptionsMenu(menu);
 
-      menu.findItem(MENU_LINER).setVisible(utils.retriever.linerNotesExist());
+      menu.findItem(MENU_LINER).setEnabled(utils.retriever.linerNotesExist());
 
       return true;
    }
@@ -478,15 +479,16 @@ public class activity extends android.app.Activity
    {
       switch (item.getItemId())
       {
-      case MENU_QUIT:
-         sendBroadcast
-            (new Intent
-             (utils.ACTION_COMMAND)
-             .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_QUIT));
+         // Alphabetical order
 
-         stopService (new Intent().setComponent(playServiceComponentName));
+      case MENU_COPY:
+         {
+            ClipboardManager clipManage = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
 
-         finish();
+            clipManage.setPrimaryClip
+               (ClipData.newPlainText
+                ("song", artistTitle.getText() + " " + albumTitle.getText() + " " + songTitle.getText()));
+         }
          break;
 
       case MENU_DOWNLOAD_NEW_PLAYLIST:
@@ -508,6 +510,69 @@ public class activity extends android.app.Activity
          }
          break;
 
+      case MENU_LINER:
+         {
+            Intent intent = new Intent(Intent.ACTION_VIEW)
+               .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+               .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+               .setDataAndType(utils.retriever.linerUri, "application/pdf");
+
+            startActivity(intent);
+         }
+         break;
+
+      case MENU_PREFERENCES:
+         startActivityForResult (new Intent(this, preferences.class), RESULT_PREFERENCES);
+         break;
+
+      case MENU_QUIT:
+         sendBroadcast
+            (new Intent
+             (utils.ACTION_COMMAND)
+             .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_QUIT));
+
+         stopService (new Intent().setComponent(playServiceComponentName));
+
+         finish();
+         break;
+
+      case MENU_RESET_PLAYLIST:
+         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_RESET_PLAYLIST));
+         break;
+
+      case MENU_SEARCH:
+         {
+            SharedPreferences prefs    = PreferenceManager.getDefaultSharedPreferences(this);
+            Resources         res      = getResources();
+            String            serverIP = prefs.getString (res.getString(R.string.server_IP_key), null);
+
+            Intent intent = new Intent(Intent.ACTION_VIEW, utils.retriever.searchUri(serverIP));
+
+            startActivity(intent);
+         }
+         break;
+
+      case MENU_SHARE:
+         {
+            utils.verboseLog("sharing " + utils.retriever.musicUri.toString());
+
+            Intent intent = new Intent()
+               .setAction(Intent.ACTION_SEND)
+               .putExtra(Intent.EXTRA_STREAM, utils.retriever.musicUri)
+               .setType("audio/mp3");
+
+            startActivity(Intent.createChooser(intent, "Share song via ..."));
+         }
+         break;
+
+      case MENU_SHOW_DOWNLOAD_LOG:
+         startActivity(utils.showDownloadLogIntent);
+         break;
+
+      case MENU_SHOW_ERROR_LOG:
+         startActivity(utils.showErrorLogIntent);
+         break;
+
       case MENU_UPDATE_PLAYLIST:
          {
             Resources         res      = getResources();
@@ -524,66 +589,6 @@ public class activity extends android.app.Activity
                diag.setArguments(args);
                diag.show(getFragmentManager(), "pick update playlist");
             }
-         }
-         break;
-
-      case MENU_JUMP_TO_SONG:
-         {
-               TextDialogFragment diag = new TextDialogFragment();
-               Bundle args = new Bundle();
-               args.putInt("command", utils.COMMAND_JUMP);
-               diag.setArguments(args);
-               diag.show(getFragmentManager(), "enter song to jump to");
-         }
-         break;
-
-      case MENU_SHOW_DOWNLOAD_LOG:
-         startActivity(utils.showDownloadLogIntent);
-         break;
-
-      case MENU_SHOW_ERROR_LOG:
-         startActivity(utils.showErrorLogIntent);
-         break;
-
-      case MENU_PREFERENCES:
-         startActivityForResult (new Intent(this, preferences.class), RESULT_PREFERENCES);
-         break;
-
-      case MENU_RESET_PLAYLIST:
-         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_RESET_PLAYLIST));
-         break;
-
-      case MENU_SHARE:
-         {
-            utils.verboseLog("sharing " + utils.retriever.musicUri.toString());
-
-            Intent intent = new Intent()
-               .setAction(Intent.ACTION_SEND)
-               .putExtra(Intent.EXTRA_STREAM, utils.retriever.musicUri)
-               .setType("audio/mp3");
-
-            startActivity(Intent.createChooser(intent, "Share song via ..."));
-         }
-         break;
-
-      case MENU_COPY:
-         {
-            ClipboardManager clipManage = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
-
-            clipManage.setPrimaryClip
-               (ClipData.newPlainText
-                ("song", artistTitle.getText() + " " + albumTitle.getText() + " " + songTitle.getText()));
-         }
-         break;
-
-      case MENU_LINER:
-         {
-            Intent intent = new Intent(Intent.ACTION_VIEW)
-               .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-               .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-               .setDataAndType(utils.retriever.linerUri, "application/pdf");
-
-            startActivity(intent);
          }
          break;
 

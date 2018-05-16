@@ -164,5 +164,17 @@ public class MetaData
          albumArt = null;
       }
    }
+
+   public Uri searchUri(String serverIP)
+   {
+      return new Uri.Builder()
+         .scheme("http")
+         .encodedAuthority(serverIP + ":8080")
+         .appendPath("search")
+         .appendQueryParameter("title", title)
+         .appendQueryParameter("album", album)
+         .appendQueryParameter("artist", artist)
+         .build();
+   }
 }
 // end of file

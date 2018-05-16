@@ -1,66 +1,75 @@
-July 2015
-- version 4.2
-    add RemoteControlClient for Scion xB bluetooth control (no lock screen controls).
+May 2018
+- version 20
+    add 'search in smm web UI' menu item.
 
-- version 4.3
-    add basic notification; text but no buttons
+Oct 2017
 
-- version 6
-    notification buttons for prev, play/pause, next
-    better startup for car bluetooth control.
+- version 19
+    Port to LG phone, Android 7.0. Move local music storage to external cache dirs (/sdcard/data/org.stephe...)
 
-- version 7
-    better handling of pending intents
-    show album art in remote control. but it doesn't work in the Scion xB!
+Feb 2017
 
-- version 8
-    add vertical separators between notes buttons
-    in notification, put title on top
-    add menu entry to share song file
-    add menu entry to reset playlist (start over)
+- version 18
+    don't restart timer on rotate
 
-Mar 2016
-- version 9
-    use Alert Dialog for some messages
-    add album art
-    add text to clipboard
-
-- version 10
-    handle SCO_AUDIO_STATE_DISCONNECTED; does not fix car power cycle issue
-
-- version 11
-    add "Show liner notes" menu item
-
-    another attempt to fix car and screen remote control: disconnect
-    from remote control in pause.
-
-May 2016
-
-- version 12
-    require Android 5.0, use MediaSession; Galaxy Note III phone upgraded.
-
-- version 13
-    fix car remote control/metadata, back on liner_notes, blink buttons
-
-June 2016
-
-- version 14
-    show liner_notes.pdf directly, rather than via GhostCommander
-    car commands actually work.
-
-- version 15
-    fix smmdir (hardcode sdcard)
-    one more time on the car commands (put back mediaSession callback).
+- version 17
+    add more catch-all exception handlers, doc interaction with State Farm Drive Safe
 
 Nov 2016
 
 - version 16
     download from smm-server
 
-Feb 2017
+June 2016
 
-- version 17
-    add more catch-all exception handlers, doc interaction with State Farm Drive Safe
+- version 15
+    fix smmdir (hardcode sdcard)
+    one more time on the car commands (put back mediaSession callback).
 
-- version 18
-    don't restart timer on rotate
+- version 14
+    show liner_notes.pdf directly, rather than via GhostCommander
+    car commands actually work.
+
+May 2016
+
+- version 13
+    fix car remote control/metadata, back on liner_notes, blink buttons
+
+- version 12
+    require Android 5.0, use MediaSession; Galaxy Note III phone upgraded.
+
+Mar 2016
+- version 11
+    add "Show liner notes" menu item
+
+    another attempt to fix car and screen remote control: disconnect
+    from remote control in pause.
+
+- version 10
+    handle SCO_AUDIO_STATE_DISCONNECTED; does not fix car power cycle issue
+
+- version 9
+    use Alert Dialog for some messages
+    add album art
+    add text to clipboard
+
+July 2015
+- version 8
+    add vertical separators between notes buttons
+    in notification, put title on top
+    add menu entry to share song file
+    add menu entry to reset playlist (start over)
+
+- version 7
+    better handling of pending intents
+    show album art in remote control. but it doesn't work in the Scion xB!
+
+- version 6
+    notification buttons for prev, play/pause, next
+    better startup for car bluetooth control.
+
+- version 4.3
+    add basic notification; text but no buttons
+
+- version 4.2
+    add RemoteControlClient for Scion xB bluetooth control (no lock screen controls).

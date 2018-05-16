@@ -15,16 +15,13 @@ branches:
 
  current tasks
 update playlist downloads one extra song
-
-download notification doesn't use default app
+    code looks ok; try unit test?
 
 navigation messages getting thru, but music does not get notified
     phone interrupts music properly
     car controls worked, once
 
 use alternate port for unit tests
-
-liner_notes entry in menu should be visible but disabled if not available
 
 turn off debug?
     compile via Makefile, install release
@@ -254,21 +251,13 @@ NEWS.text
 
 bump version
     Makefile VERSION
-    build.gradle versionName, versionCode
+    app/build.gradle versionName, versionCode
 
 Makefile all
     verify no compiler errors
 
-Android Studio run
-    verify works in emulator
-
-PDA: sshDroid
-
-Makefile
-    install-pda-ssh-release
-
-PDA: Ghost Commander | /storage/emulated/0/Download/org.stephe_leake.android.stephes_music.<version>-release.apk
-    install
+Android Studio run on phone
+    installs in phone
 
 PDA: app info verify version
     run app, verify new features
