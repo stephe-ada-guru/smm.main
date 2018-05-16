@@ -30,9 +30,6 @@ play-before causes short replay periods
 do best lists
     parse html
 
-use tabs for general/detailed search
-    https://www.w3schools.com/howto/howto_js_tabs.asp
-
 highlite all search results
 
 use w3.css to set search input width?

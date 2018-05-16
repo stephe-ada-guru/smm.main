@@ -1,6 +1,9 @@
 /* Cascading Style Sheet for smm-server Songs data, on low dpi devices (laptop, desktop). */
 /* must be utf-8-unix */
 
+.tabbutton {background-color: darkseagreen; color: black; border: none; }
+.tabcontent {display: none; }
+
 div.table {display: table; }
 span.caption {display: table-caption; position: relative; left: 10%; }
 div.row {display: table-row; }
@@ -27,6 +30,7 @@ td:nth-child(even) {background-color: lightgrey; }
     input[type=text] {font-size: xx-large; }
     label {font-size: xx-large; }
 
+    .tabbutton {font-size: xx-large; }
     .text {font-size: xx-large; }
 }
 
@@ -37,6 +41,7 @@ td:nth-child(even) {background-color: lightgrey; }
     input[type=text] {font-size: larger; }
     label {font-size: larger; }
 
+    .tabbutton {font-size: larger; }
     .text {font-size: larger; }
 }
 
@@ -47,6 +52,7 @@ td:nth-child(even) {background-color: lightgrey; }
     input[type=text] {font-size: medium; }
     label {font-size: medium; }
 
+    .tabbutton {font-size: medium; }
     .text {font-size: medium; } /* same as default */
 }
 /* end of file */

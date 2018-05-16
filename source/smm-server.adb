@@ -417,15 +417,20 @@ package body SMM.Server is
         "<head>" & ASCII.LF &
         "<script src=""/" & (-Server_Data) & "/songs.js""></script>" & ASCII.LF &
         "<link type=""text/css"" rel=""stylesheet"" href=""/" & (-Server_Data) & "/songs.css""/>" & ASCII.LF &
-        "</head><body>" &
+        "</head><body onload=""InitTabs()"">" &
 
-        "<form action=""/search"" method=get>" &
-        "<label>General Search</label>" &
+        "<div class=""tabbar"">" &
+        "<button class=""tabbutton"" id=""general_search_button""" &
+        " onclick=""SelectTab('general_search_button', 'general_search_tab')"">General Search</button>" &
+        "<button class=""tabbutton"" id=""detailed_search_button""" &
+        " onclick=""SelectTab('detailed_search_button', 'detailed_search_tab')"">Detailed Search</button>" &
+        "</div>" & ASCII.LF &
+        "<div class=""tabcontent"" id=""general_search_tab""><form action=""/search"" method=get>" &
         "<input type=submit value=""Search"">" &
         "<input type=search autofocus name=""search"" value=""" & URI_Param.Get ("search") & """>" &
-        "</form>"  & ASCII.LF &
-        "<hr><form action=""/search"" method=get><div class=""table"">" &
-        "<span class=""caption"">Detailed Search</span>" &
+        "</form></div>" & ASCII.LF &
+        "<div class=""tabcontent"" id=""detailed_search_tab"">" &
+        "<form action=""/search"" method=get><div class=""table"">" &
         "<div class=""row""><label>Title </label>" &
         "<input type=search name=""title"" value=""" & URI_Param.Get ("title") & """></div>" &
         "<div class=""row""><label>Artist </label>" &
@@ -435,7 +440,7 @@ package body SMM.Server is
         "<div class=""row""><label>Category </label>" &
         "<input type=search name=""category"" value=""" & URI_Param.Get ("category") & """></div>" &
         "</div><input type=submit value=""Search"">" &
-        "</form><hr>" & ASCII.LF;
+        "</form></div><hr>" & ASCII.LF;
 
       Current_Album : Unbounded_String;
 
