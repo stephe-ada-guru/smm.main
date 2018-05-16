@@ -2,7 +2,7 @@ gpr_project_path=../../org.stephe_leake.aunit_ext/build
 gpr_project_path=../../org.stephe_leake.makerules
 gpr_project_path=../../org.stephe_leake.sal/build
 
-gpr_file=smm.gpr
+gpr_file=smm_test.gpr
 
 casing=smm.casing
 casing=../../org.stephe_leake.sal/build/sal.casing

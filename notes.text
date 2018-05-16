@@ -27,8 +27,15 @@ play-before causes short replay periods
     fixed 1 feb 2018; short periods should dissappear from status eventually
 
 
+add track no
+    get from id3
+    order by track no within album
+    rebuild db with new schema
+
+
 do best lists
-    parse html
+    done to shiny ride/spin
+        waiting on track number ordering
 
 highlite all search results
 

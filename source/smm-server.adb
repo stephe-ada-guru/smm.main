@@ -479,7 +479,8 @@ package body SMM.Server is
 
             declare
                Album_Item : Unbounded_String := +"<li>" &
-                 "<div class=""album_row""><span class=""text"">" & I.Album & "</span>";
+                 "<div class=""album_row""><a class=""text"" href=""search?album=" & AWS.URL.Encode
+                   (I.Album, SMM.File_Name_Encode_Set) & """>" & I.Album & "</a>";
 
                Meta : constant AWS.Containers.Tables.Table_Type := Meta_Files (Containing_Directory (I.File_Name));
             begin
@@ -527,6 +528,8 @@ package body SMM.Server is
       --  ?search=michael+joni+miles
       --
       --  ?title=michael&artist=joni&album=miles&category=
+      --
+      --  ?album=miles
 
       if URI_Param.Is_Empty then
          --  Return search page with no results.

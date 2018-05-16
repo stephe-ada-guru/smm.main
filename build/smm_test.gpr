@@ -1,14 +1,14 @@
-with "aws";
-with "gnatcoll_sqlite";
-with "sal_devel";
+with "aunit";
+with "aunit_ext";
+with "smm";
 with "standard_common";
-project Smm is
-   for Source_Dirs use ("../source");
+project SMM_Test is
+   for Source_Dirs use ("../test");
 
    for Object_Dir use "objects";
    for Exec_Dir use ".";
 
-   for Main use ("smm-driver", "smm-server_driver");
+   for Main use ("test_all_harness");
 
    package Compiler is
       case Standard_Common.Build is
@@ -33,8 +33,6 @@ project Smm is
       --  We use ".exe" extension even on non-Windows, to simplify the makefiles.
       for Executable_Suffix use ".exe";
 
-      for Executable ("smm-driver.adb") use "smm.exe";
-
    end Builder;
 
-end Smm;
+end SMM_Test;

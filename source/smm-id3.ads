@@ -49,6 +49,7 @@ package SMM.ID3 is
    Artist     : constant ID_String := "TPE1"; -- [1] Lead performer(s)/Soloist(s)
    Alt_Artist : constant ID_String := "TPE2"; -- [1] Band/orchestra/accompaniment
    Title      : constant ID_String := "TIT2"; -- [1] Title/songname/content description
+   Track      : constant ID_String := "TRCK"; -- [1] Track number/position in a set
 
    type Frame is record
       ID   : ID_String;

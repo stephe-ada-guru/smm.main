@@ -54,12 +54,12 @@ function SelectTab(buttonId, tabId) {
             if (buttons[i].classList.contains("active")) {
                 // already active; do nothing
             } else {
-                buttons[i].style.backgroundcolor = 'palegreen';
+                buttons[i].style.backgroundColor = 'palegreen';
                 buttons[i].classList.add("active");
             }
         } else {
             if (buttons[i].classList.contains("active")) {
-                buttons[i].style.backgroundcolor = 'darkseagreen';
+                buttons[i].style.backgroundColor = 'darkseagreen';
                 buttons[i].classList.remove("active");
             }
         }
