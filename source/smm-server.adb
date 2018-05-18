@@ -545,8 +545,8 @@ package body SMM.Server is
          declare
             I : Cursor :=
               (if URI_Param.Exist ("search")
-               then DB.Find_Like (URI_Param.Get ("search"), Order_By => Album)
-               else DB.Find_Like (To_SQL_Param (URI_Param), Order_By => Album));
+               then DB.Find_Like (URI_Param.Get ("search"), Order_By => (Album, Track))
+               else DB.Find_Like (To_SQL_Param (URI_Param), Order_By => (Album, Track)));
          begin
             if not I.Has_Element then
                Response := Response  & "<p>no matching entries found</p></body></html>";
@@ -851,7 +851,8 @@ package body SMM.Server is
       begin
          Put_Line
            ("listening on " & Server_Host (Ws_Config) & ":" & Integer'Image (Server_Port (Ws_Config)) &
-            " source_root: '" & (-Source_Root) & "' server_data: '" & (-Server_Data) & "'");
+              " db : '" & (-DB_Filename) & "' source_root: '" & (-Source_Root) & "' server_data: '" &
+              (-Server_Data) & "'");
       end;
 
       AWS.Server.Wait;

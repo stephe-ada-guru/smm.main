@@ -72,6 +72,7 @@ package body SMM.Database is
       Artist          : in String      := "";
       Album           : in String      := "";
       Title           : in String      := "";
+      Track           : in Integer     := No_Track;
       Last_Downloaded : in Time_String := Default_Time_String;
       Prev_Downloaded : in Time_String := Default_Time_String;
       Play_Before     : in Integer     := Null_ID;
@@ -87,7 +88,7 @@ package body SMM.Database is
 
       Values : Unbounded_String := +"VALUES (";
 
-      Params : SQL_Parameters (1 .. 10) := (others => Null_Parameter);
+      Params : SQL_Parameters (1 .. 11) := (others => Null_Parameter);
 
       Need_Comma : Boolean := False;
       Last       : Integer := 0;
@@ -111,9 +112,9 @@ package body SMM.Database is
          end if;
       end Add_Param;
 
-      procedure Add_Param (Name : in String; Value : in Integer)
+      procedure Add_Param (Name : in String; Value : in Integer; Default : in Integer)
       is begin
-         if Value /= Null_ID then
+         if Value /= Default then
             if Need_Comma then
                Statement := Statement & ", ";
                Values    := Values & ",";
@@ -136,10 +137,11 @@ package body SMM.Database is
       Add_Param ("Artist", Artist, "");
       Add_Param ("Album", Album, "");
       Add_Param ("Title", Title, "");
+      Add_Param ("Track", Track, No_Track);
       Add_Param ("Last_Downloaded", Last_Downloaded, Default_Time_String);
       Add_Param ("Prev_Downloaded", Prev_Downloaded, Default_Time_String);
-      Add_Param ("Play_Before", Play_Before);
-      Add_Param ("Play_After", Play_After);
+      Add_Param ("Play_Before", Play_Before, Null_ID);
+      Add_Param ("Play_After", Play_After, Null_ID);
 
       if Update then
          Statement := Statement & " WHERE ID = ?";
@@ -201,6 +203,7 @@ package body SMM.Database is
       Artist          : in String;
       Album           : in String;
       Title           : in String;
+      Track           : in Integer;
       Last_Downloaded : in Time_String := Default_Time_String;
       Prev_Downloaded : in Time_String := Default_Time_String;
       Play_Before     : in Integer     := Null_ID;
@@ -215,6 +218,7 @@ package body SMM.Database is
          Artist          => Artist,
          Album           => Album,
          Title           => Title,
+         Track           => Track,
          Last_Downloaded => Last_Downloaded,
          Prev_Downloaded => Prev_Downloaded,
          Play_Before     => Play_Before,
@@ -239,7 +243,8 @@ package body SMM.Database is
    Artist_Field          : constant GNATCOLL.SQL.Exec.Field_Index := Category_Field + 1;
    Album_Field           : constant GNATCOLL.SQL.Exec.Field_Index := Artist_Field + 1;
    Title_Field           : constant GNATCOLL.SQL.Exec.Field_Index := Album_Field + 1;
-   Last_Downloaded_Field : constant GNATCOLL.SQL.Exec.Field_Index := Title_Field + 1;
+   Track_Field           : constant GNATCOLL.SQL.Exec.Field_Index := Title_Field + 1;
+   Last_Downloaded_Field : constant GNATCOLL.SQL.Exec.Field_Index := Track_Field + 1;
    Prev_Downloaded_Field : constant GNATCOLL.SQL.Exec.Field_Index := Last_Downloaded_Field + 1;
    Play_Before_Field     : constant GNATCOLL.SQL.Exec.Field_Index := Prev_Downloaded_Field + 1;
    Play_After_Field      : constant GNATCOLL.SQL.Exec.Field_Index := Play_Before_Field + 1;
@@ -248,7 +253,8 @@ package body SMM.Database is
      (Artist   => Artist_Field,
       Album    => Album_Field,
       Category => Category_Field,
-      Title    => Title_Field);
+      Title    => Title_Field,
+      Track    => Track_Field);
 
    function Has_Element (Position : Cursor) return Boolean
    is begin
@@ -293,6 +299,7 @@ package body SMM.Database is
       Artist          : in String      := "";
       Album           : in String      := "";
       Title           : in String      := "";
+      Track           : in Integer     := No_Track;
       Last_Downloaded : in Time_String := Default_Time_String;
       Prev_Downloaded : in Time_String := Default_Time_String;
       Play_Before     : in Integer     := Null_ID;
@@ -307,6 +314,7 @@ package body SMM.Database is
          Artist          => Artist,
          Album           => Album,
          Title           => Title,
+         Track           => Track,
          Last_Downloaded => Last_Downloaded,
          Prev_Downloaded => Prev_Downloaded,
          Play_Before     => Play_Before,
@@ -388,15 +396,16 @@ package body SMM.Database is
    function Find_Like
      (DB       : in Database'Class;
       Param    : in Field_Values;
-      Order_By : in Fields)
+      Order_By : in Field_Array)
      return Cursor
    is
       use Ada.Strings.Unbounded;
       use GNATCOLL.SQL.Exec;
-      Statement : Unbounded_String := +"SELECT * FROM Song WHERE ";
-      Need_And  : Boolean          := False;
-      Params    : GNATCOLL.SQL.Exec.SQL_Parameters (1 .. 3);
-      Last      : Integer          := 0;
+      Statement  : Unbounded_String := +"SELECT * FROM Song WHERE ";
+      Need_And   : Boolean          := False;
+      Need_Comma : Boolean          := False;
+      Params     : GNATCOLL.SQL.Exec.SQL_Parameters (1 .. 3);
+      Last       : Integer          := 0;
    begin
       for I in Param'Range loop
          if Length (Param (I)) > 0 then
@@ -411,7 +420,14 @@ package body SMM.Database is
          end if;
       end loop;
 
-      Statement := Statement & " ORDER BY " & Field_Image (Order_By);
+      Statement := Statement & " ORDER BY ";
+      for Field of Order_By loop
+         if Need_Comma then
+            Statement := Statement & ", ";
+         end if;
+         Statement  := Statement & Field_Image (Field);
+         Need_Comma := True;
+      end loop;
 
       return Checked_Fetch (DB, -Statement, Params (1 .. Last));
    end Find_Like;
@@ -419,7 +435,7 @@ package body SMM.Database is
    function Find_Like
      (DB       : in Database'Class;
       Search   : in String;
-      Order_By : in Fields)
+      Order_By : in Field_Array)
      return Cursor
    is
       use Ada.Strings.Unbounded;
@@ -430,6 +446,7 @@ package body SMM.Database is
 
       Statement   : Unbounded_String := +"SELECT * FROM Song WHERE";
       Need_And    : Boolean          := False;
+      Need_Comma  : Boolean          := False;
       Params      : GNATCOLL.SQL.Exec.SQL_Parameters (1 .. 60);
       Params_Last : Integer          := Params'First - 1;
    begin
@@ -465,7 +482,14 @@ package body SMM.Database is
          Need_And := True;
       end loop;
 
-      Statement := Statement & " ORDER BY " & Field_Image (Order_By);
+      Statement := Statement & " ORDER BY ";
+      for Field of Order_By loop
+         if Need_Comma then
+            Statement := Statement & ", ";
+         end if;
+         Statement  := Statement & Field_Image (Field);
+         Need_Comma := True;
+      end loop;
 
       return Checked_Fetch (DB, -Statement, Params (1 .. Params_Last));
    end Find_Like;
@@ -474,49 +498,6 @@ package body SMM.Database is
    is begin
       Position.Cursor.Next;
    end Next;
-
-   function Element (Position : in Cursor) return Song_Type
-   is begin
-      if not Position.Cursor.Has_Row then
-         raise No_Data;
-      end if;
-
-      return
-        (ID              => Integer'Value (Position.Cursor.Value (ID_Field)),
-         File_Name       => +Position.Cursor.Value (File_Name_Field),
-         Category        =>
-           (if Position.Cursor.Is_Null (Category_Field)
-            then +""
-            else +Position.Cursor.Value (Category_Field)),
-         Artist          =>
-           (if Position.Cursor.Is_Null (Artist_Field)
-            then +""
-            else +Position.Cursor.Value (Artist_Field)),
-         Album           =>
-           (if Position.Cursor.Is_Null (Album_Field)
-            then +""
-            else +Position.Cursor.Value (Album_Field)),
-         Title           =>
-           (if Position.Cursor.Is_Null (Title_Field)
-            then +""
-            else +Position.Cursor.Value (Title_Field)),
-         Last_Downloaded =>
-           (if Position.Cursor.Is_Null (Last_Downloaded_Field)
-            then Default_Time_String
-            else Position.Cursor.Value (Last_Downloaded_Field)),
-         Prev_Downloaded =>
-           (if Position.Cursor.Is_Null (Prev_Downloaded_Field)
-            then Default_Time_String
-            else Position.Cursor.Value (Prev_Downloaded_Field)),
-         Play_Before =>
-           (if Position.Cursor.Is_Null (Play_Before_Field)
-            then Null_ID
-            else Integer'Value (Position.Cursor.Value (Play_Before_Field))),
-         Play_After =>
-           (if Position.Cursor.Is_Null (Play_After_Field)
-            then Null_ID
-            else Integer'Value (Position.Cursor.Value (Play_After_Field))));
-   end Element;
 
    function Field (Position : in Cursor; Item : in Fields) return String
    is begin

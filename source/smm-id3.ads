@@ -51,6 +51,9 @@ package SMM.ID3 is
    Title      : constant ID_String := "TIT2"; -- [1] Title/songname/content description
    Track      : constant ID_String := "TRCK"; -- [1] Track number/position in a set
 
+   function To_Track (Item : in String) return Integer;
+   --  Handle <track>/<total>
+
    type Frame is record
       ID   : ID_String;
       Data : Ada.Strings.Unbounded.Unbounded_String;

@@ -21,6 +21,7 @@ pragma License (GPL);
 with Ada.Characters.Handling;
 with Ada.Exceptions;
 with Ada.IO_Exceptions;
+with Ada.Strings.Fixed;
 with Ada.Strings.UTF_Encoding.Conversions;
 with Ada.Text_IO;
 with Interfaces.C;
@@ -257,6 +258,18 @@ package body SMM.ID3 is
          Close (File.Stream);
       end if;
    end Close;
+
+   function To_Track (Item : in String) return Integer
+   is
+      use Ada.Strings.Fixed;
+      Slash_Index : constant Integer := Index (Item, "/");
+   begin
+      if Slash_Index = 0 then
+         return Integer'Value (Item);
+      else
+         return Integer'Value (Item (Item'First .. Slash_Index - 1));
+      end if;
+   end To_Track;
 
    function Find (ID : in ID_String; Frames : in Frame_Lists.List) return Ada.Strings.Unbounded.Unbounded_String
    is begin

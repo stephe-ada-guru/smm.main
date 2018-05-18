@@ -37,7 +37,8 @@ package SMM.Database is
 
    Default_Time_String : Time_String renames Jan_1_1958;
 
-   Null_ID : constant Integer := -1;
+   Null_ID  : constant Integer := -1;
+   No_Track : constant Integer := -1;
 
    type Database is new Ada.Finalization.Limited_Controlled with private;
 
@@ -54,6 +55,7 @@ package SMM.Database is
       Artist          : in String;
       Album           : in String;
       Title           : in String;
+      Track           : in Integer;
       Last_Downloaded : in Time_String := Default_Time_String;
       Prev_Downloaded : in Time_String := Default_Time_String;
       Play_Before     : in Integer     := Null_ID;
@@ -63,19 +65,6 @@ package SMM.Database is
 
    ----------
    --  Iterate over db contents, in ID order
-
-   type Song_Type is record
-      ID              : Integer;
-      File_Name       : Ada.Strings.Unbounded.Unbounded_String;
-      Category        : Ada.Strings.Unbounded.Unbounded_String;
-      Artist          : Ada.Strings.Unbounded.Unbounded_String;
-      Album           : Ada.Strings.Unbounded.Unbounded_String;
-      Title           : Ada.Strings.Unbounded.Unbounded_String;
-      Last_Downloaded : Time_String;
-      Prev_Downloaded : Time_String;
-      Play_Before     : Integer;
-      Play_After      : Integer;
-   end record;
 
    type Cursor is tagged private;
    --  We'd like to be able to do:
@@ -121,6 +110,7 @@ package SMM.Database is
       Artist          : in String      := "";
       Album           : in String      := "";
       Title           : in String      := "";
+      Track           : in Integer     := No_Track;
       Last_Downloaded : in Time_String := Default_Time_String;
       Prev_Downloaded : in Time_String := Default_Time_String;
       Play_Before     : in Integer     := Null_ID;
@@ -128,9 +118,11 @@ package SMM.Database is
    --  Items that are the defaults are not updated.
    --  Cursor must be refetched to reflect changes.
 
-   type Fields is (Artist, Album, Title, Category);
+   type Fields is (Artist, Album, Title, Category, Track);
 
    type Field_Values is array (Fields) of Ada.Strings.Unbounded.Unbounded_String;
+
+   type Field_Array is array (Natural range <>) of Fields;
 
    function Image (Item : Field_Values) return String;
    --  User-friendly image, good for "not found" error messages.
@@ -139,7 +131,8 @@ package SMM.Database is
      (Artist   => +"artist",
       Album    => +"album",
       Category => +"category",
-      Title    => +"title");
+      Title    => +"title",
+      Track    => +"track");
 
    function Valid_Field (Item : in String) return Boolean;
    --  True if Item in Field_Image (case insensitive).
@@ -153,19 +146,17 @@ package SMM.Database is
    function Find_Like
      (DB       : in Database'Class;
       Param    : in Field_Values;
-      Order_By : in Fields)
+      Order_By : in Field_Array)
      return Cursor;
 
    function Find_Like
      (DB       : in Database'Class;
       Search   : in String;
-      Order_By : in Fields)
+      Order_By : in Field_Array)
      return Cursor;
    --  Match Search against Artist, Album, Title, Category.
 
    procedure Next (Position : in out Cursor);
-
-   function Element (Position : in Cursor) return Song_Type;
 
    function Field (Position : in Cursor; Item : in Fields) return String;
 
