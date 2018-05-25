@@ -41,7 +41,7 @@ package body SMM.Database.Test is
       is
          use AUnit.Checks;
 
-         I           : Cursor  := Find_Like (DB, Param);
+         I           : Cursor  := Find_Like (DB, Param, Order_By => (1 => Category));
          Found_Count : Integer := 0;
          J           : Integer := Expected'First;
       begin
@@ -76,7 +76,7 @@ package body SMM.Database.Test is
       is
          use AUnit.Checks;
 
-         I           : Cursor  := Find_Like (DB, Search);
+         I           : Cursor  := Find_Like (DB, Search, Order_By => (1 => Category));
          Found_Count : Integer := 0;
          J           : Integer := Expected'First;
       begin
@@ -166,14 +166,21 @@ package body SMM.Database.Test is
 
       DB.Open (DB_File_Name);
 
-      DB.Insert (1, "artist_1/album_1/1 - song_1.mp3", "vocal", "artist 1", "album 1", "1 - song_1");
-      DB.Write_Play_Before_After (1, 2);
-      DB.Insert (2, "artist_1/album_1/2 - song_2.mp3", "vocal", "artist 1", "album 1", "2 - song_2");
       DB.Insert
-        (3, "artist_1/album_1/03 The Dance #1.mp3", "instrumental", "artist 1", "album 1", "03 The Dance #1");
-      DB.Insert (4, "artist_2/album_1/1 - song_1.mp3", "vocal", "artist 2", "album 1", "1 - song_1");
-      DB.Insert (5, "artist_2/album_1/2 - song_2.mp3", "vocal", "artist 2", "album 1", "2 - song_2");
-      DB.Insert (6, "artist_2/album_1/3 - song_3.mp3", "vocal", "artist 2", "album 1", "3 - song_3");
+        (ID        => 1,
+         File_Name => "artist_1/album_1/1 - song_1.mp3",
+         Category  => "vocal",
+         Artist    => "artist 1",
+         Album     => "album 1",
+         Title     => "1 - song_1",
+         Track     => 1);
+      DB.Write_Play_Before_After (1, 2);
+      DB.Insert (2, "artist_1/album_1/2 - song_2.mp3", "vocal", "artist 1", "album 1", "2 - song_2", 2);
+      DB.Insert
+        (3, "artist_1/album_1/03 The Dance #1.mp3", "instrumental", "artist 1", "album 1", "03 The Dance #1", 3);
+      DB.Insert (4, "artist_2/album_1/1 - song_1.mp3", "vocal", "artist 2", "album 1", "1 - song_1", 1);
+      DB.Insert (5, "artist_2/album_1/2 - song_2.mp3", "vocal", "artist 2", "album 1", "2 - song_2", 2);
+      DB.Insert (6, "artist_2/album_1/3 - song_3.mp3", "vocal", "artist 2", "album 1", "3 - song_3", 3);
    end Set_Up_Case;
 
    overriding procedure Tear_Down_Case (T : in out Test_Case)

@@ -90,12 +90,13 @@ package body SMM.Song_Lists is
          All_Songs_I : SMM.Database.Cursor := SMM.Database.First (DB);
       begin
          loop
-            --  Note that we can't exit on finding Count songs; there
-            --  may be more later that were downloaded less recently.
-            --  DB is sorted on ID.
+            --  Note that we can't exit on finding Count songs; there may be more
+            --  later that were downloaded less recently. All_Songs_I is sorted on
+            --  ID. FIXME: sort on Last_Downloaded, add index.
             exit when not All_Songs_I.Has_Element;
 
             if All_Songs_I.Category_Contains (Category) and
+              (not All_Songs_I.Category_Contains ("dont_play")) and
               (not All_Songs_I.Play_After_Is_Present) -- only play this when Play_Before is included.
             then
                Insert (DB, All_Songs_I.ID, Time_List);
@@ -107,7 +108,10 @@ package body SMM.Song_Lists is
 
       Time_List_I := Time_List.First;
 
-      --  FIXME: Time_List_I can be null if Category doesn't match any songs (ie spelled wrong).
+      if Time_List_I = Time_Lists.No_Element then
+         --  Time_List_I can be null if Category doesn't match any songs (ie spelled wrong).
+         return;
+      end if;
 
       if Element (Time_List_I).Last_Downloaded = SMM.Database.Default_Time_String then
          --  New songs

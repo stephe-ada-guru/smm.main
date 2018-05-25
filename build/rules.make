@@ -18,6 +18,9 @@ smm.exe : force
 
 test_all_harness.out : test_all_harness.exe smm-server_driver.exe smm.exe
 
+test_all_harness.exe : GNAT_PROJECT := smm_test.gpr
+test_one_harness.exe : GNAT_PROJECT := smm_test.gpr
+
 create_test_db :
 	mkdir -p tmp/source
 	echo "Root = " $(CURDIR) "/tmp/source" > tmp/smm.db

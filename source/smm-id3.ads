@@ -52,7 +52,7 @@ package SMM.ID3 is
    Track      : constant ID_String := "TRCK"; -- [1] Track number/position in a set
 
    function To_Track (Item : in String) return Integer;
-   --  Handle <track>/<total>
+   --  Handle <track>/<total>; 0 for empty string.
 
    type Frame is record
       ID   : ID_String;

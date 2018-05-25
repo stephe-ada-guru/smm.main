@@ -26,7 +26,6 @@ with AWS.URL;
 with Ada.Calendar.Formatting;
 with Ada.Directories;
 with Ada.IO_Exceptions;
-with Ada.Strings.Fixed;
 with Ada.Text_IO;
 with GNAT.OS_Lib;
 with SAL.Calendar_More.AUnit;
@@ -49,41 +48,6 @@ package body Test_Server is
    is begin
       return AWS.URL.Encode (Item, SMM.File_Name_Encode_Set);
    end Encode;
-
-   procedure Check_File
-     (Computed           : in String;
-      Expected_File_Name : in String)
-   is
-      use Ada.Strings;
-      use Ada.Strings.Fixed;
-      use Ada.Text_IO;
-      use AUnit.Checks.Text_IO;
-
-      Expected_File : File_Type;
-      Computed_Last : Integer := Computed'First - 1;
-
-      function Get_Line (Item : in String; Last : in out Integer) return String
-      is
-         --  Our known good files use Unix line endings
-         Delim : constant Integer := Index (Source => Item, Pattern => "" & ASCII.LF, From => Last + 1);
-      begin
-         if Delim < Item'First then
-            return Item (Last + 1 .. Item'Last);
-         else
-            return Result : constant String := Item (Last + 1 .. Delim - 1) do
-               Last := Delim;
-            end return;
-         end if;
-      end Get_Line;
-
-   begin
-      Open (Expected_File, In_File, Expected_File_Name);
-      loop
-         exit when End_Of_File (Expected_File);
-
-         Check (Get_Line (Computed, Computed_Last), Expected_File);
-      end loop;
-   end Check_File;
 
    ----------
    --  Test procedures
@@ -264,29 +228,6 @@ package body Test_Server is
 
    end Test_Send_Notes;
 
-   procedure Test_Search_Initial (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
-   is
-      use AWS.Response;
-      use AWS.Messages.AUnit;
-
-      pragma Unreferenced (T);
-
-      URL : constant String := "http://" & Server_IP & ":" & Server_Port & "/search";
-
-      Good_File_Name : constant String := "../source/search_initial.html";
-      Response       : constant Data   := AWS.Client.Get (URL);
-
-   begin
-      --  Test response to initial page request
-      Check ("1 status", Status_Code (Response), AWS.Messages.S200);
-
-      declare
-         Computed : constant String := Message_Body (Response);
-      begin
-         Check_File (Computed, Good_File_Name);
-      end;
-   end Test_Search_Initial;
-
    ----------
    --  Public bodies
 
@@ -305,7 +246,6 @@ package body Test_Server is
       Register_Routine (T, Test_Meta'Access, "Test_Meta");
       Register_Routine (T, Test_Get_File'Access, "Test_Get_File");
       Register_Routine (T, Test_Send_Notes'Access, "Test_Send_Notes");
-      Register_Routine (T, Test_Search_Initial'Access, "Test_Search_Initial");
    end Register_Tests;
 
    overriding procedure Set_Up_Case (T : in out Test_Case)
@@ -335,14 +275,14 @@ package body Test_Server is
 
          DB.Open (DB_File_Name);
 
-         DB.Insert (1, "artist_1/album_1/1 - song_1.mp3", "vocal", "artist 1", "album 1", "1 - song_1");
+         DB.Insert (1, "artist_1/album_1/1 - song_1.mp3", "vocal", "artist 1", "album 1", "1 - song_1", 1);
          DB.Write_Play_Before_After (1, 2);
-         DB.Insert (2, "artist_1/album_1/2 - song_2.mp3", "vocal", "artist 1", "album 1", "2 - song_2");
+         DB.Insert (2, "artist_1/album_1/2 - song_2.mp3", "vocal", "artist 1", "album 1", "2 - song_2", 2);
          DB.Insert
-           (3, "artist_1/album_1/03 The Dance #1.mp3", "instrumental", "artist 1", "album 1", "03 The Dance #1");
-         DB.Insert (4, "artist_2/album_1/1 - song_1.mp3", "vocal", "artist 2", "album 1", "1 - song_1");
-         DB.Insert (5, "artist_2/album_1/2 - song_2.mp3", "vocal", "artist 2", "album 1", "2 - song_2");
-         DB.Insert (6, "artist_2/album_1/3 - song_3.mp3", "vocal", "artist 2", "album 1", "3 - song_3");
+           (3, "artist_1/album_1/03 The Dance #1.mp3", "instrumental", "artist 1", "album 1", "03 The Dance #1", 3);
+         DB.Insert (4, "artist_2/album_1/1 - song_1.mp3", "vocal", "artist 2", "album 1", "1 - song_1", 1);
+         DB.Insert (5, "artist_2/album_1/2 - song_2.mp3", "vocal", "artist 2", "album 1", "2 - song_2", 2);
+         DB.Insert (6, "artist_2/album_1/3 - song_3.mp3", "vocal", "artist 2", "album 1", "3 - song_3", 3);
 
          DB.Finalize;
 
@@ -395,11 +335,6 @@ package body Test_Server is
 
          Create_Directory ("tmp/source/Jason Castro [Deluxe] [+Video] [+Digital Booklet]");
          Create_Test_File ("tmp/source/Jason Castro [Deluxe] [+Video] [+Digital Booklet]/liner_notes.pdf");
-
-         --  Server-side html, css
-         Create_Directory ("tmp/server");
-         Copy_File ("../source/search_initial.html", "tmp/server/search_initial.html");
-
       end if;
 
       if T.Debug /= 1 then

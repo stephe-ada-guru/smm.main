@@ -86,6 +86,7 @@ package body Test_Utils is
          Artist          => "none",
          Album           => "none",
          Title           => "none",
+         Track           => 1,
          Last_Downloaded => Prefix & Duration'Image (Last_Downloaded) (2 .. 2));
    end Insert;
 

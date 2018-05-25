@@ -44,7 +44,7 @@ package body Test_Least_Recent is
       Open (DB, DB_File_Name);
 
       Insert (DB, 1, "I1.mp3", 1.0, "instrumental");
-      Insert (DB, 2, "I2.mp3", 1.0, "instrumental");
+      Insert (DB, 2, "I2.mp3", 1.0, "instrumental, dont_play");
       Insert (DB, 3, "I3.mp3", 1.0, "instrumental");
       Insert (DB, 4, "I4.mp3", 0.0, "instrumental");
       Insert (DB, 5, "I5.mp3", 0.0, "instrumental");
@@ -115,9 +115,9 @@ package body Test_Least_Recent is
 
       --  Results depend on random number generator, which can change
       --  with compiler version. These are correct for GNAT GPL 2014.
-      --  Possible results are any song I1 .. I7.
+      --  Possible results are any song I1 .. I7, except I2 "dont_play".
       I := First (Songs);
-      Check ("1 1", I, "I2.mp3", DB);
+      Check ("1 1", I, "I1.mp3", DB);
       Next (I);
 
       Check ("1 2", I, "I3.mp3", DB);
@@ -126,14 +126,14 @@ package body Test_Least_Recent is
 
       SMM.Song_Lists.Least_Recent_Songs
         (DB, "instrumental", Songs,
-         Song_Count => 2, New_Song_Count => 2, Over_Select_Ratio => 2.0, Seed => 2);
+         Song_Count => 2, New_Song_Count => 4, Over_Select_Ratio => 2.0, Seed => 2);
 
       Check ("song count", Integer (Songs.Length), 2);
 
-      --  Possible results are two from I1 .. I7, excluding the two
-      --  from first call.
+      --  Possible results are two from I1 .. I7, excluding (with reasonable
+      --  probability) the two from first call, and I2 "dont_play".
       I := First (Songs);
-      Check ("2 1", I, "I2.mp3", DB);
+      Check ("2 1", I, "I6.mp3", DB);
       Next (I);
 
       Check ("2 2", I, "I4.mp3", DB);

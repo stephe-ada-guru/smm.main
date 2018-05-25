@@ -141,6 +141,7 @@ begin
 exception
 when E : Ada.IO_Exceptions.Name_Error =>
    Ada.Text_IO.Put_Line (Ada.Exceptions.Exception_Message (E));
+   Set_Exit_Status (Failure);
 
 when E : others =>
    Put_Line
@@ -148,4 +149,5 @@ when E : others =>
         Ada.Exceptions.Exception_Message (E));
    Ada.Text_IO.Put_Line (GNAT.Traceback.Symbolic.Symbolic_Traceback (Ada.Exceptions.Traceback.Tracebacks (E)));
    Put_Usage;
+   Set_Exit_Status (Failure);
 end SMM.Driver;

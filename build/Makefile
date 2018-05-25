@@ -10,7 +10,7 @@ export Standard_Common_Build := Debug
 t_one : test_one_harness.run
 
 #t_all : export Standard_Common_Build := Debug
-t_all : smm-server_driver.exe test_all_harness.run
+t_all : smm.exe smm-server_driver.exe test_all_harness.run
 
 one-clean :
 	rm -f smm_config.db

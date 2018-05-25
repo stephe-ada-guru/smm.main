@@ -264,7 +264,9 @@ package body SMM.ID3 is
       use Ada.Strings.Fixed;
       Slash_Index : constant Integer := Index (Item, "/");
    begin
-      if Slash_Index = 0 then
+      if Item'Length = 0 then
+         return 0;
+      elsif Slash_Index = 0 then
          return Integer'Value (Item);
       else
          return Integer'Value (Item (Item'First .. Slash_Index - 1));
