@@ -125,9 +125,13 @@ package body SMM.Server is
       if Size.X <= Width and Size.Y <= Height then
          return "<img src=""/" & Relative_Resource & """ alt=""" & Label & """ class=""" & Class & """>";
       else
+         --  The size specified here is overwritten by Scale_Px. It limits the
+         --  display size before Scale_Px runs, to avoid large-scale
+         --  reformatting as the page loads.
          return "<img src=""/" & Relative_Resource & """" &
            " onload=""Scale_Px(event," & Integer'Image (Width) & "," & Integer'Image (Height) & ")""" &
-           " alt=""" & Label & """ class=""" & Class & """>";
+           " alt=""" & Label & """ class=""" & Class & """ width=" & Integer'Image (Width) & """ height=" &
+           Integer'Image (Height) & """>";
       end if;
    end Server_Img;
 
