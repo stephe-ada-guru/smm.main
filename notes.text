@@ -27,8 +27,10 @@ play-before causes short replay periods
     fixed 1 feb 2018; short periods should dissappear from status eventually
 
 
-album_art displays full size, then resizes.
-    provide initial size?
+smm rename old_filename new_filename
+    beth wood "mission statment"
+
+detailed search results keep detailed tab visible
 
 highlite all search results
 

@@ -66,34 +66,40 @@ is
 
          when Ordinary_File =>
 
-            declare
-               use SMM.ID3;
-               Ext        : constant String   := Extension (Name);
-               ID3_Frames : Frame_Lists.List;
-               Artist_ID  : SMM.ID3.ID_String := SMM.ID3.Artist;
-            begin
-               if Ext = "mp3" then
-                  if Verbosity > 0 then
-                     Ada.Text_IO.Put_Line ("adding file " & Name);
-                  end if;
-
-                  Metadata (Abs_Name, ID3_Frames, Artist_ID);
-
-                  DB.Insert
-                    (ID        => Index,
-                     File_Name => Name,
-                     Category  => Category,
-                     Artist    => -Find (Artist_ID, ID3_Frames),
-                     Album     => -Find (SMM.ID3.Album, ID3_Frames),
-                     Title     => -Find (SMM.ID3.Title, ID3_Frames),
-                     Track     => SMM.ID3.To_Track (-Find (SMM.ID3.Track, ID3_Frames)));
-
-                  Index := Index + 1;
-               else
-                  --  not a recognized music file extension; ignore
-                  null;
+            if DB.Find_File_Name (Name).Has_Element then
+               if Verbosity > 1 then
+                  Ada.Text_IO.Put_Line ("duplicate: " & Name);
                end if;
-            end;
+            else
+               declare
+                  use SMM.ID3;
+                  Ext        : constant String   := Extension (Name);
+                  ID3_Frames : Frame_Lists.List;
+                  Artist_ID  : SMM.ID3.ID_String := SMM.ID3.Artist;
+               begin
+                  if Ext = "mp3" then
+                     if Verbosity > 0 then
+                        Ada.Text_IO.Put_Line ("adding file " & Name);
+                     end if;
+
+                     Metadata (Abs_Name, ID3_Frames, Artist_ID);
+
+                     DB.Insert
+                       (ID        => Index,
+                        File_Name => Name,
+                        Category  => Category,
+                        Artist    => -Find (Artist_ID, ID3_Frames),
+                        Album     => -Find (SMM.ID3.Album, ID3_Frames),
+                        Title     => -Find (SMM.ID3.Title, ID3_Frames),
+                        Track     => SMM.ID3.To_Track (-Find (SMM.ID3.Track, ID3_Frames)));
+
+                     Index := Index + 1;
+                  else
+                     --  not a recognized music file extension; ignore
+                     null;
+                  end if;
+               end;
+            end if;
 
          when Special_File =>
             raise SAL.Programmer_Error with "found special file";
