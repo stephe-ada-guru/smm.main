@@ -136,15 +136,16 @@ package body SMM.Server is
    end Server_Img;
 
    function Server_Img_Set
-     (Root      : in String;
-      Ext       : in String;
-      Size_Low  : in String;
-      Size_Med  : in String;
-      Size_High : in String;
-      Label     : in String;
-      Class     : in String := "")
+     (Root  : in String;
+      Ext   : in String;
+      Label : in String;
+      Class : in String := "")
      return String
-   is begin
+   is
+      Size_Low  : constant String := "desktop";
+      Size_Med  : constant String := "tablet";
+      Size_High : constant String := "phone";
+   begin
       return "<img src=""/" & Root & "-" & Size_Low & Ext & """" &
         " srcset=""/" & Root & "-" & Size_Med & Ext & " 2x, /" & Root & "-" & Size_High & Ext & " 3x""" &
         " alt=""" & Label & """" & (if Class = "" then "" else " class=""" & Class & """") & ">";
@@ -455,7 +456,7 @@ package body SMM.Server is
 
          Title_Row : constant Unbounded_String := +"<tr>" &
            "<td><a href=""/" & AWS.URL.Encode (I.File_Name, SMM.File_Name_Encode_Set) &
-           """>" & Server_Img_Set (-Server_Data & "/play_icon", ".png", "desktop", "tablet", "phone", "play") &
+           """>" & Server_Img_Set (-Server_Data & "/play_icon", ".png", "play") &
            "</a></td>" &
            "<td class=""text"">" & I.Artist & "</td>" &
            "<td class=""text"">" & I.Title & "</td>" &
@@ -499,7 +500,7 @@ package body SMM.Server is
                   if To_Lower (Meta.Get_Name (J)) = "liner_notes.pdf" then
                      Album_Item := Album_Item & Server_Href
                        (Meta.Get_Value (J), Server_Img_Set
-                          (-Server_Data & "/liner_notes_icon", ".png", "desktop", "tablet", "phone", "liner notes",
+                          (-Server_Data & "/liner_notes_icon", ".png", "liner notes",
                            Class => "album_art_item"));
                   end if;
                end loop;
