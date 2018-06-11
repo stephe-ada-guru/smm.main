@@ -66,6 +66,13 @@ is
       Put_Line ("    list all new songs.");
    end Put_Usage;
 
+   procedure Check_Arg (Expected_Count : in Integer)
+   is begin
+      if Argument_Count < Expected_Count then
+         raise SAL.Parameter_Error;
+      end if;
+   end Check_Arg;
+
    Source_Root  : constant String := As_Directory (Ada.Directories.Current_Directory);
    DB_File_Name : access String;
    DB           : SMM.Database.Database;
@@ -112,6 +119,7 @@ begin
 
    case Command is
    when Copy_Playlist =>
+      Check_Arg (Next_Arg + 1);
       declare
          Playlist_Name : constant String := Argument (Next_Arg);
          Playlist_Dir    : constant String := As_Directory (Argument (Next_Arg + 1));
@@ -120,6 +128,7 @@ begin
       end;
 
    when Import =>
+      Check_Arg (Next_Arg + 1);
       declare
          Category    : constant String := Argument (Next_Arg);
          Import_Root : constant String := As_Directory (Argument (Next_Arg + 1));
@@ -129,6 +138,7 @@ begin
       end;
 
    when Update =>
+      Check_Arg (Next_Arg);
       SMM.Update (DB, Source_Root, Relative_Name (Source_Root, Argument (Next_Arg)));
 
    when Check =>
@@ -139,6 +149,10 @@ begin
    end case;
 
 exception
+when SAL.Parameter_Error =>
+   Put_Usage;
+   Set_Exit_Status (Failure);
+
 when E : Ada.IO_Exceptions.Name_Error =>
    Ada.Text_IO.Put_Line (Ada.Exceptions.Exception_Message (E));
    Set_Exit_Status (Failure);
