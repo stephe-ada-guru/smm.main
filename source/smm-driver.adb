@@ -86,8 +86,6 @@ is
 
    Command : Command_Type;
 
-   use type Ada.Containers.Count_Type;
-
 begin
    if Argument (Next_Arg)'Length > 5 and then
      Argument (Next_Arg)(1 .. 5) = "--db="

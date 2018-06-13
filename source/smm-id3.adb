@@ -24,7 +24,6 @@ with Ada.IO_Exceptions;
 with Ada.Strings.Fixed;
 with Ada.Strings.UTF_Encoding.Conversions;
 with Ada.Text_IO;
-with Interfaces.C;
 with SAL.Generic_Binary_Image;
 package body SMM.ID3 is
 
@@ -286,7 +285,6 @@ package body SMM.ID3 is
    function All_Frames (File : in SMM.ID3.File) return Frame_Lists.List
    is
       use all type Ada.Streams.Stream_IO.Count;
-      use all type Interfaces.C.char_array;
       use all type Interfaces.Unsigned_8;
 
       File_Head  : File_Header;

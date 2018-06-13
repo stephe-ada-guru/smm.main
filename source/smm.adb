@@ -200,7 +200,6 @@ package body SMM is
 
       loop -- exit on End_Error
          declare
-            use Ada.Directories;
             Name : constant String := Get_Line (File);
          begin
             String_Lists.Append (Files, Ada.Characters.Handling.To_Lower (Name));

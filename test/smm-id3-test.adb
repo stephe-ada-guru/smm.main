@@ -46,7 +46,6 @@ package body SMM.ID3.Test is
    is
       pragma Unreferenced (T);
       use all type Ada.Streams.Stream_IO.Count;
-      use SAL.Interfaces_More.AUnit;
 
       procedure Check_One
         (Label          : in String;
@@ -54,7 +53,6 @@ package body SMM.ID3.Test is
          Expected_Count : in Ada.Streams.Stream_IO.Count)
       is
          use Ada.Streams.Stream_IO;
-         use SMM.ID3;
          Computed_Count : constant Count := Size (Item);
          Computed_Size  : constant Size_Type  := To_Size (Computed_Count);
       begin

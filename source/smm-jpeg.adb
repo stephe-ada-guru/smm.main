@@ -50,7 +50,6 @@ package body SMM.JPEG is
 
    function To_Integer (Item : in Two_Bytes) return Integer
    is
-      use all type Interfaces.Unsigned_8;
    begin
       return Integer (Item.High) * 256 + Integer (Item.Low);
    end To_Integer;
@@ -171,7 +170,6 @@ package body SMM.JPEG is
          Two_Bytes'Read (Stream, Length);
 
          declare
-            use all type Interfaces.Unsigned_16;
             Junk : Stream_Element_Array (1 .. Stream_Element_Offset (To_Integer (Length) - 2));
             pragma Unreferenced (Junk);
          begin

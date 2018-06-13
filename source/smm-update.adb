@@ -57,8 +57,6 @@ is
 
    procedure Update_Dir (Root : in String; Dir : in String)
    is
-      use SMM.Database;
-
       procedure Process_Dir_Entry (Dir_Entry : in Directory_Entry_Type)
       is
          Abs_Name : constant String := Full_Name (Dir_Entry);

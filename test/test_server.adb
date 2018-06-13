@@ -122,9 +122,6 @@ package body Test_Server is
       use AUnit.Checks;
       use AWS.Response;
       use AWS.Response.AUnit;
-      use SMM;
-      use SMM.ID3;
-      use Test_Utils;
 
       pragma Unreferenced (T);
 
@@ -251,7 +248,6 @@ package body Test_Server is
    overriding procedure Set_Up_Case (T : in out Test_Case)
    is
       use Ada.Directories;
-      use Ada.Text_IO;
       use SMM;
       use SMM.ID3;
       use SMM.ID3.Frame_Lists;
