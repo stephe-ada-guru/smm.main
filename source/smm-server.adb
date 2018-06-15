@@ -214,6 +214,53 @@ package body SMM.Server is
          Message_Body => "exception " & Exception_Name (E) & ": " & Exception_Message (E));
    end Handle_Download;
 
+   function Handle_Field (URI : in AWS.URL.Object) return AWS.Response.Data
+   is
+      use SMM.Database;
+
+      URI_Param : constant AWS.Parameters.List := AWS.URL.Parameters (URI);
+      DB        : SMM.Database.Database;
+   begin
+      --  From Emacs notes, query looks like:
+      --
+      --  field?id=<id>&field=<field-name>
+
+      if URI_Param.Is_Empty then
+         return AWS.Response.Acknowledge (AWS.Messages.S400, "no params; usage field?id=<id>&field=<field_name>");
+
+      elsif URI_Param.Exist ("id") and URI_Param.Exist ("field") then
+         DB.Open (-DB_Filename);
+
+         declare
+            I          : constant Cursor := Find_ID (DB, Integer'Value (URI_Param.Get ("id")));
+            Field_Name : constant String := URI_Param.Get ("field");
+         begin
+            if not I.Has_Element then
+               return AWS.Response.Acknowledge (AWS.Messages.S400, "id " & URI_Param.Get ("id") & " not found");
+            end if;
+
+            if Field_Name = "artist" then
+               return AWS.Response.Build ("text/plain", I.Artist);
+            elsif Field_Name = "album" then
+               return AWS.Response.Build ("text/plain", I.Album);
+            elsif Field_Name = "category" then
+               return AWS.Response.Build ("text/plain", I.Category);
+            elsif Field_Name = "title" then
+               return AWS.Response.Build ("text/plain", I.Title);
+            else
+               return AWS.Response.Acknowledge (AWS.Messages.S400, "id " & URI_Param.Get ("id") & " not found");
+            end if;
+         end; --  Free cursor
+
+      else
+         return AWS.Response.Acknowledge (AWS.Messages.S400, "invalid query params '" & AWS.URL.Parameters (URI) & "'");
+      end if;
+   exception
+   when Constraint_Error =>
+      --  from Integer'Value (id)
+      return AWS.Response.Acknowledge (AWS.Messages.S400, "invalid id '" & URI_Param.Get ("id") & "'");
+   end Handle_Field;
+
    function Handle_File (URI : in AWS.URL.Object; Name_In_Param : in Boolean) return AWS.Response.Data
    is
       --  If Name_In_Param, assume it's from Android app updating playlist;
@@ -608,12 +655,12 @@ package body SMM.Server is
 
       else
          --  From Emacs notes buffer page, query looks like
-         --  'update?file=<file_name>&<field>=<data>'
+         --  'update?id=<id>&<field>=<data>'
          --  only update field if present.
 
          --  From Web search results page, query looks like
          --
-         --  'update?ref=<search uri>id=<id>&<field>=<data>'
+         --  'update?ref=<search uri>&id=<id>&<field>=<data>'
          --
          --  Only update field if present. If a "cancel" param is present, don't update anything.
 
@@ -712,6 +759,9 @@ package body SMM.Server is
 
             elsif URI_File = "favicon.ico" then
                return AWS.Response.File ("image/x-icon", (-Source_Root) & "/" & (-Server_Data) & "/app.ico");
+
+            elsif URI_File = "field" then
+               return Handle_Field (URI);
 
             elsif URI_File = "file" then
                --  record download time in db
