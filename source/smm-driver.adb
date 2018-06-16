@@ -58,6 +58,9 @@ is
       Put_Line ("  update <file | dir>");
       Put_Line ("    update metadata for <file>, or all .mp3 files in <dir>.");
       New_Line;
+      Put_Line ("  rename <old file name> <new file name");
+      Put_Line ("    change file name.");
+      New_Line;
       Put_Line ("  check");
       Put_Line ("    compare music files to db, report any missing files/fields.");
       New_Line;
@@ -80,7 +83,7 @@ is
 
    Home : constant String := Find_Home;
 
-   type Command_Type is (Copy_Playlist, Import, Update, Check, History);
+   type Command_Type is (Copy_Playlist, Import, Update, Rename, Check, History);
 
    procedure Get_Command is new SAL.Command_Line_IO.Gen_Get_Discrete_Proc (Command_Type, "command", Next_Arg);
 
@@ -139,6 +142,22 @@ begin
       Check_Arg (Next_Arg);
       SMM.Update (DB, Source_Root, Relative_Name (Source_Root, Argument (Next_Arg)));
 
+   when Rename =>
+      Check_Arg (Next_Arg + 1);
+      declare
+         Old_Name : constant String := Relative_Name (Source_Root, Argument (Next_Arg));
+         New_Name : constant String := Relative_Name (Source_Root, Argument (Next_Arg + 1));
+
+         use SMM.Database;
+         I : constant Cursor := Find_File_Name (DB, Old_Name);
+      begin
+         if I.Has_Element then
+            DB.Update (I, File_Name => New_Name);
+         else
+            raise Ada.IO_Exceptions.Name_Error with "old file name '" & Old_Name & "' not found in db";
+         end if;
+      end;
+
    when Check =>
       SMM.Check (DB, Source_Root);
 
@@ -152,7 +171,7 @@ when SAL.Parameter_Error =>
    Set_Exit_Status (Failure);
 
 when E : Ada.IO_Exceptions.Name_Error =>
-   Ada.Text_IO.Put_Line (Ada.Exceptions.Exception_Message (E));
+   Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, Ada.Exceptions.Exception_Message (E));
    Set_Exit_Status (Failure);
 
 when E : others =>

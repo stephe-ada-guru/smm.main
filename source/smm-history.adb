@@ -92,49 +92,66 @@ is
 
    procedure Accumulate (I : in SMM.Database.Cursor)
    is
-      Category : constant Categories := Categories'Value (I.Category_First);
-      Data     : Category_Data_Type renames Category_Data (Category);
+      Category : Categories;
    begin
-      Total_Songs := Total_Songs + 1;
-
-      case Category_Data (Category).Hist is
-      when True =>
+      if I.Category_Contains ("dont_play") then
+         Category := Dont_Play;
+      else
          declare
-            use Ada.Calendar;
-            use Ada.Calendar.Formatting;
-            use Ada.Float_Text_IO;
-
-            Seconds_Per_Year : constant := 31_536_000.0;
-
-            Default_Time : constant Time := Value (SMM.Database.Default_Time_String);
-
-            Last   : constant Time  := Value (I.Last_Downloaded);
-            Prev   : constant Time  := Value (I.Prev_Downloaded);
-            Period : constant Float := Float (Last - Prev) / Seconds_Per_Year;
+            Cat_String : constant String := I.Category_First;
          begin
-            if Last = Default_Time then
-               Data.Never_Downloaded := Data.Never_Downloaded + 1;
-               Put_Line ("new: " & I.File_Name);
-
-            elsif Prev = Default_Time then
-               Data.Downloaded_Once := Data.Downloaded_Once + 1;
-
-            else
-               Data.Stats.Accumulate (Period);
-               Data.Histogram.Accumulate (Period);
-
-               if To_Bin (Period) > Bin_Max or
-                 To_Bin (Period) = 0
-               then
-                  Put ("song:" & Integer'Image (I.ID) & " period:");
-                  Put (Period, Aft => 2, Exp => 0);
-                  New_Line;
-               end if;
-            end if;
+            Category := Categories'Value (Cat_String);
+         exception
+         when Constraint_Error =>
+            raise SAL.Programmer_Error with "id" & Integer'Image (I.ID) & ": '" & Cat_String &
+              "' (first of '" & I.Category & "') not a recognized category";
          end;
-      when False =>
-         Data.Count := Data.Count + 1;
-      end case;
+      end if;
+
+      declare
+         Data : Category_Data_Type renames Category_Data (Category);
+      begin
+         Total_Songs := Total_Songs + 1;
+
+         case Category_Data (Category).Hist is
+         when True =>
+            declare
+               use Ada.Calendar;
+               use Ada.Calendar.Formatting;
+               use Ada.Float_Text_IO;
+
+               Seconds_Per_Year : constant := 31_536_000.0;
+
+               Default_Time : constant Time := Value (SMM.Database.Default_Time_String);
+
+               Last   : constant Time  := Value (I.Last_Downloaded);
+               Prev   : constant Time  := Value (I.Prev_Downloaded);
+               Period : constant Float := Float (Last - Prev) / Seconds_Per_Year;
+            begin
+               if Last = Default_Time then
+                  Data.Never_Downloaded := Data.Never_Downloaded + 1;
+                  Put_Line ("new: " & I.File_Name);
+
+               elsif Prev = Default_Time then
+                  Data.Downloaded_Once := Data.Downloaded_Once + 1;
+
+               else
+                  Data.Stats.Accumulate (Period);
+                  Data.Histogram.Accumulate (Period);
+
+                  if To_Bin (Period) > Bin_Max or
+                    To_Bin (Period) = 0
+                  then
+                     Put ("song:" & Integer'Image (I.ID) & " period:");
+                     Put (Period, Aft => 2, Exp => 0);
+                     New_Line;
+                  end if;
+               end if;
+            end;
+         when False =>
+            Data.Count := Data.Count + 1;
+         end case;
+      end;
    end Accumulate;
 
    procedure Put_Category (Category : in Categories)

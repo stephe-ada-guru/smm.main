@@ -27,10 +27,13 @@ play-before causes short replay periods
     fixed 1 feb 2018; short periods should dissappear from status eventually
 
 
-smm rename old_filename new_filename
-    beth wood "mission statment"
-
 detailed search results keep detailed tab visible
+
+add year
+
+add album_artist
+    put group name in album_artist, group members in artist(s)
+    Helicon; Ken Kolodner/Chris Norman/Robin Bullock
 
 highlite all search results
 
