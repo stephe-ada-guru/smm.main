@@ -95,7 +95,7 @@ public class MetaData
 
          title    = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
          album    = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM);
-         artist   = (artist1.length() == 0) ? artist2 : artist1;
+         artist   = (artist1 == null || artist1.length() == 0) ? artist2 : artist1;
          duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
       }
       catch (Exception e)
@@ -167,14 +167,21 @@ public class MetaData
 
    public Uri searchUri(String serverIP)
    {
-      return new Uri.Builder()
+      Uri.Builder B = new Uri.Builder()
          .scheme("http")
          .encodedAuthority(serverIP + ":8080")
-         .appendPath("search")
-         .appendQueryParameter("title", title)
-         .appendQueryParameter("album", album)
-         .appendQueryParameter("artist", artist)
-         .build();
+         .appendPath("search");
+
+      if (title != null)
+         B = B.appendQueryParameter("title", title);
+
+      if (album != null)
+         B = B.appendQueryParameter("album", album);
+
+      if (artist != null)
+         B = B.appendQueryParameter("artist", artist);
+
+      return B.build();
    }
 }
 // end of file

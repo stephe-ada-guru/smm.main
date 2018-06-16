@@ -19,7 +19,9 @@ update playlist downloads one extra song
 
 navigation messages getting thru, but music does not get notified
     phone interrupts music properly
-    car controls worked, once
+    android updated; now music muted (not paused?) but nav message not audible
+
+car controls worked, twice
 
 use alternate port for unit tests
 

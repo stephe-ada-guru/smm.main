@@ -1008,7 +1008,7 @@ public class PlayService extends Service
           public void onAudioFocusChange(int focusChange)
           {
              // FIXME: something's not working; Navigator messages are not played. So log every event.
-             utils.errorLog(null, "onAudioFocusChange code " + focusChange);
+             utils.debugLog("onAudioFocusChange code " + focusChange);
 
              if (focusChange == AudioManager.AUDIOFOCUS_LOSS)
              {
@@ -1020,6 +1020,8 @@ public class PlayService extends Service
              {
                 haveAudioFocus = false;
 
+                // Can't use 'Paused' here; _not_ followed by
+                // AUDIOFOCUS_GAIN when do that.
                 pause(PlayState.Paused_Transient);
              }
              else if (focusChange == AudioManager.AUDIOFOCUS_GAIN)
