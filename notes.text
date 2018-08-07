@@ -27,13 +27,20 @@ play-before causes short replay periods
     fixed 1 feb 2018; short periods should dissappear from status eventually
 
 
+add album_artist
+    d:/Music/Michelle Makarski, Keith Jarret/
+    put group name in album_artist, group members in artist(s)
+    Helicon; Ken Kolodner/Chris Norman/Robin Bullock
+
 detailed search results keep detailed tab visible
 
 add year
 
-add album_artist
-    put group name in album_artist, group members in artist(s)
-    Helicon; Ken Kolodner/Chris Norman/Robin Bullock
+show play_before/after
+
+add command line play_before/after
+    "instrumental/Aaron Copland/Appalachian Spring/06 - Appalachian Spring - As at first (slowly).mp3" Play Before
+
 
 highlite all search results
 

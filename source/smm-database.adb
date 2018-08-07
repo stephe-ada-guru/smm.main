@@ -469,6 +469,7 @@ package body SMM.Database is
          begin
             for J in Fields'Range loop
                Statement            := Statement & (if Need_Or then " or " else " (") & Field_Image (J) & " like ?";
+               exit when Params_Last = Params'Last;
                Params_Last          := Params_Last + 1;
                Params (Params_Last) := +("%" & Word & "%");
                Need_Or              := True;
