@@ -14,12 +14,15 @@ branches:
     o.s_l.m_p.work                     - available
 
  current tasks
+http://android-developers.googleblog.com/2018/06/a-new-universal-music-player.html
+
 update playlist downloads one extra song
     code looks ok; try unit test?
 
 navigation messages getting thru, but music does not get notified
     phone interrupts music properly
     android updated; now music muted (not paused?) but nav message not audible
+    pause for transient, register request for audio focus so get notified?
 
 car controls worked, twice
 
