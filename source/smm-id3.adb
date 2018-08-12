@@ -24,6 +24,7 @@ with Ada.IO_Exceptions;
 with Ada.Strings.Fixed;
 with Ada.Strings.UTF_Encoding.Conversions;
 with Ada.Text_IO;
+with GNATCOLL.Iconv;
 with SAL.Generic_Binary_Image;
 package body SMM.ID3 is
 
@@ -162,14 +163,27 @@ package body SMM.ID3 is
       use Ada.Streams;
       use all type Interfaces.Unsigned_8;
 
-      function To_UTF_8 (First, Last : Stream_Element_Offset) return Frame
+      function To_UTF_8 (First, Last : Stream_Element_Offset) return String
+      is
+         use GNATCOLL.Iconv;
+      begin
+         if not Has_Iconv then
+            raise SAL.Programmer_Error with "GNATCOLL.Iconv not installed";
+         end if;
+         return Iconv
+           (Input     => To_String (Data (First .. Last)),
+            To_Code   => UTF8,
+            From_Code => ISO_8859_1);
+      end To_UTF_8;
+
+      function To_Frame (First, Last : Stream_Element_Offset) return Frame
       is begin
          if (for some C of Data (First .. Last) => C = 0) then
             return (Header.ID, +"<multiple strings>");
          else
             return (Header.ID, +To_String (Data (First .. Last)));
          end if;
-      end To_UTF_8;
+      end To_Frame;
 
    begin
       if Header.Flags_0 /= 0 then
@@ -184,12 +198,20 @@ package body SMM.ID3 is
          end if;
 
          case Data (1) is
-         when Text_Encoding_ISO_8859_1 | Text_Encoding_UTF_8 =>
+         when Text_Encoding_ISO_8859_1 =>
             --  Supposed to be null terminated, but sometimes not.
             if Data (Data'Last) = 0 then
-               return To_UTF_8 (Data'First + 1, Data'Last - 1);
+               return (Header.ID, +To_UTF_8 (Data'First + 1, Data'Last - 1));
             else
-               return To_UTF_8 (Data'First + 1, Data'Last);
+               return (Header.ID, +To_UTF_8 (Data'First + 1, Data'Last));
+            end if;
+
+         when Text_Encoding_UTF_8 =>
+            --  Supposed to be null terminated, but sometimes not.
+            if Data (Data'Last) = 0 then
+               return To_Frame (Data'First + 1, Data'Last - 1);
+            else
+               return To_Frame (Data'First + 1, Data'Last);
             end if;
 
          when Text_Encoding_UTF_16 =>
@@ -217,7 +239,7 @@ package body SMM.ID3 is
 
          when others =>
             --  Older format; no encoding byte.
-            return To_UTF_8 (Data'First, Data'Last);
+            return To_Frame (Data'First, Data'Last);
          end case;
 
       else

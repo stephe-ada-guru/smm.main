@@ -1,5 +1,6 @@
 with "aws";
 with "gnatcoll_sqlite";
+with "gnatcoll_iconv";
 with "sal_devel";
 with "standard_common";
 project Smm is

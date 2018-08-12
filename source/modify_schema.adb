@@ -2,6 +2,20 @@
 --
 --  Modify the schema of the database.
 --
+--  To add a new field:
+--
+--  1. Edit create_schema.sql
+--  2. Edit smm-database.ad? Insert, Update
+--     do _not_ add new field to Fields, Cursor functions yet
+--  3. Edit this file to copy old fields, add new
+--  4. create smm_new.db
+--  5. run modify_schema.exe c:/home/stephe/smm/smm_server.config smm_new.db
+--  6. Edit smm-database.ad? Fields, Cursor function
+--  7. edit rest of smm to handle new field
+--     smm-update.adb, smm-import.adb
+--  8. mv smm_new.db c:/home/stephe/smm/smm.db
+--  9. make install
+--
 --  Copyright (C) 2018 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
@@ -83,16 +97,10 @@ begin
             File_Name  : constant String := I.File_Name;
             File       : SMM.ID3.File;
             ID3_Frames : Frame_Lists.List;
-            Track      : Integer;
          begin
             File.Open (Root_Dir & File_Name);
 
             ID3_Frames := File.All_Frames;
-            if Is_Present (SMM.ID3.Track, ID3_Frames) then
-               Track := SMM.ID3.To_Track (-Find (SMM.ID3.Track, ID3_Frames));
-            else
-               Track := SMM.Database.No_Track;
-            end if;
 
             New_DB.Insert
               (ID              => I.ID,
@@ -100,8 +108,9 @@ begin
                Category        => I.Category,
                Artist          => I.Artist,
                Album           => I.Album,
+               Album_Artist    => -Find (SMM.ID3.Alt_Artist, ID3_Frames),
                Title           => I.Title,
-               Track           => Track,
+               Track           => I.Track,
                Last_Downloaded => I.Last_Downloaded,
                Prev_Downloaded => I.Prev_Downloaded,
                Play_Before     => I.Play_Before,

@@ -2,22 +2,24 @@
 
 include rules.make
 
+#export Standard_Common_Build := Debug
+
 # ../test/test_one_harness.adb
 # ../test/test_all_harness.adb
-export Standard_Common_Build := Debug
 #t_one : RUN_ARGS := 1
 #t_one : smm-server_driver.exe
 t_one : test_one_harness.run
 
-#t_all : export Standard_Common_Build := Debug
 t_all : smm.exe smm-server_driver.exe test_all_harness.run
 
 one-clean :
 	rm -f smm_config.db
 
-one : export Standard_Common_Build := Debug
-one : debug.exe
-	./debug.exe "d:/music/beth nielsen chapman/beth nielsen chapman/that's the easy part.mp3"
+one : modify_schema.exe smm_new.db
+	./modify_schema.exe c:/home/stephe/smm/smm_server.config smm_new.db
+
+two : smm.exe
+	cd d:/Music; $(CURDIR)/smm.exe --verbosity=1 update "Helicon/The Titan/Mazurka Limousin_Bouree.mp3"
 
 # This server can't be seen from phone, tablet (not clear why); use
 # ~/bin/music-server-work_1.sh
@@ -38,7 +40,10 @@ histogram : ~/bin/smm.exe
 check : smm.exe
 	cd d:/Music; $(CURDIR)/smm check > missing.log
 
-install : server-data c:/home/stephe/bin/smm.exe c:/home/stephe/bin/smm-server_driver.exe
+install :: server-data
+install :: c:/home/stephe/bin/smm.exe
+install :: c:/home/stephe/bin/smm-server_driver.exe
+install :: c:/home/stephe/bin/smm-show_id3.exe
 
 .PHONY : server-data play-icons
 

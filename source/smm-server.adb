@@ -463,15 +463,15 @@ package body SMM.Server is
       URI_Param : constant AWS.Parameters.List := Decode_Plus (AWS.URL.Parameters (URI));
       DB        : SMM.Database.Database;
 
-      Response : Unbounded_String := +"<!DOCTYPE html>" & ASCII.LF &
+      Response_1 : constant String := "<!DOCTYPE html>" & ASCII.LF &
         "<html lang=""en"">" &
         "<meta http-equiv=""Content-Type"" content=""text/html; charset=utf-8"">" & ASCII.LF &
         "<head>" & ASCII.LF &
         "<script src=""/" & (-Server_Data) & "/songs.js""></script>" & ASCII.LF &
         "<link type=""text/css"" rel=""stylesheet"" href=""/" & (-Server_Data) & "/songs.css""/>" & ASCII.LF &
-        "</head><body onload=""InitTabs()"">" &
+        "</head>";
 
-        "<div class=""tabbar"">" &
+      Response_2 : constant String := "<div class=""tabbar"">" &
         "<button class=""tabbutton"" id=""general_search_button""" &
         " onclick=""SelectTab('general_search_button', 'general_search_tab')"">General Search</button>" &
         "<button class=""tabbutton"" id=""detailed_search_button""" &
@@ -489,11 +489,14 @@ package body SMM.Server is
         "<input type=search name=""artist"" value=""" & URI_Param.Get ("artist") & """></div>" &
         "<div class=""row""><label>Album </label>" &
         "<input type=search name=""album"" value=""" & URI_Param.Get ("album") & """></div>" &
+        "<div class=""row""><label>Album Artist</label>" &
+        "<input type=search name=""album_artist"" value=""" & URI_Param.Get ("album_artist") & """></div>" &
         "<div class=""row""><label>Category </label>" &
         "<input type=search name=""category"" value=""" & URI_Param.Get ("category") & """></div>" &
         "</div><input type=submit value=""Search"">" &
         "</form></div><hr>" & ASCII.LF;
 
+      Response : Unbounded_String;
       Current_Album : Unbounded_String;
 
       function Search_Result (I : in Cursor) return String
@@ -510,7 +513,12 @@ package body SMM.Server is
            "<td class=""text"">" & Days_Ago (I.Last_Downloaded) & " / " & Days_Ago (I.Prev_Downloaded) & "</td>" &
            "<td><div class=""categories_list text"" onclick=""EditCategory(event)""" &
            " tabindex=""0"" onkeydown=""EditCategory(event)""" &
-           " id=""" & I.ID_String & """>" & I.Category & "</div></td></tr>" & ASCII.LF;
+           " id=""" & I.ID_String & """>" & I.Category & "</div></td>" &
+           "<td class=""text"">" &
+           (if I.Play_Before /= Null_ID then "v"
+            elsif I.Play_After /= Null_ID then "^"
+            else "") & "</td>" &
+           "</tr>" & ASCII.LF;
 
          Result : Unbounded_String;
       begin
@@ -532,7 +540,8 @@ package body SMM.Server is
             declare
                Album_Item : Unbounded_String := +"<li>" &
                  "<div class=""album_row""><a class=""text"" href=""search?album=" & AWS.URL.Encode
-                   (I.Album, SMM.File_Name_Encode_Set) & """>" & I.Album & "</a>";
+                   (I.Album, SMM.File_Name_Encode_Set) & """>" & I.Album & "</a>" &
+                 "<div class=""text"">" & I.Album_Artist & "</div>";
 
                Meta : constant AWS.Containers.Tables.Table_Type := Meta_Files (Containing_Directory (I.File_Name));
             begin
@@ -590,16 +599,22 @@ package body SMM.Server is
 
       elsif URI_Param.Exist ("search") or
         URI_Param.Exist ("title") or URI_Param.Exist ("artist") or URI_Param.Exist ("album") or
-        URI_Param.Exist ("category")
+        URI_Param.Exist ("album_artist") or URI_Param.Exist ("category")
       then
          DB.Open (-DB_Filename);
 
          declare
             I : Cursor :=
               (if URI_Param.Exist ("search")
-               then DB.Find_Like (URI_Param.Get ("search"), Order_By => (Album, Track))
-               else DB.Find_Like (To_SQL_Param (URI_Param), Order_By => (Album, Track)));
+               then DB.Find_Like (URI_Param.Get ("search"), Order_By => (Album, Track))   -- General search
+               else DB.Find_Like (To_SQL_Param (URI_Param), Order_By => (Album, Track))); -- Detailed search
          begin
+            Response := +Response_1 &
+              (if URI_Param.Exist ("search")
+               then "<body onload=""InitTabs()"">"
+               else "<body onload=""SelectTab('detailed_search_button', 'detailed_search_tab')"">") &
+              Response_2;
+
             if not I.Has_Element then
                Response := Response  & "<p>no matching entries found</p></body></html>";
                return AWS.Response.Build ("text/html", Response);

@@ -71,6 +71,7 @@ package body SMM.Database is
       Category        : in String      := "";
       Artist          : in String      := "";
       Album           : in String      := "";
+      Album_Artist    : in String      := "";
       Title           : in String      := "";
       Track           : in Integer     := No_Track;
       Last_Downloaded : in Time_String := Default_Time_String;
@@ -136,6 +137,7 @@ package body SMM.Database is
       Add_Param ("Category", Category, "");
       Add_Param ("Artist", Artist, "");
       Add_Param ("Album", Album, "");
+      Add_Param ("Album_Artist", Album_Artist, "");
       Add_Param ("Title", Title, "");
       Add_Param ("Track", Track, No_Track);
       Add_Param ("Last_Downloaded", Last_Downloaded, Default_Time_String);
@@ -202,6 +204,7 @@ package body SMM.Database is
       Category        : in String;
       Artist          : in String;
       Album           : in String;
+      Album_Artist    : in String;
       Title           : in String;
       Track           : in Integer;
       Last_Downloaded : in Time_String := Default_Time_String;
@@ -217,6 +220,7 @@ package body SMM.Database is
          Category        => Category,
          Artist          => Artist,
          Album           => Album,
+         Album_Artist    => Album_Artist,
          Title           => Title,
          Track           => Track,
          Last_Downloaded => Last_Downloaded,
@@ -241,7 +245,8 @@ package body SMM.Database is
    File_Name_Field       : constant GNATCOLL.SQL.Exec.Field_Index := ID_Field + 1;
    Category_Field        : constant GNATCOLL.SQL.Exec.Field_Index := File_Name_Field + 1;
    Artist_Field          : constant GNATCOLL.SQL.Exec.Field_Index := Category_Field + 1;
-   Album_Field           : constant GNATCOLL.SQL.Exec.Field_Index := Artist_Field + 1;
+   Album_Artist_Field    : constant GNATCOLL.SQL.Exec.Field_Index := Artist_Field + 1;
+   Album_Field           : constant GNATCOLL.SQL.Exec.Field_Index := Album_Artist_Field + 1;
    Title_Field           : constant GNATCOLL.SQL.Exec.Field_Index := Album_Field + 1;
    Track_Field           : constant GNATCOLL.SQL.Exec.Field_Index := Title_Field + 1;
    Last_Downloaded_Field : constant GNATCOLL.SQL.Exec.Field_Index := Track_Field + 1;
@@ -250,11 +255,12 @@ package body SMM.Database is
    Play_After_Field      : constant GNATCOLL.SQL.Exec.Field_Index := Play_Before_Field + 1;
 
    Field_Fields : constant array (Fields) of GNATCOLL.SQL.Exec.Field_Index :=
-     (Artist   => Artist_Field,
-      Album    => Album_Field,
-      Category => Category_Field,
-      Title    => Title_Field,
-      Track    => Track_Field);
+     (Artist       => Artist_Field,
+      Album        => Album_Field,
+      Album_Artist => Album_Artist_Field,
+      Category     => Category_Field,
+      Title        => Title_Field,
+      Track        => Track_Field);
 
    function Has_Element (Position : Cursor) return Boolean
    is begin
@@ -298,6 +304,7 @@ package body SMM.Database is
       Category        : in String      := "";
       Artist          : in String      := "";
       Album           : in String      := "";
+      Album_Artist    : in String      := "";
       Title           : in String      := "";
       Track           : in Integer     := No_Track;
       Last_Downloaded : in Time_String := Default_Time_String;
@@ -313,6 +320,7 @@ package body SMM.Database is
          Category        => Category,
          Artist          => Artist,
          Album           => Album,
+         Album_Artist    => Album_Artist,
          Title           => Title,
          Track           => Track,
          Last_Downloaded => Last_Downloaded,
@@ -547,6 +555,14 @@ package body SMM.Database is
          else Position.Cursor.Value (Album_Field));
    end Album;
 
+   function Album_Artist (Position : in Cursor) return String
+   is begin
+      return
+        (if Position.Cursor.Is_Null (Album_Artist_Field)
+         then ""
+         else Position.Cursor.Value (Album_Artist_Field));
+   end Album_Artist;
+
    function Title (Position : in Cursor) return String
    is begin
       return
@@ -554,6 +570,14 @@ package body SMM.Database is
          then ""
          else Position.Cursor.Value (Title_Field));
    end Title;
+
+   function Track (Position : in Cursor) return Integer
+   is begin
+      return
+        (if Position.Cursor.Is_Null (Track_Field)
+         then No_Track
+         else Integer'Value (Position.Cursor.Value (Track_Field)));
+   end Track;
 
    function Last_Downloaded (Position : in Cursor) return Time_String
    is begin

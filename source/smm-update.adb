@@ -49,9 +49,10 @@ is
 
       DB.Update
         (I,
-         Artist => -Find (Artist_ID, ID3_Frames),
-         Album  => -Find (SMM.ID3.Album, ID3_Frames),
-         Title  => -Find (SMM.ID3.Title, ID3_Frames));
+         Artist       => -Find (Artist_ID, ID3_Frames),
+         Album_Artist => -Find (SMM.ID3.Alt_Artist, ID3_Frames),
+         Album        => -Find (SMM.ID3.Album, ID3_Frames),
+         Title        => -Find (SMM.ID3.Title, ID3_Frames));
 
    end Update_File;
 

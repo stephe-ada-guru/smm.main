@@ -47,7 +47,7 @@ package SMM.ID3 is
    --  Some common Frames
    Album      : constant ID_String := "TALB"; -- [1] Album/Movie/Show title
    Artist     : constant ID_String := "TPE1"; -- [1] Lead performer(s)/Soloist(s)
-   Alt_Artist : constant ID_String := "TPE2"; -- [1] Band/orchestra/accompaniment
+   Alt_Artist : constant ID_String := "TPE2"; -- [1] Band/orchestra/accompaniment = Album Artist
    Title      : constant ID_String := "TIT2"; -- [1] Title/songname/content description
    Track      : constant ID_String := "TRCK"; -- [1] Track number/position in a set
 
@@ -56,7 +56,7 @@ package SMM.ID3 is
 
    type Frame is record
       ID   : ID_String;
-      Data : Ada.Strings.Unbounded.Unbounded_String;
+      Data : Ada.Strings.Unbounded.Unbounded_String; -- In UTF-8 encoding
    end record;
 
    package Frame_Lists is new Ada.Containers.Doubly_Linked_Lists (Frame);
@@ -65,6 +65,7 @@ package SMM.ID3 is
      is (for some F of Frames => ID = F.ID);
 
    function Find (ID : in ID_String; Frames : in Frame_Lists.List) return Ada.Strings.Unbounded.Unbounded_String;
+   --  Return empty string if not found.
 
    function All_Frames (File : in SMM.ID3.File) return Frame_Lists.List;
 

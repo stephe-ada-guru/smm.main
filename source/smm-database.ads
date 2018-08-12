@@ -54,6 +54,7 @@ package SMM.Database is
       Category        : in String;
       Artist          : in String;
       Album           : in String;
+      Album_Artist    : in String;
       Title           : in String;
       Track           : in Integer;
       Last_Downloaded : in Time_String := Default_Time_String;
@@ -109,6 +110,7 @@ package SMM.Database is
       Category        : in String      := "";
       Artist          : in String      := "";
       Album           : in String      := "";
+      Album_Artist    : in String      := "";
       Title           : in String      := "";
       Track           : in Integer     := No_Track;
       Last_Downloaded : in Time_String := Default_Time_String;
@@ -118,7 +120,7 @@ package SMM.Database is
    --  Items that are the defaults are not updated.
    --  Cursor must be refetched to reflect changes.
 
-   type Fields is (Artist, Album, Title, Category, Track);
+   type Fields is (Artist, Album, Album_Artist, Title, Category, Track);
 
    type Field_Values is array (Fields) of Ada.Strings.Unbounded.Unbounded_String;
 
@@ -128,11 +130,12 @@ package SMM.Database is
    --  User-friendly image, good for "not found" error messages.
 
    Field_Image : constant Field_Values :=
-     (Artist   => +"artist",
-      Album    => +"album",
-      Category => +"category",
-      Title    => +"title",
-      Track    => +"track");
+     (Artist       => +"artist",
+      Album        => +"album",
+      Album_Artist => +"album_artist",
+      Category     => +"category",
+      Title        => +"title",
+      Track        => +"track");
 
    function Valid_Field (Item : in String) return Boolean;
    --  True if Item in Field_Image (case insensitive).
@@ -154,7 +157,7 @@ package SMM.Database is
       Search   : in String;
       Order_By : in Field_Array)
      return Cursor;
-   --  Match Search against Artist, Album, Title, Category.
+   --  Match Search against Fields.
 
    procedure Next (Position : in out Cursor);
 
@@ -166,7 +169,9 @@ package SMM.Database is
    function Category (Position : in Cursor) return String;
    function Artist (Position : in Cursor) return String;
    function Album (Position : in Cursor) return String;
+   function Album_Artist (Position : in Cursor) return String;
    function Title (Position : in Cursor) return String;
+   function Track (Position : in Cursor) return Integer;
    function Last_Downloaded (Position : in Cursor) return Time_String;
    function Prev_Downloaded (Position : in Cursor) return Time_String;
    function Play_After (Position : in Cursor) return Integer;

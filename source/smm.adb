@@ -60,7 +60,9 @@ package body SMM is
    is
       Dir_Root : constant String := As_Directory (Root);
    begin
-      if Dir_Root = Full_Name (Full_Name'First .. Full_Name'First + Dir_Root'Length - 1) then
+      if Full_Name'Length >= Dir_Root'Length and then
+        Dir_Root = Full_Name (Full_Name'First .. Full_Name'First + Dir_Root'Length - 1)
+      then
          return Full_Name (Full_Name'First + Dir_Root'Length .. Full_Name'Last);
       else
          --  Assume it's already relative.

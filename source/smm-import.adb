@@ -85,13 +85,14 @@ is
                      Metadata (Abs_Name, ID3_Frames, Artist_ID);
 
                      DB.Insert
-                       (ID        => Index,
-                        File_Name => Name,
-                        Category  => Category,
-                        Artist    => -Find (Artist_ID, ID3_Frames),
-                        Album     => -Find (SMM.ID3.Album, ID3_Frames),
-                        Title     => -Find (SMM.ID3.Title, ID3_Frames),
-                        Track     => SMM.ID3.To_Track (-Find (SMM.ID3.Track, ID3_Frames)));
+                       (ID           => Index,
+                        File_Name    => Name,
+                        Category     => Category,
+                        Artist       => -Find (Artist_ID, ID3_Frames),
+                        Album        => -Find (SMM.ID3.Album, ID3_Frames),
+                        Album_Artist => -Find (SMM.ID3.Alt_Artist, ID3_Frames),
+                        Title        => -Find (SMM.ID3.Title, ID3_Frames),
+                        Track        => SMM.ID3.To_Track (-Find (SMM.ID3.Track, ID3_Frames)));
 
                      Index := Index + 1;
                   else
