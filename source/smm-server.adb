@@ -594,7 +594,7 @@ package body SMM.Server is
 
       if URI_Param.Is_Empty then
          --  Return search page with no results.
-         Response := Response  & "</body></html>";
+         Response := +Response_1 & "<body onload=""InitTabs()"">" & Response_2 & "</body></html>";
          return AWS.Response.Build ("text/html", Response);
 
       elsif URI_Param.Exist ("search") or

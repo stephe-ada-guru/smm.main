@@ -27,6 +27,8 @@ play-before causes short replay periods
     fixed 1 feb 2018; short periods should dissappear from status eventually
 
 
+freeze search area - frames?
+
 show play_before/after
     ok, need better graphic
 
@@ -43,13 +45,6 @@ add year
 highlite all search results
 
 use w3.css to set search input width?
-
-edit album_artist
-    smm-edit_id3.exe; don't just override in smm.db
-        too hard
-        https://mutagen.readthedocs.io/en/latest/index.html
-            provides a python class; write python code
-            doesn't write files, at least on windows (sigh)
 
 http://www.css-validator.org/
 

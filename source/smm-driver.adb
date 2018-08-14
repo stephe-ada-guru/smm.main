@@ -58,7 +58,7 @@ is
       Put_Line ("  update <file | dir>");
       Put_Line ("    update metadata for <file>, or all .mp3 files in <dir>.");
       New_Line;
-      Put_Line ("  rename <old file name> <new file name");
+      Put_Line ("  rename <old file name> <new file name>");
       Put_Line ("    change file name.");
       New_Line;
       Put_Line ("  check");
