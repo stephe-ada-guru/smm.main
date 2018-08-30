@@ -86,11 +86,31 @@ package SMM.Database is
    --       ...
    --       I.Next;
    --
+   --  3)
+   --    declare
+   --       I : Cursor := DB.Find_Like (..);
+   --       J : Cursor;
+   --    begin
+   --       ...
+   --       J := I;
+   --       I.Next; -- must not change J
+   --
    --  Ada forbids two dispatching parameters, so these functions
    --  dispatch either on DB or Cursor; the other must be classwide.
    --
    --  1) requires dispatching on DB, which means Cursor is classwide;
    --  that means it must be initialized, which forbids 2).
+   --
+   --  3) Requires GNATCOLL.SQL.Exec.Direct_Cursor, which only gives us:
+   --    declare
+   --       I : Cursor := DB.Find_Like (..);
+   --       J : Positive;
+   --    begin
+   --       ...
+   --       J := I.Row;
+   --       I.Next;
+   --       ...
+   --       I.Set_Row (J);
 
    function Has_Element (Position : in Cursor) return Boolean;
 
@@ -161,6 +181,9 @@ package SMM.Database is
 
    procedure Next (Position : in out Cursor);
 
+   function Row (Position : in Cursor) return Positive;
+   procedure Set_Row (Position : in out Cursor; Row : in Positive);
+
    function Field (Position : in Cursor; Item : in Fields) return String;
 
    function ID (Position : in Cursor) return Integer;
@@ -206,7 +229,7 @@ private
 
    type Cursor is tagged record
       --  GNATCOLL.SQL.Exec Finalize releases cursor
-      Cursor : GNATCOLL.SQL.Exec.Forward_Cursor;
+      Cursor : GNATCOLL.SQL.Exec.Direct_Cursor;
    end record;
 
    ----------

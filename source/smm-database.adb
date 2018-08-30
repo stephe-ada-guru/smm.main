@@ -508,6 +508,16 @@ package body SMM.Database is
       Position.Cursor.Next;
    end Next;
 
+   function Row (Position : in Cursor) return Positive
+   is begin
+      return Position.Cursor.Current;
+   end Row;
+
+   procedure Set_Row (Position : in out Cursor; Row : in Positive)
+   is begin
+      Position.Cursor.Absolute (Row);
+   end Set_Row;
+
    function Field (Position : in Cursor; Item : in Fields) return String
    is begin
       return

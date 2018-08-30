@@ -19,6 +19,7 @@
 pragma License (GPL);
 
 with Ada.Directories; use Ada.Directories;
+with Ada.Exceptions;
 with Ada.Text_IO;
 with SAL;
 with SMM.Database;
@@ -34,9 +35,10 @@ is
    is
       use SMM.ID3;
       ID3_Frames : Frame_Lists.List;
-      Artist_ID  : ID_String                := SMM.ID3.Artist;
-      I          : constant Database.Cursor := DB.Find_File_Name (Name);
+      Artist_ID  : ID_String := SMM.ID3.Artist;
+      I          : Database.Cursor; -- no init for exception handler
    begin
+      I := DB.Find_File_Name (Name);
       if not I.Has_Element then
          raise SAL.Not_Found with "not found in db: '" & Name & "'";
       end if;
@@ -53,7 +55,9 @@ is
          Album_Artist => -Find (SMM.ID3.Alt_Artist, ID3_Frames),
          Album        => -Find (SMM.ID3.Album, ID3_Frames),
          Title        => -Find (SMM.ID3.Title, ID3_Frames));
-
+   exception
+   when E : SAL.Not_Found =>
+      Ada.Text_IO.Put (Ada.Exceptions.Exception_Message (E));
    end Update_File;
 
    procedure Update_Dir (Root : in String; Dir : in String)
