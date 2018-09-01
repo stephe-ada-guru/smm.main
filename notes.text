@@ -5,7 +5,7 @@ see ../Android/org.stephe_leake.music_player.java/notes.text
 branches:
     smm.main - installed in Windows
     smm.work - ssh download; terminated
-    smm.work_1 - web search
+    smm.work_1 - available
 
 d:/Music/remote_cache/smm-server_driver.log
 
@@ -30,7 +30,8 @@ play-before causes short replay periods
 need update to null
     pete seeger flowers gone kisses sweeter than wine
 
-freeze search area - frames?
+freeze search area
+    enclose rest in scroll
 
 show play_before/after
     ok, need better graphic

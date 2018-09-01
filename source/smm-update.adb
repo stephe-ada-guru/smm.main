@@ -57,7 +57,7 @@ is
          Title        => -Find (SMM.ID3.Title, ID3_Frames));
    exception
    when E : SAL.Not_Found =>
-      Ada.Text_IO.Put (Ada.Exceptions.Exception_Message (E));
+      Ada.Text_IO.Put_Line (Ada.Exceptions.Exception_Message (E));
    end Update_File;
 
    procedure Update_Dir (Root : in String; Dir : in String)
