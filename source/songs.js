@@ -5,13 +5,31 @@ function Scale_Px(event, low_width, low_height) {
     event.currentTarget.height = window.devicePixelRatio * low_height;
 }
 
+function Fill_Remaining(fixedId, remainingId) {
+    // fixedId     = id of element at top of screen
+    // remainingId = id of element filling rest of screen
+    var remaining = document.getElementById(remainingId);
+    var fixed     = document.getElementById(fixedId);
+
+    // In FireFox on Windows, calculated height is too large, by half an image.
+    // Height is correct on Android Chrome phone, tablet.
+    // can't just do 'remaining.height' here. sigh.
+    remaining.style.height = (window.innerHeight - fixed.clientHeight) + "px";
+}
+
 const Return = 13;
 const Escape = 27;
 const Space  = 32;
 
 function EditCategory(event) {
+    var strippedURI = document.baseURI.replace(/#album_[0-9]+/g, ""); // strip current fragment.
     var parent = event.currentTarget;
     // the <div> containing the category list
+
+    var album = parent.parentElement; // the <li> containing the album
+    while (album.getAttribute("class") != "album_li") {
+        album = album.parentElement;
+    }
 
     if (("keyCode" in event && (event.keyCode == Return || event.keyCode == Space)) ||
         "button" in event) {
@@ -20,7 +38,8 @@ function EditCategory(event) {
             var el = event.currentTarget; // the <div> containing the category list
 
             el.innerHTML = "<form action=\"/update\" method=\"post\" class=\"category_edit\">" +
-                "<input type=hidden name=ref value=\"" + encodeURI(document.baseURI) + "\">" +
+                "<input type=hidden name=ref value=\"" +
+                encodeURI(strippedURI + "#" + album.getAttribute("id")) + "\">" +
                 "<input type=hidden name=id readonly value=\"" + parent.getAttribute("id") +"\">" +
                 "<input type=text id=\"edit_focus\" name=category value=\"" + parent.innerText + "\"" +
                 " onkeydown=\"EditingKey(event)\">" +
@@ -46,7 +65,7 @@ function EditingKey(event) {
 //  Apparently global variables holding current active tab, button
 //  don't work in FireFox. 
 
-function SelectTab(buttonId, tabId) {
+function SelectTab(buttonId, tabId, remainingId) {
     var i;
     var buttons = document.getElementsByClassName("tabbutton");
     for (i = 0; i < buttons.length; i++) {
@@ -81,6 +100,8 @@ function SelectTab(buttonId, tabId) {
             }
         }
     }
+
+    Fill_Remaining(tabId, remainingId);
 }
 
 function InitTabs() {

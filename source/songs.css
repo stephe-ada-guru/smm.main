@@ -15,6 +15,8 @@ label {display: table-cell; text-align: right; margin-right: 2px; }
 .album_row {overflow-x: scroll; white-space: nowrap; }
 /* to get scrolling in Firefox, must be a 'div', not a 'span'. sigh */
 
+.search_result {overflow-y: scroll; }
+
 td:nth-child(even) {background-color: lightgrey; }
 
 /* Select sizes according to pixel density. devicePixelRatio gives */

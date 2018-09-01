@@ -47,7 +47,7 @@ install :: c:/home/stephe/bin/smm-show_id3.exe
 
 .PHONY : server-data play-icons
 
-SERVER_DATA := /d/Music/server_data
+# SERVER_DATA defined in prj.el
 
 server-data :: $(SERVER_DATA)/app.ico
 server-data :: $(SERVER_DATA)/liner_notes_icon-desktop.png

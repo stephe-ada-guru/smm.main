@@ -458,10 +458,14 @@ package body SMM.Server is
    is
       use Ada.Characters.Handling;
       use Ada.Directories;
+      use Ada.Strings.Fixed;
+      use Ada.Strings;
       use SMM.Database;
 
       URI_Param : constant AWS.Parameters.List := Decode_Plus (AWS.URL.Parameters (URI));
       DB        : SMM.Database.Database;
+
+      Search_Result_ID : constant String := "search_result";
 
       Response_1 : constant String := "<!DOCTYPE html>" & ASCII.LF &
         "<html lang=""en"">" &
@@ -473,9 +477,11 @@ package body SMM.Server is
 
       Response_2 : constant String := "<div class=""tabbar"">" &
         "<button class=""tabbutton"" id=""general_search_button""" &
-        " onclick=""SelectTab('general_search_button', 'general_search_tab')"">General Search</button>" &
+        " onclick=""SelectTab('general_search_button', 'general_search_tab', '" & Search_Result_ID &
+        "')"">General Search</button>" &
         "<button class=""tabbutton"" id=""detailed_search_button""" &
-        " onclick=""SelectTab('detailed_search_button', 'detailed_search_tab')"">Detailed Search</button>" &
+        " onclick=""SelectTab('detailed_search_button', 'detailed_search_tab', '" & Search_Result_ID &
+        "')"">Detailed Search</button>" &
         "</div>" & ASCII.LF &
         "<div class=""tabcontent"" id=""general_search_tab""><form action=""/search"" method=get>" &
         "<input type=submit value=""Search"">" &
@@ -496,14 +502,12 @@ package body SMM.Server is
         "</div><input type=submit value=""Search"">" &
         "</form></div><hr>" & ASCII.LF;
 
-      Response : Unbounded_String;
+      Response      : Unbounded_String;
       Current_Album : Unbounded_String;
+      Album_ID      : Integer := 0;
 
       function Search_Result (I : in Cursor) return String
       is
-         --  Some albums are single artist, some are not; we always list the
-         --  artist with each title.
-
          Title_Row : constant Unbounded_String := +"<tr>" &
            "<td><a href=""/" & AWS.URL.Encode (I.File_Name, SMM.File_Name_Encode_Set) &
            """>" & Server_Img_Set (-Server_Data & "/play_icon", ".png", "play") &
@@ -531,6 +535,8 @@ package body SMM.Server is
                Result := Result & "</tbody></table></li><hr>";
             end if;
 
+            Album_ID := Album_ID + 1;
+
             if I.Album'Length = 0 then
                Current_Album := +"no album";
             else
@@ -538,7 +544,8 @@ package body SMM.Server is
             end if;
 
             declare
-               Album_Item : Unbounded_String := +"<li>" &
+               Album_Item : Unbounded_String := +"<li id=""album_" & Trim (Integer'Image (Album_ID), Both) &
+                 """ class=""album_li"">" &
                  "<div class=""album_row""><a class=""text"" href=""search?album=" & AWS.URL.Encode
                    (I.Album, SMM.File_Name_Encode_Set) & """>" & I.Album & "</a>" &
                  "<div class=""text"">" & I.Album_Artist & "</div>";
@@ -604,15 +611,24 @@ package body SMM.Server is
          DB.Open (-DB_Filename);
 
          declare
-            I : Cursor :=
-              (if URI_Param.Exist ("search")
-               then DB.Find_Like (URI_Param.Get ("search"), Order_By => (Album, Track))   -- General search
-               else DB.Find_Like (To_SQL_Param (URI_Param), Order_By => (Album, Track))); -- Detailed search
+            I                : Cursor;
+            Button           : Unbounded_String;
+            Tab              : Unbounded_String;
          begin
+            if URI_Param.Exist ("search") then
+               --  General search
+               I      := DB.Find_Like (URI_Param.Get ("search"), Order_By => (Album, Track));
+               Button := +"general_search_button";
+               Tab    := +"general_search_tab";
+            else
+               --  Detailed search
+               I      := DB.Find_Like (To_SQL_Param (URI_Param), Order_By => (Album, Track));
+               Button := +"detailed_search_button";
+               Tab    := +"detailed_search_tab";
+            end if;
+
             Response := +Response_1 &
-              (if URI_Param.Exist ("search")
-               then "<body onload=""InitTabs()"">"
-               else "<body onload=""SelectTab('detailed_search_button', 'detailed_search_tab')"">") &
+                "<body onload=""SelectTab('" & Button & "', '" & Tab & "', '" & Search_Result_ID & "')"">" &
               Response_2;
 
             if not I.Has_Element then
@@ -620,7 +636,7 @@ package body SMM.Server is
                return AWS.Response.Build ("text/html", Response);
             end if;
 
-            Response := Response & "<ul>";
+            Response := Response & "<div id=""" & Search_Result_ID & """ class=""" & Search_Result_ID & """><ul>";
             loop
                exit when not I.Has_Element;
                Response := Response & Search_Result (I) & ASCII.LF;
@@ -632,7 +648,9 @@ package body SMM.Server is
          --  Terminate last album title table and album item
          Response := Response & "</tbody></table></li><hr>";
 
-         Response := Response & "</ul></body></html>";
+         --  Terminate album list, search result scroll, body, doc.
+         Response := Response & "</ul></div></body></html>";
+
          return AWS.Response.Build ("text/html", Response);
 
       else
