@@ -897,6 +897,9 @@ package body SMM.Server is
          --  useful for sync from outside this box. But there doesn't
          --  seem to be a way to tell which ones those are from here. So
          --  we get the address to use from the config file.
+         --
+         --  In GNAT GPL 2018, AWS uses GNAT.Sockets, and Bind does not support
+         --  IPv6. Sigh.
          Server_Host (Obj, Read (Config, "Server_IP", Missing_Key => Raise_Exception));
 
          --  AWS default server port is AWS.Default.Server_Port (= 8080)
