@@ -51,12 +51,12 @@ is
 
             if Ada.Directories.Extension (File_Name) /= "mp3" then
                Failed := Failed + 1;
-               Put_Line ("db extension: '" & Ada.Directories.Extension (File_Name) & "'");
+               Put_Line ("db extension:" & Integer'Image (I.ID) & " '" & Ada.Directories.Extension (File_Name) & "'");
             end if;
 
             if not Ada.Directories.Exists (File_Name) then
                Failed := Failed + 1;
-               Put_Line ("db extra: " & File_Name);
+               Put_Line ("db extra:" & Integer'Image (I.ID) & " '" & File_Name & "'");
             end if;
          end;
 

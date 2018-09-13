@@ -35,8 +35,7 @@ procedure SMM.Driver
 is
    procedure Put_Usage
    is begin
-      Put_Line
-        ("smm [--db=<db_file>] [--verbosity=<int>] <operation> [arg]...");
+      Put_Line ("smm [--db=<db_file>] [--verbosity=<int>] <operation> [arg]...");
       Put_Line ("  <db_file> : defaults to ~/smm/smm.db or $APPDATA/smm or $SMM_HOME");
       New_Line;
       Put_Line ("  categories: {instrumental | vocal | ...}");
@@ -176,9 +175,12 @@ when E : Ada.IO_Exceptions.Name_Error =>
 
 when E : others =>
    Put_Line
-     ("exception: " & Ada.Exceptions.Exception_Name (E) & ": " &
+     (Standard_Error,
+      "exception: " & Ada.Exceptions.Exception_Name (E) & ": " &
         Ada.Exceptions.Exception_Message (E));
-   Ada.Text_IO.Put_Line (GNAT.Traceback.Symbolic.Symbolic_Traceback (Ada.Exceptions.Traceback.Tracebacks (E)));
+   Put_Line
+     (Standard_Error,
+      GNAT.Traceback.Symbolic.Symbolic_Traceback (Ada.Exceptions.Traceback.Tracebacks (E)));
    Put_Usage;
    Set_Exit_Status (Failure);
 end SMM.Driver;

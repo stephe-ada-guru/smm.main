@@ -25,11 +25,13 @@
 pragma License (GPL);
 
 with Ada.Calendar.Formatting;
+with Ada.Characters.Handling;
 with Ada.Float_Text_IO;
 with Ada.Numerics.Generic_Elementary_Functions;
+with Ada.Strings.Fixed;
 with Ada.Text_IO;      use Ada.Text_IO;
-with SAL.Gen_Stats;
 with SAL.Gen_Histogram.Gen_Gnuplot;
+with SAL.Gen_Stats;
 with SMM.Database;
 procedure SMM.History (DB : in SMM.Database.Database)
 is
@@ -92,19 +94,43 @@ is
 
    procedure Accumulate (I : in SMM.Database.Cursor)
    is
+      use Ada.Characters.Handling;
+      use Ada.Strings.Fixed;
+
       Category : Categories;
    begin
       if I.Category_Contains ("dont_play") then
          Category := Dont_Play;
       else
          declare
-            Cat_String : constant String := I.Category_First;
+            Cat_String : constant String := I.Category;
+            First      : Integer         := Cat_String'First;
+            Last       : Integer         := Index (Cat_String, ",", First);
+
+            function Cat return String
+            is begin
+               if Last = 0 then
+                  return To_Lower (Cat_String (First .. Cat_String'Last));
+               else
+                  return To_Lower (Cat_String (First .. Last - 1));
+               end if;
+            end Cat;
+
          begin
-            Category := Categories'Value (Cat_String);
+            loop
+               if Cat = "best" then
+                  --  Get next category
+                  First := Last + 1;
+                  Last := Index (Cat_String, ",", First);
+               else
+                  Category := Categories'Value (Cat);
+                  exit;
+               end if;
+            end loop;
          exception
          when Constraint_Error =>
-            raise SAL.Programmer_Error with "id" & Integer'Image (I.ID) & ": '" & Cat_String &
-              "' (first of '" & I.Category & "') not a recognized category";
+            raise SAL.Programmer_Error with "id" & Integer'Image (I.ID) & ": '" & Cat &
+                 "' (from '" & Cat_String & "') not a recognized category";
          end;
       end if;
 
@@ -139,10 +165,13 @@ is
                   Data.Stats.Accumulate (Period);
                   Data.Histogram.Accumulate (Period);
 
-                  if To_Bin (Period) > Bin_Max or
-                    To_Bin (Period) = 0
-                  then
-                     Put ("song:" & Integer'Image (I.ID) & " period:");
+                  if To_Bin (Period) = 0 then
+                     Put ("song:" & Integer'Image (I.ID) & " short period:");
+                     Put (Period, Aft => 2, Exp => 0);
+                     New_Line;
+
+                  elsif To_Bin (Period) > Bin_Max then
+                     Put ("song:" & Integer'Image (I.ID) & " long period:");
                      Put (Period, Aft => 2, Exp => 0);
                      New_Line;
                   end if;

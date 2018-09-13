@@ -58,6 +58,10 @@ is
    exception
    when E : SAL.Not_Found =>
       Ada.Text_IO.Put_Line (Ada.Exceptions.Exception_Message (E));
+   when E : others =>
+      Ada.Text_IO.Put_Line
+        ("file '" & Name & "' exception: " & Ada.Exceptions.Exception_Name (E) & ": " &
+           Ada.Exceptions.Exception_Message (E));
    end Update_File;
 
    procedure Update_Dir (Root : in String; Dir : in String)

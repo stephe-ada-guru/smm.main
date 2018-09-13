@@ -19,6 +19,7 @@
 pragma License (GPL);
 
 with Ada.Containers.Doubly_Linked_Lists;
+with AWS.Log;
 with SAL.Gen_Randomize_Doubly_Linked_Lists;
 with SMM.Database;
 package SMM.Song_Lists is
@@ -38,7 +39,9 @@ package SMM.Song_Lists is
       Song_Count        : in     Ada.Containers.Count_Type;
       New_Song_Count    : in     Ada.Containers.Count_Type;
       Over_Select_Ratio : in     Float;
-      Seed              : in     Integer := 0);
+      Seed              : in     Integer := 0;
+      Debug             : in     Boolean := False;
+      Debug_Log         : in out AWS.Log.Object);
    --  Return randomized list of Song_Count least-recently downloaded
    --  songs in Category. If any Songs have .Play_Before attribute,
    --  enforce it.

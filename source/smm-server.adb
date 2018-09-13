@@ -20,8 +20,9 @@ pragma License (GPL);
 
 with AWS.Config.Set;
 with AWS.Containers.Tables;
-with AWS.Messages;
+with AWS.Log;
 with AWS.MIME;
+with AWS.Messages;
 with AWS.Parameters;
 with AWS.Response.Set;
 with AWS.Server.Log;
@@ -49,6 +50,8 @@ package body SMM.Server is
    --  Relative to Source_Root; contains server html, css, js files; does not end in /
 
    DB_Filename : Unbounded_String;
+   Enable_Log  : Boolean := False;
+   Debug_Log   : AWS.Log.Object;
 
    function Decode_Plus (Item : in String) return String
    is begin
@@ -200,7 +203,9 @@ package body SMM.Server is
          Song_Count        => Count,
          New_Song_Count    => New_Count,
          Over_Select_Ratio => Over_Select_Ratio,
-         Seed              => Seed);
+         Seed              => Seed,
+         Debug             => Enable_Log,
+         Debug_Log         => Debug_Log);
 
       for I of Songs loop
          Response := Response & Normalize (DB.Find_ID (I).File_Name) & ASCII.CR & ASCII.LF;
@@ -855,10 +860,8 @@ package body SMM.Server is
          Put_Line ("DB_Filename");
       end Usage;
 
-      Config     : SAL.Config_Files.Configuration_Type;
-      Ws         : AWS.Server.HTTP;
-      Enable_Log : Boolean := False;
-
+      Config : SAL.Config_Files.Configuration_Type;
+      Ws     : AWS.Server.HTTP;
    begin
       declare
          use Ada.Command_Line;
@@ -918,6 +921,12 @@ package body SMM.Server is
 
                Log_File_Directory (Obj, Log_Dir_Name);
                Log_Filename_Prefix (Obj, "smm-server");
+
+               AWS.Log.Start
+                 (Debug_Log,
+                  File_Directory  => Log_Dir_Name,
+                  Filename_Prefix => "smm-server-debug",
+                  Auto_Flush      => True);
             end;
          else
             Put_Line ("not logging");
