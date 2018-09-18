@@ -32,6 +32,8 @@ package body SMM.Song_Lists is
       Debug             : in     Boolean := False;
       Debug_Log         : in out AWS.Log.Object)
    is
+      pragma Unreferenced (Debug, Debug_Log);
+
       --  Requirements:
       --
       --  When the database is new, we want to select random sets of songs.
@@ -66,26 +68,6 @@ package body SMM.Song_Lists is
       is begin
          Randomize (Songs, Seed);
          if Songs.Length > Song_Count then
-            if Debug then
-               AWS.Log.Write (Debug_Log, "rejected:");
-               declare
-                  use Song_Lists;
-                  Songs_Cur : Cursor  := Songs.First;
-                  I         : Integer := 0;
-               begin
-                  loop
-                     exit when I = Integer (Song_Count);
-                     Next (Songs_Cur);
-                     I := I + 1;
-                  end loop;
-                  loop
-                     exit when not Has_Element (Songs_Cur);
-                     AWS.Log.Write (Debug_Log, DB.Find_ID (Element (Songs_Cur)).File_Name);
-                     Next (Songs_Cur);
-                  end loop;
-               end;
-            end if;
-
             Songs.Delete_Last (Songs.Length - Song_Count);
          end if;
          Play_Before (DB, Songs);
