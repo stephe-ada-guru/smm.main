@@ -260,7 +260,9 @@ package body SMM.Database is
       Album_Artist => Album_Artist_Field,
       Category     => Category_Field,
       Title        => Title_Field,
-      Track        => Track_Field);
+      Track        => Track_Field,
+      Play_Before  => Play_Before_Field,
+      Play_After   => Play_After_Field);
 
    function Has_Element (Position : Cursor) return Boolean
    is begin

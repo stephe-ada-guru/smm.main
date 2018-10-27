@@ -140,7 +140,7 @@ package SMM.Database is
    --  Items that are the defaults are not updated.
    --  Cursor must be refetched to reflect changes.
 
-   type Fields is (Artist, Album, Album_Artist, Title, Category, Track);
+   type Fields is (Artist, Album, Album_Artist, Title, Category, Track, Play_Before, Play_After);
 
    type Field_Values is array (Fields) of Ada.Strings.Unbounded.Unbounded_String;
 
@@ -155,7 +155,9 @@ package SMM.Database is
       Album_Artist => +"album_artist",
       Category     => +"category",
       Title        => +"title",
-      Track        => +"track");
+      Track        => +"track",
+      Play_Before  => +"play_before",
+      Play_After   => +"play_after");
 
    function Valid_Field (Item : in String) return Boolean;
    --  True if Item in Field_Image (case insensitive).
