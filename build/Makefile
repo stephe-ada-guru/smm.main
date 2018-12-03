@@ -15,14 +15,16 @@ t_all : smm.exe smm-server_driver.exe test_all_harness.run
 one-clean :
 	rm -f smm_config.db
 
-one : modify_schema.exe smm_new.db
+one : smm.exe
+	cd d:/Music; $(CURDIR)/smm.exe update "Barry Miles, Eric Claus/Pittsburg 1980/"
+
+modify : modify_schema.exe smm_new.db
 	./modify_schema.exe c:/home/stephe/smm/smm_server.config smm_new.db
 
-two : smm.exe
-	cd d:/Music; $(CURDIR)/smm.exe --verbosity=1 update "Helicon/The Titan/Mazurka Limousin_Bouree.mp3"
+two : smm-server_driver.exe
+#	cd d:/Music; $(CURDIR)/smm.exe update "Beth Wood/20-20-2017/"
 
-# This server can't be seen from phone, tablet (not clear why); use
-# ~/bin/music-server-work_1.sh
+# This server can't be seen from phone, tablet (not clear why)
 run-server : server-data smm-server_driver.exe
 	./smm-server_driver.exe smm_server_devel.config
 
@@ -31,12 +33,11 @@ convert-main : config_to_sqlite.exe | c:/home/stephe/smm/smm_work_1.db
 
 DATE := $(shell date +%Y-%m-%d)
 
-histogram : ~/bin/smm.exe
+histogram : c:/home/stephe/bin/smm.exe
 	cd d:/Music; smm history > status-$(DATE).text
 	cd d:/Music; gnuplot vocal_histogram.gnuplot > vocal_histogram.png
 	cd d:/Music; gnuplot instrumental_histogram.gnuplot > instrumental_histogram.png
 
-# check : export Standard_Common_Build = Debug
 check : smm.exe
 	cd d:/Music; $(CURDIR)/smm check > missing.log
 

@@ -49,13 +49,26 @@ is
 
       Metadata (Source_Root & Name, ID3_Frames, Artist_ID);
 
-      DB.Update
-        (I,
-         Artist       => -Find (Artist_ID, ID3_Frames),
-         Album_Artist => -Find (SMM.ID3.Alt_Artist, ID3_Frames),
-         Album        => -Find (SMM.ID3.Album, ID3_Frames),
-         Title        => -Find (SMM.ID3.Title, ID3_Frames),
-         Track        => Integer'Value (-Find (SMM.ID3.Track, ID3_Frames)));
+      declare
+         Track_Str : constant String := -Find (SMM.ID3.Track, ID3_Frames);
+      begin
+         if Track_Str'Length = 0 then
+            DB.Update
+              (I,
+               Artist       => -Find (Artist_ID, ID3_Frames),
+               Album_Artist => -Find (SMM.ID3.Alt_Artist, ID3_Frames),
+               Album        => -Find (SMM.ID3.Album, ID3_Frames),
+               Title        => -Find (SMM.ID3.Title, ID3_Frames));
+         else
+            DB.Update
+              (I,
+               Artist       => -Find (Artist_ID, ID3_Frames),
+               Album_Artist => -Find (SMM.ID3.Alt_Artist, ID3_Frames),
+               Album        => -Find (SMM.ID3.Album, ID3_Frames),
+               Title        => -Find (SMM.ID3.Title, ID3_Frames),
+               Track        => Integer'Value (Track_Str));
+         end if;
+      end;
    exception
    when E : SAL.Not_Found =>
       Ada.Text_IO.Put_Line (Ada.Exceptions.Exception_Message (E));

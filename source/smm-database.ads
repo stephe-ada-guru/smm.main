@@ -204,7 +204,7 @@ package SMM.Database is
 
    function Category_Contains (Position : in Cursor; Item : in String) return Boolean;
    --  "Category" is a comma separated list of labels; return True if
-   --  Item equals one of those labels.
+   --  Item equals one of those labels, using case insensitive compare.
 
    function Category_First (Position : in Cursor) return String;
    --  First item in category list.

@@ -625,9 +625,10 @@ package body SMM.Database is
 
    function Category_Contains (Position : in Cursor; Item : in String) return Boolean
    is
+      use Ada.Characters.Handling;
       use Ada.Strings.Fixed;
    begin
-      return 0 /= Index (Source => Position.Category, Pattern => Item);
+      return 0 /= Index (Source => To_Lower (Position.Category), Pattern => To_Lower (Item));
    end Category_Contains;
 
    function Category_First (Position : in Cursor) return String
