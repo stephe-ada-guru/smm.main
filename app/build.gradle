@@ -7,11 +7,11 @@ android
   defaultConfig
   {
     // No dots allowed in versionCode, so just use sequential integer.
-    // Version shown in Samsung Application Manager info (not in Google Nexus)
+    // Version shown in App info (not in Google Nexus)
     // 
-    // versionName = versionCode = VERSION in ../build/Makefile
+    // versionName = versionCode = VERSION in ../Makefile
     //
-    // minSdkVersion   : Galaxy Tablet, LG Stylo run API 24
+    // minSdkVersion   : see ~/Misc/android.text; support phone and tablet
     // targetSdkVersion: lint complains if not latest
 
     applicationId "org.stephe_leake.android.stephes_music"
@@ -41,12 +41,6 @@ android
     }
   }
 
-  // compileJava
-  // {
-  //   // FIXME: there must be a way to put this in 'lintOptions'!
-  //   options.compilerArgs << "-Xlint:unchecked"
-  // }
-  
   lintOptions
   {
     // see also lint.xml

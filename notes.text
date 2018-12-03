@@ -14,6 +14,14 @@ branches:
     o.s_l.m_p.work                     - available
 
  current tasks
+album art prefer _huge_0
+
+https://github.com/googleapis/google-http-java-client/tree/1.19
+    use packet sniffer to debug network connection problems
+        lost Jonathon's recommendation
+
+use workmanager to schedule update
+
 http://android-developers.googleblog.com/2018/08/verifying-your-google-assistant-media.html
 http://android-developers.googleblog.com/2018/06/a-new-universal-music-player.html
 
