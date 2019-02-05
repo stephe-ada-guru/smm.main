@@ -2,7 +2,7 @@
 --
 --  See spec.
 --
---  Copyright (C) 2018 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2018 - 2019 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -221,6 +221,8 @@ package body SMM.Song_Lists is
       Item_I := First (Have_Play_Before);
       Find_Second_Song :
       loop
+         --  FIXME: we never insert a play_after in Least_Recent_Songs, so this
+         --  loop is not needed.
          exit Find_Second_Song when Item_I = Item_Lists.No_Element;
 
          declare

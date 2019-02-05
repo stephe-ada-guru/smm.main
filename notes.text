@@ -23,18 +23,37 @@ d:/Music/remote_cache/smm-server_driver.log
  '(("../org.stephe_leake.sal.stephe-1" . "../org.stephe_leake.sal")
    ("../smm.work_1"                    . "../smm.main")))
 
+
 play-before causes short replay periods
     fixed 1 feb 2018; short periods should dissappear from status eventually
+    5357|Fred Small/Everything Possible- Fred Small in Concert/02 Guinevere and the Fire.mp3    |2017-07-20 09:23:19|2017-07-19 11:00:56||5356
+
+other short replay periods
+    774 |Vince Conaway||Distractions from the muse|Water In The Tree         |2018-01-11 22:36:28|2018-01-11 21:20:22
+        ?
+
+    216|Mary Chapin Carpenter/Between Here And Gone/Grand Central Station.mp3|2018-10-01 20:04:42|2018-09-27 19:47:47
+    419|Original Broadway Cast/Pippin Soundtrack/Corner Of The Sky.mp3       |2018-10-01 20:06:04|2018-09-27 19:32:05
+    898|Keith Jarrett/The Koln Concert, January 24, 1975/Part II c.mp3       |2018-10-01 20:17:23|2018-09-30 15:29:29
+    1032|David Wilcox/Home Again/Advertising Man.mp3                         |2018-10-01 20:04:38|2018-09-27 19:48:56
+    1078|David Wilcox/How Did You Find Me Here/Eye Of The Hurricane.mp3      |2018-10-01 20:07:24|2018-09-23 17:16:34
+    1435|Crosby, Stills, Nash & Young/4 Way Street/Triad.mp3                 |2018-10-01 20:04:48|2018-09-27 19:45:22
+    2037|Fred Small/Heart of the Appaloosa/Annie.mp3                         |2018-10-01 20:17:53|2018-09-23 17:16:21
+    2757|Indigo Girls/Strange Fire/Get Together.mp3                          |2018-10-01 20:19:43|2018-09-27 19:32:35
+    3828|Jack Williams/Across the Winterline/08 The Lone Palmetto Sings.mp3  |2018-10-01 20:00:22|2018-09-27 19:45:05
+    3894|Lucy Kaplansky/Over the Hills/10 The Gift.mp3                       |2018-10-01 20:13:55|2018-09-23 17:12:27
+    3922|David Wilcox/Reverie/12 We Call It Freedom.mp3                      |2018-10-01 20:03:32|2018-10-01 18:12:46
+    6053|Sharlene Wallace & Susan Piltch/Anticipation/06 Wedding Promise.mp3 |2018-10-01 20:06:24|2018-09-24 00:23:44
+        Download glitch related to moving?
 
 
-new songs
-    ara lee/Nasty Woman not downloaded since May;  5 months
-        could be bad luck
-        d:/Music/remote_cache/smm-server-debug.log
-            notes in projects.text
+rename enforce relative to root
 
 need update to null
     pete seeger flowers gone kisses sweeter than wine
+
+smm-song-lists.adb
+    delete Find_Second_Song loop
 
 use ip6 address for faster connect
     Android tries 3 ipv6 addresses before ipv4
