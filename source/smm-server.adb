@@ -2,7 +2,7 @@
 --
 --  Stephe's Music Manager Server
 --
---  Copyright (C) 2016 - 2018 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2016 - 2019 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -208,7 +208,16 @@ package body SMM.Server is
          Debug_Log         => Debug_Log);
 
       for I of Songs loop
-         Response := Response & Normalize (DB.Find_ID (I).File_Name) & ASCII.CR & ASCII.LF;
+         declare
+            Cur : constant SMM.Database.Cursor := DB.Find_ID (I);
+         begin
+            if Cur.Has_Element then
+               Response := Response & Normalize (Cur.File_Name) & ASCII.CR & ASCII.LF;
+            else
+               --  Must be a bad play before/after link. Need an error message protocol.
+               null;
+            end if;
+         end;
       end loop;
 
       return AWS.Response.Build ("text/plain", Response);

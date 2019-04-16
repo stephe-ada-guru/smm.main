@@ -2,7 +2,7 @@
 --
 --  Check against db, report missing in either.
 --
---  Copyright (C) 2016 - 2018 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2016 - 2019 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -150,7 +150,7 @@ is
                   I : constant Cursor := DB.Find_File_Name (Name);
                begin
                   if I.Has_Element then
-                     for J in Fields loop
+                     for J in Required_Fields loop
                         if I.Field (J)'Length = 0 then
                            Put_Line (-Field_Image (J) & " missing: " & Name);
                         end if;

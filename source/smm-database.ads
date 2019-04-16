@@ -2,7 +2,7 @@
 --
 --  Interface to SQLite3 database
 --
---  Copyright (C) 2018 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2018 - 2019 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -141,6 +141,7 @@ package SMM.Database is
    --  Cursor must be refetched to reflect changes.
 
    type Fields is (Artist, Album, Album_Artist, Title, Category, Track, Play_Before, Play_After);
+   subtype Required_Fields is Fields range Artist .. Track;
 
    type Field_Values is array (Fields) of Ada.Strings.Unbounded.Unbounded_String;
 
