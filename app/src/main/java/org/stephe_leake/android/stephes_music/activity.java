@@ -2,7 +2,7 @@
 //
 //  Provides User Interface to Stephe's Music Player.
 //
-//  Copyright (C) 2011 - 2013, 2015 - 2018 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2011 - 2013, 2015 - 2019 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -27,6 +27,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.content.FileProvider;
@@ -37,6 +38,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -69,8 +71,8 @@ public class activity extends android.app.Activity
 
    // Main UI members
 
-   private ImageView   albumArt;
    private TextView    artistTitle;
+   private TextView    albumArtistTitle;
    private TextView    albumTitle;
    private TextView    songTitle;
    private TextView    currentTime;
@@ -116,145 +118,156 @@ public class activity extends android.app.Activity
    };
 
    private ImageButton.OnClickListener nextListener = new ImageButton.OnClickListener()
+   {
+      @Override public void onClick(View v)
       {
-         @Override public void onClick(View v)
-         {
-            sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_NEXT));
-         }
-      };
+         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_NEXT));
+      }
+   };
 
    private TextView.OnClickListener playlistListener = new TextView.OnClickListener()
+   {
+      @Override public void onClick(View v)
       {
-         @Override public void onClick(View v)
-         {
-            PickPlaylistDialogFragment diag = new PickPlaylistDialogFragment();
-            Bundle args = new Bundle();
-            args.putInt("command", utils.COMMAND_PLAYLIST);
-            diag.setArguments(args);
-            diag.show(getFragmentManager(), "pick play playlist");
-         }
-      };
+         PickPlaylistDialogFragment diag = new PickPlaylistDialogFragment();
+         Bundle args = new Bundle();
+         args.putInt("command", utils.COMMAND_PLAYLIST);
+         diag.setArguments(args);
+         diag.show(getFragmentManager(), "pick play playlist");
+      }
+   };
 
    private ImageButton.OnClickListener playPauseListener = new ImageButton.OnClickListener()
+   {
+      @Override public void onClick(View v)
       {
-         @Override public void onClick(View v)
-         {
-            sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_TOGGLEPAUSE));
-         }
-      };
+         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_TOGGLEPAUSE));
+      }
+   };
 
    private ImageButton.OnClickListener prevListener = new ImageButton.OnClickListener()
+   {
+      @Override public void onClick(View v)
       {
-         @Override public void onClick(View v)
-         {
-            sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PREVIOUS));
-         }
-      };
+         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PREVIOUS));
+      }
+   };
 
    private OnSeekBarChangeListener progressListener = new OnSeekBarChangeListener()
+   {
+      // The system generates events very fast; that leads to a
+      // stuttering sound. So add some time hysteresis.
+
+      private long lastTime = 0;
+
+      public void onStartTrackingTouch(SeekBar bar)
       {
-         // The system generates events very fast; that leads to a
-         // stuttering sound. So add some time hysteresis.
+      }
 
-         private long lastTime = 0;
+      public void onProgressChanged(SeekBar bar, int progress, boolean fromuser)
+      {
+         if (!fromuser) return;
 
-         public void onStartTrackingTouch(SeekBar bar)
+         final long currentTime = System.currentTimeMillis();
+
+         if (currentTime > lastTime + 100) // 0.1 seconds
          {
+            lastTime = currentTime;
+
+            sendBroadcast
+               (new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_SEEK).
+                putExtra(utils.EXTRA_COMMAND_POSITION, (trackDuration * progress / maxProgress)));
          }
+      }
 
-         public void onProgressChanged(SeekBar bar, int progress, boolean fromuser)
-         {
-            if (!fromuser) return;
-
-            final long currentTime = System.currentTimeMillis();
-
-            if (currentTime > lastTime + 100) // 0.1 seconds
-            {
-               lastTime = currentTime;
-
-               sendBroadcast
-                  (new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_SEEK).
-                   putExtra(utils.EXTRA_COMMAND_POSITION, (trackDuration * progress / maxProgress)));
-            }
-         }
-
-         public void onStopTrackingTouch(SeekBar bar)
-         {
-         }
-      };
+      public void onStopTrackingTouch(SeekBar bar)
+      {
+      }
+   };
 
    ////////// Broadcast reciever
 
    private BroadcastReceiver broadcastReceiver = new BroadcastReceiver()
+   {
+      // see utils.java constants for list of intents
+
+      @Override public void onReceive(Context context, Intent intent)
       {
-         // see utils.java constants for list of intents
+         final String action = intent.getAction();
 
-         @Override public void onReceive(Context context, Intent intent)
+         try
          {
-            final String action = intent.getAction();
-
-            try
+            if (action.equals(utils.META_CHANGED))
             {
-               if (action.equals(utils.META_CHANGED))
+               LinearLayout layout = (LinearLayout)findViewById (R.id.albumArtLinear);
+               Bitmap[] art = utils.retriever.getAlbumArt(false);
+
+               if (BuildConfig.DEBUG) utils.verboseLog("activity.onReceive META");
+               layout.removeAllViews();
+               for (int i = 0; i < art.length; i++)
+                  {
+                     ImageView imageView = new ImageView(context);
+                     imageView.setId(i);
+                     // imageView.setPadding(2, 2, 2, 2);
+                     imageView.setImageBitmap(art[i]);
+                     layout.addView(imageView);
+                  }
+
+               // On first start, with no playlist selected, these
+               // are all empty strings except playlist, which
+               // contains R.string.null_playlist or null_playlist_directory.
+               playlistTitle.setText(intent.getStringExtra("playlist"));
+               albumArtistTitle.setText(utils.retriever.albumArtist);
+               artistTitle.setText(utils.retriever.artist);
+               albumTitle.setText(utils.retriever.album);
+               songTitle.setText(utils.retriever.title);
+
+               trackDuration = Long.valueOf(utils.retriever.duration);
+
+               totalTime.setText(utils.makeTimeString(activity.this, trackDuration));
+            }
+            else if (action.equals(utils.PLAYSTATE_CHANGED))
+            {
+               final boolean playing = intent.getBooleanExtra("playing", false);
+               final int currentPos = intent.getIntExtra("position", 0);
+
+               if (BuildConfig.DEBUG) utils.verboseLog("activity.onReceive PLAYSTATE");
+
+               if (playing)
                {
-                  if (BuildConfig.DEBUG) utils.verboseLog("activity.onReceive META");
-
-                  albumArt.setImageBitmap(utils.retriever.getAlbumArt()); // Ok if null
-
-                  // On first start, with no playlist selected, these
-                  // are all empty strings except playlist, which
-                  // contains R.string.null_playlist or null_playlist_directory.
-                  playlistTitle.setText(intent.getStringExtra("playlist"));
-                  artistTitle.setText(utils.retriever.artist);
-                  albumTitle.setText(utils.retriever.album);
-                  songTitle.setText(utils.retriever.title);
-
-                  trackDuration = Long.valueOf(utils.retriever.duration);
-
-                  totalTime.setText(utils.makeTimeString(activity.this, trackDuration));
-               }
-               else if (action.equals(utils.PLAYSTATE_CHANGED))
-               {
-                  final boolean playing = intent.getBooleanExtra("playing", false);
-                  final int currentPos = intent.getIntExtra("position", 0);
-
-                  if (BuildConfig.DEBUG) utils.verboseLog("activity.onReceive PLAYSTATE");
-
-                  if (playing)
-                  {
-                     playPauseButton.setImageResource(R.drawable.pause);
-                  }
-                  else
-                  {
-                     playPauseButton.setImageResource(R.drawable.play);
-                  }
-
-                  currentTime.setText(utils.makeTimeString(activity.this, currentPos));
-
-                  if (trackDuration != 0)
-                  {
-                     progressBar.setProgress((int)(maxProgress * (long)currentPos/trackDuration));
-                  }
+                  playPauseButton.setImageResource(R.drawable.pause);
                }
                else
                {
-                  utils.errorLog (activity.this, "broadcastReceiver got unexpected intent: " + intent.toString());
+                  playPauseButton.setImageResource(R.drawable.play);
+               }
+
+               currentTime.setText(utils.makeTimeString(activity.this, currentPos));
+
+               if (trackDuration != 0)
+               {
+                  progressBar.setProgress((int)(maxProgress * (long)currentPos/trackDuration));
                }
             }
-            catch (RuntimeException e)
+            else
             {
-               utils.errorLog(null, "activity.broadcastReceiver: " + e);
+               utils.errorLog (activity.this, "broadcastReceiver got unexpected intent: " + intent.toString());
             }
          }
-      };
+         catch (RuntimeException e)
+         {
+            utils.errorLog(null, "activity.broadcastReceiver: " + e);
+         }
+      }
+   };
 
    private void setSMMDirectory()
    {
       Resources         res   = getResources();
       SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
       utils.smmDirectory = prefs.getString
-         (res.getString(R.string.smm_directory_key),
-          res.getString(R.string.smm_directory_default));
+      (res.getString(R.string.smm_directory_key),
+      res.getString(R.string.smm_directory_default));
    }
 
    ////////// Activity lifetime methods (in lifecycle order)
@@ -278,26 +291,26 @@ public class activity extends android.app.Activity
          FileProvider fileProvider = new FileProvider();
 
          utils.showDownloadLogIntent =
-            new Intent(Intent.ACTION_VIEW)
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            .setDataAndType
-            (fileProvider.getUriForFile
-             (this,
-              BuildConfig.APPLICATION_ID + ".fileprovider",
-              new File(DownloadUtils.logFileName())),
-             "text/plain");
+         new Intent(Intent.ACTION_VIEW)
+         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+         .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+         .setDataAndType
+         (fileProvider.getUriForFile
+         (this,
+         BuildConfig.APPLICATION_ID + ".fileprovider",
+         new File(DownloadUtils.logFileName())),
+         "text/plain");
 
          utils.showErrorLogIntent =
-            new Intent(Intent.ACTION_VIEW)
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            .setDataAndType
-            (fileProvider.getUriForFile
-             (this,
-              BuildConfig.APPLICATION_ID + ".fileprovider",
-              new File(utils.errorLogFileName())),
-             "text/plain");
+         new Intent(Intent.ACTION_VIEW)
+         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+         .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+         .setDataAndType
+         (fileProvider.getUriForFile
+         (this,
+         BuildConfig.APPLICATION_ID + ".fileprovider",
+         new File(utils.errorLogFileName())),
+         "text/plain");
 
          {
             GregorianCalendar time = new GregorianCalendar(); // holds current time
@@ -318,13 +331,14 @@ public class activity extends android.app.Activity
 
          // Set up displays, top to bottom left to right
 
-         albumArt    = (ImageView)findViewById(R.id.albumArt);
          artistTitle = utils.findTextViewById(this, R.id.artistTitle);
+         albumArtistTitle = utils.findTextViewById(this, R.id.albumArtistTitle);
          albumTitle  = utils.findTextViewById(this, R.id.albumTitle);
          songTitle   = utils.findTextViewById(this, R.id.songTitle);
 
          defaultTextViewTextSize = artistTitle.getTextSize();
          artistTitle.setTextSize(scale * defaultTextViewTextSize);
+         albumArtistTitle.setTextSize(scale * defaultTextViewTextSize);
          albumTitle.setTextSize(scale * defaultTextViewTextSize);
          songTitle.setTextSize(scale * defaultTextViewTextSize);
 
@@ -405,39 +419,39 @@ public class activity extends android.app.Activity
 
       switch (keyCode)
       {
-         // Alphabetical keycode order
+      // Alphabetical keycode order
       case KeyEvent.KEYCODE_MEDIA_NEXT:
       case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
-         // Google TV Remote app has fast forward button but not next
-         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_NEXT));
-         handled = true; // terminate event processing; MediaEventReceivers won't get it
-         break;
+      // Google TV Remote app has fast forward button but not next
+      sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_NEXT));
+      handled = true; // terminate event processing; MediaEventReceivers won't get it
+      break;
 
       case KeyEvent.KEYCODE_MEDIA_PAUSE:
-         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PAUSE));
-         handled = true;
-         break;
+      sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PAUSE));
+      handled = true;
+      break;
 
       case KeyEvent.KEYCODE_MEDIA_PLAY:
-         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PLAY));
-         handled = true;
-         break;
+      sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PLAY));
+      handled = true;
+      break;
 
       case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
-         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_TOGGLEPAUSE));
-         handled = true;
-         break;
+      sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_TOGGLEPAUSE));
+      handled = true;
+      break;
 
       case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
       case KeyEvent.KEYCODE_MEDIA_REWIND:
-         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PREVIOUS));
-         handled = true;
-         break;
+      sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PREVIOUS));
+      handled = true;
+      break;
 
       case KeyEvent.KEYCODE_MEDIA_STOP:
-         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PAUSE));
-         handled = true;
-         break;
+      sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PAUSE));
+      handled = true;
+      break;
 
       default:
       }
@@ -479,122 +493,126 @@ public class activity extends android.app.Activity
    {
       switch (item.getItemId())
       {
-         // Alphabetical order
+      // Alphabetical order
 
       case MENU_COPY:
-         {
-            ClipboardManager clipManage = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+      {
+      ClipboardManager clipManage = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
 
-            clipManage.setPrimaryClip
-               (ClipData.newPlainText
-                ("song", artistTitle.getText() + " " + albumTitle.getText() + " " + songTitle.getText()));
+         // Workaround for java-wisi parser not handling repeated (foo.getText() + )
+         CharSequence Msg = albumArtistTitle.getText();
+         Msg = Msg + " " + artistTitle.getText();
+         Msg = Msg + " " + albumTitle.getText();
+         Msg = Msg + " " + songTitle.getText();
+
+         clipManage.setPrimaryClip (ClipData.newPlainText ("song", Msg));
          }
-         break;
+      break;
 
       case MENU_DOWNLOAD_NEW_PLAYLIST:
-         {
-            Resources         res      = getResources();
-            SharedPreferences prefs    = PreferenceManager.getDefaultSharedPreferences(this);
-            String            serverIP = prefs.getString (res.getString(R.string.server_IP_key), null);
+      {
+         Resources         res      = getResources();
+         SharedPreferences prefs    = PreferenceManager.getDefaultSharedPreferences(this);
+         String            serverIP = prefs.getString (res.getString(R.string.server_IP_key), null);
 
-            if (null == serverIP)
-               utils.alertLog(this, "set Server IP in preferences");
-            else
-            {
-               TextDialogFragment diag = new TextDialogFragment();
-               Bundle args = new Bundle();
-               args.putInt("command", utils.COMMAND_DOWNLOAD);
-               diag.setArguments(args);
-               diag.show(getFragmentManager(), "enter new playlist category");
-            }
+         if (null == serverIP)
+         utils.alertLog(this, "set Server IP in preferences");
+         else
+         {
+            TextDialogFragment diag = new TextDialogFragment();
+            Bundle args = new Bundle();
+            args.putInt("command", utils.COMMAND_DOWNLOAD);
+            diag.setArguments(args);
+            diag.show(getFragmentManager(), "enter new playlist category");
          }
-         break;
+      }
+      break;
 
       case MENU_LINER:
-         {
-            Intent intent = new Intent(Intent.ACTION_VIEW)
-               .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-               .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-               .setDataAndType(utils.retriever.linerUri, "application/pdf");
+      {
+         Intent intent = new Intent(Intent.ACTION_VIEW)
+         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+         .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+         .setDataAndType(utils.retriever.linerUri, "application/pdf");
 
-            startActivity(intent);
-         }
-         break;
+         startActivity(intent);
+      }
+      break;
 
       case MENU_PREFERENCES:
-         startActivityForResult (new Intent(this, preferences.class), RESULT_PREFERENCES);
-         break;
+      startActivityForResult (new Intent(this, preferences.class), RESULT_PREFERENCES);
+      break;
 
       case MENU_QUIT:
-         sendBroadcast
-            (new Intent
-             (utils.ACTION_COMMAND)
-             .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_QUIT));
+      sendBroadcast
+      (new Intent
+      (utils.ACTION_COMMAND)
+      .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_QUIT));
 
-         stopService (new Intent().setComponent(playServiceComponentName));
+      stopService (new Intent().setComponent(playServiceComponentName));
 
-         finish();
-         break;
+      finish();
+      break;
 
       case MENU_RESET_PLAYLIST:
-         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_RESET_PLAYLIST));
-         break;
+      sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_RESET_PLAYLIST));
+      break;
 
       case MENU_SEARCH:
-         {
-            SharedPreferences prefs    = PreferenceManager.getDefaultSharedPreferences(this);
-            Resources         res      = getResources();
-            String            serverIP = prefs.getString (res.getString(R.string.server_IP_key), null);
+      {
+         SharedPreferences prefs    = PreferenceManager.getDefaultSharedPreferences(this);
+         Resources         res      = getResources();
+         String            serverIP = prefs.getString (res.getString(R.string.server_IP_key), null);
 
-            Intent intent = new Intent(Intent.ACTION_VIEW, utils.retriever.searchUri(serverIP));
+         Intent intent = new Intent(Intent.ACTION_VIEW, utils.retriever.searchUri(serverIP));
 
-            startActivity(intent);
-         }
-         break;
+         startActivity(intent);
+      }
+      break;
 
       case MENU_SHARE:
-         {
-            utils.verboseLog("sharing " + utils.retriever.musicUri.toString());
+      {
+         utils.verboseLog("sharing " + utils.retriever.musicUri.toString());
 
-            Intent intent = new Intent()
-               .setAction(Intent.ACTION_SEND)
-               .putExtra(Intent.EXTRA_STREAM, utils.retriever.musicUri)
-               .setType("audio/mp3");
+         Intent intent = new Intent()
+         .setAction(Intent.ACTION_SEND)
+         .putExtra(Intent.EXTRA_STREAM, utils.retriever.musicUri)
+         .setType("audio/mp3");
 
-            startActivity(Intent.createChooser(intent, "Share song via ..."));
-         }
-         break;
+         startActivity(Intent.createChooser(intent, "Share song via ..."));
+      }
+      break;
 
       case MENU_SHOW_DOWNLOAD_LOG:
-         startActivity(utils.showDownloadLogIntent);
-         break;
+      startActivity(utils.showDownloadLogIntent);
+      break;
 
       case MENU_SHOW_ERROR_LOG:
-         startActivity(utils.showErrorLogIntent);
-         break;
+      startActivity(utils.showErrorLogIntent);
+      break;
 
       case MENU_UPDATE_PLAYLIST:
-         {
-            Resources         res      = getResources();
-            SharedPreferences prefs    = PreferenceManager.getDefaultSharedPreferences(this);
-            String            serverIP = prefs.getString (res.getString(R.string.server_IP_key), null);
+      {
+         Resources         res      = getResources();
+         SharedPreferences prefs    = PreferenceManager.getDefaultSharedPreferences(this);
+         String            serverIP = prefs.getString (res.getString(R.string.server_IP_key), null);
 
-            if (null == serverIP)
-               utils.alertLog(this, "set Server IP in preferences");
-            else
-            {
-               PickPlaylistDialogFragment diag = new PickPlaylistDialogFragment();
-               Bundle args = new Bundle();
-               args.putInt("command", utils.COMMAND_DOWNLOAD);
-               diag.setArguments(args);
-               diag.show(getFragmentManager(), "pick update playlist");
-            }
+         if (null == serverIP)
+         utils.alertLog(this, "set Server IP in preferences");
+         else
+         {
+            PickPlaylistDialogFragment diag = new PickPlaylistDialogFragment();
+            Bundle args = new Bundle();
+            args.putInt("command", utils.COMMAND_DOWNLOAD);
+            diag.setArguments(args);
+            diag.show(getFragmentManager(), "pick update playlist");
          }
-         break;
+      }
+      break;
 
       default:
-         utils.errorLog
-            (this, "activity.onOptionsItemSelected: unknown MenuItemId " + item.getItemId());
+      utils.errorLog
+      (this, "activity.onOptionsItemSelected: unknown MenuItemId " + item.getItemId());
       }
       return false; // continue menu processing
    }
@@ -608,47 +626,48 @@ public class activity extends android.app.Activity
          switch (resultCode)
          {
          case RESULT_OK: // = -1
-            break;
+         break;
 
          // Not much we can do if we don't get access.
          }
       }
-         break;
+      break;
 
       case RESULT_PREFERENCES:
-         switch (resultCode)
-         {
-         case RESULT_CANCELED:
-         case RESULT_OK: // = -1
-            break;
+      switch (resultCode)
+      {
+      case RESULT_CANCELED:
+      case RESULT_OK: // = -1
+      break;
 
-         case utils.RESULT_TEXT_SCALE:
-            {
-               final float scale = getTextViewTextScale();
+      case utils.RESULT_TEXT_SCALE:
+      {
+         final float scale = getTextViewTextScale();
 
-               artistTitle.setTextSize(scale * defaultTextViewTextSize);
-               albumTitle.setTextSize(scale * defaultTextViewTextSize);
-               songTitle.setTextSize(scale * defaultTextViewTextSize);
-            }
-            break;
+         albumArtistTitle.setTextSize(scale * defaultTextViewTextSize);
+         artistTitle.setTextSize(scale * defaultTextViewTextSize);
+         albumTitle.setTextSize(scale * defaultTextViewTextSize);
+         songTitle.setTextSize(scale * defaultTextViewTextSize);
+      }
+      break;
 
-         case utils.RESULT_SMM_DIRECTORY:
-            {
-               setSMMDirectory();
-               // value from preferences
-            }
-            break;
-
-         default:
-            utils.errorLog
-               (this, "activity.onActivityResult: unknown preferences resultCode " + resultCode);
-            break;
-         }
-         break;
+      case utils.RESULT_SMM_DIRECTORY:
+      {
+         setSMMDirectory();
+      // value from preferences
+      }
+      break;
 
       default:
-         utils.errorLog
-            (this, "activity.onActivityResult: unknown requestCode " + requestCode);
+      utils.errorLog
+      (this, "activity.onActivityResult: unknown preferences resultCode " + resultCode);
+      break;
+      }
+      break;
+
+      default:
+      utils.errorLog
+      (this, "activity.onActivityResult: unknown requestCode " + requestCode);
       }
    }
 }

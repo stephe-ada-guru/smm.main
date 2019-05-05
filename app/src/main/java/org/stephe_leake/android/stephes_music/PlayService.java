@@ -3,7 +3,7 @@
 //  Provides background audio playback capabilities, allowing the
 //  user to switch between activities without stopping playback.
 //
-//  Copyright (C) 2011 - 2013, 2015 - 2018 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2011 - 2013, 2015 - 2019 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -164,7 +164,7 @@ public class PlayService extends Service
       try
       {
          RemoteViews notifView = new RemoteViews(context.getPackageName(), R.layout.notification);
-         notifView.setTextViewText(R.id.notifArtist, retriever.artist);
+         notifView.setTextViewText(R.id.notifArtist, retriever.albumArtist);
          notifView.setTextViewText(R.id.notifAlbum, retriever.album);
          notifView.setTextViewText(R.id.notifTitle, retriever.title);
          notifView.setOnClickPendingIntent(R.id.notifPrev, prevIntent);
@@ -248,7 +248,7 @@ public class PlayService extends Service
                .putLong(MediaMetadata.METADATA_KEY_DURATION, Integer.parseInt(utils.retriever.duration))
                // This works for the lock screen, but not for the Scion xB
                // ok if albumart is null
-               .putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, utils.retriever.getAlbumArt())
+               .putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, utils.retriever.getAlbumArt(true)[0])
                .build();
 
             mediaSession.setMetadata(metadata);

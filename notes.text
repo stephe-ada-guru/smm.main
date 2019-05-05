@@ -1,32 +1,43 @@
- references
-NEWS.text
+(setq java-process-parse-exec "c:/Projects/org.emacs.java-wisi/build/java_mode_wisi_parse")
+
 Makefile
-c:/Projects/smm.main/notes.text
-~/Misc/android.text
-d:/Archive/Android/libs/commons-io-2.5/docs/index.html
-https://github.com/square/okhttp/wiki
-http://square.github.io/okhttp/3.x/okhttp/ javadoc
-
-d:/Music/remote_cache/smm-server_driver.log
-
-branches:
-    org.stephe_leake.music_player.java - main, currently on phone
-    o.s_l.m_p.work                     - available
+c:/Projects/org.emacs.java-wisi/notes.text
 
  current tasks
-album art prefer _huge_0
+xref lines too long; overflow window
+    M-? on getAlbumArt
+    in xref--insert-xrefs: (file-name-nondirectory group)
+        abs file name in xref-item text property
+    submit patch
 
-https://github.com/googleapis/google-http-java-client/tree/1.19
-    use packet sniffer to debug network connection problems
-        lost Jonathon's recommendation
+select java project by dir
+    and xref; don't remove xref-find in deselect; make it work by dir
+    broken anyway; reselect does not add xref-find!
+
+need align
+    activity.java artistTitle
+    metadata.java setMetaData title/album/albumArtist
+
+which function not working
+
+indent bug:
+      String scale            = prefs.getString
+      (res.getString(R.string.text_scale_key),
+      res.getString(R.string.text_scale_default));
+
+parse broken in activity.java onOptionsItemSelected
+    .getText() + ... 4 times
+
+display composer?
 
 use workmanager to schedule update
+
+Add categ love, provide not categ search
 
 http://android-developers.googleblog.com/2018/08/verifying-your-google-assistant-media.html
 http://android-developers.googleblog.com/2018/06/a-new-universal-music-player.html
 
-update playlist downloads one extra song
-    code looks ok; try unit test?
+https://codelabs.developers.google.com/advanced-android-training/
 
 navigation messages getting thru, but music does not get notified
     phone interrupts music properly
@@ -160,6 +171,21 @@ stop after n songs
 fix menu
     on tablet, currently works, but displayes as "MORE" instead of vertical "..."
     on phone, menu button works, nothing on screen
+
+ references
+NEWS.text
+Makefile
+c:/Projects/smm.main/notes.text
+~/Misc/android.text
+d:/Archive/Android/libs/commons-io-2.5/docs/index.html
+https://github.com/square/okhttp/wiki
+http://square.github.io/okhttp/3.x/okhttp/ javadoc
+
+d:/Music/remote_cache/smm-server_driver.log
+
+branches:
+    org.stephe_leake.music_player.java - main, currently on phone
+    o.s_l.m_p.work                     - available
 
  Kate's Mythical Music Manager (KMMM Km3)
 ../stephes_music_player.kate/build/Makefile

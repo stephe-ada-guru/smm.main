@@ -11,7 +11,7 @@
 //
 //  So we return a copy  of the bitmap.
 //
-//  Copyright (C) 2013, 2015 - 2018 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2013, 2015 - 2019 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -40,6 +40,7 @@ public class MetaData
 {
    public String  title;
    public String  album;
+   public String  albumArtist;
    public String  artist;
    public String  duration;     // service needs a string for sendBroadcast, so don't bother with integer conversions
    public Uri     musicUri;     // for sharing
@@ -47,12 +48,7 @@ public class MetaData
    private String linerFileName;
 
    private String currentMusicFileName; // absolute
-   private Bitmap albumArt;
-
-   public Boolean albumArtValid()
-   {
-      return albumArt != null;
-   }
+   private Bitmap[] albumArt;
 
    public Boolean linerNotesExist()
    {
@@ -64,13 +60,20 @@ public class MetaData
          return new File(linerFileName).exists();
    }
 
-   public Bitmap getAlbumArt()
+   public Bitmap[] getAlbumArt(boolean one)
    {
-      // always return a copy, so the client can recycle it
+      // Always return copies, so the client can recycle them.
       if (albumArt == null)
          return null;
       else
-         return albumArt.copy(albumArt.getConfig(), false);
+      {
+         Bitmap[] result = new Bitmap[one ? 1 : albumArt.length];
+         for (int i = 0; i < albumArt.length; i++)
+         {
+            result [i] = albumArt[i].copy(albumArt[i].getConfig(), false);
+         }
+         return result;
+      }
    }
 
    public void setMetaData(Context context, String playlistDirectory, String musicFileName)
@@ -90,12 +93,10 @@ public class MetaData
          MediaMetadataRetriever retriever = new MediaMetadataRetriever();
          retriever.setDataSource(currentMusicFileName);
 
-         String artist1 = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
-         String artist2 = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST);
-
          title    = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
          album    = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM);
-         artist   = (artist1 == null || artist1.length() == 0) ? artist2 : artist1;
+         artist   = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
+         albumArtist    = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST);
          duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
       }
       catch (Exception e)
@@ -131,35 +132,18 @@ public class MetaData
       try
       {
          File albumArtFiles[] = musicFile.getParentFile().listFiles(new FileExtFilter(".jpg"));
-         File albumArtFile = null;
-         long maxSize = 0;
 
-         for (File file : albumArtFiles)
+         albumArt = new Bitmap[albumArtFiles.length];
+         for (int i = 0; i < albumArtFiles.length; i++)
          {
-            if (file.length() > maxSize)
-            {
-               albumArtFile = file;
-               maxSize = file.length();
-            }
-         }
-
-         if (albumArtFile != null)
-         {
-            // FIXME: scale to layout.
-            albumArt = BitmapFactory.decodeStream(new FileInputStream(albumArtFile));
-         }
-         else
-         {
-            // No album art files found
-            albumArt = null;
+            albumArt[i] = BitmapFactory.decodeStream(new FileInputStream(albumArtFiles[i]));
          }
       }
       catch (java.io.FileNotFoundException e)
       {
          if (BuildConfig.DEBUG)
          {
-            utils.debugLog("metadata bitmap exception");
-            utils.debugLog(e.toString());
+            utils.debugLog("metadata bitmap exception" + e.toString());
          }
          albumArt = null;
       }
