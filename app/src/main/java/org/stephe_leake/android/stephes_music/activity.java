@@ -205,20 +205,23 @@ public class activity extends android.app.Activity
                if (BuildConfig.DEBUG) utils.verboseLog("activity.onReceive META");
                layout.removeAllViews();
                for (int i = 0; i < art.length; i++)
-                  {
-                     ImageView imageView = new ImageView(context);
-                     imageView.setId(i);
-                     // imageView.setPadding(2, 2, 2, 2);
-                     imageView.setImageBitmap(art[i]);
-                     layout.addView(imageView);
-                  }
+               {
+                  ImageView imageView = new ImageView(context);
+                  imageView.setId(i);
+                  imageView.setImageBitmap(art[i]);
+                  layout.addView(imageView);
+               }
 
                // On first start, with no playlist selected, these
                // are all empty strings except playlist, which
                // contains R.string.null_playlist or null_playlist_directory.
                playlistTitle.setText(intent.getStringExtra("playlist"));
                albumArtistTitle.setText(utils.retriever.albumArtist);
-               artistTitle.setText(utils.retriever.artist);
+               if ((new String(utils.retriever.albumArtist)).equals(new String(utils.retriever.artist)))
+                  artistTitle.setText("");
+               else
+                  artistTitle.setText(utils.retriever.artist);
+
                albumTitle.setText(utils.retriever.album);
                songTitle.setText(utils.retriever.title);
 
@@ -497,7 +500,7 @@ public class activity extends android.app.Activity
 
       case MENU_COPY:
       {
-      ClipboardManager clipManage = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+         ClipboardManager clipManage = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
 
          // Workaround for java-wisi parser not handling repeated (foo.getText() + )
          CharSequence Msg = albumArtistTitle.getText();
@@ -506,7 +509,7 @@ public class activity extends android.app.Activity
          Msg = Msg + " " + songTitle.getText();
 
          clipManage.setPrimaryClip (ClipData.newPlainText ("song", Msg));
-         }
+      }
       break;
 
       case MENU_DOWNLOAD_NEW_PLAYLIST:
@@ -516,7 +519,7 @@ public class activity extends android.app.Activity
          String            serverIP = prefs.getString (res.getString(R.string.server_IP_key), null);
 
          if (null == serverIP)
-         utils.alertLog(this, "set Server IP in preferences");
+            utils.alertLog(this, "set Server IP in preferences");
          else
          {
             TextDialogFragment diag = new TextDialogFragment();
@@ -598,7 +601,7 @@ public class activity extends android.app.Activity
          String            serverIP = prefs.getString (res.getString(R.string.server_IP_key), null);
 
          if (null == serverIP)
-         utils.alertLog(this, "set Server IP in preferences");
+            utils.alertLog(this, "set Server IP in preferences");
          else
          {
             PickPlaylistDialogFragment diag = new PickPlaylistDialogFragment();

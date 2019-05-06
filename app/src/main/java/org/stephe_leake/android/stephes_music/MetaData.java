@@ -68,7 +68,7 @@ public class MetaData
       else
       {
          Bitmap[] result = new Bitmap[one ? 1 : albumArt.length];
-         for (int i = 0; i < albumArt.length; i++)
+         for (int i = 0; i < result.length; i++)
          {
             result [i] = albumArt[i].copy(albumArt[i].getConfig(), false);
          }
