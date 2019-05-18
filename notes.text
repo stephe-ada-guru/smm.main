@@ -1,18 +1,15 @@
-(setq java-process-parse-exec "c:/Projects/org.emacs.java-wisi/build/java_mode_wisi_parse")
-
 Makefile
 c:/Projects/org.emacs.java-wisi/notes.text
 
  current tasks
-xref lines too long; overflow window
-    M-? on getAlbumArt
-    in xref--insert-xrefs: (file-name-nondirectory group)
-        abs file name in xref-item text property
-    submit patch
+fix bug in activity broadcast_receiver on album_artist = null
 
 select java project by dir
     and xref; don't remove xref-find in deselect; make it work by dir
     broken anyway; reselect does not add xref-find!
+
+display composer
+    MediaItemMetadata.KEY_COMPOSER
 
 need align
     activity.java artistTitle
@@ -27,8 +24,6 @@ indent bug:
 
 parse broken in activity.java onOptionsItemSelected
     .getText() + ... 4 times
-
-display composer?
 
 use workmanager to schedule update
 

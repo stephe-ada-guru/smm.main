@@ -217,7 +217,8 @@ public class activity extends android.app.Activity
                // contains R.string.null_playlist or null_playlist_directory.
                playlistTitle.setText(intent.getStringExtra("playlist"));
                albumArtistTitle.setText(utils.retriever.albumArtist);
-               if ((new String(utils.retriever.albumArtist)).equals(new String(utils.retriever.artist)))
+               if ((utils.retriever.albumArtist != null && utils.retriever.artist != null) &&
+                     ((new String(utils.retriever.albumArtist)).equals(new String(utils.retriever.artist))))
                   artistTitle.setText("");
                else
                   artistTitle.setText(utils.retriever.artist);
@@ -269,8 +270,8 @@ public class activity extends android.app.Activity
       Resources         res   = getResources();
       SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
       utils.smmDirectory = prefs.getString
-      (res.getString(R.string.smm_directory_key),
-      res.getString(R.string.smm_directory_default));
+        (res.getString(R.string.smm_directory_key),
+         res.getString(R.string.smm_directory_default));
    }
 
    ////////// Activity lifetime methods (in lifecycle order)
