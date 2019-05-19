@@ -2,7 +2,7 @@
 --
 --  Update metadata
 --
---  Copyright (C) 2018 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2018, 2019 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -43,32 +43,37 @@ is
          raise SAL.Not_Found with "not found in db: '" & Name & "'";
       end if;
 
-      if Verbosity > 0 then
-         Ada.Text_IO.Put_Line ("updating file " & Name);
-      end if;
-
       Metadata (Source_Root & Name, ID3_Frames, Artist_ID);
 
-      declare
-         Track_Str : constant String := -Find (SMM.ID3.Track, ID3_Frames);
-      begin
-         if Track_Str'Length = 0 then
-            DB.Update
-              (I,
-               Artist       => -Find (Artist_ID, ID3_Frames),
-               Album_Artist => -Find (SMM.ID3.Alt_Artist, ID3_Frames),
-               Album        => -Find (SMM.ID3.Album, ID3_Frames),
-               Title        => -Find (SMM.ID3.Title, ID3_Frames));
-         else
-            DB.Update
-              (I,
-               Artist       => -Find (Artist_ID, ID3_Frames),
-               Album_Artist => -Find (SMM.ID3.Alt_Artist, ID3_Frames),
-               Album        => -Find (SMM.ID3.Album, ID3_Frames),
-               Title        => -Find (SMM.ID3.Title, ID3_Frames),
-               Track        => Integer'Value (Track_Str));
+      DB.Update
+        (I,
+         Artist       => -Find (Artist_ID, ID3_Frames),
+         Album_Artist => -Find (SMM.ID3.Album_Artist, ID3_Frames),
+         Composer     => -Find (SMM.ID3.Composer, ID3_Frames),
+         Album        => -Find (SMM.ID3.Album, ID3_Frames),
+         Year         => SMM.ID3.To_Year
+           (-Find (SMM.ID3.Orig_Year, ID3_Frames),
+            -Find (SMM.ID3.Year, ID3_Frames)),
+         Title        => -Find (SMM.ID3.Title, ID3_Frames),
+         Track        => SMM.ID3.To_Track (-Find (SMM.ID3.Track, ID3_Frames)));
+
+      if Verbosity > 0 then
+         Ada.Text_IO.Put_Line ("updating file " & Name);
+         if Verbosity > 1 then
+            --  Must re-fetch cursor to show updated values
+            I := DB.Find_File_Name (Name);
+
+            for Field in Database.Field_Values'Range loop
+               Ada.Text_IO.Put_Line (-Database.Field_Image (Field) & " '" & I.Field (Field) & "'");
+            end loop;
          end if;
-      end;
+         if Verbosity > 2 then
+            for Frame of ID3_Frames loop
+               Ada.Text_IO.Put_Line (Frame.ID & " '" & (-Frame.Data) & "'");
+            end loop;
+         end if;
+      end if;
+
    exception
    when E : SAL.Not_Found =>
       Ada.Text_IO.Put_Line (Ada.Exceptions.Exception_Message (E));

@@ -511,6 +511,8 @@ package body SMM.Server is
         "<input type=search name=""album"" value=""" & URI_Param.Get ("album") & """></div>" &
         "<div class=""row""><label>Album Artist</label>" &
         "<input type=search name=""album_artist"" value=""" & URI_Param.Get ("album_artist") & """></div>" &
+        "<div class=""row""><label>Composer</label>" &
+        "<input type=search name=""composer"" value=""" & URI_Param.Get ("composer") & """></div>" &
         "<div class=""row""><label>Category </label>" &
         "<input type=search name=""category"" value=""" & URI_Param.Get ("category") & """></div>" &
         "</div><input type=submit value=""Search"">" &
@@ -527,6 +529,7 @@ package body SMM.Server is
            """>" & Server_Img_Set (-Server_Data & "/play_icon", ".png", "play") &
            "</a></td>" &
            "<td class=""text"">" & I.Artist & "</td>" &
+           "<td class=""text"">" & I.Composer & "</td>" &
            "<td class=""text"">" & I.Title & "</td>" &
            "<td class=""text"">" & Days_Ago (I.Last_Downloaded) & " / " & Days_Ago (I.Prev_Downloaded) & "</td>" &
            "<td><div class=""categories_list text"" onclick=""EditCategory(event)""" &
@@ -562,7 +565,8 @@ package body SMM.Server is
                  """ class=""album_li"">" &
                  "<div class=""album_row""><a class=""text"" href=""search?album=" & AWS.URL.Encode
                    (I.Album, SMM.File_Name_Encode_Set) & """>" & I.Album & "</a>" &
-                 "<div class=""text"">" & I.Album_Artist & "</div>";
+                 "<div class=""text"">" & I.Album_Artist &
+                 (if I.Year /= No_Year then Integer'Image (I.Year) else "") & "</div>";
 
                Meta : constant AWS.Containers.Tables.Table_Type := Meta_Files (Containing_Directory (I.File_Name));
             begin

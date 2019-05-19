@@ -2,21 +2,7 @@
 --
 --  Modify the schema of the database.
 --
---  To add a new field:
---
---  1. Edit create_schema.sql
---  2. Edit smm-database.ad? Insert, Update
---     do _not_ add new field to Fields, Cursor functions yet
---  3. Edit this file to copy old fields, add new
---  4. create smm_new.db
---  5. run modify_schema.exe c:/home/stephe/smm/smm_server.config smm_new.db
---  6. Edit smm-database.ad? Fields, Cursor function
---  7. edit rest of smm to handle new field
---     smm-update.adb, smm-import.adb
---  8. mv smm_new.db c:/home/stephe/smm/smm.db
---  9. make install
---
---  Copyright (C) 2018 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2018 - 2019 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -89,6 +75,7 @@ begin
 
       I          : Cursor  := Old_DB.First;
       Warm_Fuzzy : Integer := 0;
+
    begin
       loop
          exit when not I.Has_Element;
@@ -102,19 +89,41 @@ begin
 
             ID3_Frames := File.All_Frames;
 
-            New_DB.Insert
-              (ID              => I.ID,
-               File_Name       => I.File_Name,
-               Category        => I.Category,
-               Artist          => I.Artist,
-               Album           => I.Album,
-               Album_Artist    => -Find (SMM.ID3.Alt_Artist, ID3_Frames),
-               Title           => I.Title,
-               Track           => I.Track,
-               Last_Downloaded => I.Last_Downloaded,
-               Prev_Downloaded => I.Prev_Downloaded,
-               Play_Before     => I.Play_Before,
-               Play_After      => I.Play_After);
+            declare
+               Year : constant String := -Find (SMM.ID3.Year, ID3_Frames);
+
+               function Year_To_Integer return Integer
+               is
+                  use Ada.Text_IO;
+               begin
+                  if Year'Length = 0 then
+                     return No_Year;
+                  else
+                     return Integer'Value (Year);
+                  end if;
+               exception
+               when Constraint_Error =>
+                  --  From 'Value
+                  Put_Line (Standard_Error, I.File_Name & " : bad year: '" & Year & "'");
+                  return No_Year;
+               end Year_To_Integer;
+            begin
+               New_DB.Insert
+                 (ID              => I.ID,
+                  File_Name       => I.File_Name,
+                  Category        => I.Category,
+                  Artist          => I.Artist,
+                  Album           => I.Album,
+                  Album_Artist    => I.Album_Artist,
+                  Composer        => -Find (SMM.ID3.Composer, ID3_Frames),
+                  Title           => I.Title,
+                  Year            => Year_To_Integer,
+                  Track           => I.Track,
+                  Last_Downloaded => I.Last_Downloaded,
+                  Prev_Downloaded => I.Prev_Downloaded,
+                  Play_Before     => I.Play_Before,
+                  Play_After      => I.Play_After);
+            end;
          exception
          when E : SMM.Database.Entry_Error =>
             declare

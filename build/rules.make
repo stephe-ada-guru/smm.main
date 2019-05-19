@@ -2,9 +2,7 @@
 
 all : smm.exe
 all : smm-server_driver.exe
-all : config_to_sqlite.exe
 all : test_all_harness.diff
-all : smm.html
 
 tests : test_all_harness.diff
 

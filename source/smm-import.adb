@@ -2,7 +2,7 @@
 --
 --  Import new files into SMM db.
 --
---  Copyright (C) 2008 - 2010, 2012, 2014, 2018 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2010, 2012, 2014, 2018 - 2019 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -90,7 +90,11 @@ is
                         Category     => Category,
                         Artist       => -Find (Artist_ID, ID3_Frames),
                         Album        => -Find (SMM.ID3.Album, ID3_Frames),
-                        Album_Artist => -Find (SMM.ID3.Alt_Artist, ID3_Frames),
+                        Album_Artist => -Find (SMM.ID3.Album_Artist, ID3_Frames),
+                        Composer     => -Find (SMM.ID3.Composer, ID3_Frames),
+                        Year         => SMM.ID3.To_Year
+                          (-Find (SMM.ID3.Orig_Year, ID3_Frames),
+                           -Find (SMM.ID3.Year, ID3_Frames)),
                         Title        => -Find (SMM.ID3.Title, ID3_Frames),
                         Track        => SMM.ID3.To_Track (-Find (SMM.ID3.Track, ID3_Frames)));
 

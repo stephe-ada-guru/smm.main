@@ -2,7 +2,7 @@
 --
 --  See spec.
 --
---  Copyright (C) 2018 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2018 - 2019 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -70,8 +70,10 @@ package body SMM.Database is
       File_Name       : in String      := "";
       Category        : in String      := "";
       Artist          : in String      := "";
-      Album           : in String      := "";
       Album_Artist    : in String      := "";
+      Composer        : in String      := "";
+      Album           : in String      := "";
+      Year            : in Integer     := No_Year;
       Title           : in String      := "";
       Track           : in Integer     := No_Track;
       Last_Downloaded : in Time_String := Default_Time_String;
@@ -89,7 +91,7 @@ package body SMM.Database is
 
       Values : Unbounded_String := +"VALUES (";
 
-      Params : SQL_Parameters (1 .. 11) := (others => Null_Parameter);
+      Params : SQL_Parameters (1 .. 13) := (others => Null_Parameter);
 
       Need_Comma : Boolean := False;
       Last       : Integer := 0;
@@ -136,9 +138,11 @@ package body SMM.Database is
       Add_Param ("File_Name", File_Name, "");
       Add_Param ("Category", Category, "");
       Add_Param ("Artist", Artist, "");
-      Add_Param ("Album", Album, "");
       Add_Param ("Album_Artist", Album_Artist, "");
+      Add_Param ("Album", Album, "");
+      Add_Param ("Composer", Composer, "");
       Add_Param ("Title", Title, "");
+      Add_Param ("Year", Year, No_Year);
       Add_Param ("Track", Track, No_Track);
       Add_Param ("Last_Downloaded", Last_Downloaded, Default_Time_String);
       Add_Param ("Prev_Downloaded", Prev_Downloaded, Default_Time_String);
@@ -203,8 +207,10 @@ package body SMM.Database is
       File_Name       : in String;
       Category        : in String;
       Artist          : in String;
-      Album           : in String;
       Album_Artist    : in String;
+      Composer        : in String;
+      Album           : in String;
+      Year            : in Integer;
       Title           : in String;
       Track           : in Integer;
       Last_Downloaded : in Time_String := Default_Time_String;
@@ -219,9 +225,11 @@ package body SMM.Database is
          File_Name       => File_Name,
          Category        => Category,
          Artist          => Artist,
-         Album           => Album,
          Album_Artist    => Album_Artist,
+         Composer        => Composer,
+         Album           => Album,
          Title           => Title,
+         Year            => Year,
          Track           => Track,
          Last_Downloaded => Last_Downloaded,
          Prev_Downloaded => Prev_Downloaded,
@@ -246,8 +254,10 @@ package body SMM.Database is
    Category_Field        : constant GNATCOLL.SQL.Exec.Field_Index := File_Name_Field + 1;
    Artist_Field          : constant GNATCOLL.SQL.Exec.Field_Index := Category_Field + 1;
    Album_Artist_Field    : constant GNATCOLL.SQL.Exec.Field_Index := Artist_Field + 1;
-   Album_Field           : constant GNATCOLL.SQL.Exec.Field_Index := Album_Artist_Field + 1;
-   Title_Field           : constant GNATCOLL.SQL.Exec.Field_Index := Album_Field + 1;
+   Composer_Field        : constant GNATCOLL.SQL.Exec.Field_Index := Album_Artist_Field + 1;
+   Album_Field           : constant GNATCOLL.SQL.Exec.Field_Index := Composer_Field + 1;
+   Year_Field            : constant GNATCOLL.SQL.Exec.Field_Index := Album_Field + 1;
+   Title_Field           : constant GNATCOLL.SQL.Exec.Field_Index := Year_Field + 1;
    Track_Field           : constant GNATCOLL.SQL.Exec.Field_Index := Title_Field + 1;
    Last_Downloaded_Field : constant GNATCOLL.SQL.Exec.Field_Index := Track_Field + 1;
    Prev_Downloaded_Field : constant GNATCOLL.SQL.Exec.Field_Index := Last_Downloaded_Field + 1;
@@ -258,8 +268,10 @@ package body SMM.Database is
      (Artist       => Artist_Field,
       Album        => Album_Field,
       Album_Artist => Album_Artist_Field,
+      Composer     => Composer_Field,
       Category     => Category_Field,
       Title        => Title_Field,
+      Year         => Year_Field,
       Track        => Track_Field,
       Play_Before  => Play_Before_Field,
       Play_After   => Play_After_Field);
@@ -307,7 +319,9 @@ package body SMM.Database is
       Artist          : in String      := "";
       Album           : in String      := "";
       Album_Artist    : in String      := "";
+      Composer        : in String      := "";
       Title           : in String      := "";
+      Year            : in Integer     := No_Year;
       Track           : in Integer     := No_Track;
       Last_Downloaded : in Time_String := Default_Time_String;
       Prev_Downloaded : in Time_String := Default_Time_String;
@@ -323,7 +337,9 @@ package body SMM.Database is
          Artist          => Artist,
          Album           => Album,
          Album_Artist    => Album_Artist,
+         Composer        => Composer,
          Title           => Title,
+         Year            => Year,
          Track           => Track,
          Last_Downloaded => Last_Downloaded,
          Prev_Downloaded => Prev_Downloaded,
@@ -575,6 +591,14 @@ package body SMM.Database is
          else Position.Cursor.Value (Album_Artist_Field));
    end Album_Artist;
 
+   function Composer (Position : in Cursor) return String
+   is begin
+      return
+        (if Position.Cursor.Is_Null (Composer_Field)
+         then ""
+         else Position.Cursor.Value (Composer_Field));
+   end Composer;
+
    function Title (Position : in Cursor) return String
    is begin
       return
@@ -582,6 +606,14 @@ package body SMM.Database is
          then ""
          else Position.Cursor.Value (Title_Field));
    end Title;
+
+   function Year (Position : in Cursor) return Integer
+   is begin
+      return
+        (if Position.Cursor.Is_Null (Year_Field)
+         then No_Year
+         else Integer'Value (Position.Cursor.Value (Year_Field)));
+   end Year;
 
    function Track (Position : in Cursor) return Integer
    is begin

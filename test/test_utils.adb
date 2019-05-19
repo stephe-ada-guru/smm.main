@@ -2,7 +2,7 @@
 --
 --  see spec
 --
---  Copyright (C) 2007 - 2009, 2015 - 2016, 2018 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007 - 2009, 2015 - 2016, 2018, 2019 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -85,6 +85,9 @@ package body Test_Utils is
          Category        => Category,
          Artist          => "none",
          Album           => "none",
+         Album_Artist    => "none",
+         Composer        => "none",
+         Year            => 2000,
          Title           => "none",
          Track           => 1,
          Last_Downloaded => Prefix & Duration'Image (Last_Downloaded) (2 .. 2));

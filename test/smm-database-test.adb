@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2018 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2018, 2019 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -167,20 +167,30 @@ package body SMM.Database.Test is
       DB.Open (DB_File_Name);
 
       DB.Insert
-        (ID        => 1,
-         File_Name => "artist_1/album_1/1 - song_1.mp3",
-         Category  => "vocal",
-         Artist    => "artist 1",
-         Album     => "album 1",
-         Title     => "1 - song_1",
-         Track     => 1);
+        (ID           => 1,
+         File_Name    => "artist_1/album_1/1 - song_1.mp3",
+         Category     => "vocal",
+         Artist       => "artist 1",
+         Album        => "album 1",
+         Album_Artist => "album_artist 1",
+         Composer     => "composer 1",
+         Year         => 1999,
+         Title        => "1 - song_1",
+         Track        => 1);
       DB.Write_Play_Before_After (1, 2);
-      DB.Insert (2, "artist_1/album_1/2 - song_2.mp3", "vocal", "artist 1", "album 1", "2 - song_2", 2);
       DB.Insert
-        (3, "artist_1/album_1/03 The Dance #1.mp3", "instrumental", "artist 1", "album 1", "03 The Dance #1", 3);
-      DB.Insert (4, "artist_2/album_1/1 - song_1.mp3", "vocal", "artist 2", "album 1", "1 - song_1", 1);
-      DB.Insert (5, "artist_2/album_1/2 - song_2.mp3", "vocal", "artist 2", "album 1", "2 - song_2", 2);
-      DB.Insert (6, "artist_2/album_1/3 - song_3.mp3", "vocal", "artist 2", "album 1", "3 - song_3", 3);
+        (2, "artist_1/album_1/2 - song_2.mp3", "vocal", "artist 1", "album 1", "album_artist 1", "composer 1",
+         1999, "2 - song_2", 2);
+      DB.Insert
+        (3, "artist_1/album_1/03 The Dance #1.mp3", "instrumental", "artist 1", "album 1", "album_artist 1",
+         "composer 1", 1999, "03 The Dance #1", 3);
+      DB.Insert
+        (4, "artist_2/album_1/1 - song_1.mp3", "vocal", "artist 2", "album 1", "album_artist 2", "composer 2",
+         2000, "1 - song_1", 1);
+      DB.Insert (5, "artist_2/album_1/2 - song_2.mp3", "vocal", "artist 2", "album 1", "album_artist 2", "composer 2",
+                 2000, "2 - song_2", 2);
+      DB.Insert (6, "artist_2/album_1/3 - song_3.mp3", "vocal", "artist 2", "album 1", "album_artist 2", "composer 2",
+                 2000, "3 - song_3", 3);
    end Set_Up_Case;
 
    overriding procedure Tear_Down_Case (T : in out Test_Case)

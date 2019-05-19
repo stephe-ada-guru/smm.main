@@ -1,6 +1,7 @@
 ;; Project definitions
 
 (require 'ada-project)
+(require 'project-menu)
 (require 'xref-ada)
 
 (add-to-list 'project-find-functions 'project-menu-prj)

@@ -2,7 +2,7 @@
 --
 --  See spec.
 --
---  Copyright (C) 2018 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2018 - 2019 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -280,13 +280,26 @@ package body SMM.ID3 is
       end if;
    end Close;
 
+   function To_Year (Orig_Year, Year : in String) return Integer
+   is begin
+      if Orig_Year'Length = 0 then
+         if Year'Length = 0 then
+            return -1;
+         else
+            return Integer'Value (Year);
+         end if;
+      else
+         return Integer'Value (Orig_Year);
+      end if;
+   end To_Year;
+
    function To_Track (Item : in String) return Integer
    is
       use Ada.Strings.Fixed;
       Slash_Index : constant Integer := Index (Item, "/");
    begin
       if Item'Length = 0 then
-         return 0;
+         return -1;
       elsif Slash_Index = 0 then
          return Integer'Value (Item);
       else
@@ -434,10 +447,10 @@ package body SMM.ID3 is
       then
          Artist_ID := Artist;
       else
-         if Is_Present (Alt_Artist, ID3_Frames) and then
-           Length (Find (Alt_Artist, ID3_Frames)) > 0
+         if Is_Present (Album_Artist, ID3_Frames) and then
+           Length (Find (Album_Artist, ID3_Frames)) > 0
          then
-            Artist_ID := Alt_Artist;
+            Artist_ID := Album_Artist;
          else
             Ada.Text_IO.Put_Line (Abs_File_Name & " missing artist");
          end if;

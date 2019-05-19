@@ -2,7 +2,7 @@
 
 include rules.make
 
-#export Standard_Common_Build := Debug
+export Standard_Common_Build := Debug
 
 # ../test/test_one_harness.adb
 # ../test/test_all_harness.adb
@@ -27,9 +27,6 @@ two : smm-server_driver.exe
 # This server can't be seen from phone, tablet (not clear why)
 run-server : server-data smm-server_driver.exe
 	./smm-server_driver.exe smm_server_devel.config
-
-convert-main : config_to_sqlite.exe | c:/home/stephe/smm/smm_work_1.db
-	./$< ~/smm/smm_server.config c:/home/stephe/smm/smm_work_1.db
 
 DATE := $(shell date +%Y-%m-%d)
 

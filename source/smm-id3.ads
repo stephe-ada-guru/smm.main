@@ -8,7 +8,7 @@
 --  [2] http://id3.org/id3v2.4.0-structure ID3 2.4.0 spec
 --  [3] http://id3.org/id3v2.4.0-frames    ID3 2.4.0 frames
 --
---  Copyright (C) 2018 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2018, 2019 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -45,14 +45,20 @@ package SMM.ID3 is
    --  See [1] section 4, or [3], for frame definitions.
 
    --  Some common Frames
-   Album      : constant ID_String := "TALB"; -- [1] Album/Movie/Show title
-   Artist     : constant ID_String := "TPE1"; -- [1] Lead performer(s)/Soloist(s)
-   Alt_Artist : constant ID_String := "TPE2"; -- [1] Band/orchestra/accompaniment = Album Artist
-   Title      : constant ID_String := "TIT2"; -- [1] Title/songname/content description
-   Track      : constant ID_String := "TRCK"; -- [1] Track number/position in a set
+   Album        : constant ID_String := "TALB"; -- [1] Album/Movie/Show title
+   Artist       : constant ID_String := "TPE1"; -- [1] Lead performer(s)/Soloist(s)
+   Album_Artist : constant ID_String := "TPE2"; -- [1] Band/orchestra/accompaniment = Album Artist
+   Composer     : constant ID_String := "TCOM"; -- [1] Composer
+   Title        : constant ID_String := "TIT2"; -- [1] Title/songname/content description
+   Track        : constant ID_String := "TRCK"; -- [1] Track number/position in a set
+   Orig_Year    : constant ID_String := "TORY"; -- [1] Original Release Year
+   Year         : constant ID_String := "TYER"; -- [1] Year
 
    function To_Track (Item : in String) return Integer;
-   --  Handle <track>/<total>; 0 for empty string.
+   --  Handle <track>/<total>; -1 for empty string.
+
+   function To_Year (Orig_Year, Year : in String) return Integer;
+   --  Orig_Year has preference, -1 for empty string
 
    type Frame is record
       ID   : ID_String;

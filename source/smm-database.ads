@@ -39,6 +39,7 @@ package SMM.Database is
 
    Null_ID  : constant Integer := -1;
    No_Track : constant Integer := -1;
+   No_Year  : constant Integer := -1;
 
    type Database is new Ada.Finalization.Limited_Controlled with private;
 
@@ -53,8 +54,10 @@ package SMM.Database is
       File_Name       : in String;
       Category        : in String;
       Artist          : in String;
-      Album           : in String;
       Album_Artist    : in String;
+      Composer        : in String;
+      Album           : in String;
+      Year            : in Integer;
       Title           : in String;
       Track           : in Integer;
       Last_Downloaded : in Time_String := Default_Time_String;
@@ -131,7 +134,9 @@ package SMM.Database is
       Artist          : in String      := "";
       Album           : in String      := "";
       Album_Artist    : in String      := "";
+      Composer        : in String      := "";
       Title           : in String      := "";
+      Year            : in Integer     := No_Year;
       Track           : in Integer     := No_Track;
       Last_Downloaded : in Time_String := Default_Time_String;
       Prev_Downloaded : in Time_String := Default_Time_String;
@@ -140,7 +145,7 @@ package SMM.Database is
    --  Items that are the defaults are not updated.
    --  Cursor must be refetched to reflect changes.
 
-   type Fields is (Artist, Album, Album_Artist, Title, Category, Track, Play_Before, Play_After);
+   type Fields is (Artist, Album, Album_Artist, Composer, Title, Year, Category, Track, Play_Before, Play_After);
    subtype Required_Fields is Fields range Artist .. Track;
 
    type Field_Values is array (Fields) of Ada.Strings.Unbounded.Unbounded_String;
@@ -154,8 +159,10 @@ package SMM.Database is
      (Artist       => +"artist",
       Album        => +"album",
       Album_Artist => +"album_artist",
-      Category     => +"category",
+      Composer     => +"composer",
       Title        => +"title",
+      Year         => +"year",
+      Category     => +"category",
       Track        => +"track",
       Play_Before  => +"play_before",
       Play_After   => +"play_after");
@@ -196,7 +203,9 @@ package SMM.Database is
    function Artist (Position : in Cursor) return String;
    function Album (Position : in Cursor) return String;
    function Album_Artist (Position : in Cursor) return String;
+   function Composer (Position : in Cursor) return String;
    function Title (Position : in Cursor) return String;
+   function Year (Position : in Cursor) return Integer;
    function Track (Position : in Cursor) return Integer;
    function Last_Downloaded (Position : in Cursor) return Time_String;
    function Prev_Downloaded (Position : in Cursor) return Time_String;

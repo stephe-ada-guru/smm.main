@@ -5,13 +5,13 @@ adding file artist_2/album_1/1 - song_1.mp3
 adding file artist_2/album_1/2 - song_2.mp3
 adding file artist_2/album_1/3 - song_3.mp3
 not logging
-listening on Takver4: 8081
+listening on Takver4: 8081 db : 'tmp/smm.db' source_root: 'C:/Projects/smm.main/build/tmp/source' server_data: 'server_data'
 new db; all new songs
 
-OK smm-database-test.adb : Test_Find_Like
+OK smm-database-test.adb : Test_Find_Like_1
+OK smm-database-test.adb : Test_Find_Like_2
 OK smm-database-test.adb : Test_Update
-OK smm-database-test.adb : Test_Categories
-OK test_id3.adb : Test_Size
+OK smm-id3-test.adb : Test_Size
 OK test_copy.adb : Nominal
 OK test_import.adb : Nominal
 OK test_least_recent.adb : Nominal
@@ -20,9 +20,8 @@ OK test_server.adb : Test_Playlist
 OK test_server.adb : Test_Meta
 OK test_server.adb : Test_Get_File
 OK test_server.adb : Test_Send_Notes
-OK test_server.adb : Test_Search_Initial
 
-Total Tests Run:   13
-Successful Tests:  13
+Total Tests Run:   12
+Successful Tests:  12
 Failed Assertions: 0
 Unexpected Errors: 0
