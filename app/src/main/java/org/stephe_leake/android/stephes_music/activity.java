@@ -48,6 +48,9 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.Timer;
 
+import static android.view.View.GONE;
+import static android.view.View.VISIBLE;
+
 public class activity extends android.app.Activity
 {
    // constants
@@ -71,15 +74,17 @@ public class activity extends android.app.Activity
 
    // Main UI members
 
-   private TextView    artistTitle;
-   private TextView    albumArtistTitle;
-   private TextView    albumTitle;
-   private TextView    songTitle;
-   private TextView    currentTime;
-   private TextView    totalTime;
    private ImageButton playPauseButton;
    private SeekBar     progressBar;
-   private TextView    playlistTitle;
+   private TextView    album;
+   private TextView    albumArtist;
+   private TextView    artist;
+   private TextView    composer;
+   private TextView    currentTime;
+   private TextView    playlist;
+   private TextView    title;
+   private TextView    totalTime;
+   private TextView    year;
 
    // Cached values
    private long          trackDuration = 0; // track duration in milliseconds
@@ -104,7 +109,7 @@ public class activity extends android.app.Activity
          utils.errorLog(this, "invalid text_scale preference: " + scale);
          return 1.3f;
       }
-   };
+   }
 
    ////////// UI listeners (alphabetical by listener name; some defined in main.xml)
 
@@ -115,7 +120,7 @@ public class activity extends android.app.Activity
           (utils.ACTION_COMMAND)
           .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_NOTE)
           .putExtra("note", ((String)((Button)v).getText()).replace('\n', ' ')));
-   };
+   }
 
    private ImageButton.OnClickListener nextListener = new ImageButton.OnClickListener()
    {
@@ -191,13 +196,41 @@ public class activity extends android.app.Activity
    {
       // see utils.java constants for list of intents
 
+      private void updateText (TextView view, String content)
+      {
+         if (content == null || content.length() == 0)
+            view.setVisibility(GONE);
+         else
+         {
+            view.setVisibility(VISIBLE);
+            view.setText(content);
+         }
+      }
+
+      private void updateText (TextView view, String content, String compare1, String compare2)
+      {
+         if (content == null || content.length() == 0)
+            view.setVisibility(GONE);
+         else if (content.equals(compare1))
+            view.setVisibility(GONE);
+         else if (content.equals(compare2))
+            view.setVisibility(GONE);
+         else
+         {
+            view.setVisibility(VISIBLE);
+            view.setText(content);
+         }
+      }
+
       @Override public void onReceive(Context context, Intent intent)
       {
          final String action = intent.getAction();
 
          try
          {
-            if (action.equals(utils.META_CHANGED))
+            if (action == null)
+            {}
+            else if (action.equals(utils.META_CHANGED))
             {
                LinearLayout layout = (LinearLayout)findViewById (R.id.albumArtLinear);
                Bitmap[] art = utils.retriever.getAlbumArt(false);
@@ -215,16 +248,14 @@ public class activity extends android.app.Activity
                // On first start, with no playlist selected, these
                // are all empty strings except playlist, which
                // contains R.string.null_playlist or null_playlist_directory.
-               playlistTitle.setText(intent.getStringExtra("playlist"));
-               albumArtistTitle.setText(utils.retriever.albumArtist);
-               if ((utils.retriever.albumArtist != null && utils.retriever.artist != null) &&
-                     ((new String(utils.retriever.albumArtist)).equals(new String(utils.retriever.artist))))
-                  artistTitle.setText("");
-               else
-                  artistTitle.setText(utils.retriever.artist);
+               playlist.setText(intent.getStringExtra("playlist"));
 
-               albumTitle.setText(utils.retriever.album);
-               songTitle.setText(utils.retriever.title);
+               updateText(albumArtist, utils.retriever.albumArtist, utils.retriever.artist, utils.retriever.composer);
+               updateText(artist, utils.retriever.artist, utils.retriever.composer, null);
+               updateText(composer, utils.retriever.composer, null, null);
+               updateText(year, utils.retriever.year);
+               album.setText(utils.retriever.album);
+               title.setText(utils.retriever.title);
 
                trackDuration = Long.valueOf(utils.retriever.duration);
 
@@ -288,8 +319,6 @@ public class activity extends android.app.Activity
 
          final float scale = getTextViewTextScale();
 
-         final Intent intent = getIntent();
-
          setSMMDirectory();
 
          FileProvider fileProvider = new FileProvider();
@@ -335,27 +364,30 @@ public class activity extends android.app.Activity
 
          // Set up displays, top to bottom left to right
 
-         artistTitle = utils.findTextViewById(this, R.id.artistTitle);
-         albumArtistTitle = utils.findTextViewById(this, R.id.albumArtistTitle);
-         albumTitle  = utils.findTextViewById(this, R.id.albumTitle);
-         songTitle   = utils.findTextViewById(this, R.id.songTitle);
+         artist = utils.findTextViewById(this, R.id.artist);
+         albumArtist = utils.findTextViewById(this, R.id.albumArtist);
+         composer = utils.findTextViewById(this, R.id.composer);
+         album  = utils.findTextViewById(this, R.id.album);
+         title   = utils.findTextViewById(this, R.id.title);
+         year   = utils.findTextViewById(this, R.id.year);
 
-         defaultTextViewTextSize = artistTitle.getTextSize();
-         artistTitle.setTextSize(scale * defaultTextViewTextSize);
-         albumArtistTitle.setTextSize(scale * defaultTextViewTextSize);
-         albumTitle.setTextSize(scale * defaultTextViewTextSize);
-         songTitle.setTextSize(scale * defaultTextViewTextSize);
+         defaultTextViewTextSize = artist.getTextSize();
+         artist.setTextSize(scale * defaultTextViewTextSize);
+         albumArtist.setTextSize(scale * defaultTextViewTextSize);
+         composer.setTextSize(scale * defaultTextViewTextSize);
+         album.setTextSize(scale * defaultTextViewTextSize);
+         title.setTextSize(scale * defaultTextViewTextSize);
 
          // FIXME: set button text size from preference. find
          // notes_buttons_* linear layout(s), iterate over children
 
-         ((ImageButton)findViewById(R.id.prev)).setOnClickListener(prevListener);
+         findViewById(R.id.prev).setOnClickListener(prevListener);
 
          playPauseButton = (ImageButton)findViewById(R.id.play_pause);
          playPauseButton.setOnClickListener(playPauseListener);
          playPauseButton.requestFocus();
 
-         ((ImageButton)findViewById(R.id.next)).setOnClickListener(nextListener);
+         findViewById(R.id.next).setOnClickListener(nextListener);
 
          currentTime = (TextView)findViewById(R.id.currenttime);
          totalTime   = (TextView)findViewById(R.id.totaltime);
@@ -364,9 +396,9 @@ public class activity extends android.app.Activity
          progressBar.setOnSeekBarChangeListener(progressListener);
          progressBar.setMax(maxProgress);
 
-         playlistTitle = utils.findTextViewById(this, R.id.playlistTitle);
-         playlistTitle.setTextSize(scale * defaultTextViewTextSize);
-         playlistTitle.setOnClickListener(playlistListener);
+         playlist = utils.findTextViewById(this, R.id.playlist);
+         playlist.setTextSize(scale * defaultTextViewTextSize);
+         playlist.setOnClickListener(playlistListener);
       }
       catch (Exception e)
       {
@@ -383,8 +415,6 @@ public class activity extends android.app.Activity
 
       try
       {
-         Resources         res   = getResources();
-         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
          IntentFilter      f     = new IntentFilter();
          f.addAction(utils.META_CHANGED);
          f.addAction(utils.PLAYSTATE_CHANGED);
@@ -405,8 +435,6 @@ public class activity extends android.app.Activity
 
       try
       {
-         Resources         res   = getResources();
-         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
          unregisterReceiver(broadcastReceiver);
       }
       catch (RuntimeException e)
@@ -426,41 +454,41 @@ public class activity extends android.app.Activity
       // Alphabetical keycode order
       case KeyEvent.KEYCODE_MEDIA_NEXT:
       case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
-      // Google TV Remote app has fast forward button but not next
-      sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_NEXT));
-      handled = true; // terminate event processing; MediaEventReceivers won't get it
-      break;
+         // Google TV Remote app has fast forward button but not next
+         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_NEXT));
+         handled = true; // terminate event processing; MediaEventReceivers won't get it
+         break;
 
       case KeyEvent.KEYCODE_MEDIA_PAUSE:
-      sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PAUSE));
-      handled = true;
-      break;
+         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PAUSE));
+         handled = true;
+         break;
 
       case KeyEvent.KEYCODE_MEDIA_PLAY:
-      sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PLAY));
-      handled = true;
-      break;
+         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PLAY));
+         handled = true;
+         break;
 
       case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
-      sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_TOGGLEPAUSE));
-      handled = true;
-      break;
+         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_TOGGLEPAUSE));
+         handled = true;
+         break;
 
       case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
       case KeyEvent.KEYCODE_MEDIA_REWIND:
-      sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PREVIOUS));
-      handled = true;
-      break;
+         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PREVIOUS));
+         handled = true;
+         break;
 
       case KeyEvent.KEYCODE_MEDIA_STOP:
-      sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PAUSE));
-      handled = true;
-      break;
+         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PAUSE));
+         handled = true;
+         break;
 
       default:
       }
       return handled;
-   };
+   }
 
    ////////// Menu
 
@@ -504,10 +532,11 @@ public class activity extends android.app.Activity
          ClipboardManager clipManage = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
 
          // Workaround for java-wisi parser not handling repeated (foo.getText() + )
-         CharSequence Msg = albumArtistTitle.getText();
-         Msg = Msg + " " + artistTitle.getText();
-         Msg = Msg + " " + albumTitle.getText();
-         Msg = Msg + " " + songTitle.getText();
+         CharSequence Msg = albumArtist.getText();
+         Msg = Msg + " " + artist.getText();
+         Msg = Msg + " " + album.getText();
+         Msg = Msg + " " + title.getText();
+         Msg = Msg + " " + composer.getText();
 
          clipManage.setPrimaryClip (ClipData.newPlainText ("song", Msg));
       }
@@ -544,23 +573,23 @@ public class activity extends android.app.Activity
       break;
 
       case MENU_PREFERENCES:
-      startActivityForResult (new Intent(this, preferences.class), RESULT_PREFERENCES);
-      break;
+         startActivityForResult (new Intent(this, preferences.class), RESULT_PREFERENCES);
+         break;
 
       case MENU_QUIT:
-      sendBroadcast
-      (new Intent
-      (utils.ACTION_COMMAND)
-      .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_QUIT));
+         sendBroadcast
+           (new Intent
+              (utils.ACTION_COMMAND)
+              .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_QUIT));
 
-      stopService (new Intent().setComponent(playServiceComponentName));
+         stopService (new Intent().setComponent(playServiceComponentName));
 
-      finish();
-      break;
+         finish();
+         break;
 
       case MENU_RESET_PLAYLIST:
-      sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_RESET_PLAYLIST));
-      break;
+         sendBroadcast(new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_RESET_PLAYLIST));
+         break;
 
       case MENU_SEARCH:
       {
@@ -588,12 +617,12 @@ public class activity extends android.app.Activity
       break;
 
       case MENU_SHOW_DOWNLOAD_LOG:
-      startActivity(utils.showDownloadLogIntent);
-      break;
+         startActivity(utils.showDownloadLogIntent);
+         break;
 
       case MENU_SHOW_ERROR_LOG:
-      startActivity(utils.showErrorLogIntent);
-      break;
+         startActivity(utils.showErrorLogIntent);
+         break;
 
       case MENU_UPDATE_PLAYLIST:
       {
@@ -615,8 +644,8 @@ public class activity extends android.app.Activity
       break;
 
       default:
-      utils.errorLog
-      (this, "activity.onOptionsItemSelected: unknown MenuItemId " + item.getItemId());
+         utils.errorLog
+           (this, "activity.onOptionsItemSelected: unknown MenuItemId " + item.getItemId());
       }
       return false; // continue menu processing
    }
@@ -626,52 +655,44 @@ public class activity extends android.app.Activity
       switch(requestCode)
       {
       case RESULT_STORAGE_ACCESS:
-      {
-         switch (resultCode)
-         {
-         case RESULT_OK: // = -1
-         break;
-
-         // Not much we can do if we don't get access.
-         }
-      }
       break;
 
       case RESULT_PREFERENCES:
       switch (resultCode)
       {
-      case RESULT_CANCELED:
-      case RESULT_OK: // = -1
-      break;
+         case RESULT_CANCELED:
+         case RESULT_OK: // = -1
+            break;
 
-      case utils.RESULT_TEXT_SCALE:
-      {
-         final float scale = getTextViewTextScale();
+         case utils.RESULT_TEXT_SCALE:
+         {
+            final float scale = getTextViewTextScale();
 
-         albumArtistTitle.setTextSize(scale * defaultTextViewTextSize);
-         artistTitle.setTextSize(scale * defaultTextViewTextSize);
-         albumTitle.setTextSize(scale * defaultTextViewTextSize);
-         songTitle.setTextSize(scale * defaultTextViewTextSize);
-      }
-      break;
+            albumArtist.setTextSize(scale * defaultTextViewTextSize);
+            composer.setTextSize(scale * defaultTextViewTextSize);
+            artist.setTextSize(scale * defaultTextViewTextSize);
+            album.setTextSize(scale * defaultTextViewTextSize);
+            title.setTextSize(scale * defaultTextViewTextSize);
+         }
+         break;
 
-      case utils.RESULT_SMM_DIRECTORY:
-      {
-         setSMMDirectory();
-      // value from preferences
-      }
-      break;
+         case utils.RESULT_SMM_DIRECTORY:
+         {
+            setSMMDirectory();
+            // value from preferences
+         }
+         break;
+
+         default:
+            utils.errorLog
+              (this, "activity.onActivityResult: unknown preferences resultCode " + resultCode);
+            break;
+         }
+         break;
 
       default:
-      utils.errorLog
-      (this, "activity.onActivityResult: unknown preferences resultCode " + resultCode);
-      break;
-      }
-      break;
-
-      default:
-      utils.errorLog
-      (this, "activity.onActivityResult: unknown requestCode " + requestCode);
+         utils.errorLog
+           (this, "activity.onActivityResult: unknown requestCode " + requestCode);
       }
    }
 }

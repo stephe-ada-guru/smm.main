@@ -2,15 +2,6 @@ Makefile
 c:/Projects/org.emacs.java-wisi/notes.text
 
  current tasks
-fix bug in activity broadcast_receiver on album_artist = null
-
-select java project by dir
-    and xref; don't remove xref-find in deselect; make it work by dir
-    broken anyway; reselect does not add xref-find!
-
-display composer
-    MediaItemMetadata.KEY_COMPOSER
-
 need align
     activity.java artistTitle
     metadata.java setMetaData title/album/albumArtist

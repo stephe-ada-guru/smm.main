@@ -38,15 +38,18 @@ import java.io.FileInputStream;
 
 public class MetaData
 {
-   public String  title;
-   public String  album;
-   public String  albumArtist;
-   public String  artist;
-   public String  duration;     // service needs a string for sendBroadcast, so don't bother with integer conversions
-   public Uri     musicUri;     // for sharing
-   public Uri     linerUri;
-   private String linerFileName;
+   public String album;
+   public String albumArtist;
+   public String artist;
+   public String composer;
+   public String duration;     // service needs a string for sendBroadcast, so don't bother with integer conversions
+   public String title;
+   public String year;
 
+   public Uri linerUri;
+   public Uri musicUri;     // for sharing
+
+   private String linerFileName;
    private String currentMusicFileName; // absolute
    private Bitmap[] albumArt;
 
@@ -93,19 +96,25 @@ public class MetaData
          MediaMetadataRetriever retriever = new MediaMetadataRetriever();
          retriever.setDataSource(currentMusicFileName);
 
-         title    = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
-         album    = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM);
-         artist   = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
-         albumArtist    = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST);
-         duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+         album       = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM);
+         albumArtist = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST);
+         artist      = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
+         composer    = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_COMPOSER);
+         duration    = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+         title       = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
+         year        = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_YEAR);
       }
       catch (Exception e)
       {
          utils.errorLog(context, "media query failed: " + e);
-         title    = "<query failed>";
-         album    = "<query failed>";
-         artist   = "<query failed>";
-         duration = "0";
+
+         album       = null;
+         albumArtist = null;
+         artist      = null;
+         composer    = null;
+         duration    = "0";
+         title       = "<query failed>";
+         year        = null;
       }
 
       // requires FileProvider declaration in AndroidManifest,
