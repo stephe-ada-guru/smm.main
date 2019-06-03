@@ -2,20 +2,6 @@ Makefile
 c:/Projects/org.emacs.java-wisi/notes.text
 
  current tasks
-need align
-    activity.java artistTitle
-    metadata.java setMetaData title/album/albumArtist
-
-which function not working
-
-indent bug:
-      String scale            = prefs.getString
-      (res.getString(R.string.text_scale_key),
-      res.getString(R.string.text_scale_default));
-
-parse broken in activity.java onOptionsItemSelected
-    .getText() + ... 4 times
-
 use workmanager to schedule update
 
 Add categ love, provide not categ search

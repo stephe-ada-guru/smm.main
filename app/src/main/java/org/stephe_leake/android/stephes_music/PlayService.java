@@ -240,16 +240,20 @@ public class PlayService extends Service
                 ("playlist",
                  utils.playlistBasename + " " + (playlistPos + 1) + " / " + playlist.size()));
 
-            MediaMetadata metadata = new MediaMetadata.Builder()
-               .putString(MediaMetadata.METADATA_KEY_TITLE, utils.retriever.title)
-               .putString(MediaMetadata.METADATA_KEY_ALBUM, utils.retriever.album)
-               .putString(MediaMetadata.METADATA_KEY_ARTIST, utils.retriever.artist)
-               .putString(MediaMetadata.METADATA_KEY_ALBUM_ARTIST, utils.retriever.artist)
-               .putLong(MediaMetadata.METADATA_KEY_DURATION, Integer.parseInt(utils.retriever.duration))
-               // This works for the lock screen, but not for the Scion xB
-               // ok if albumart is null
-               .putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, utils.retriever.getAlbumArt(true)[0])
-               .build();
+            MediaMetadata.Builder builder = new MediaMetadata.Builder()
+              .putString(MediaMetadata.METADATA_KEY_TITLE, utils.retriever.title)
+              .putString(MediaMetadata.METADATA_KEY_ALBUM, utils.retriever.album)
+              .putString(MediaMetadata.METADATA_KEY_ARTIST, utils.retriever.artist)
+              .putString(MediaMetadata.METADATA_KEY_ALBUM_ARTIST, utils.retriever.albumArtist)
+              .putLong(MediaMetadata.METADATA_KEY_DURATION, Integer.parseInt(utils.retriever.duration));
+
+            // This works for the lock screen, but not for the Scion xB
+            if (utils.retriever.getAlbumArt(true) == null)
+               builder.putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, null);
+            else
+               builder.putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, utils.retriever.getAlbumArt(true)[0]);
+
+            MediaMetadata metadata = builder.build();
 
             mediaSession.setMetadata(metadata);
 

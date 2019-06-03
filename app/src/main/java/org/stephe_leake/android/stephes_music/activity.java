@@ -250,9 +250,9 @@ public class activity extends android.app.Activity
                // contains R.string.null_playlist or null_playlist_directory.
                playlist.setText(intent.getStringExtra("playlist"));
 
-               updateText(albumArtist, utils.retriever.albumArtist, utils.retriever.artist, utils.retriever.composer);
-               updateText(artist, utils.retriever.artist, utils.retriever.composer, null);
-               updateText(composer, utils.retriever.composer, null, null);
+               updateText(composer, utils.retriever.composer, utils.retriever.artist, utils.retriever.albumArtist);
+               updateText(artist, utils.retriever.artist, utils.retriever.albumArtist, null);
+               updateText(albumArtist, utils.retriever.albumArtist, null, null);
                updateText(year, utils.retriever.year);
                album.setText(utils.retriever.album);
                title.setText(utils.retriever.title);
@@ -305,6 +305,19 @@ public class activity extends android.app.Activity
          res.getString(R.string.smm_directory_default));
    }
 
+   private void scaleTextViews()
+   {
+      final float scale = getTextViewTextScale();
+
+      album.setTextSize(scale * defaultTextViewTextSize);
+      albumArtist.setTextSize(scale * defaultTextViewTextSize);
+      artist.setTextSize(scale * defaultTextViewTextSize);
+      composer.setTextSize(0.5f * scale * defaultTextViewTextSize);
+      playlist.setTextSize(scale * defaultTextViewTextSize);
+      title.setTextSize(scale * defaultTextViewTextSize);
+      year.setTextSize(0.5f * scale * defaultTextViewTextSize);
+   }
+
    ////////// Activity lifetime methods (in lifecycle order)
 
    @Override public void onCreate(Bundle savedInstanceState)
@@ -316,8 +329,6 @@ public class activity extends android.app.Activity
          utils.mainActivity = this;
 
          PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
-
-         final float scale = getTextViewTextScale();
 
          setSMMDirectory();
 
@@ -364,19 +375,14 @@ public class activity extends android.app.Activity
 
          // Set up displays, top to bottom left to right
 
-         artist = utils.findTextViewById(this, R.id.artist);
+         album       = utils.findTextViewById(this, R.id.album);
          albumArtist = utils.findTextViewById(this, R.id.albumArtist);
-         composer = utils.findTextViewById(this, R.id.composer);
-         album  = utils.findTextViewById(this, R.id.album);
-         title   = utils.findTextViewById(this, R.id.title);
-         year   = utils.findTextViewById(this, R.id.year);
+         artist      = utils.findTextViewById(this, R.id.artist);
+         composer    = utils.findTextViewById(this, R.id.composer);
+         title       = utils.findTextViewById(this, R.id.title);
+         year        = utils.findTextViewById(this, R.id.year);
 
          defaultTextViewTextSize = artist.getTextSize();
-         artist.setTextSize(scale * defaultTextViewTextSize);
-         albumArtist.setTextSize(scale * defaultTextViewTextSize);
-         composer.setTextSize(scale * defaultTextViewTextSize);
-         album.setTextSize(scale * defaultTextViewTextSize);
-         title.setTextSize(scale * defaultTextViewTextSize);
 
          // FIXME: set button text size from preference. find
          // notes_buttons_* linear layout(s), iterate over children
@@ -397,8 +403,9 @@ public class activity extends android.app.Activity
          progressBar.setMax(maxProgress);
 
          playlist = utils.findTextViewById(this, R.id.playlist);
-         playlist.setTextSize(scale * defaultTextViewTextSize);
          playlist.setOnClickListener(playlistListener);
+
+         scaleTextViews();
       }
       catch (Exception e)
       {
@@ -667,12 +674,7 @@ public class activity extends android.app.Activity
          case utils.RESULT_TEXT_SCALE:
          {
             final float scale = getTextViewTextScale();
-
-            albumArtist.setTextSize(scale * defaultTextViewTextSize);
-            composer.setTextSize(scale * defaultTextViewTextSize);
-            artist.setTextSize(scale * defaultTextViewTextSize);
-            album.setTextSize(scale * defaultTextViewTextSize);
-            title.setTextSize(scale * defaultTextViewTextSize);
+            scaleTextViews();
          }
          break;
 
