@@ -52,6 +52,9 @@ import java.lang.Integer;
 import java.util.LinkedList;
 import org.apache.commons.io.FilenameUtils;
 
+import static android.view.View.GONE;
+import static android.view.View.VISIBLE;
+
 public class PlayService extends Service
 {
    //  Internal Messages used for delays
@@ -96,10 +99,10 @@ public class PlayService extends Service
       mediaPlayer.setOnCompletionListener(completionListener);
       mediaPlayer.setOnErrorListener(errorListener);
       mediaPlayer.setAudioAttributes
-         (new AudioAttributes.Builder()
-          .setUsage(AudioAttributes.USAGE_MEDIA)
-          .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-          .build());
+        (new AudioAttributes.Builder()
+           .setUsage(AudioAttributes.USAGE_MEDIA)
+           .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+           .build());
 
    }
 
@@ -128,7 +131,7 @@ public class PlayService extends Service
             // way to indicate we've wrapped; it looks like there is
             // lots of music left, so we don't sync.
             stop();
-         };
+         }
       }
 
       // for some crashes, onDestroy is not called, so we don't
@@ -164,7 +167,14 @@ public class PlayService extends Service
       try
       {
          RemoteViews notifView = new RemoteViews(context.getPackageName(), R.layout.notification);
-         notifView.setTextViewText(R.id.notifArtist, retriever.albumArtist);
+
+         if (retriever.albumArtist == null)
+            notifView.setViewVisibility(R.id.notifArtist, GONE);
+         else
+         {
+            notifView.setViewVisibility(R.id.notifArtist, VISIBLE);
+            notifView.setTextViewText(R.id.notifArtist, retriever.albumArtist);
+         }
          notifView.setTextViewText(R.id.notifAlbum, retriever.album);
          notifView.setTextViewText(R.id.notifTitle, retriever.title);
          notifView.setOnClickPendingIntent(R.id.notifPrev, prevIntent);
@@ -173,14 +183,14 @@ public class PlayService extends Service
          notifView.setOnClickPendingIntent(R.id.notifNext, nextIntent);
 
          Notification notif = new Notification.Builder(context)
-            .setAutoCancel(false)
-            .setContent(notifView)
-            .setContentIntent(utils.activityIntent)
-            .setOngoing(true)
-            .setSmallIcon(R.drawable.icon) // shown in status bar
-            .setShowWhen(false)
-            .build()
-            ;
+           .setAutoCancel(false)
+           .setContent(notifView)
+           .setContentIntent(utils.activityIntent)
+           .setOngoing(true)
+           .setSmallIcon(R.drawable.icon) // shown in status bar
+           .setShowWhen(false)
+           .build()
+         ;
 
          try
          {
@@ -211,21 +221,21 @@ public class PlayService extends Service
          if (playing == PlayState.Idle)
          {
             sendStickyBroadcast
-               (new Intent (utils.META_CHANGED).
-                putExtra ("artist", "").
-                putExtra ("album", "").
-                putExtra ("track", "").
-                putExtra ("duration", "0").
-                putExtra ("playlist", getResources().getString(R.string.null_playlist)));
+              (new Intent (utils.META_CHANGED).
+                 putExtra ("artist", "").
+                 putExtra ("album", "").
+                 putExtra ("track", "").
+                 putExtra ("duration", "0").
+                 putExtra ("playlist", getResources().getString(R.string.null_playlist)));
 
             MediaMetadata metadata = new MediaMetadata.Builder()
-               .putString(MediaMetadata.METADATA_KEY_TITLE, "")
-               .putString(MediaMetadata.METADATA_KEY_ALBUM, "")
-               .putString(MediaMetadata.METADATA_KEY_ARTIST, "")
-               .putString(MediaMetadata.METADATA_KEY_ALBUM_ARTIST, "")
-               .putLong(MediaMetadata.METADATA_KEY_DURATION, 0)
-               .putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, null)
-               .build();
+              .putString(MediaMetadata.METADATA_KEY_TITLE, "")
+              .putString(MediaMetadata.METADATA_KEY_ALBUM, "")
+              .putString(MediaMetadata.METADATA_KEY_ARTIST, "")
+              .putString(MediaMetadata.METADATA_KEY_ALBUM_ARTIST, "")
+              .putLong(MediaMetadata.METADATA_KEY_DURATION, 0)
+              .putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, null)
+              .build();
 
             mediaSession.setMetadata(metadata);
 
@@ -236,9 +246,9 @@ public class PlayService extends Service
             utils.retriever.setMetaData(context, utils.smmDirectory, playlist.get(playlistPos));
 
             sendStickyBroadcast
-               (new Intent (utils.META_CHANGED).putExtra
-                ("playlist",
-                 utils.playlistBasename + " " + (playlistPos + 1) + " / " + playlist.size()));
+              (new Intent (utils.META_CHANGED).putExtra
+                 ("playlist",
+                  utils.playlistBasename + " " + (playlistPos + 1) + " / " + playlist.size()));
 
             MediaMetadata.Builder builder = new MediaMetadata.Builder()
               .putString(MediaMetadata.METADATA_KEY_TITLE, utils.retriever.title)
@@ -263,51 +273,51 @@ public class PlayService extends Service
 
       case State:
       case Position:
+      {
+         sendStickyBroadcast
+           (new Intent (utils.PLAYSTATE_CHANGED).
+              putExtra ("playing", playing == PlayState.Playing).
+              putExtra ("position", (playing == PlayState.Idle) ? 0 : mediaPlayer.getCurrentPosition()));
+
+         switch (playing)
          {
-            sendStickyBroadcast
-               (new Intent (utils.PLAYSTATE_CHANGED).
-                putExtra ("playing", playing == PlayState.Playing).
-                putExtra ("position", (playing == PlayState.Idle) ? 0 : mediaPlayer.getCurrentPosition()));
+         case Idle:
+            mediaSession.setPlaybackState
+              (new PlaybackState.Builder()
+                 .setState(PlaybackState.STATE_STOPPED, mediaPlayer.getCurrentPosition(), 1.0f, 0)
+                 .build());
 
-            switch (playing)
+            // no Notification
+            break;
+
+         case Playing:
+            mediaSession.setPlaybackState
+              (new PlaybackState.Builder()
+                 .setState(PlaybackState.STATE_PLAYING, mediaPlayer.getCurrentPosition(), 1.0f, 0)
+                 .build());
+
+            if (what == WhatChanged.State & utils.retriever != null)
             {
-            case Idle:
-               mediaSession.setPlaybackState
-                  (new PlaybackState.Builder()
-                   .setState(PlaybackState.STATE_STOPPED, mediaPlayer.getCurrentPosition(), 1.0f, 0)
-                   .build());
-
-               // no Notification
-               break;
-
-            case Playing:
-               mediaSession.setPlaybackState
-                  (new PlaybackState.Builder()
-                   .setState(PlaybackState.STATE_PLAYING, mediaPlayer.getCurrentPosition(), 1.0f, 0)
-                   .build());
-
-               if (what == WhatChanged.State & utils.retriever != null)
-               {
-                  // normally set by previous META_CHANGED; may not be at startup
-                  setPlayNotif(utils.retriever);
-               }
-               break;
-
-            case Paused:
-            case Paused_Transient:
-               mediaSession.setPlaybackState
-                  (new PlaybackState.Builder()
-                   .setState(PlaybackState.STATE_PAUSED, mediaPlayer.getCurrentPosition(), 1.0f, 0)
-                   .build());
-
-               if (what == WhatChanged.State && utils.retriever != null)
-               {
-                  setPlayNotif(utils.retriever);
-               }
-               break;
+               // normally set by previous META_CHANGED; may not be at startup
+               setPlayNotif(utils.retriever);
             }
+            break;
+
+         case Paused:
+         case Paused_Transient:
+            mediaSession.setPlaybackState
+              (new PlaybackState.Builder()
+                 .setState(PlaybackState.STATE_PAUSED, mediaPlayer.getCurrentPosition(), 1.0f, 0)
+                 .build());
+
+            if (what == WhatChanged.State && utils.retriever != null)
+            {
+               setPlayNotif(utils.retriever);
+            }
+            break;
          }
-         break;
+      }
+      break;
       }
    }
 
@@ -382,7 +392,7 @@ public class PlayService extends Service
    class Fail extends RuntimeException {}
 
    private void playList(final String filename, PlayState newState)
-      throws Fail
+   throws Fail
    {
       // Start playing playlist 'filename' (absolute path).
       //
@@ -514,9 +524,9 @@ public class PlayService extends Service
       Resources         res   = getResources();
       SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
       final int prevThreshold = Integer.valueOf
-         (prefs.getString
-          (res.getString(R.string.prev_threshold_key),
-           res.getString(R.string.prev_threshold_default)));
+        (prefs.getString
+           (res.getString(R.string.prev_threshold_key),
+            res.getString(R.string.prev_threshold_default)));
 
       final int currentPos = mediaPlayer.getCurrentPosition();
 
@@ -596,8 +606,8 @@ public class PlayService extends Service
       editor.putString(keyPlaylistFilename, utils.playlistBasename);
 
       editor.putInt
-         (utils.playlistBasename + keyCurrentPos,
-          (playing == PlayState.Idle) ? 0 : mediaPlayer.getCurrentPosition());
+        (utils.playlistBasename + keyCurrentPos,
+         (playing == PlayState.Idle) ? 0 : mediaPlayer.getCurrentPosition());
 
       try
       {
@@ -607,9 +617,9 @@ public class PlayService extends Service
       }
       catch (Exception e)
       {
-         // State Farm Drive Save apparently locks the file system for
-         // a long time occasionally, causing these writes to fail.
-         // They will probably succeed next time.
+      // State Farm Drive Safe apparently locks the file system for
+      // a long time occasionally, causing these writes to fail.
+      // They will probably succeed next time.
       }
    }
 
@@ -640,9 +650,9 @@ public class PlayService extends Service
       if (!haveAudioFocus)
       {
          final int result = audioManager.requestAudioFocus
-            (audioFocusListener,
-             android.media.AudioManager.STREAM_MUSIC,
-             android.media.AudioManager.AUDIOFOCUS_GAIN);
+           (audioFocusListener,
+            android.media.AudioManager.STREAM_MUSIC,
+            android.media.AudioManager.AUDIOFOCUS_GAIN);
 
          if (result != android.media.AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
          {
@@ -715,7 +725,7 @@ public class PlayService extends Service
 
             if (playlistPos < 0)
             {
-               // none played yet; write empty file
+            // none played yet; write empty file
             }
             else
             {
@@ -737,222 +747,65 @@ public class PlayService extends Service
    ////////// nested classes
 
    private Handler handler = new Handler()
+   {
+      // FIXME: lint wants this object to be static, but then it
+      // can't call unpause, which is not static.
+      @Override public void handleMessage(Message msg)
       {
-         // FIXME: lint wants this object to be static, but then it
-         // can't call unpause, which is not static.
-         @Override public void handleMessage(Message msg)
+         switch (msg.what)
          {
-            switch (msg.what)
-            {
-            case UNPAUSE:
-               unpause();
+         case UNPAUSE:
+            unpause();
 
-            case UPDATE_DISPLAY:
-               notifyChange(WhatChanged.Position);
+         case UPDATE_DISPLAY:
+            notifyChange(WhatChanged.Position);
 
-               handler.sendEmptyMessageDelayed(UPDATE_DISPLAY, 1000);
+            handler.sendEmptyMessageDelayed(UPDATE_DISPLAY, 1000);
 
-            default:
-               break;
-            }
+         default:
+            break;
          }
-      };
+      }
+   };
 
    private BroadcastReceiver broadcastReceiverCommand = new BroadcastReceiver()
+   {
+      // Intent filter set for ACTION_COMMAND
+      @Override public void onReceive(Context context, Intent intent)
       {
-         // Intent filter set for ACTION_COMMAND
-         @Override public void onReceive(Context context, Intent intent)
+         try
          {
-            try
+            final int command = intent.getIntExtra(utils.EXTRA_COMMAND, -1);
+
+            // command alphabetical order
+            switch (command)
             {
-               final int command = intent.getIntExtra(utils.EXTRA_COMMAND, -1);
+            case utils.COMMAND_RESERVED:
+               // not clear what is sending this!
+               break;
 
-               // command alphabetical order
-               switch (command)
-               {
-               case utils.COMMAND_RESERVED:
-                  // not clear what is sending this!
-                  break;
-
-               case utils.COMMAND_JUMP:
-                  {
-                     // playlist is 0 indexed; user is 1 indexed.
-                     playlistPos = -1 + intent.getIntExtra(utils.EXTRA_COMMAND_POSITION, 0);
-                     play(playlist.get(playlistPos), 0);
-                  }
-                  break;
-
-               case utils.COMMAND_NEXT:
-                  next();
-                  break;
-
-               case utils.COMMAND_NOTE:
-                  writeNote(intent.getStringExtra("note"));
-                  break;
-
-               case utils.COMMAND_PAUSE:
-                  pause(PlayState.Paused);
-                  break;
-
-               case utils.COMMAND_PLAY:
-
-                  switch (PlayService.playing)
-                  {
-                  case Idle:
-                     next();
-                     break;
-
-                  case Playing:
-                     break;
-
-                  case Paused:
-                     unpause();
-                     break;
-
-                  case Paused_Transient:
-                     // user wants to override
-                     unpause();
-                     break;
-
-                  };
-                  break;
-
-               case utils.COMMAND_PLAYLIST:
-
-                  try
-                  {
-                     final PlayState newState = PlayState.toPlayState
-                        (intent.getIntExtra (utils.EXTRA_COMMAND_STATE, PlayState.Playing.toInt()));
-
-                     // User will want to resume the current playlist at some point.
-                     saveState();
-
-                     playList(intent.getStringExtra(utils.EXTRA_COMMAND_PLAYLIST), newState);
-                  }
-                  catch (Fail e)
-                  {
-                     // nothing to do here.
-                  }
-                  break;
-
-               case utils.COMMAND_PREVIOUS:
-                  previous();
-                  break;
-
-               case utils.COMMAND_RESET_PLAYLIST:
-                  resetPlaylist();
-                  break;
-
-               case utils.COMMAND_SAVE_STATE:
-                  saveState();
-                  break;
-
-               case utils.COMMAND_SEEK:
-                  {
-                     final long pos = intent.getLongExtra(utils.EXTRA_COMMAND_POSITION, 0);
-                     mediaPlayer.seekTo((int)pos);
-                     notifyChange(WhatChanged.Position);
-                  }
-                  break;
-
-               case utils.COMMAND_TOGGLEPAUSE:
-                  switch (PlayService.playing)
-                  {
-                  case Idle:
-                     break;
-
-                  case Playing:
-                     pause(PlayState.Paused);
-                     break;
-
-                  case Paused:
-                     unpause();
-                     break;
-
-                  case Paused_Transient:
-                     // user wants to override
-                     unpause();
-                     break;
-
-                  };
-                  break;
-
-               case utils.COMMAND_UPDATE_DISPLAY:
-                  notifyChange(WhatChanged.Meta);
-                  notifyChange(WhatChanged.State);
-                  break;
-
-               case utils.COMMAND_QUIT:
-                  pause(PlayState.Paused);
-
-                  NotificationManager notifManager = (NotificationManager)
-                     getSystemService(Context.NOTIFICATION_SERVICE);
-                  notifManager.cancel(null, utils.notif_play_id);
-                  break;
-
-               default:
-                  utils.errorLog
-                     (context, "broadcastReceiverCommand.onReceive: unknown command: " + Integer.toString(command) +
-                      ", " + intent.getExtras());
-
-               }
+            case utils.COMMAND_JUMP:
+            {
+               // playlist is 0 indexed; user is 1 indexed.
+               playlistPos = -1 + intent.getIntExtra(utils.EXTRA_COMMAND_POSITION, 0);
+               play(playlist.get(playlistPos), 0);
             }
-            catch (Exception e)
-            {
-               utils.errorLog
-                  (context, "broadcastReceiverCommand.onReceive: exception: ", e);
-            }
-         }
-      };
+            break;
 
-   private BroadcastReceiver broadcastReceiverBTConnect = new BroadcastReceiver()
-      {
-         // Intent filter set for ACTION_SCO_AUDIO_STATE_UPDATED
-         @Override public void onReceive(Context context, Intent intent)
-         {
-            final int state = intent.getIntExtra(AudioManager.EXTRA_SCO_AUDIO_STATE, -2);
+            case utils.COMMAND_NEXT:
+               next();
+               break;
 
-            switch (state)
-            {
-            case AudioManager.SCO_AUDIO_STATE_CONNECTED:
-               // Assume it's a smart remote control; tell it our
-               // state to start the control connection.
-               notifyChange(WhatChanged.State);
+            case utils.COMMAND_NOTE:
+               writeNote(intent.getStringExtra("note"));
+               break;
 
-            default:
-               // just ignore.
-
-            }
-         }
-      };
-
-   private MediaSession mediaSession;
-   // Sends data to car remote, and cover art to lock screen.
-   //
-   // To get both controls and metadata with my phone and car requires (apparently):
-   // MediaSession.Callback registered
-   // MediaButtonReciever in AndroidManifest, but _not_ registered with the audio manager
-
-   private MediaSession.Callback mediaCallback = new MediaSession.Callback()
-      {
-         @Override public void onPause()
-         {
-            try
-            {
+            case utils.COMMAND_PAUSE:
                pause(PlayState.Paused);
-            }
-            catch (Exception e)
-            {
-               utils.errorLog
-                  (context, "mediaCallback.onPause: exception: ", e);
-            }
-         }
+               break;
 
-         @Override
-         public void onPlay()
-         {
-            try
-            {
+            case utils.COMMAND_PLAY:
+
                switch (PlayService.playing)
                {
                case Idle:
@@ -972,123 +825,280 @@ public class PlayService extends Service
                   break;
 
                };
-            }
-            catch (Exception e)
-            {
-               utils.errorLog
-                  (context, "mediaCallback.onPlay: exception: ", e);
-            }
-         }
+               break;
 
-         @Override public void onSkipToNext()
-         {
-            try
-            {
-               next();
-            }
-            catch (Exception e)
-            {
-               utils.errorLog
-                  (context, "mediaCallback.onSkipToNext: exception: ", e);
-            }
-         }
+            case utils.COMMAND_PLAYLIST:
 
-         @Override public void onSkipToPrevious()
-         {
-            try
-            {
+               try
+               {
+                  final PlayState newState = PlayState.toPlayState
+                    (intent.getIntExtra (utils.EXTRA_COMMAND_STATE, PlayState.Playing.toInt()));
+
+                  // User will want to resume the current playlist at some point.
+                  saveState();
+
+                  playList(intent.getStringExtra(utils.EXTRA_COMMAND_PLAYLIST), newState);
+               }
+               catch (Fail e)
+               {
+               // nothing to do here.
+               }
+               break;
+
+            case utils.COMMAND_PREVIOUS:
                previous();
-            }
-            catch (Exception e)
+               break;
+
+            case utils.COMMAND_RESET_PLAYLIST:
+               resetPlaylist();
+               break;
+
+            case utils.COMMAND_SAVE_STATE:
+               saveState();
+               break;
+
+            case utils.COMMAND_SEEK:
             {
+               final long pos = intent.getLongExtra(utils.EXTRA_COMMAND_POSITION, 0);
+               mediaPlayer.seekTo((int)pos);
+               notifyChange(WhatChanged.Position);
+            }
+            break;
+
+            case utils.COMMAND_TOGGLEPAUSE:
+               switch (PlayService.playing)
+               {
+               case Idle:
+                  break;
+
+               case Playing:
+                  pause(PlayState.Paused);
+                  break;
+
+               case Paused:
+                  unpause();
+                  break;
+
+               case Paused_Transient:
+                  // user wants to override
+                  unpause();
+                  break;
+
+               };
+               break;
+
+            case utils.COMMAND_UPDATE_DISPLAY:
+               notifyChange(WhatChanged.Meta);
+               notifyChange(WhatChanged.State);
+               break;
+
+            case utils.COMMAND_QUIT:
+               pause(PlayState.Paused);
+
+               NotificationManager notifManager = (NotificationManager)
+                 getSystemService(Context.NOTIFICATION_SERVICE);
+               notifManager.cancel(null, utils.notif_play_id);
+               break;
+
+            default:
                utils.errorLog
-                  (context, "mediaCallback.onSkipToPrevious: exception: ", e);
+                 (context, "broadcastReceiverCommand.onReceive: unknown command: " + Integer.toString(command) +
+                    ", " + intent.getExtras());
+
             }
          }
-      };
+         catch (Exception e)
+         {
+            utils.errorLog
+              (context, "broadcastReceiverCommand.onReceive: exception: ", e);
+         }
+      }
+   };
 
-   private OnAudioFocusChangeListener audioFocusListener = new OnAudioFocusChangeListener()
+   private BroadcastReceiver broadcastReceiverBTConnect = new BroadcastReceiver()
+   {
+      // Intent filter set for ACTION_SCO_AUDIO_STATE_UPDATED
+      @Override public void onReceive(Context context, Intent intent)
       {
-          public void onAudioFocusChange(int focusChange)
-          {
-             // FIXME: something's not working; Navigator messages are not played. So log every event.
-             utils.debugLog("onAudioFocusChange code " + focusChange);
+         final int state = intent.getIntExtra(AudioManager.EXTRA_SCO_AUDIO_STATE, -2);
 
-             if (focusChange == AudioManager.AUDIOFOCUS_LOSS)
-             {
-                haveAudioFocus = false;
-                pause(PlayState.Paused);
-             }
-             else if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK ||
-                      focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT)
-             {
-                haveAudioFocus = false;
+         switch (state)
+         {
+         case AudioManager.SCO_AUDIO_STATE_CONNECTED:
+            // Assume it's a smart remote control; tell it our
+            // state to start the control connection.
+            notifyChange(WhatChanged.State);
 
-                // Can't use 'Paused' here; _not_ followed by
-                // AUDIOFOCUS_GAIN when do that.
-                pause(PlayState.Paused_Transient);
-             }
-             else if (focusChange == AudioManager.AUDIOFOCUS_GAIN)
-             {
-                haveAudioFocus = true;
+         default:
+         // just ignore.
 
-                switch (playing)
-                {
-                case Idle:
-                   break;
+         }
+      }
+   };
 
-                case Playing:
-                   break;
+   private MediaSession mediaSession;
+   // Sends data to car remote, and cover art to lock screen.
+   //
+   // To get both controls and metadata with my phone and car requires (apparently):
+   // MediaSession.Callback registered
+   // MediaButtonReciever in AndroidManifest, but _not_ registered with the audio manager
 
-                case Paused:
-                   unpause();
-
-                case Paused_Transient:
-                   // Most likely after a Navigator message; give
-                   // listener time to process it.
-                   handler.sendEmptyMessageDelayed(UNPAUSE, 1000);
-                }
-             }
-             else
-             {
-                utils.errorLog(null, "Unknown onAudioFocusChange code " + focusChange);
-             }
-          }
-       };
-
-   MediaPlayer.OnCompletionListener completionListener = new MediaPlayer.OnCompletionListener()
+   private MediaSession.Callback mediaCallback = new MediaSession.Callback()
+   {
+      @Override public void onPause()
       {
-         public void onCompletion(MediaPlayer mp)
+         try
+         {
+            pause(PlayState.Paused);
+         }
+         catch (Exception e)
+         {
+            utils.errorLog
+              (context, "mediaCallback.onPause: exception: ", e);
+         }
+      }
+
+      @Override
+      public void onPlay()
+      {
+         try
+         {
+            switch (PlayService.playing)
+            {
+            case Idle:
+               next();
+               break;
+
+            case Playing:
+               break;
+
+            case Paused:
+               unpause();
+               break;
+
+            case Paused_Transient:
+               // user wants to override
+               unpause();
+               break;
+
+            };
+         }
+         catch (Exception e)
+         {
+            utils.errorLog
+              (context, "mediaCallback.onPlay: exception: ", e);
+         }
+      }
+
+      @Override public void onSkipToNext()
+      {
+         try
          {
             next();
          }
-      };
-
-   MediaPlayer.OnErrorListener errorListener = new MediaPlayer.OnErrorListener()
-      {
-         public boolean onError(MediaPlayer mp, int what, int extra)
+         catch (Exception e)
          {
-            switch (what)
+            utils.errorLog
+              (context, "mediaCallback.onSkipToNext: exception: ", e);
+         }
+      }
+
+      @Override public void onSkipToPrevious()
+      {
+         try
+         {
+            previous();
+         }
+         catch (Exception e)
+         {
+            utils.errorLog
+              (context, "mediaCallback.onSkipToPrevious: exception: ", e);
+         }
+      }
+   };
+
+   private OnAudioFocusChangeListener audioFocusListener = new OnAudioFocusChangeListener()
+   {
+      public void onAudioFocusChange(int focusChange)
+      {
+         // FIXME: something's not working; Navigator messages are not played. So log every event.
+         utils.debugLog("onAudioFocusChange code " + focusChange);
+
+         if (focusChange == AudioManager.AUDIOFOCUS_LOSS)
+         {
+            haveAudioFocus = false;
+            pause(PlayState.Paused);
+         }
+         else if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK ||
+                    focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT)
+         {
+            haveAudioFocus = false;
+
+            // Can't use 'Paused' here; _not_ followed by
+            // AUDIOFOCUS_GAIN when do that.
+            pause(PlayState.Paused_Transient);
+         }
+         else if (focusChange == AudioManager.AUDIOFOCUS_GAIN)
+         {
+            haveAudioFocus = true;
+
+            switch (playing)
             {
-            case MediaPlayer.MEDIA_ERROR_SERVER_DIED: // = 100
-               mediaPlayer.release();
-               createMediaPlayer();
-               // Since we don't know why it died, just trying again seems
-               // problematic, but it is the most user friendly if it
-               // works. This will _not_ be easy to debug!
-               if (playing == PlayState.Playing)
-               {
-                  play(playlist.get(playlistPos), 0);
-               };
+            case Idle:
+               break;
 
-               return true;
+            case Playing:
+               break;
 
-            default:
-               // onCompletion will _not_ be called
-               return true;
+            case Paused:
+               unpause();
+
+            case Paused_Transient:
+               // Most likely after a Navigator message; give
+               // listener time to process it.
+               handler.sendEmptyMessageDelayed(UNPAUSE, 1000);
             }
          }
-      };
+         else
+         {
+            utils.errorLog(null, "Unknown onAudioFocusChange code " + focusChange);
+         }
+      }
+   };
+
+   MediaPlayer.OnCompletionListener completionListener = new MediaPlayer.OnCompletionListener()
+   {
+      public void onCompletion(MediaPlayer mp)
+      {
+         next();
+      }
+   };
+
+   MediaPlayer.OnErrorListener errorListener = new MediaPlayer.OnErrorListener()
+   {
+      public boolean onError(MediaPlayer mp, int what, int extra)
+      {
+         switch (what)
+         {
+         case MediaPlayer.MEDIA_ERROR_SERVER_DIED: // = 100
+            mediaPlayer.release();
+            createMediaPlayer();
+            // Since we don't know why it died, just trying again seems
+            // problematic, but it is the most user friendly if it
+            // works. This will _not_ be easy to debug!
+            if (playing == PlayState.Playing)
+            {
+               play(playlist.get(playlistPos), 0);
+            };
+
+            return true;
+
+         default:
+            // onCompletion will _not_ be called
+            return true;
+         }
+      }
+   };
 
    ////////// PlayService lifetime methods
    @Override public IBinder onBind(Intent intent)
@@ -1113,30 +1123,30 @@ public class PlayService extends Service
          registerReceiver(broadcastReceiverBTConnect, filter);
 
          utils.activityIntent = PendingIntent.getActivity
-            (context.getApplicationContext(),
-             utils.activityIntentId,
-             new Intent(context, activity.class),
-             0);
+           (context.getApplicationContext(),
+            utils.activityIntentId,
+            new Intent(context, activity.class),
+            0);
 
          prevIntent = PendingIntent.getBroadcast
-            (context.getApplicationContext(),
-             utils.prevIntentId,
-             new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PREVIOUS), 0);
+           (context.getApplicationContext(),
+            utils.prevIntentId,
+            new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PREVIOUS), 0);
 
          nextIntent = PendingIntent.getBroadcast
-            (context.getApplicationContext(),
-             utils.nextIntentId,
-             new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_NEXT), 0);
+           (context.getApplicationContext(),
+            utils.nextIntentId,
+            new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_NEXT), 0);
 
          pauseIntent = PendingIntent.getBroadcast
-            (context.getApplicationContext(),
-             utils.pauseIntentId,
-             new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PAUSE), 0);
+           (context.getApplicationContext(),
+            utils.pauseIntentId,
+            new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PAUSE), 0);
 
          playIntent = PendingIntent.getBroadcast
-            (context.getApplicationContext(),
-             utils.playIntentId,
-             new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PLAY), 0);
+           (context.getApplicationContext(),
+            utils.playIntentId,
+            new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PLAY), 0);
 
          createMediaPlayer();
 
@@ -1145,7 +1155,7 @@ public class PlayService extends Service
          mediaSession = new MediaSession(context, "stephes media session");
 
          mediaSession.setFlags
-            (MediaSession.FLAG_HANDLES_MEDIA_BUTTONS | MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS);
+           (MediaSession.FLAG_HANDLES_MEDIA_BUTTONS | MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS);
 
          mediaSession.setCallback(mediaCallback);
          mediaSession.setActive(true);
@@ -1162,7 +1172,7 @@ public class PlayService extends Service
       catch (Exception e)
       {
          utils.errorLog
-            (context, "PlayService.onCreate: exception: ", e);
+           (context, "PlayService.onCreate: exception: ", e);
       }
    }
 
@@ -1203,7 +1213,7 @@ public class PlayService extends Service
       catch (Exception e)
       {
          utils.errorLog
-            (context, "PlayService.onDestroy: exception: ", e);
+           (context, "PlayService.onDestroy: exception: ", e);
       }
 
       super.onDestroy();
@@ -1213,8 +1223,8 @@ public class PlayService extends Service
    {
       if (intent == null)
       {
-         // intent is null if the service is restarted by Android
-         // after a crash.
+      // intent is null if the service is restarted by Android
+      // after a crash.
       }
       else if (intent.getAction() != null)
       {

@@ -311,7 +311,7 @@ public class activity extends android.app.Activity
 
       album.setTextSize(scale * defaultTextViewTextSize);
       albumArtist.setTextSize(scale * defaultTextViewTextSize);
-      artist.setTextSize(scale * defaultTextViewTextSize);
+      artist.setTextSize(0.5f * scale * defaultTextViewTextSize);
       composer.setTextSize(0.5f * scale * defaultTextViewTextSize);
       playlist.setTextSize(scale * defaultTextViewTextSize);
       title.setTextSize(scale * defaultTextViewTextSize);
