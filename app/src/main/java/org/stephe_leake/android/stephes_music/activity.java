@@ -232,17 +232,35 @@ public class activity extends android.app.Activity
             {}
             else if (action.equals(utils.META_CHANGED))
             {
-               LinearLayout layout = (LinearLayout)findViewById (R.id.albumArtLinear);
-               Bitmap[] art = utils.retriever.getAlbumArt(false);
-
                if (BuildConfig.DEBUG) utils.verboseLog("activity.onReceive META");
-               layout.removeAllViews();
-               for (int i = 0; i < art.length; i++)
+
+               LinearLayout layout = (LinearLayout)findViewById (R.id.albumArtLinear);
+               int artCount = utils.retriever.getAlbumArtCount();
+               int layoutCount = layout.getChildCount();
+               int i = 0;
+
+               // There is a memory problem here;
+               // 'layout.removeAllViews()' does _not_ free previous
+               // views. So we reuse the views.
+
+               for (; i < artCount && i < layoutCount; i++)
                {
-                  ImageView imageView = new ImageView(context);
+                  ImageView imageView = (ImageView)layout.getChildAt(i);
+                  imageView.setImageBitmap(utils.retriever.getAlbumArt(i));
+                  imageView.setVisibility(VISIBLE);
+               }
+               for (; i < artCount; i++)
+               {
+                  ImageView imageView = new ImageView (context);
                   imageView.setId(i);
-                  imageView.setImageBitmap(art[i]);
+                  imageView.setImageBitmap(utils.retriever.getAlbumArt(i));
                   layout.addView(imageView);
+               }
+               for (; i < layoutCount; i++)
+               {
+                  ImageView imageView = (ImageView)layout.getChildAt(i);
+                  imageView.setImageBitmap(null);
+                  imageView.setVisibility(GONE);
                }
 
                // On first start, with no playlist selected, these

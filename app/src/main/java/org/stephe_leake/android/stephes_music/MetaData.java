@@ -63,20 +63,21 @@ public class MetaData
          return new File(linerFileName).exists();
    }
 
-   public Bitmap[] getAlbumArt(boolean one)
+   public int getAlbumArtCount()
+   {
+      if (albumArt == null)
+         return 0;
+      else
+         return albumArt.length;
+   }
+
+   public Bitmap getAlbumArt(int index)
    {
       // Always return copies, so the client can recycle them.
       if (albumArt == null)
          return null;
       else
-      {
-         Bitmap[] result = new Bitmap[one ? 1 : albumArt.length];
-         for (int i = 0; i < result.length; i++)
-         {
-            result [i] = albumArt[i].copy(albumArt[i].getConfig(), false);
-         }
-         return result;
-      }
+         return albumArt[index].copy(albumArt[index].getConfig(), false);
    }
 
    public void setMetaData(Context context, String playlistDirectory, String musicFileName)

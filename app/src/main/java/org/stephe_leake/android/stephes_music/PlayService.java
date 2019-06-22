@@ -258,10 +258,10 @@ public class PlayService extends Service
               .putLong(MediaMetadata.METADATA_KEY_DURATION, Integer.parseInt(utils.retriever.duration));
 
             // This works for the lock screen, but not for the Scion xB
-            if (utils.retriever.getAlbumArt(true) == null)
+            if (utils.retriever.getAlbumArtCount() == 0)
                builder.putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, null);
             else
-               builder.putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, utils.retriever.getAlbumArt(true)[0]);
+               builder.putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, utils.retriever.getAlbumArt(0));
 
             MediaMetadata metadata = builder.build();
 
