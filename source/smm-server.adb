@@ -401,19 +401,26 @@ package body SMM.Server is
 
       Source_Dir : constant String := -Source_Root & Path (URI);
       Response   : Unbounded_String;
+      Min_Size : File_Size := 0;
+
+      Min_Jpg_Size : constant File_Size := 40_000; -- exclude tiny images
 
       procedure Copy_Aux (Dir_Ent : in Directory_Entry_Type)
       is begin
-         Response := Response &
-           Relative_Name (-Source_Root, Normalize (Full_Name (Dir_Ent))) & ASCII.CR & ASCII.LF;
+         if Size (Dir_Ent) > Min_Size then
+            Response := Response &
+              Relative_Name (-Source_Root, Normalize (Full_Name (Dir_Ent))) & ASCII.CR & ASCII.LF;
+         end if;
       end Copy_Aux;
    begin
+      Min_Size := Min_Jpg_Size;
       Search
         (Directory => Source_Dir,
          Pattern   => "AlbumArt*.jpg",
          Filter    => (Ordinary_File => True, others => False),
          Process   => Copy_Aux'Access);
 
+      Min_Size := 0;
       Search
         (Directory => Source_Dir,
          Pattern   => "liner_notes.pdf",
