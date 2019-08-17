@@ -77,7 +77,15 @@ public class MetaData
       if (albumArt == null)
          return null;
       else
-         return albumArt[index].copy(albumArt[index].getConfig(), false);
+         try
+         {
+            return albumArt[index].copy(albumArt[index].getConfig(), false);
+         }
+         catch (java.lang.OutOfMemoryError e)
+         {
+            //  Image too big, or too many images; just ignore
+            return null;
+         }
    }
 
    public void setMetaData(Context context, String playlistDirectory, String musicFileName)
