@@ -90,11 +90,17 @@
   <string name="song_count_max_summary">Maximum count of songs in playlist after download</string>
   <string name="song_count_max_dialog_title">Song count max</string>
 
-  <string name="new_song_count_key">new_song_count</string>
-  <string name="new_song_count_default">0.333</string>
-  <string name="new_song_count_title">New song fraction</string>
-  <string name="new_song_count_summary">Fraction of new songs downloaded</string>
-  <string name="new_song_count_dialog_title">New song count fraction</string>
+  <string name="new_song_fraction_key">new_song_count</string> ;; backward compatible
+  <string name="new_song_fraction_default">0.333</string>
+  <string name="new_song_fraction_title">New song fraction</string>
+  <string name="new_song_fraction_summary">Fraction of new songs downloaded</string>
+  <string name="new_song_fraction_dialog_title">New song fraction</string>
+
+  <string name="over_select_ratio_key">over_select_ratio</string>
+  <string name="over_select_ratio_default">1.1</string>
+  <string name="over_select_ratio_title">Over select ratio</string>
+  <string name="over_select_ratio_summary">Multiple of needed songs selected before randomize and truncate</string>
+  <string name="over_select_ratio_dialog_title">Over select ratio</string>
 
   <string name="song_count_threshold_key">song_count_threshold</string>
   <string name="song_count_threshold_default">10</string>

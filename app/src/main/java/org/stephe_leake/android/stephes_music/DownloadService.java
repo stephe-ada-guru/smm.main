@@ -2,7 +2,7 @@
 //
 //  Provides background download from smm server.
 //
-//  Copyright (C) 2016 - 2018 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2016 - 2019 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -92,9 +92,12 @@ public class DownloadService extends IntentService
       String songCountMaxStr    = prefs.getString
          (res.getString(R.string.song_count_max_key),
           res.getString(R.string.song_count_max_default));
-      String newSongCountStr    = prefs.getString
-         (res.getString(R.string.new_song_count_key),
-          res.getString(R.string.new_song_count_default));
+      String newSongFractionStr    = prefs.getString
+         (res.getString(R.string.new_song_fraction_key),
+          res.getString(R.string.new_song_fraction_default));
+      String overSelectRatioStr = prefs.getString
+         (res.getString(R.string.over_select_ratio_key),
+          res.getString(R.string.over_select_ratio_default));
       String songCountThreshStr = prefs.getString
          (res.getString(R.string.song_count_threshold_key),
           res.getString(R.string.song_count_threshold_default));
@@ -120,12 +123,13 @@ public class DownloadService extends IntentService
          int songsRemaining  = playlistFile.exists() ? countSongsRemaining(category, playlistFile) : 0;
          int songCountMax    = Integer.valueOf(songCountMaxStr);
          int songCountThresh = Integer.valueOf(songCountThreshStr);
+         float overSelectRatio = Float.valueOf(overSelectRatioStr);
 
          if (songsRemaining < songCountMax - songCountThresh)
          {
             StatusStrings newSongs;
             int           songCount         = songCountMax - songsRemaining;
-            Float         newSongCountFloat = songCount * Float.valueOf(newSongCountStr);
+            Float         newSongCountFloat = songCount * Float.valueOf(newSongFractionStr);
             int           newSongCount      = newSongCountFloat.intValue();
 
             if (playlistFile.exists())
@@ -152,7 +156,8 @@ public class DownloadService extends IntentService
                playlistFile.createNewFile();
             }
 
-            newSongs = DownloadUtils.getNewSongsList(context, serverIP, category, songCount, newSongCount, -1);
+            newSongs =
+              DownloadUtils.getNewSongsList(context, serverIP, category, songCount, newSongCount, overSelectRatio, -1);
 
             if (newSongs.strings.length == 0)
             {

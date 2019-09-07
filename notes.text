@@ -16,15 +16,6 @@ navigation messages getting thru, but music does not get notified
     android updated; now music muted (not paused?) but nav message not audible
     pause for transient, register request for audio focus so get notified?
 
-car controls worked, twice
-
-use alternate port for unit tests
-
-turn off debug?
-    compile via Makefile, install release
-        requires uninstall; waiting for more testing (ie in car)
-        but install debug via Makefile can't read metadata; install debug via Android Studio can. sigh.
-
 https://github.com/hitenpratap/Task-Reminder-App/blob/master/src/com/TechSect/TaskReminderApp/ReminderManager.java
     uses android.app.AlarmManager
 

@@ -2,7 +2,7 @@
 //
 //  Utilities for downloading from smm_server
 //
-//  Copyright (C) 2016 - 2018 Stephen Leake. All Rights Reserved.
+//  Copyright (C) 2016 - 2019 Stephen Leake. All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -311,13 +311,15 @@ public class DownloadUtils
                                                String  category,
                                                int     count,
                                                int     newCount,
+                                               float   overSelectRatio,
                                                int     randomSeed)
    // randomSeed = -1 means randomize; other values used in unit tests.
    {
       final String url = "http://" + serverIP + ":8080/download?" +
          "category=" + category +
-         "&count=" + Integer.toString(count) +
-         "&new_count=" + Integer.toString(newCount) +
+        "&count=" + Integer.toString(count) +
+        "&new_count=" + Integer.toString(newCount) +
+        "&over_select_ratio=" + Float.toString(overSelectRatio) +
          (-1 == randomSeed ? "" : "&seed=" + Integer.toString(randomSeed));
 
       Request       request = new Request.Builder().url(url).build();

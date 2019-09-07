@@ -48,12 +48,20 @@ write to the Free Software Foundation, 51 Franklin Street, Suite
         android:dialogTitle="@string/song_count_max_dialog_title" />
 
     <EditTextPreference
-        android:key="@string/new_song_count_key"
-        android:defaultValue="@string/new_song_count_default"
-        android:numeric="integer"
-        android:title="@string/new_song_count_title"
-        android:summary="@string/new_song_count_summary"
-        android:dialogTitle="@string/new_song_count_dialog_title" />
+        android:key="@string/new_song_fraction_key"
+        android:defaultValue="@string/new_song_fraction_default"
+        android:numeric="decimal"
+        android:title="@string/new_song_fraction_title"
+        android:summary="@string/new_song_fraction_summary"
+        android:dialogTitle="@string/new_song_fraction_dialog_title" />
+
+    <EditTextPreference
+        android:key="@string/over_select_ratio_key"
+        android:defaultValue="@string/over_select_ratio_default"
+        android:numeric="decimal"
+        android:title="@string/over_select_ratio_title"
+        android:summary="@string/over_select_ratio_summary"
+        android:dialogTitle="@string/over_select_ratio_dialog_title" />
 
     <EditTextPreference
         android:key="@string/song_count_threshold_key"
