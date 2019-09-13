@@ -190,7 +190,9 @@ package body SMM.Server is
 
       Over_Select_Ratio_Param : constant String := Parameter (URI, "over_select_ratio");
       Over_Select_Ratio       : constant Float  :=
-        (if Over_Select_Ratio_Param'Length > 0 then Float'Value (Over_Select_Ratio_Param) else 2.0);
+        (if Over_Select_Ratio_Param'Length > 0 then Float'Value (Over_Select_Ratio_Param) else 1.1);
+      --  Larger over_select_ratio causes more mixing of total song order,
+      --  but it also makes it take longer to download new songs. 2.0 is too high.
 
       DB       : SMM.Database.Database;
       Songs    : List;
@@ -960,7 +962,7 @@ package body SMM.Server is
          if Enable_Log then
             AWS.Server.Log.Start (Ws, Auto_Flush => True);
 
-            Put_Line ("logging to   " & Log_File_Directory (Obj) & "smm-server.log");
+            Put_Line ("logging to   " & Log_File_Directory (Obj) & "smm-server.log, smm-server-debug.log");
          end if;
       end;
 

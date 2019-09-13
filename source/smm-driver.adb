@@ -2,7 +2,7 @@
 --
 --  main procedure for SMM application
 --
---  Copyright (C) 2008 - 2013, 2015 - 2018 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2013, 2015 - 2019 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -22,6 +22,7 @@ with Ada.Command_Line; use Ada.Command_Line;
 with Ada.Directories;
 with Ada.Exceptions.Traceback;
 with Ada.IO_Exceptions;
+with Ada.Strings.Unbounded;
 with Ada.Text_IO; use Ada.Text_IO;
 with GNAT.Traceback.Symbolic;
 with SAL.Command_Line_IO;
@@ -76,7 +77,7 @@ is
    end Check_Arg;
 
    Source_Root  : constant String := As_Directory (Ada.Directories.Current_Directory);
-   DB_File_Name : access String;
+   DB_File_Name : Ada.Strings.Unbounded.String_Access;
    DB           : SMM.Database.Database;
    Next_Arg     : Integer         := 1;
 

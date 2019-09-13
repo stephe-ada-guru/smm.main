@@ -129,7 +129,7 @@ is
          use Ada.Strings.Fixed;
          use SMM.Database;
 
-         Name : constant String := Relative_Name (Source_Root, Normalize (Full_Name (Dir_Entry)));
+         File_Name : constant String := Relative_Name (Source_Root, Normalize (Full_Name (Dir_Entry)));
       begin
          case Kind (Dir_Entry) is
          when Directory =>
@@ -139,30 +139,30 @@ is
                return;
             end if;
 
-            Check_Dir (Name);
+            Check_Dir (File_Name);
 
          when Ordinary_File =>
-            if Extension (Name) = "mp3" then
+            if Extension (File_Name) = "mp3" then
                Disk_Count := Disk_Count + 1;
                Found_Mp3  := True;
 
                declare
-                  I : constant Cursor := DB.Find_File_Name (Name);
+                  I : constant Cursor := DB.Find_File_Name (File_Name);
                begin
                   if I.Has_Element then
                      for J in Required_Fields loop
                         if I.Field (J)'Length = 0 then
-                           Put_Line (-Field_Image (J) & " missing: " & Name);
+                           Put_Line ("db missing " & (-Field_Image (J)) & ": " & File_Name);
                         end if;
                      end loop;
                   else
-                     Put_Line ("db missing: " & Name);
+                     Put_Line ("db missing file: " & File_Name);
                   end if;
                end;
-            elsif 0 < Index (Name, "liner_notes.pdf") then
+            elsif 0 < Index (File_Name, "liner_notes.pdf") then
                Found_Liner_Notes := True;
 
-            elsif 0 < Index (Name, "AlbumArt_huge") then
+            elsif 0 < Index (File_Name, "AlbumArt_huge") then
                Found_AlbumArt_Huge := True;
             end if;
 
