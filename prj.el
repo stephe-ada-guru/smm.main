@@ -1,8 +1,7 @@
 ;; elisp project file
 (require 'sal-android)
 
-(wisi-prj-set-dominating
- "Makefile"
+(wisi-prj-select-cache
  (or load-file-name (buffer-file-name)) ;; project-file
  (make-android-prj
   :name "Stephe's Music Android main"
@@ -15,6 +14,7 @@
   :path-rec ;; include java, because global does not index variables
   (list ;;
    (concat default-directory "app/src/main/")
-   )))
+   ))
+  "Makefile")
 
 ;; end of file
