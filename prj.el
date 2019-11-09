@@ -2,11 +2,10 @@
 (require 'sal-android)
 
 (wisi-prj-select-cache
- (or load-file-name (buffer-file-name)) ;; project-file
+ "prj.el" ;; project-file; placeholder
  (make-android-prj
   :name "Stephe's Music Android main"
   :global-project-root default-directory
-  :global-android-root "c:/Users/stephe/AppData/Local/Android/sdk/sources/android-24/"
   :path-non-rec
   (list
    (concat default-directory "app")

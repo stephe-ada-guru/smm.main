@@ -168,13 +168,11 @@ public class PlayService extends Service
       {
          RemoteViews notifView = new RemoteViews(context.getPackageName(), R.layout.notification);
 
-         if (retriever.albumArtist == null)
-            notifView.setViewVisibility(R.id.notifArtist, GONE);
+         if (retriever.albumArtist == null || retriever.albumArtist.length() == 0)
+            notifView.setTextViewText(R.id.notifArtist, retriever.artist);
          else
-         {
-            notifView.setViewVisibility(R.id.notifArtist, VISIBLE);
             notifView.setTextViewText(R.id.notifArtist, retriever.albumArtist);
-         }
+         
          notifView.setTextViewText(R.id.notifAlbum, retriever.album);
          notifView.setTextViewText(R.id.notifTitle, retriever.title);
          notifView.setOnClickPendingIntent(R.id.notifPrev, prevIntent);
