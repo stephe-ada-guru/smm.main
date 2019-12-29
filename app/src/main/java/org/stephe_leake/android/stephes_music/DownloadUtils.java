@@ -357,7 +357,8 @@ public class DownloadUtils
                                       String                 serverIP,
                                       String                 resource,
                                       File                   fileName,
-                                      MediaScannerConnection mediaScanner)
+                                      MediaScannerConnection mediaScanner,
+                                      boolean                recordDownload)
    {
       // Get 'resource' from 'serverIP', store in 'fileName'.
       // 'resource' shall have only path and file name.
@@ -368,13 +369,22 @@ public class DownloadUtils
 
       StatusCount result = new StatusCount();
 
-      HttpUrl url = new HttpUrl.Builder()
-         .scheme("http")
-         .host(serverIP)
-         .port(8080)
-         .addPathSegment("file")
-         .addQueryParameter("name", "/" + resource)
-         .build();
+      HttpUrl.Builder builder = new HttpUrl.Builder()
+        .scheme("http")
+        .host(serverIP)
+        .port(8080);
+
+      HttpUrl url;
+
+      if (recordDownload)
+         url = builder
+           .addPathSegment("file")
+           .addQueryParameter("name", "/" + resource)
+           .build();
+      else
+         url = builder
+           .addPathSegment(resource)
+           .build();
 
       try
       {
@@ -523,7 +533,7 @@ public class DownloadUtils
       {
          objFile = new File(destDir, FilenameUtils.getName(file));
 
-         fileStatus = getFile(context, serverIP, file, objFile, mediaScanner);
+         fileStatus = getFile(context, serverIP, file, objFile, mediaScanner, false);
          if (ProcessStatus.Success != fileStatus.status)
             return fileStatus.status;
       }
@@ -591,7 +601,9 @@ public class DownloadUtils
             if (result.status == ProcessStatus.Success)
             {
                songFile   = new File(destDir, FilenameUtils.getName(song));
-               fileStatus = getFile(context, serverIP, song, songFile, mediaScanner);
+               fileStatus = getFile(context, serverIP, song, songFile, mediaScanner,
+                                    0 == category.compareTo("vocal") ||
+                                      0 == category.compareTo("instrumental"));
 
                switch (fileStatus.status)
                {
