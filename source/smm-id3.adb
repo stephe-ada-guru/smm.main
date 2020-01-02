@@ -280,17 +280,18 @@ package body SMM.ID3 is
       end if;
    end Close;
 
-   function To_Year (Orig_Year, Year : in String) return Integer
+   function To_Year (Orig_Year, Year, Recording_Time : in String) return Integer
    is begin
-      if Orig_Year'Length = 0 then
-         if Year'Length = 0 then
-            return -1;
-         else
-            return Integer'Value (Year);
-         end if;
-      else
+      if Orig_Year'Length > 0 then
          return Integer'Value (Orig_Year);
       end if;
+      if Year'Length > 0 then
+         return Integer'Value (Year);
+      end if;
+      if Recording_Time'Length > 0 then
+         return Integer'Value (Recording_Time);
+      end if;
+      return -1;
    end To_Year;
 
    function To_Track (Item : in String) return Integer

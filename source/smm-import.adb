@@ -94,7 +94,8 @@ is
                         Composer     => -Find (SMM.ID3.Composer, ID3_Frames),
                         Year         => SMM.ID3.To_Year
                           (-Find (SMM.ID3.Orig_Year, ID3_Frames),
-                           -Find (SMM.ID3.Year, ID3_Frames)),
+                           -Find (SMM.ID3.Year, ID3_Frames),
+                           -Find (SMM.ID3.Recording_Time, ID3_Frames)),
                         Title        => -Find (SMM.ID3.Title, ID3_Frames),
                         Track        => SMM.ID3.To_Track (-Find (SMM.ID3.Track, ID3_Frames)));
 
