@@ -2,7 +2,7 @@
 --
 --  Interface to SQLite3 database
 --
---  Copyright (C) 2018 - 2019 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2018 - 2020 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -114,6 +114,9 @@ package SMM.Database is
    --       I.Next;
    --       ...
    --       I.Set_Row (J);
+
+   function Count (Position : in Cursor) return Natural;
+   --  Count of items Next will visit.
 
    function Has_Element (Position : in Cursor) return Boolean;
 

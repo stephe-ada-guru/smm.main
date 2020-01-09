@@ -2,7 +2,7 @@
 --
 --  Stephe's Music Manager Server
 --
---  Copyright (C) 2016 - 2019 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2016 - 2020 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -40,6 +40,7 @@ with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with Ada.Text_IO;
 with SAL.Config_Files.Integer;
 with SAL.Time_Conversions;
+with SAL.Web_Utils;
 with SMM.Database;
 with SMM.JPEG;
 with SMM.Song_Lists;
@@ -109,11 +110,6 @@ package body SMM.Server is
       --  GNAT runtime sets message to "(unknown directory "")"; no file name!
       raise Ada.IO_Exceptions.Name_Error with "unknown directory '" & Source_Dir & "'";
    end Meta_Files;
-
-   function Server_Href (Relative_Resource : in String; Label : in String) return String
-   is begin
-      return "<a href=""/" & Relative_Resource & """>" & Label & "</a>";
-   end Server_Href;
 
    function Server_Img
      (Relative_Resource : in String;
@@ -495,6 +491,7 @@ package body SMM.Server is
         "<meta http-equiv=""Content-Type"" content=""text/html; charset=utf-8"">" & ASCII.LF &
         "<head>" & ASCII.LF &
         "<script src=""/" & (-Server_Data) & "/songs.js""></script>" & ASCII.LF &
+        "<title>Stephe's music</title>" &
         "<link type=""text/css"" rel=""stylesheet"" href=""/" & (-Server_Data) & "/songs.css""/>" & ASCII.LF &
         "</head>";
 
@@ -588,7 +585,7 @@ package body SMM.Server is
 
                for J in 1 .. Meta.Count loop
                   if To_Lower (Meta.Get_Name (J)) = "liner_notes.pdf" then
-                     Album_Item := Album_Item & Server_Href
+                     Album_Item := Album_Item & SAL.Web_Utils.Local_Href
                        (Meta.Get_Value (J), Server_Img_Set
                           (-Server_Data & "/liner_notes_icon", ".png", "liner notes",
                            Class => "album_art_item"));

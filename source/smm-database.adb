@@ -2,7 +2,7 @@
 --
 --  See spec.
 --
---  Copyright (C) 2018 - 2019 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2018 - 2020 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -275,6 +275,11 @@ package body SMM.Database is
       Track        => Track_Field,
       Play_Before  => Play_Before_Field,
       Play_After   => Play_After_Field);
+
+   function Count (Position : in Cursor) return Natural
+   is begin
+      return Position.Cursor.Rows_Count;
+   end Count;
 
    function Has_Element (Position : Cursor) return Boolean
    is begin
