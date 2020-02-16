@@ -1,0 +1,7 @@
+.gradle/
+.idea/
+GPATH
+GRTAGS
+GTAGS
+app/app.iml
+app/build/
