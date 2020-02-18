@@ -2,7 +2,7 @@
 --
 --  Run all AUnit tests.
 --
---  Copyright (C) 2009, 2011 - 2013, 2015, 2016, 2018 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2009, 2011 - 2013, 2015, 2016, 2018, 2020 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -18,6 +18,7 @@
 
 pragma License (GPL);
 
+with AUnit.Test_Cases; use AUnit.Test_Cases;
 with AUnit.Options;
 with AUnit.Reporter.Text;
 with AUnit.Test_Filters.Verbose;
@@ -91,13 +92,13 @@ begin
       Debug     := (if Argument_Count >= 5 then Integer'Value (Argument (5)) else 0);
    end;
 
-   Add_Test (Suite, new SMM.Database.Test.Test_Case);
-   Add_Test (Suite, new SMM.ID3.Test.Test_Case);
-   Add_Test (Suite, new Test_Copy.Test_Case (Verbosity => Verbosity));
-   Add_Test (Suite, new Test_Import.Test_Case);
-   Add_Test (Suite, new Test_Least_Recent.Test_Case);
-   Add_Test (Suite, new Test_Play_Before.Test_Case);
-   Add_Test (Suite, new Test_Server.Test_Case (Debug => Debug, Verbosity => Verbosity));
+   Add_Test (Suite, Test_Case_Access'(new SMM.Database.Test.Test_Case));
+   Add_Test (Suite, Test_Case_Access'(new SMM.ID3.Test.Test_Case));
+   Add_Test (Suite, Test_Case_Access'(new Test_Copy.Test_Case (Verbosity => Verbosity)));
+   Add_Test (Suite, Test_Case_Access'(new Test_Import.Test_Case));
+   Add_Test (Suite, Test_Case_Access'(new Test_Least_Recent.Test_Case));
+   Add_Test (Suite, Test_Case_Access'(new Test_Play_Before.Test_Case));
+   Add_Test (Suite, Test_Case_Access'(new Test_Server.Test_Case (Debug => Debug, Verbosity => Verbosity)));
 
    Run (Suite, Options, Result, Status);
 
