@@ -2,7 +2,7 @@
 --
 --  See spec.
 --
---  Copyright (C) 2018 - 2019 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2018 - 2020 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -186,7 +186,7 @@ package body SMM.ID3 is
       end To_Frame;
 
    begin
-      if Header.Flags_0 /= 0 then
+      if not Ignore_Flags and Header.Flags_0 /= 0 then
          raise SAL.Not_Implemented with "frame flags_0:" & Image (Header.Flags_0);
       end if;
       --  We don't care about Flags_1, since we are only reading.
@@ -346,7 +346,7 @@ package body SMM.ID3 is
            Interfaces.Unsigned_8'Image (File_Head.Version_Msb);
       end if;
 
-      if File_Head.Flags /= 0 then
+      if not Ignore_Flags and  File_Head.Flags /= 0 then
          raise SAL.Not_Implemented with "file flags:" & Image (File_Head.Flags);
       end if;
 

@@ -8,7 +8,7 @@
 --  [2] http://id3.org/id3v2.4.0-structure ID3 2.4.0 spec
 --  [3] http://id3.org/id3v2.4.0-frames    ID3 2.4.0 frames
 --
---  Copyright (C) 2018, 2019 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2018 - 2020 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -32,6 +32,11 @@ private with Interfaces;
 package SMM.ID3 is
 
    type File is new Ada.Finalization.Limited_Controlled with private;
+
+   Ignore_Flags : Boolean := False;
+   --  By default, ID3 file and frame header flags are checked for
+   --  settings we nominally don't support. Setting Ignore_Flags True
+   --  ignores those checks, which sometimes lets us read the frames.
 
    overriding procedure Finalize (File : in out SMM.ID3.File);
    --  Close file.

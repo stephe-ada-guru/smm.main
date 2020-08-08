@@ -2,7 +2,7 @@
 --
 --  main procedure for SMM application
 --
---  Copyright (C) 2008 - 2013, 2015 - 2019 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2013, 2015 - 2020 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -30,14 +30,18 @@ with SMM.Check;
 with SMM.Copy;
 with SMM.Database;
 with SMM.History;
+with SMM.ID3;
 with SMM.Import;
 with SMM.Update;
 procedure SMM.Driver
 is
    procedure Put_Usage
    is begin
-      Put_Line ("smm [--db=<db_file>] [--verbosity=<int>] <operation> [arg]...");
-      Put_Line ("  <db_file> : defaults to ~/smm/smm.db or $APPDATA/smm or $SMM_HOME");
+      Put_Line ("smm [options] <operation> [arg]...");
+      Put_Line ("  options:");
+      Put_Line ("  --db=<db_file> : defaults to ~/smm/smm.db or $APPDATA/smm or $SMM_HOME");
+      Put_Line ("  --verbosity=<int>");
+      Put_Line ("  --ignore_id3_flags : ignore ID3 file, frame flag settings that we nominally don't support.");
       New_Line;
       Put_Line ("  categories: {instrumental | vocal | ...}");
       New_Line;
@@ -90,23 +94,34 @@ is
    Command : Command_Type;
 
 begin
-   if Argument (Next_Arg)'Length > 5 and then
-     Argument (Next_Arg)(1 .. 5) = "--db="
-   then
-      DB_File_Name := new String'(Argument (Next_Arg)(6 .. Argument (Next_Arg)'Last));
-      Next_Arg     := Next_Arg + 1;
-   else
-      DB_File_Name := new String'(Home & "/smm.db");
-   end if;
+   loop
+      exit when Argument (Next_Arg)'Length < 2 or else Argument (Next_Arg) (1 .. 2) /= "--";
 
-   if Argument (Next_Arg)'Length > 12 and then
-     Argument (Next_Arg)(1 .. 12) = "--verbosity="
-   then
-      Verbosity := Integer'Value (Argument (Next_Arg)(13 .. Argument (Next_Arg)'Last));
-      Next_Arg := Next_Arg + 1;
-   else
-      Verbosity := 0;
-   end if;
+      if Argument (Next_Arg)'Length > 5 and then
+        Argument (Next_Arg)(1 .. 5) = "--db="
+      then
+         DB_File_Name := new String'(Argument (Next_Arg)(6 .. Argument (Next_Arg)'Last));
+         Next_Arg     := Next_Arg + 1;
+      else
+         DB_File_Name := new String'(Home & "/smm.db");
+      end if;
+
+      if Argument (Next_Arg)'Length > 12 and then
+        Argument (Next_Arg)(1 .. 12) = "--verbosity="
+      then
+         Verbosity := Integer'Value (Argument (Next_Arg)(13 .. Argument (Next_Arg)'Last));
+         Next_Arg := Next_Arg + 1;
+      else
+         Verbosity := 0;
+      end if;
+
+      if Argument (Next_Arg)'Length = 18 and then
+        Argument (Next_Arg) = "--ignore_id3_flags"
+      then
+         SMM.ID3.Ignore_Flags := True;
+         Next_Arg := Next_Arg + 1;
+      end if;
+   end loop;
 
    DB.Open (DB_File_Name.all);
 

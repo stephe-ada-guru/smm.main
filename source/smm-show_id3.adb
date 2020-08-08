@@ -12,6 +12,10 @@ is
 
    Frames : SMM.ID3.Frame_Lists.List;
 begin
+   if Ada.Command_Line.Argument_Count > 1 then
+      SMM.ID3.Ignore_Flags := True;
+   end if;
+
    File.Open (File_Name);
 
    Frames := File.All_Frames;
