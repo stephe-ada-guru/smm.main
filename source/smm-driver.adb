@@ -80,12 +80,12 @@ is
       end if;
    end Check_Arg;
 
+   Home : constant String := Find_Home;
+
    Source_Root  : constant String := As_Directory (Ada.Directories.Current_Directory);
-   DB_File_Name : Ada.Strings.Unbounded.String_Access;
+   DB_File_Name : Ada.Strings.Unbounded.String_Access := new String'(Home & "/smm.db");
    DB           : SMM.Database.Database;
    Next_Arg     : Integer         := 1;
-
-   Home : constant String := Find_Home;
 
    type Command_Type is (Copy_Playlist, Import, Update, Rename, Check, History);
 
@@ -102,8 +102,6 @@ begin
       then
          DB_File_Name := new String'(Argument (Next_Arg)(6 .. Argument (Next_Arg)'Last));
          Next_Arg     := Next_Arg + 1;
-      else
-         DB_File_Name := new String'(Home & "/smm.db");
       end if;
 
       if Argument (Next_Arg)'Length > 12 and then

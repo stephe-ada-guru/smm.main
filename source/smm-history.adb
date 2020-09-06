@@ -8,7 +8,7 @@
 --
 --  gnu plot manual:    /usr/share/doc/gnuplot/manual/gnuplot.pdf
 --
---  Copyright (C) 2016 - 2018 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2016 - 2018, 2020 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -134,6 +134,7 @@ is
 
                Seconds_Per_Year : constant := 31_536_000.0;
 
+               Now          : constant Time := Clock;
                Default_Time : constant Time := Value (SMM.Database.Default_Time_String);
 
                Last   : constant Time  := Value (I.Last_Downloaded);
@@ -161,6 +162,11 @@ is
                      Put (Period, Aft => 2, Exp => 0);
                      New_Line;
                   end if;
+               end if;
+
+               if Last /= Default_Time and then Now - Last > Seconds_Per_Year then
+                  Put_Line
+                    ("song:" & Integer'Image (I.ID) & " last downloaded more than a year ago: " & Image (Last));
                end if;
             end;
          when False =>
