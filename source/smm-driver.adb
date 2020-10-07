@@ -113,11 +113,13 @@ begin
          Verbosity := 0;
       end if;
 
-      if Argument (Next_Arg)'Length = 18 and then
-        Argument (Next_Arg) = "--ignore_id3_flags"
-      then
+      if Argument (Next_Arg) = "--ignore_id3_flags" then
          SMM.ID3.Ignore_Flags := True;
          Next_Arg := Next_Arg + 1;
+
+      elsif Argument (Next_Arg) = "--help" then
+         Put_Usage;
+         return;
       end if;
    end loop;
 
