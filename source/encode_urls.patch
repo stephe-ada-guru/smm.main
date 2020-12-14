@@ -1,6 +1,6 @@
 diff -u -r aws-2020-20200429-19A9F-src-orig/src/core/aws-client.adb aws-2020-20200429-19A9F-src/src/core/aws-client.adb
 --- aws-2020-20200429-19A9F-src-orig/src/core/aws-client.adb	2020-03-04 22:07:10.000000000 -0800
-+++ aws-2020-20200429-19A9F-src/src/core/aws-client.adb	2020-06-15 13:45:13.557713700 -0700
++++ aws-2020-20200429-19A9F-src/src/core/aws-client.adb	2020-09-29 15:10:52.109776100 -0700
 @@ -156,7 +156,8 @@
     is
        use type Net.SSL.Config;
@@ -11,9 +11,40 @@ diff -u -r aws-2020-20200429-19A9F-src-orig/src/core/aws-client.adb aws-2020-202
        Proxy_URL   : constant AWS.URL.Object := AWS.URL.Parse (Proxy);
        Connect_URL : AWS.URL.Object;
     begin
+diff -u -r aws-2020-20200429-19A9F-src-orig/src/core/aws-url.adb aws-2020-20200429-19A9F-src/src/core/aws-url.adb
+--- aws-2020-20200429-19A9F-src-orig/src/core/aws-url.adb	2020-02-27 22:22:44.000000000 -0800
++++ aws-2020-20200429-19A9F-src/src/core/aws-url.adb	2020-09-29 15:20:00.486346900 -0700
+@@ -321,11 +321,12 @@
+    function Parse
+       (URL            : String;
+        Check_Validity : Boolean := True;
+-       Normalize      : Boolean := False) return Object
++       Normalize      : Boolean := False;
++       Decode         : Boolean := True) return Object
+    is
+       O : Object;
+    begin
+-      Set.Parse (O, URL, Check_Validity, Normalize);
++      Set.Parse (O, URL, Check_Validity, Normalize, Decode);
+ 
+       return O;
+    end Parse;
+diff -u -r aws-2020-20200429-19A9F-src-orig/src/core/aws-url.ads aws-2020-20200429-19A9F-src/src/core/aws-url.ads
+--- aws-2020-20200429-19A9F-src-orig/src/core/aws-url.ads	2020-02-27 22:22:44.000000000 -0800
++++ aws-2020-20200429-19A9F-src/src/core/aws-url.ads	2020-09-29 15:18:25.000236800 -0700
+@@ -68,7 +68,8 @@
+    function Parse
+      (URL            : String;
+       Check_Validity : Boolean := True;
+-      Normalize      : Boolean := False) return Object;
++      Normalize      : Boolean := False;
++      Decode         : Boolean := True) return Object;
+    --  Parse an URL and return an Object representing this URL. It is then
+    --  possible to extract each part of the URL with the services bellow.
+    --  Raises URL_Error if Check_Validity is true and the URL reference a
 diff -u -r aws-2020-20200429-19A9F-src-orig/src/core/aws-url-set.adb aws-2020-20200429-19A9F-src/src/core/aws-url-set.adb
 --- aws-2020-20200429-19A9F-src-orig/src/core/aws-url-set.adb	2020-02-27 22:22:44.000000000 -0800
-+++ aws-2020-20200429-19A9F-src/src/core/aws-url-set.adb	2020-06-15 13:49:49.020669400 -0700
++++ aws-2020-20200429-19A9F-src/src/core/aws-url-set.adb	2020-09-29 15:10:52.109776100 -0700
 @@ -156,9 +156,10 @@
  
     procedure Parse
@@ -119,3 +150,15 @@ diff -u -r aws-2020-20200429-19A9F-src-orig/src/core/aws-url-set.adb aws-2020-20
           end if;
  
        else
+diff -u -r aws-2020-20200429-19A9F-src-orig/src/core/aws-url-set.ads aws-2020-20200429-19A9F-src/src/core/aws-url-set.ads
+--- aws-2020-20200429-19A9F-src-orig/src/core/aws-url-set.ads	2020-02-27 22:22:44.000000000 -0800
++++ aws-2020-20200429-19A9F-src/src/core/aws-url-set.ads	2020-09-29 15:15:19.043108100 -0700
+@@ -58,6 +58,7 @@
+      (Item           : in out Object;
+       URL            : String;
+       Check_Validity : Boolean := True;
+-      Normalize      : Boolean := False);
++      Normalize      : Boolean := False;
++      Decode         : Boolean := True);
+ 
+ end AWS.URL.Set;

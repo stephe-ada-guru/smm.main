@@ -24,6 +24,7 @@ d:/Music/remote_cache/smm-server_driver.log
    ("../smm.work_1"                    . "../smm.main")))
 
  download status notes
+< nov 2020
 song: 636 long period: 1.04
 song: 2145 last downloaded more than a year ago: 2017-10-01 05:24:11
 song: 2172 last downloaded more than a year ago: 2017-11-20 05:16:56
@@ -194,3 +195,5 @@ d:/Apps/GNAT-gpl_2017/aws-gpl-2017-src/docs/aws.pdf
 d:/Apps/GNAT-gpl_2017/aws-gpl-2017-src/docs/templates_parser/index.html
 
 http://taglib.org/ C ID3 library (simpler than ffmpeg)
+
+to update source/encode_urls.patch, see Google Drive windows-install-notes
