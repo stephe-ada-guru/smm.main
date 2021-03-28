@@ -2,7 +2,7 @@
 //
 //  Provides User Interface to Stephe's Music Player.
 //
-//  Copyright (C) 2011 - 2013, 2015 - 2019 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2011 - 2013, 2015 - 2019, 2021 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -27,7 +27,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
-import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.content.FileProvider;
@@ -39,14 +38,11 @@ import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.SeekBar;
+import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
+
 import java.io.File;
-import java.lang.Float;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.Timer;
 
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
@@ -102,7 +98,7 @@ public class activity extends android.app.Activity
               res.getString(R.string.text_scale_default));
       try
       {
-         return Float.valueOf(scale);
+         return Float.parseFloat(scale);
       }
       catch (NumberFormatException e)
       {
@@ -122,7 +118,7 @@ public class activity extends android.app.Activity
           .putExtra("note", ((String)((Button)v).getText()).replace('\n', ' ')));
    }
 
-   private ImageButton.OnClickListener nextListener = new ImageButton.OnClickListener()
+   private final ImageButton.OnClickListener nextListener = new ImageButton.OnClickListener()
    {
       @Override public void onClick(View v)
       {
@@ -130,7 +126,7 @@ public class activity extends android.app.Activity
       }
    };
 
-   private TextView.OnClickListener playlistListener = new TextView.OnClickListener()
+   private final TextView.OnClickListener playlistListener = new TextView.OnClickListener()
    {
       @Override public void onClick(View v)
       {
@@ -142,7 +138,7 @@ public class activity extends android.app.Activity
       }
    };
 
-   private ImageButton.OnClickListener playPauseListener = new ImageButton.OnClickListener()
+   private final ImageButton.OnClickListener playPauseListener = new ImageButton.OnClickListener()
    {
       @Override public void onClick(View v)
       {
@@ -150,7 +146,7 @@ public class activity extends android.app.Activity
       }
    };
 
-   private ImageButton.OnClickListener prevListener = new ImageButton.OnClickListener()
+   private final ImageButton.OnClickListener prevListener = new ImageButton.OnClickListener()
    {
       @Override public void onClick(View v)
       {
@@ -158,7 +154,7 @@ public class activity extends android.app.Activity
       }
    };
 
-   private OnSeekBarChangeListener progressListener = new OnSeekBarChangeListener()
+   private final OnSeekBarChangeListener progressListener = new OnSeekBarChangeListener()
    {
       // The system generates events very fast; that leads to a
       // stuttering sound. So add some time hysteresis.
@@ -192,7 +188,7 @@ public class activity extends android.app.Activity
 
    ////////// Broadcast reciever
 
-   private BroadcastReceiver broadcastReceiver = new BroadcastReceiver()
+   private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver()
    {
       // see utils.java constants for list of intents
 
@@ -275,7 +271,7 @@ public class activity extends android.app.Activity
                album.setText(utils.retriever.album);
                title.setText(utils.retriever.title);
 
-               trackDuration = Long.valueOf(utils.retriever.duration);
+               trackDuration = Long.parseLong(utils.retriever.duration);
 
                totalTime.setText(utils.makeTimeString(activity.this, trackDuration));
             }
@@ -314,15 +310,6 @@ public class activity extends android.app.Activity
       }
    };
 
-   private void setSMMDirectory()
-   {
-      Resources         res   = getResources();
-      SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-      utils.smmDirectory = prefs.getString
-        (res.getString(R.string.smm_directory_key),
-         res.getString(R.string.smm_directory_default));
-   }
-
    private void scaleTextViews()
    {
       final float scale = getTextViewTextScale();
@@ -348,16 +335,14 @@ public class activity extends android.app.Activity
 
          PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 
-         setSMMDirectory();
-
-         FileProvider fileProvider = new FileProvider();
+         utils.smmDirectory = this.getExternalFilesDir(null).getAbsolutePath();
 
          utils.showDownloadLogIntent =
          new Intent(Intent.ACTION_VIEW)
          .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
          .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
          .setDataAndType
-         (fileProvider.getUriForFile
+         (FileProvider.getUriForFile
          (this,
          BuildConfig.APPLICATION_ID + ".fileprovider",
          new File(DownloadUtils.logFileName())),
@@ -368,24 +353,11 @@ public class activity extends android.app.Activity
          .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
          .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
          .setDataAndType
-         (fileProvider.getUriForFile
+         (FileProvider.getUriForFile
          (this,
          BuildConfig.APPLICATION_ID + ".fileprovider",
          new File(utils.errorLogFileName())),
          "text/plain");
-
-         {
-            GregorianCalendar time = new GregorianCalendar(); // holds current time
-            time.add(Calendar.DAY_OF_MONTH, 1); // tomorrow
-            time.set(Calendar.HOUR_OF_DAY, 0);
-            time.set(Calendar.MINUTE, 30); // 12:30 AM
-
-            if (null == utils.downloadTimer)
-            {
-               utils.downloadTimer = new Timer();
-               utils.downloadTimer.scheduleAtFixedRate(utils.downloadTimerTask, time.getTime(), utils.millisPerDay);
-            }
-         }
 
          setContentView(R.layout.main);
 
@@ -466,6 +438,13 @@ public class activity extends android.app.Activity
       {
          utils.errorLog(this, "activity.onPause: ", e);
       }
+   }
+
+   @Override protected void onDestroy()
+   {
+      super.onDestroy();
+
+      if (BuildConfig.DEBUG) utils.verboseLog("activity.onDestroy");
    }
 
    ////////// key handling
@@ -691,15 +670,7 @@ public class activity extends android.app.Activity
 
          case utils.RESULT_TEXT_SCALE:
          {
-            final float scale = getTextViewTextScale();
             scaleTextViews();
-         }
-         break;
-
-         case utils.RESULT_SMM_DIRECTORY:
-         {
-            setSMMDirectory();
-            // value from preferences
          }
          break;
 

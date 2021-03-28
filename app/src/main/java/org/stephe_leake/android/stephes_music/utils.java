@@ -32,8 +32,6 @@ import android.widget.Toast;
 import java.io.PrintWriter;
 import java.lang.RuntimeException;
 import java.text.SimpleDateFormat;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.io.File;
 import java.io.FileWriter;
 import java.util.Locale;
@@ -96,7 +94,6 @@ public class utils
 
    // sub-activity result codes
    public static final int RESULT_TEXT_SCALE         = Activity.RESULT_FIRST_USER + 1;
-   public static final int RESULT_SMM_DIRECTORY      = Activity.RESULT_FIRST_USER + 2;
 
    public static final int pauseIntentId           = 1;
    public static final int playIntentId            = 2;
@@ -115,7 +112,7 @@ public class utils
    // used to interface with Stephe's Music manager (smm); .last
    // files, notes files.
    //
-   // Set by preferences.
+   // Set by Activity to getExternalStorageDir().
 
    public static String playlistBasename;
    // Current playlist file name; relative to smmDirectory, without
@@ -139,18 +136,7 @@ public class utils
    public static Intent        showErrorLogIntent;
    // For notifications.
 
-   public static Timer downloadTimer;
    public static Context mainActivity;
-
-   public static TimerTask downloadTimerTask = new TimerTask()
-      {
-         public void run()
-         {
-            mainActivity.startService
-               (new Intent(utils.ACTION_COMMAND, null, mainActivity, DownloadService.class)
-                .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_DOWNLOAD));
-         }
-      };
 
    ////////// methods
 

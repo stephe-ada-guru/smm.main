@@ -2,7 +2,7 @@
 //
 //  Provides background download from smm server.
 //
-//  Copyright (C) 2016 - 2019 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2016 - 2019, 2021 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -20,6 +20,7 @@ package org.stephe_leake.android.stephes_music;
 
 import android.app.IntentService;
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
@@ -40,9 +41,12 @@ import org.apache.commons.io.FilenameUtils;
 
 public class DownloadService extends IntentService
 {
+   private static final String channelId   = "Stephe's Music download service";
+
    private static PendingIntent showLogPendingIntent;
 
    private Timer delayTimer;
+   private Notification notif;
 
    ////////// private methods (alphabetical order)
 
@@ -108,7 +112,7 @@ public class DownloadService extends IntentService
       String      category        = FilenameUtils.getBaseName(playlistAbsName);
       StatusCount status          = new StatusCount();
 
-      if (serverIP == null)
+      if (serverIP == null || serverIP == "")
       {
          notifyDownload("Download error", "set Server IP preference");
          status.status = ProcessStatus.Fatal;
@@ -204,7 +208,14 @@ public class DownloadService extends IntentService
    {
       try
       {
-         Notification notif = new Notification.Builder(this)
+         NotificationChannel channel = new NotificationChannel
+           (channelId, "Stephe's Music download channel", NotificationManager.IMPORTANCE_MIN);
+         channel.setLockscreenVisibility(Notification.VISIBILITY_SECRET);
+
+         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+         notificationManager.createNotificationChannel(channel);
+
+         notif = new Notification.Builder(this, channelId)
             .setAutoCancel(false)
             .setContentTitle(title)
             .setContentText(msg)
@@ -247,72 +258,54 @@ public class DownloadService extends IntentService
          Integer                totalCount     = 0;
 
          showLogPendingIntent = PendingIntent.getActivity
-            (this.getApplicationContext(),
-             utils.showDownloadLogIntentId,
-             utils.showDownloadLogIntent,
-             0);
+           (this.getApplicationContext(),
+            utils.showDownloadLogIntentId,
+            utils.showDownloadLogIntent,
+            0);
 
          {
             Resources         res   = getResources();
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
             DownloadUtils.prefLogLevel = LogLevel.valueOf
-               (prefs.getString(res.getString(R.string.log_level_key), LogLevel.Info.toString()));
+              (prefs.getString(res.getString(R.string.log_level_key), LogLevel.Info.toString()));
          }
 
-         mediaScanner.connect();
-
-         if (null == intentPlaylist)
+         try
          {
-            Resources         res       = getResources();
-            SharedPreferences prefs     = PreferenceManager.getDefaultSharedPreferences(this);
-            Set<String>       playlists = prefs.getStringSet
-               (res.getString(R.string.auto_download_playlists_key),
-                new LinkedHashSet<String>());
+            mediaScanner.connect();
 
-            msg = "Downloading " + playlists.size() + " playlists";
-
-            notifyDownload(msg, "...");
-
-            for (String playlist : playlists)
             {
-               status = download(this, utils.smmDirectory + "/" + playlist + ".m3u", mediaScanner);
+               msg = "Downloading " + FilenameUtils.getBaseName(intentPlaylist);
+
+               notifyDownload(msg, "...");
+
+               startForeground (1, notif);
+
+               status = download(this, intentPlaylist, mediaScanner);
+
                totalCount += status.count;
-               if (status.status == ProcessStatus.Retry)
-               {
-                  // Apparently we cannot use a timer twice.
-                  delayTimer = new Timer();
-                  delayTimer.schedule(utils.downloadTimerTask, 10 * utils.millisPerMinute);
-                  break;
-               }
+            }
+
+            switch (status.status)
+            {
+            case Success:
+               notifyDownload(msg, "downloaded " + totalCount.toString() + " songs.");
+               break;
+
+            case Retry:
+               notifyDownload(msg, "delayed ...");
+               break;
+
+            case Fatal:
+               notifyDownload(msg, "error");
+               break;
             }
          }
-         else
+         finally
          {
-            msg = "Downloading " + FilenameUtils.getBaseName(intentPlaylist);
-
-            notifyDownload(msg, "...");
-
-            status = download(this, intentPlaylist, mediaScanner);
-            totalCount += status.count;
+            mediaScanner.disconnect();
          }
-
-         switch (status.status)
-         {
-         case Success:
-            notifyDownload(msg, "downloaded " + totalCount.toString() + " songs.");
-            break;
-
-         case Retry:
-            notifyDownload(msg, "delayed ...");
-            break;
-
-         case Fatal:
-            notifyDownload(msg, "error");
-            break;
-         }
-
-         mediaScanner.disconnect();
       }
       catch (Exception e)
       {

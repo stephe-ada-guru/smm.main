@@ -3,7 +3,7 @@
 //  Provides background audio playback capabilities, allowing the
 //  user to switch between activities without stopping playback.
 //
-//  Copyright (C) 2011 - 2013, 2015 - 2019 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2011 - 2013, 2015 - 2019, 2021 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -20,6 +20,7 @@
 package org.stephe_leake.android.stephes_music;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -52,21 +53,19 @@ import java.lang.Integer;
 import java.util.LinkedList;
 import org.apache.commons.io.FilenameUtils;
 
-import static android.view.View.GONE;
-import static android.view.View.VISIBLE;
-
 public class PlayService extends Service
 {
    //  Internal Messages used for delays
    private static final int UNPAUSE        = 3;
    private static final int UPDATE_DISPLAY = 4;
+   private static final String channelId   = "Stephe's Music play service";
 
    enum WhatChanged
    {
       Meta,    // song or playlist
       State,   // play/pause
       Position // progress
-   };
+   }
 
    Context context;
 
@@ -78,6 +77,7 @@ public class PlayService extends Service
    private AudioManager audioManager;
 
    private MediaPlayer mediaPlayer;
+   private Notification notif;
 
    ////////// state
 
@@ -148,7 +148,8 @@ public class PlayService extends Service
       switch (playing)
       {
       case Idle:
-         // We get here when reinstantiated after onDestroy
+         playPauseIcon = R.drawable.stop;
+         playPauseIntent = pauseIntent;
          break;
 
       case Playing:
@@ -172,7 +173,7 @@ public class PlayService extends Service
             notifView.setTextViewText(R.id.notifArtist, retriever.artist);
          else
             notifView.setTextViewText(R.id.notifArtist, retriever.albumArtist);
-         
+
          notifView.setTextViewText(R.id.notifAlbum, retriever.album);
          notifView.setTextViewText(R.id.notifTitle, retriever.title);
          notifView.setOnClickPendingIntent(R.id.notifPrev, prevIntent);
@@ -180,10 +181,17 @@ public class PlayService extends Service
          notifView.setOnClickPendingIntent(R.id.notifPlayPause, playPauseIntent);
          notifView.setOnClickPendingIntent(R.id.notifNext, nextIntent);
 
-         Notification notif = new Notification.Builder(context)
+         NotificationChannel channel = new NotificationChannel
+           (channelId, "Stephe's Music play channel", NotificationManager.IMPORTANCE_LOW);
+         channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+
+         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+         notificationManager.createNotificationChannel(channel);
+
+         notif = new Notification.Builder(context, channelId)
            .setAutoCancel(false)
-           .setContent(notifView)
            .setContentIntent(utils.activityIntent)
+           .setCustomContentView(notifView)
            .setOngoing(true)
            .setSmallIcon(R.drawable.icon) // shown in status bar
            .setShowWhen(false)
@@ -285,7 +293,11 @@ public class PlayService extends Service
                  .setState(PlaybackState.STATE_STOPPED, mediaPlayer.getCurrentPosition(), 1.0f, 0)
                  .build());
 
-            // no Notification
+            // Foreground service must always display a Notification
+            if (what == WhatChanged.State && utils.retriever != null)
+            {
+               setPlayNotif(utils.retriever);
+            }
             break;
 
          case Playing:
@@ -469,7 +481,6 @@ public class PlayService extends Service
             throw new Fail();
          }
 
-         utils.smmDirectory = playlistFile.getParent();
          utils.playlistBasename  = tmpPlaylistBaseName;
          playlist          = tmpPlaylist;
          playlistPos       = startAt;
@@ -478,6 +489,7 @@ public class PlayService extends Service
          {
          case Idle:
             playing = PlayState.Idle;
+            notifyChange(WhatChanged.State);
             break;
 
          case Playing:
@@ -569,7 +581,6 @@ public class PlayService extends Service
 
       SharedPreferences storage = getSharedPreferences(utils.preferencesName, MODE_PRIVATE);
 
-      utils.smmDirectory = storage.getString(keySMMDirectory, null);
       utils.playlistBasename  = storage.getString(keyPlaylistFilename, null);
 
       if (utils.smmDirectory != null && utils.playlistBasename != null)
@@ -744,24 +755,32 @@ public class PlayService extends Service
 
    ////////// nested classes
 
-   private Handler handler = new Handler()
+   private final Handler handler = new Handler()
    {
       // FIXME: lint wants this object to be static, but then it
       // can't call unpause, which is not static.
       @Override public void handleMessage(Message msg)
       {
-         switch (msg.what)
+         try
          {
-         case UNPAUSE:
-            unpause();
+            switch (msg.what)
+            {
+            case UNPAUSE:
+               unpause();
 
-         case UPDATE_DISPLAY:
-            notifyChange(WhatChanged.Position);
+            case UPDATE_DISPLAY:
+               notifyChange(WhatChanged.Position);
 
-            handler.sendEmptyMessageDelayed(UPDATE_DISPLAY, 1000);
+               handler.sendEmptyMessageDelayed(UPDATE_DISPLAY, 1000);
 
-         default:
-            break;
+            default:
+               break;
+            }
+         }
+         catch (Exception e)
+         {
+            utils.errorLog
+              (context, "handleMessage: exception: ", e);
          }
       }
    };
@@ -1165,7 +1184,9 @@ public class PlayService extends Service
          playing        = PlayState.Idle;
          haveAudioFocus = false;
 
-         restoreState();
+         restoreState(); // create notification
+
+         startForeground (1, notif);
       }
       catch (Exception e)
       {

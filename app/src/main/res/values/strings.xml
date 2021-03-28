@@ -26,7 +26,9 @@
   <string name="dialog_download_new_playlist">Enter a playlist category</string>
   <string name="dialog_jump_song">Enter a song number to jump to</string>
   <string name="dialog_play_playlist">Select a playlist</string>
+  <string name="dialog_create_playlist">Create a playlist</string>
   <string name="download">Download</string>
+  <string name="cancel">Cancel</string>
   <string name="jump_song">Jump</string>
   <string name="null_playlist">(click to select a playlist)</string>
 
@@ -55,12 +57,6 @@
   <!-- preference ; alphabetical after activity name-->
   <string name="preferences_activity_name">&quot;Stephe's Music Player Preferences&quot;</string>
 
-  <string name="auto_download_playlists_key">auto_download_playlists</string>
-  <string name="auto_download_playlists_default"></string>
-  <string name="auto_download_playlists_title">Auto-download playlists</string>
-  <string name="auto_download_playlists_summary">List of playlists that are downloaded every night</string>
-  <string name="auto_download_playlists_dialog_title">Auto-download playlists</string>
-
   <string name="log_level_key">log_level</string>
   <string name="log_level_title">Log Level</string>
   <string name="log_level_summary">Verbose or Info messages in download log (always includes Error) </string>
@@ -77,12 +73,6 @@
   <string name="server_IP_title">Server IP</string>
   <string name="server_IP_summary">Server for download</string>
   <string name="server_IP_dialog_title">Server IP</string>
-
-  <string name="smm_directory_key">smm_directory</string>
-  <string name="smm_directory_default">/storage/emulated/0/Android/data/org.stephen_leake.android.stephes_music/cache</string>
-  <string name="smm_directory_title">smm directory</string>
-  <string name="smm_directory_summary">absolute path where smm interface files are stored</string>
-  <string name="smm_directory_dialog_title">smm directory</string>
 
   <string name="song_count_max_key">song_count_max</string>
   <string name="song_count_max_default">100</string>

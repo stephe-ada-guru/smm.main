@@ -2,7 +2,7 @@
 //
 //  Dialog for picking an available playlist to play
 //
-//  Copyright (C) 2016 Stephen Leake. All Rights Reserved.
+//  Copyright (C) 2016, 2021 Stephen Leake. All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -22,13 +22,13 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
 import android.os.Bundle;
-import android.content.res.Resources;
-import android.content.SharedPreferences;
 import java.io.File;
 import android.preference.PreferenceManager;
 import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.view.LayoutInflater;
+import android.widget.EditText;
 
 public class PickPlaylistDialogFragment extends DialogFragment
 {
@@ -43,59 +43,88 @@ public class PickPlaylistDialogFragment extends DialogFragment
 
       try
       {
-         Resources         res   = getResources();
-         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(activity);
-         final File playlistDir  = new File
-            (prefs.getString
-             (res.getString(R.string.smm_directory_key),
-              res.getString(R.string.smm_directory_default)));
+         final File playlistDir  = new File (utils.smmDirectory);
 
          final FileExtFilter playlistFilter = new FileExtFilter(".m3u");
          final String[] playlists           = playlistDir.list(playlistFilter);
 
          if (playlists == null || playlists.length == 0)
-         {
-            utils.alertLog(activity, "no playlists found in " + playlistDir);
-            return null;
-         }
+           {
+             LayoutInflater inflater = activity.getLayoutInflater();
 
-         dialogPlayPlaylist = new AlertDialog.Builder(activity)
-            .setTitle(R.string.dialog_play_playlist)
-            .setItems
-            (playlists,
-             new DialogInterface.OnClickListener()
-             {
-                public void onClick(DialogInterface dialogInt, int which)
+             dialogPlayPlaylist = new AlertDialog.Builder(activity)
+               .setTitle(R.string.dialog_create_playlist)
+               .setMessage("no playlists found in " + playlistDir)
+               .setView(inflater.inflate(R.layout.dialog_text, null))
+               .setPositiveButton
+               (R.string.download,
+                new DialogInterface.OnClickListener()
                 {
-                   try
-                   {
-                      final android.widget.ListView listView = dialogPlayPlaylist.getListView();
-                      final String filename = (String)listView.getAdapter().getItem(which);
+                  public void onClick(DialogInterface dialog, int which)
+                  {
+                    final android.widget.TextView textView = (EditText)dialogPlayPlaylist.findViewById(R.id.text_view);
+                    final String playListName = textView.getText().toString();
 
-                      switch (command)
+                    activity.startService
+                      (new Intent (utils.ACTION_COMMAND, null, activity, DownloadService.class)
+                       .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_DOWNLOAD)
+                       .putExtra(utils.EXTRA_COMMAND_PLAYLIST,
+                                 playlistDir.getAbsolutePath() + "/" + playListName));
+                  }})
+
+               .setNegativeButton
+               (R.string.cancel,
+                new DialogInterface.OnClickListener()
+                {
+                  public void onClick(DialogInterface dialog, int id)
+                  {
+                    PickPlaylistDialogFragment.this.getDialog().cancel();
+                  }})
+
+               .create();
+           }
+         else
+           {
+             dialogPlayPlaylist = new AlertDialog.Builder(activity)
+               .setTitle(R.string.dialog_play_playlist)
+               .setItems
+               (playlists,
+                new DialogInterface.OnClickListener()
+                {
+                  public void onClick(DialogInterface dialogInt, int which)
+                  {
+                    try
                       {
-                      case utils.COMMAND_DOWNLOAD:
-                         activity.startService
-                            (new Intent (utils.ACTION_COMMAND, null, activity, DownloadService.class)
-                             .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_DOWNLOAD)
-                             .putExtra(utils.EXTRA_COMMAND_PLAYLIST, playlistDir.getAbsolutePath() + "/" + filename));
-                         break;
+                        final android.widget.ListView listView = dialogPlayPlaylist.getListView();
+                        final String filename = (String)listView.getAdapter().getItem(which);
 
-                      case utils.COMMAND_PLAYLIST:
-                         activity.sendBroadcast
-                            (new Intent (utils.ACTION_COMMAND)
-                             .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PLAYLIST)
-                             .putExtra(utils.EXTRA_COMMAND_PLAYLIST, playlistDir.getAbsolutePath() + "/" + filename));
-                      };
+                        switch (command)
+                          {
+                          case utils.COMMAND_DOWNLOAD:
+                            activity.startService
+                              (new Intent (utils.ACTION_COMMAND, null, activity, DownloadService.class)
+                               .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_DOWNLOAD)
+                               .putExtra(utils.EXTRA_COMMAND_PLAYLIST,
+                                         playlistDir.getAbsolutePath() + "/" + filename));
+                            break;
 
-                   }
-                   catch (Exception e)
-                   {
-                      utils.alertLog(activity, "pick playlist dialog onClick: ", e);
-                   }
-                };
-             }
-             ).create();
+                          case utils.COMMAND_PLAYLIST:
+                            activity.sendBroadcast
+                              (new Intent (utils.ACTION_COMMAND)
+                               .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PLAYLIST)
+                               .putExtra(utils.EXTRA_COMMAND_PLAYLIST,
+                                         playlistDir.getAbsolutePath() + "/" + filename));
+                          }
+
+                      }
+                    catch (Exception e)
+                      {
+                        utils.alertLog(activity, "pick playlist dialog onClick: ", e);
+                      }
+                  }
+                }
+                ).create();
+           }
 
          return dialogPlayPlaylist;
       }

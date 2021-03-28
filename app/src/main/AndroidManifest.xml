@@ -26,7 +26,9 @@ along with GCC; see the file COPYING3.  If not see
 
   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" /> <!-- download -->
   <uses-permission android:name="android.permission.BROADCAST_STICKY" /> <!-- send data from service to activity -->
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/> <!-- PlayService is not killed -->
   <uses-permission android:name="android.permission.INTERNET" />             <!-- download -->
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>  <!-- download -->
   <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" /> <!-- media metadata -->
   <uses-permission android:name="android.permission.WRITE_SETTINGS" /> <!-- preferences -->
 
@@ -35,6 +37,7 @@ along with GCC; see the file COPYING3.  If not see
       android:label="@string/app_name"
       android:allowBackup="false"
       android:theme="@android:style/Theme.Holo"
+      android:usesCleartextTraffic="true"
   >
 
     <!--

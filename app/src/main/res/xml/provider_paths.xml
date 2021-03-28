@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
-  <!-- <cache-path name="liner_notes1" path="."/> -->
-  <external-cache-path name="liner_notes2" path="."/> <!-- this doesn't work -->
-  <external-path name="liner_notes3" path="Android/data/org.stephe_leake.android.stephes_music/cache"/>
+  <external-path name="liner_notes" path="Android/data/org.stephe_leake.android.stephes_music/files"/>
+  <external-path name="logs" path="Android/data/org.stephe_leake.android.stephes_music/files"/>
 </paths>

@@ -1,8 +1,0 @@
-gpr_file=books_agg.gpr
-
-casing=emacs_case_exceptions
-casing=../../../org.stephe_leake.sal/build/sal.casing
-casing=../../../org.stephe_leake.aunit_ext/build/aunit.casing
-
--- for Makefile
-src_dir=.

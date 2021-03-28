@@ -2,7 +2,44 @@ Makefile
 c:/Projects/org.emacs.java-wisi/notes.text
 
  current tasks
-use workmanager to schedule update
+new phone
+    minsdkversion newer than device api level
+        say what? "about phone" says "android 10"
+        reboot everything
+
+    download service
+        cleartext policy not working
+            change back to 'usesCleartextTraffic'
+                maybe working? reading error log file is problematic; see below
+                    read directly in Jota, don't tap notification.
+
+        duplicate notifications
+            different level; min, default?
+                but all done from notifyDownload!
+
+            don't recreate, just update?
+
+        error: need grantUriPermission on fileprovider
+            but clicking download notification works anyway
+            change <provider android:exported to true is not allowed. sigh.
+            already have FLAG_GRANT_READ_URI_PERMISSION
+
+
+
+        need network policy
+            because using http, not https
+            delete .xml
+
+        need wakelock?
+            prevent doze mode; no network
+
+    don't recreate notification, just change content of views?
+
+
+preferences.java:  // addPreferencesFromResource, findPreference are deprecated
+    Note: Some input files use or override a deprecated API.
+    Note: Recompile with -Xlint:deprecation for details.
+    use LayoutInflater? see PickPlaylistDialogFragment
 
 http://android-developers.googleblog.com/2018/08/verifying-your-google-assistant-media.html
 http://android-developers.googleblog.com/2018/06/a-new-universal-music-player.html

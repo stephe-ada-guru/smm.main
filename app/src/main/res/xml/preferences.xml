@@ -23,22 +23,6 @@ write to the Free Software Foundation, 51 Franklin Street, Suite
   <PreferenceCategory
       android:title="all">
 
-    <ListPreference
-        android:key="@string/smm_directory_key"
-        android:defaultValue="@string/smm_directory_default"
-        android:title="@string/smm_directory_title"
-        android:summary="@string/smm_directory_summary"
-        android:dialogTitle="@string/smm_directory_dialog_title" />
-    <!-- list entries filled at runtime -->
-
-    <MultiSelectListPreference
-        android:key="@string/auto_download_playlists_key"
-        android:defaultValue="@string/auto_download_playlists_default"
-        android:title="@string/auto_download_playlists_title"
-        android:summary="@string/auto_download_playlists_summary"
-        android:dialogTitle="@string/auto_download_playlists_dialog_title" />
-    <!-- list entries filled at runtime -->
-
     <EditTextPreference
         android:key="@string/song_count_max_key"
         android:defaultValue="@string/song_count_max_default"

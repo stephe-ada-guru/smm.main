@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android
 {
-  compileSdkVersion 24
+  compileSdkVersion 29
 
   defaultConfig
   {
@@ -15,10 +15,10 @@ android
     // targetSdkVersion: lint complains if not latest
 
     applicationId "org.stephe_leake.android.stephes_music"
-    minSdkVersion 24
-    targetSdkVersion 24
-    versionName "22"
-    versionCode 22
+    minSdkVersion 29
+    targetSdkVersion 29
+    versionName "23"
+    versionCode 23
   }
 
   signingConfigs

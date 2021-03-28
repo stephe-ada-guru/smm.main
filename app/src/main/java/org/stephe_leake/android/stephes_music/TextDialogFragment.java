@@ -2,7 +2,7 @@
 //
 //  Dialog with an EditText view
 //
-//  Copyright (C) 2016 Stephen Leake. All Rights Reserved.
+//  Copyright (C) 2016, 2021 Stephen Leake. All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -18,21 +18,19 @@
 
 package org.stephe_leake.android.stephes_music;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
-import android.os.Bundle;
-import android.content.res.Resources;
-import android.content.SharedPreferences;
-import java.io.File;
-import android.view.View;
-import android.widget.EditText;
-import android.view.inputmethod.InputMethodManager;
-import android.preference.PreferenceManager;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.app.Activity;
 import android.content.Intent;
+import android.os.Bundle;
+import android.view.View;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
+
+import java.io.File;
 
 public class TextDialogFragment extends DialogFragment
 {
@@ -47,64 +45,60 @@ public class TextDialogFragment extends DialogFragment
          View view = getActivity().getLayoutInflater().inflate(R.layout.dialog_text, null);
          final EditText textView = (EditText)view.findViewById(R.id.text_view);
 
-         // Force display keboard for new name entry.
+         // Force display keyboard for new name entry.
          // FIXME: doesn't work!
          InputMethodManager imm = (InputMethodManager)activity.getSystemService(Context.INPUT_METHOD_SERVICE);
          imm.showSoftInput(textView, InputMethodManager.SHOW_IMPLICIT);
 
          AlertDialog.Builder builder = new AlertDialog.Builder(activity)
-            .setView(view);
+           .setView(view);
 
          switch (command)
          {
          case utils.COMMAND_DOWNLOAD:
-            {
-               Resources         res   = getResources();
-               SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(activity);
-               final File playlistDir  = new File
-                  (prefs.getString
-                   (res.getString(R.string.smm_directory_key),
-                    res.getString(R.string.smm_directory_default)));
+         {
+            final File playlistDir  = new File(utils.smmDirectory);
 
-               builder
-                  .setTitle(R.string.dialog_download_new_playlist)
-                  .setPositiveButton(R.string.download, new DialogInterface.OnClickListener()
-                     {
-                        public void onClick(DialogInterface dialog, int which)
-                        {
-                           // User entered new playlist name in edit box
-                           final String filename = textView.getText().toString() + ".m3u";
+            builder
+            .setTitle(R.string.dialog_download_new_playlist)
+            .setPositiveButton
+              (R.string.download, new DialogInterface.OnClickListener()
+               {
+                  public void onClick(DialogInterface dialog, int which)
+                  {
+                     // User entered new playlist name in edit box
+                     final String filename = textView.getText().toString() + ".m3u";
 
-                           activity.startService
-                              (new Intent (utils.ACTION_COMMAND, null, activity, DownloadService.class)
-                               .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_DOWNLOAD)
-                               .putExtra(utils.EXTRA_COMMAND_PLAYLIST, playlistDir.getAbsolutePath() +
-                                         "/" + filename));
-                        };
-                     }
-                     );
-            }
-            break;
+                     activity.startService
+                       (new Intent (utils.ACTION_COMMAND, null, activity, DownloadService.class)
+                          .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_DOWNLOAD)
+                          .putExtra(utils.EXTRA_COMMAND_PLAYLIST, playlistDir.getAbsolutePath() +
+                                      "/" + filename));
+                  }
+               }
+              );
+         }
+         break;
 
          case utils.COMMAND_JUMP:
             builder
-               .setTitle(R.string.dialog_jump_song)
-               .setPositiveButton(R.string.jump_song, new DialogInterface.OnClickListener()
+            .setTitle(R.string.dialog_jump_song)
+            .setPositiveButton
+              (R.string.jump_song, new DialogInterface.OnClickListener()
+               {
+                  public void onClick(DialogInterface dialog, int which)
                   {
-                     public void onClick(DialogInterface dialog, int which)
-                     {
-                        // User entered song number in edit box
-                        final int songNumber = Integer.valueOf(textView.getText().toString());
+                     // User entered song number in edit box
+                     final int songNumber = Integer.parseInt(textView.getText().toString());
 
-                        activity.sendBroadcast
-                           (new Intent (utils.ACTION_COMMAND)
-                            .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_JUMP)
-                            .putExtra(utils.EXTRA_COMMAND_POSITION, songNumber));
-                        };
-                     }
-                     );
-
-         };
+                     activity.sendBroadcast
+                       (new Intent (utils.ACTION_COMMAND)
+                          .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_JUMP)
+                          .putExtra(utils.EXTRA_COMMAND_POSITION, songNumber));
+                  }
+               }
+              );
+         }
 
          return builder.create();
       }
