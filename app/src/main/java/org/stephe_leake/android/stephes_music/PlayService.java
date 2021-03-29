@@ -201,7 +201,7 @@ public class PlayService extends Service
          try
          {
             NotificationManager notifManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            notifManager.notify(null, utils.notif_play_id, notif);
+            notifManager.notify(utils.notif_play_id, notif);
          }
          catch (RuntimeException e)
          {
@@ -1208,7 +1208,7 @@ public class PlayService extends Service
          pause(PlayState.Idle); // does saveState()
 
          NotificationManager notifManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-         notifManager.cancel(null, utils.notif_play_id);
+         notifManager.cancel(utils.notif_play_id);
          prevIntent.cancel();
          nextIntent.cancel();
          playIntent.cancel();

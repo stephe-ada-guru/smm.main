@@ -93,7 +93,7 @@
   <string name="over_select_ratio_dialog_title">Over select ratio</string>
 
   <string name="song_count_threshold_key">song_count_threshold</string>
-  <string name="song_count_threshold_default">10</string>
+  <string name="song_count_threshold_default">30</string>
   <string name="song_count_threshold_title">Song count threshold</string>
   <string name="song_count_threshold_summary">Count of songs played before next download</string>
   <string name="song_count_threshold_dialog_title">Song count threshold</string>

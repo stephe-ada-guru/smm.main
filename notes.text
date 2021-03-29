@@ -8,33 +8,20 @@ new phone
         reboot everything
 
     download service
-        cleartext policy not working
-            change back to 'usesCleartextTraffic'
-                maybe working? reading error log file is problematic; see below
-                    read directly in Jota, don't tap notification.
+        downloading vocal!
+            need text count
 
         duplicate notifications
             different level; min, default?
+                min too low for foreground
                 but all done from notifyDownload!
 
             don't recreate, just update?
 
-        error: need grantUriPermission on fileprovider
-            but clicking download notification works anyway
-            change <provider android:exported to true is not allowed. sigh.
-            already have FLAG_GRANT_READ_URI_PERMISSION
-
-
-
-        need network policy
-            because using http, not https
-            delete .xml
-
         need wakelock?
             prevent doze mode; no network
 
-    don't recreate notification, just change content of views?
-
+preferenceManager is deprecated in api 29
 
 preferences.java:  // addPreferencesFromResource, findPreference are deprecated
     Note: Some input files use or override a deprecated API.

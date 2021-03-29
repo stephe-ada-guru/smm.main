@@ -2,7 +2,7 @@
 //
 //  Status enum.
 //
-//  Copyright (C) 2017 Stephen Leake. All Rights Reserved.
+//  Copyright (C) 2017, 2021 Stephen Leake. All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -20,9 +20,11 @@ package org.stephe_leake.android.stephes_music;
 
 public enum ProcessStatus
 {
-   Success(0),
-   Retry(1),
-   Fatal(2);
+   Start(0),
+   Running(1),
+   Success(2),
+   Retry(3),
+   Fatal(4);
 
    private int index;
    private ProcessStatus(int i) {index = i;}

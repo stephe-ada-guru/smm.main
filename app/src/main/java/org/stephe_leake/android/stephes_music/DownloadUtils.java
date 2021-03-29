@@ -2,7 +2,7 @@
 //
 //  Utilities for downloading from smm_server
 //
-//  Copyright (C) 2016 - 2019 Stephen Leake. All Rights Reserved.
+//  Copyright (C) 2016 - 2019, 2021 Stephen Leake. All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -364,7 +364,7 @@ public class DownloadUtils
       // 'resource' shall have only path and file name.
       //
       // Return result.status Success if successful, Fatal or Retry
-      // for any errors (error messages in log); result.count = 1 if
+      // for any errors (error messages in log). result.count = 1 if
       // file has never been downloaded before, 0 otherwise..
 
       StatusCount result = new StatusCount();
@@ -418,6 +418,7 @@ public class DownloadUtils
 
          if ((prevDownloaded != null) &&
              (prevDownloaded.equals(timeOriginString)))
+            // new song
             result.count += 1;
 
          while ((count = in.read(buffer)) != -1)
@@ -437,10 +438,6 @@ public class DownloadUtils
          {
             String ext = FilenameUtils.getExtension(fileName.toString());
             String mime = "";
-
-            // FIXME: debugging
-            if (ext.equals("mp3"))
-               log(context, LogLevel.Verbose, "prev_downloaded '" + prevDownloaded + "'");
 
             if (ext.equals("jpg"))
                mime = "image/jpeg";
@@ -571,6 +568,8 @@ public class DownloadUtils
          return result;
       }
 
+      notif.Update (songs.length, result.count);
+
       try
       {
          for (String song : songs)
@@ -611,11 +610,16 @@ public class DownloadUtils
                   playlistWriter.write(category + "/" + song + "\n");
                   result.count++;
                   newSongs = newSongs + fileStatus.count;
+                  notif.Update (songs.length, result.count);
+                  break;
+
+               case Retry:
+                  result.status = fileStatus.status;
                   break;
 
                case Fatal:
-               case Retry:
                   result.status = fileStatus.status;
+                  notif.Error ("get file failed");
                   break;
                };
             }

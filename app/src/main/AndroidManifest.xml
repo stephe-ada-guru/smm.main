@@ -41,11 +41,9 @@ along with GCC; see the file COPYING3.  If not see
   >
 
     <!--
-        We use "singleTask" because there is only one server, and
+        We use "singleTask" because there is only one play server, and
         only one song playing at a time. An alternative would be to
-        use "standard" and exit each instance in onPause. But that
-        would be a race condition with waiting for the service
-        connection.
+        use "standard" and exit each instance in onPause.
     -->
     <activity
         android:name=".activity"
