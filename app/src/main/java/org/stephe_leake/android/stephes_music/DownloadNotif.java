@@ -34,6 +34,7 @@ public class DownloadNotif
    private Notification notif;
 
    private final PendingIntent showLogPendingIntent;
+   private final Notification.Action cancelAction;
 
    private String playlistName = "";
    private String statusText = "";
@@ -41,7 +42,12 @@ public class DownloadNotif
    private Integer maxSongs = 0;
    private Integer currentSongs = 0;
 
-   DownloadNotif(@NotNull Context context, PendingIntent showLogPendingIntent)
+   private String formatCounts()
+   {
+   return maxSongs == 0 ? "" : currentSongs + "/" + maxSongs;
+   }
+
+   DownloadNotif(@NotNull Context context, PendingIntent showLogPendingIntent, PendingIntent cancelIntent)
    {
       this.context = context;
       this.showLogPendingIntent = showLogPendingIntent;
@@ -53,6 +59,8 @@ public class DownloadNotif
       NotificationManager notificationManager = (NotificationManager)
         context.getSystemService(Context.NOTIFICATION_SERVICE);
       notificationManager.createNotificationChannel(channel);
+
+      cancelAction = new Notification.Action.Builder(R.drawable.cancel, "cancel", cancelIntent).build();
 
       update();
    }
@@ -73,9 +81,10 @@ public class DownloadNotif
         context.getSystemService(Context.NOTIFICATION_SERVICE);
 
       notif = new Notification.Builder(context, channelId)
-        .setAutoCancel(true)
+        .addAction (cancelAction)
+        .setAutoCancel(true) // doesn't work
         .setContentIntent(showLogPendingIntent)
-        .setContentTitle("Downloading " + playlistName + statusText)
+        .setContentTitle("Downloading " + playlistName + " " + statusText)
         .setContentText(contentText)
         .setOngoing(true)
         .setProgress(maxSongs, currentSongs, maxSongs==0)
@@ -87,20 +96,21 @@ public class DownloadNotif
 
    void Done(String msg)
    {
-      statusText = " done";
+      statusText = "done " + formatCounts();
       contentText = msg;
       update();
    }
 
    void Error(String msg)
    {
-      statusText = " done";
+      statusText = "error " + formatCounts();
       contentText = msg;
       update();
    }
 
    void Update(Integer max, Integer current)
    {
+      statusText = formatCounts();
       maxSongs = max;
       currentSongs = current;
       update();

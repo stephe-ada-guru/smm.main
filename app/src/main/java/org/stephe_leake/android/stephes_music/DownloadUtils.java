@@ -542,7 +542,8 @@ public class DownloadUtils
                                       String[]               songs,
                                       String                 category,
                                       String                 root,
-                                      MediaScannerConnection mediaScanner)
+                                      MediaScannerConnection mediaScanner,
+                                      DownloadNotif          notif)
    {
       // Get 'songs' from 'serverIP', store in 'root/<category>', add
       // to playlist 'root/<category>.m3u'. Also get album art, liner

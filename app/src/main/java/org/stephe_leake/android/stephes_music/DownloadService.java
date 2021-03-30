@@ -20,8 +20,10 @@ package org.stephe_leake.android.stephes_music;
 
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.media.MediaScannerConnection;
@@ -62,13 +64,13 @@ public class DownloadService extends Service
             currentFile = reader.readLine();
             reader.close();
          }
-         catch (IOException e) {}
+         catch (IOException ignored) {}
 
       while (line != null)
       {
          if (new File(utils.smmDirectory, line).canRead())
          {
-            if (currentFile != null && line.equals(currentFile))
+            if (line.equals(currentFile))
                startAt = songCount;
             songCount++;
          }
@@ -106,7 +108,7 @@ public class DownloadService extends Service
       String      category        = FilenameUtils.getBaseName(playlistAbsName);
       StatusCount status          = new StatusCount();
 
-      if (serverIP == null || serverIP == "")
+      if (serverIP == null || serverIP.equals(""))
       {
          notif.Error("Server IP preference not set");
          return;
@@ -118,16 +120,16 @@ public class DownloadService extends Service
       try
       {
          int songsRemaining  = playlistFile.exists() ? countSongsRemaining(category, playlistFile) : 0;
-         int songCountMax    = Integer.valueOf(songCountMaxStr);
-         int songCountThresh = Integer.valueOf(songCountThreshStr);
-         float overSelectRatio = Float.valueOf(overSelectRatioStr);
+         int songCountMax    = Integer.parseInt(songCountMaxStr);
+         int songCountThresh = Integer.parseInt(songCountThreshStr);
+         float overSelectRatio = Float.parseFloat(overSelectRatioStr);
 
          if (songsRemaining < songCountMax - songCountThresh)
          {
             StatusStrings newSongs;
-            int           songCount         = songCountMax - songsRemaining;
-            Float         newSongCountFloat = songCount * Float.valueOf(newSongFractionStr);
-            int           newSongCount      = newSongCountFloat.intValue();
+            int   songCount         = songCountMax - songsRemaining;
+            float newSongCountFloat = songCount * Float.parseFloat(newSongFractionStr);
+            int   newSongCount      = (int) newSongCountFloat;
 
             if (playlistFile.exists())
             {
@@ -137,7 +139,7 @@ public class DownloadService extends Service
                {
                   // Restart playlist to show new song position, count
                   sendBroadcast
-                    (new Intent (utils.ACTION_COMMAND)
+                    (new Intent (utils.ACTION_PLAY_COMMAND)
                        .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PLAYLIST)
                        .putExtra(utils.EXTRA_COMMAND_PLAYLIST, playlistAbsName)
                        .putExtra(utils.EXTRA_COMMAND_STATE, PlayState.Paused.toInt()));
@@ -174,7 +176,7 @@ public class DownloadService extends Service
             {
                // Restart playlist to show new song position, count
                sendBroadcast
-                 (new Intent (utils.ACTION_COMMAND)
+                 (new Intent (utils.ACTION_PLAY_COMMAND)
                     .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PLAYLIST)
                     .putExtra(utils.EXTRA_COMMAND_PLAYLIST, playlistAbsName)
                     .putExtra(utils.EXTRA_COMMAND_STATE, PlayState.Paused.toInt()));
@@ -202,9 +204,9 @@ public class DownloadService extends Service
 
    class DownloadRun implements Runnable
    {
-      private String playlist;
-      private Context context;
-      private DownloadNotif notif;
+      private final String playlist;
+      private final Context context;
+      private final DownloadNotif notif;
 
       DownloadRun(Context context, DownloadNotif notif, String playlist)
       {
@@ -216,7 +218,6 @@ public class DownloadService extends Service
       @Override public void run()
       {
          MediaScannerConnection mediaScanner   = new MediaScannerConnection(context, null);
-         StatusCount            status         = new StatusCount();
 
          try
          {
@@ -231,6 +232,25 @@ public class DownloadService extends Service
       }
    }
 
+   private final BroadcastReceiver broadcastReceiverCommand = new BroadcastReceiver()
+   {
+      // Intent filter set for utils.ACTION_DOWNLOAD_COMMAND
+      @Override public void onReceive(Context context, Intent intent)
+      {
+         final int command = intent.getIntExtra(utils.EXTRA_COMMAND, -1);
+
+         switch (command)
+         {
+         case utils.COMMAND_CANCEL_DOWNLOAD:
+            stopSelf();
+
+         default:
+         // just ignore.
+
+         }
+      }
+   };
+
    ////////// service lifetime methods
    @Override public IBinder onBind(Intent intent)
    {
@@ -241,20 +261,31 @@ public class DownloadService extends Service
    {
       super.onCreate();
 
+      IntentFilter filter = new IntentFilter();
+      filter.addAction(utils.ACTION_DOWNLOAD_COMMAND);
+      registerReceiver(broadcastReceiverCommand, filter);
+
       notif = new DownloadNotif
         (this,
          PendingIntent.getActivity
            (this.getApplicationContext(),
             utils.showDownloadLogIntentId,
             utils.showDownloadLogIntent,
+            0),
+
+         PendingIntent.getBroadcast
+           (this.getApplicationContext(),
+            utils.cancelDownloadIntentId,
+            utils.cancelDownloadIntent,
             0));
 
-      startForeground (1, notif.getNotif());
+      startForeground (utils.notif_download_id, notif.getNotif());
    }
 
    @Override public void onDestroy()
    {
       notif.Cancel();
+      unregisterReceiver(broadcastReceiverCommand);
       super.onDestroy();
    }
 
@@ -266,7 +297,7 @@ public class DownloadService extends Service
          // after a crash.
          return START_NOT_STICKY;
       }
-      else if (intent.getAction() == utils.ACTION_COMMAND)
+      else if (intent.getAction().equals(utils.ACTION_DOWNLOAD_COMMAND))
       {
          try
          {
@@ -276,7 +307,7 @@ public class DownloadService extends Service
             DownloadUtils.prefLogLevel = LogLevel.valueOf
               (prefs.getString(res.getString(R.string.log_level_key), LogLevel.Info.toString()));
 
-            final String           intentPlaylist = intent.getStringExtra(utils.EXTRA_COMMAND_PLAYLIST);
+            final String intentPlaylist = intent.getStringExtra(utils.EXTRA_COMMAND_PLAYLIST);
 
             DownloadRun runner = new DownloadRun (this, notif, intentPlaylist);
             new Thread(runner).start();

@@ -5,7 +5,7 @@
 //  This is run in the AudioManager, so it must communicate with the
 //  service via intents; the same command intents the activity uses.
 //
-//  Copyright (C) 2015, 2016 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2015, 2016, 2021 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -56,7 +56,7 @@ public class MediaButtonReceiver extends BroadcastReceiver
             {
                handled = true;
                context.sendBroadcast
-                  (new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_NEXT));
+                  (new Intent(utils.ACTION_PLAY_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_NEXT));
             }
             break;
 
@@ -65,7 +65,7 @@ public class MediaButtonReceiver extends BroadcastReceiver
             {
                handled = true;
                context.sendBroadcast
-                  (new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PAUSE));
+                  (new Intent(utils.ACTION_PLAY_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PAUSE));
             }
             break;
 
@@ -74,7 +74,7 @@ public class MediaButtonReceiver extends BroadcastReceiver
             {
                handled = true;
                context.sendBroadcast
-                  (new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PLAY));
+                  (new Intent(utils.ACTION_PLAY_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PLAY));
             }
             break;
 
@@ -83,7 +83,7 @@ public class MediaButtonReceiver extends BroadcastReceiver
             {
                handled = true;
                context.sendBroadcast
-                  (new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_TOGGLEPAUSE));
+                  (new Intent(utils.ACTION_PLAY_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_TOGGLEPAUSE));
             }
             break;
 
@@ -92,7 +92,7 @@ public class MediaButtonReceiver extends BroadcastReceiver
             {
                handled = true;
                context.sendBroadcast
-                  (new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PREVIOUS));
+                  (new Intent(utils.ACTION_PLAY_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PREVIOUS));
             }
             break;
 

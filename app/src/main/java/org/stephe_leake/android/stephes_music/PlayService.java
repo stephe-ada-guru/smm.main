@@ -787,7 +787,7 @@ public class PlayService extends Service
 
    private BroadcastReceiver broadcastReceiverCommand = new BroadcastReceiver()
    {
-      // Intent filter set for ACTION_COMMAND
+      // Intent filter set for ACTION_PLAY_COMMAND
       @Override public void onReceive(Context context, Intent intent)
       {
          try
@@ -1132,7 +1132,7 @@ public class PlayService extends Service
          context = this;
 
          IntentFilter filter = new IntentFilter();
-         filter.addAction(utils.ACTION_COMMAND);
+         filter.addAction(utils.ACTION_PLAY_COMMAND);
          registerReceiver(broadcastReceiverCommand, filter);
 
          filter = new IntentFilter();
@@ -1148,22 +1148,22 @@ public class PlayService extends Service
          prevIntent = PendingIntent.getBroadcast
            (context.getApplicationContext(),
             utils.prevIntentId,
-            new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PREVIOUS), 0);
+            new Intent(utils.ACTION_PLAY_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PREVIOUS), 0);
 
          nextIntent = PendingIntent.getBroadcast
            (context.getApplicationContext(),
             utils.nextIntentId,
-            new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_NEXT), 0);
+            new Intent(utils.ACTION_PLAY_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_NEXT), 0);
 
          pauseIntent = PendingIntent.getBroadcast
            (context.getApplicationContext(),
             utils.pauseIntentId,
-            new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PAUSE), 0);
+            new Intent(utils.ACTION_PLAY_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PAUSE), 0);
 
          playIntent = PendingIntent.getBroadcast
            (context.getApplicationContext(),
             utils.playIntentId,
-            new Intent(utils.ACTION_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PLAY), 0);
+            new Intent(utils.ACTION_PLAY_COMMAND).putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PLAY), 0);
 
          createMediaPlayer();
 
@@ -1186,7 +1186,7 @@ public class PlayService extends Service
 
          restoreState(); // create notification
 
-         startForeground (1, notif);
+         startForeground (utils.notif_play_id, notif);
       }
       catch (Exception e)
       {

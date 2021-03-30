@@ -2,7 +2,7 @@
 //
 //  misc stuff
 //
-//  Copyright (C) 2011 - 2013, 2015 - 2018 Stephen Leake.  All Rights Reserved.
+//  Copyright (C) 2011 - 2013, 2015 - 2018, 2021 Stephen Leake.  All Rights Reserved.
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under terms of the GNU General Public License as
@@ -61,9 +61,12 @@ public class utils
    //  playing  boolean
    //  position int (milliseconds)
 
-   //  Commands to server via Intent actions sent via broadcast. Alphabetical order
+   //  Commands to play and download server via Intent actions sent via broadcast. Alphabetical order
    //  Only one action, so we can add commands without adding to the reciever filter.
-   public static final String ACTION_COMMAND = "org.stephe_leake.android.stephes_music.action.command";
+   public static final String ACTION_PLAY_COMMAND = "org.stephe_leake.android.stephes_music.action.play_command";
+   public static final String ACTION_DOWNLOAD_COMMAND =
+   "org.stephe_leake.android.stephes_music.action.download_command";
+
    // according to android docs, extra field names must inlude the package prefix (no explanation of why)
    public static final String EXTRA_COMMAND = "org.stephe_leake.android.stephes_music.extra.command";
    public static final String EXTRA_COMMAND_POSITION =
@@ -77,7 +80,7 @@ public class utils
    // but we can't make that parcelable for intent extras.
    public static final int COMMAND_RESERVED = 1; // something sends this to PlayService!
 
-   public static final int COMMAND_DOWNLOAD           = 2;
+   // play service commands
    public static final int COMMAND_JUMP               = 4;
    public static final int COMMAND_NEXT               = 5;
    public static final int COMMAND_NOTE               = 6;
@@ -92,6 +95,10 @@ public class utils
    public static final int COMMAND_TOGGLEPAUSE        = 15;
    public static final int COMMAND_UPDATE_DISPLAY     = 16;
 
+   // download service commands
+   public static final int COMMAND_CANCEL_DOWNLOAD = 2;
+   public static final int COMMAND_DOWNLOAD        = 3;
+
    // sub-activity result codes
    public static final int RESULT_TEXT_SCALE         = Activity.RESULT_FIRST_USER + 1;
 
@@ -102,6 +109,7 @@ public class utils
    public static final int activityIntentId        = 5;
    public static final int showDownloadLogIntentId = 6;
    public static final int showErrorLogIntentId    = 7;
+   public static final int cancelDownloadIntentId  = 8;
 
    ////////// Shared objects
 
@@ -134,6 +142,7 @@ public class utils
    public static PendingIntent activityIntent;
    public static Intent        showDownloadLogIntent;
    public static Intent        showErrorLogIntent;
+   public static Intent        cancelDownloadIntent;
    // For notifications.
 
    public static Context mainActivity;

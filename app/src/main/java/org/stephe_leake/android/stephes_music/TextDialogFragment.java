@@ -70,7 +70,7 @@ public class TextDialogFragment extends DialogFragment
                      final String filename = textView.getText().toString() + ".m3u";
 
                      activity.startService
-                       (new Intent (utils.ACTION_COMMAND, null, activity, DownloadService.class)
+                       (new Intent (utils.ACTION_DOWNLOAD_COMMAND, null, activity, DownloadService.class)
                           .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_DOWNLOAD)
                           .putExtra(utils.EXTRA_COMMAND_PLAYLIST, playlistDir.getAbsolutePath() +
                                       "/" + filename));
@@ -92,7 +92,7 @@ public class TextDialogFragment extends DialogFragment
                      final int songNumber = Integer.parseInt(textView.getText().toString());
 
                      activity.sendBroadcast
-                       (new Intent (utils.ACTION_COMMAND)
+                       (new Intent (utils.ACTION_PLAY_COMMAND)
                           .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_JUMP)
                           .putExtra(utils.EXTRA_COMMAND_POSITION, songNumber));
                   }

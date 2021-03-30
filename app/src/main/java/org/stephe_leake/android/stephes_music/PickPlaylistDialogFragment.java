@@ -54,24 +54,8 @@ public class PickPlaylistDialogFragment extends DialogFragment
 
              dialogPlayPlaylist = new AlertDialog.Builder(activity)
                .setTitle(R.string.dialog_create_playlist)
-               .setMessage("no playlists found in " + playlistDir)
+               .setMessage("no playlists found in " + playlistDir + "; use " + R.string.menu_download_new_playlist)
                .setView(inflater.inflate(R.layout.dialog_text, null))
-               .setPositiveButton
-               (R.string.download,
-                new DialogInterface.OnClickListener()
-                {
-                  public void onClick(DialogInterface dialog, int which)
-                  {
-                    final android.widget.TextView textView = (EditText)dialogPlayPlaylist.findViewById(R.id.text_view);
-                    final String playListName = textView.getText().toString();
-
-                    activity.startService
-                      (new Intent (utils.ACTION_COMMAND, null, activity, DownloadService.class)
-                       .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_DOWNLOAD)
-                       .putExtra(utils.EXTRA_COMMAND_PLAYLIST,
-                                 playlistDir.getAbsolutePath() + "/" + playListName));
-                  }})
-
                .setNegativeButton
                (R.string.cancel,
                 new DialogInterface.OnClickListener()
@@ -102,7 +86,7 @@ public class PickPlaylistDialogFragment extends DialogFragment
                           {
                           case utils.COMMAND_DOWNLOAD:
                             activity.startService
-                              (new Intent (utils.ACTION_COMMAND, null, activity, DownloadService.class)
+                              (new Intent (utils.ACTION_DOWNLOAD_COMMAND, null, activity, DownloadService.class)
                                .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_DOWNLOAD)
                                .putExtra(utils.EXTRA_COMMAND_PLAYLIST,
                                          playlistDir.getAbsolutePath() + "/" + filename));
@@ -110,7 +94,7 @@ public class PickPlaylistDialogFragment extends DialogFragment
 
                           case utils.COMMAND_PLAYLIST:
                             activity.sendBroadcast
-                              (new Intent (utils.ACTION_COMMAND)
+                              (new Intent (utils.ACTION_PLAY_COMMAND)
                                .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_PLAYLIST)
                                .putExtra(utils.EXTRA_COMMAND_PLAYLIST,
                                          playlistDir.getAbsolutePath() + "/" + filename));

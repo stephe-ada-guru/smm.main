@@ -3,23 +3,8 @@ c:/Projects/org.emacs.java-wisi/notes.text
 
  current tasks
 new phone
-    minsdkversion newer than device api level
-        say what? "about phone" says "android 10"
-        reboot everything
-
-    download service
-        downloading vocal!
-            need text count
-
-        duplicate notifications
-            different level; min, default?
-                min too low for foreground
-                but all done from notifyDownload!
-
-            don't recreate, just update?
-
-        need wakelock?
-            prevent doze mode; no network
+    need wakelock?
+        prevent doze mode; no network
 
 preferenceManager is deprecated in api 29
 
