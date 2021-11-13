@@ -25,14 +25,22 @@ d:/Music/remote_cache/smm-server_driver.log
 
  download status notes
 < nov 2020
-song: 636 long period: 1.04
 song: 2145 last downloaded more than a year ago: 2017-10-01 05:24:11
+    play after 2141
+    2141 has null prev_downloaded, last_downloaded 2013! set prev_downloaded to time_default.
+
 song: 2172 last downloaded more than a year ago: 2017-11-20 05:16:56
+    play after 2179
+    2179 has null prev_downloaded; set to default
+
 song: 2186 last downloaded more than a year ago: 2018-01-04 13:23:45
+    play after 2188 set prev_downloaded
+
 song: 2618 last downloaded more than a year ago: 2017-12-25 18:40:34
 song: 3201 last downloaded more than a year ago: 2018-01-09 06:39:36
 song: 5357 long period: 1.51
 song: 5357 last downloaded more than a year ago: 2019-01-24 00:16:55
+song: 6224 last downloaded more than a year ago: 2020-06-07 20:51:14
 
  current work
 rename enforce relative to root
@@ -43,8 +51,14 @@ need update to null
 smm-song-lists.adb
     delete Find_Second_Song loop
 
+add download rule; if last downloaded > 1 year, download now
+
+respect aeropex pause button
+    multimedia control?
+
 use ip6 address for faster connect
     Android tries 3 ipv6 addresses before ipv4
+    aws doesn't support ip6?
 
 web play all search results - best list, album
 
