@@ -2,9 +2,10 @@ Makefile
 c:/Projects/org.emacs.java-wisi/notes.text
 
  current tasks
-new phone
-    need wakelock?
-        prevent doze mode; no network
+Music doesn't respect Aeropex headphone pause button
+
+add support for .webp image format
+    beth wood patreon 2021
 
 preferenceManager is deprecated in api 29
 

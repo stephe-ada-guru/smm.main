@@ -376,7 +376,7 @@ public class PlayService extends Service
 
             // We consider this a programmer error, because it
             // probably indicates an SMM sync bug. It could also be a
-            // failing sdcard.
+            // failing sdcard. Or someone deleted a file.
             utils.errorLog(null, "can't play '" + path, e);
 
             notifyChange(WhatChanged.Meta);
