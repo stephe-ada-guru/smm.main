@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2004, 2016, 2017, 2018, 2019 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2004, 2016, 2017, 2018, 2019, 2022 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -298,19 +298,19 @@ package body Test_Server is
 
          Create
            ("tmp/source/artist_1/album_1/1 - song_1.mp3",
-            (Artist, +"artist_1") &
+            +(Artist, +"artist_1") &
               (Album, +"album_1") &
               (Title, +"1 - song_1"));
 
          Create
            ("tmp/source/artist_1/album_1/2 - song_2.mp3",
-            (Artist, +"artist_1") &
+            +(Artist, +"artist_1") &
               (Album, +"album_1") &
               (Title, +"2 - song_2"));
 
          Create
            ("tmp/source/artist_1/album_1/03 The Dance #1.mp3",
-            (Artist, +"artist_1") &
+            +(Artist, +"artist_1") &
               (Album, +"album_1") &
               (Title, +"03 The Dance #1"));
 
@@ -321,19 +321,19 @@ package body Test_Server is
 
          Create
            ("tmp/source/artist_2/album_1/1 - song_1.mp3",
-            (Artist, +"artist_2") &
+            +(Artist, +"artist_2") &
               (Album, +"album_1") &
               (Title, +"1 - song_1"));
 
          Create
            ("tmp/source/artist_2/album_1/2 - song_2.mp3",
-            (Artist, +"artist_2") &
+            +(Artist, +"artist_2") &
               (Album, +"album_1") &
               (Title, +"2 - song_2"));
 
          Create
            ("tmp/source/artist_2/album_1/3 - song_3.mp3",
-            (Artist, +"artist_2") &
+            +(Artist, +"artist_2") &
               (Album, +"album_1") &
               (Title, +"3 - song_3"));
 

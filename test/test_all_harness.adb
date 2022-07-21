@@ -2,7 +2,7 @@
 --
 --  Run all AUnit tests.
 --
---  Copyright (C) 2009, 2011 - 2013, 2015, 2016, 2018, 2020 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2009, 2011 - 2013, 2015, 2016, 2018, 2020, 2022 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -26,6 +26,7 @@ with AUnit.Test_Results;
 with AUnit.Test_Suites; use AUnit.Test_Suites;
 with Ada.Command_Line;
 with Ada.Exceptions;
+with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with Ada.Text_IO;
 with GNAT.Traceback.Symbolic;
 with SMM.Database.Test;
@@ -68,28 +69,25 @@ begin
       Filter.Verbose := Argument_Count > 0 and then Argument (1) = "1";
 
       case Argument_Count is
-      when 0 | 1 =>
+      when 0 =>
          null;
 
-      when 2 =>
-         Filter.Set_Name (Argument (2));
+      when 1 =>
+         Filter.Test_Name := To_Unbounded_String (Argument (2)); -- test name only
+
+      when 2 .. 5 =>
+         Filter.Test_Name    := To_Unbounded_String (Argument (2));
+         Filter.Routine_Name := To_Unbounded_String (Argument (3));
+         if Argument_Count >= 4 then
+            Verbosity := Integer'Value (Argument (4));
+         end if;
+         if Argument_Count >= 5 then
+            Debug     := Integer'Value (Argument (5));
+         end if;
 
       when others =>
-         declare
-            Test_Name    : String renames Argument (2);
-            Routine_Name : String renames Argument (3);
-         begin
-            if Test_Name = "" then
-               Filter.Set_Name (Routine_Name);
-            elsif Routine_Name = "" then
-               Filter.Set_Name (Test_Name);
-            else
-               Filter.Set_Name (Test_Name & " : " & Routine_Name);
-            end if;
-         end;
+         raise Constraint_Error with Usage;
       end case;
-      Verbosity := (if Argument_Count >= 4 then Integer'Value (Argument (4)) else 0);
-      Debug     := (if Argument_Count >= 5 then Integer'Value (Argument (5)) else 0);
    end;
 
    Add_Test (Suite, Test_Case_Access'(new SMM.Database.Test.Test_Case));

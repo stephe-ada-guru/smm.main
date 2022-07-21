@@ -43,6 +43,14 @@ song: 5357 last downloaded more than a year ago: 2019-01-24 00:16:55
 song: 6224 last downloaded more than a year ago: 2020-06-07 20:51:14
 
  current work
+read header info from m4a
+    smm-m4a.*
+        works
+
+    change smm-id3 to use smm-metadata
+
+    integrate into rest of smm
+
 rename enforce relative to root
 
 need update to null

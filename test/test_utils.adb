@@ -2,7 +2,7 @@
 --
 --  see spec
 --
---  Copyright (C) 2007 - 2009, 2015 - 2016, 2018, 2019 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007 - 2009, 2015 - 2016, 2018, 2019, 2022 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -93,13 +93,12 @@ package body Test_Utils is
          Last_Downloaded => Prefix & Duration'Image (Last_Downloaded) (2 .. 2));
    end Insert;
 
-   function "&" (Left, Right : in SMM.ID3.Frame) return SMM.ID3.Frame_Lists.List
+   function "+" (Item : in SMM.ID3.Frame) return SMM.ID3.Frame_Lists.List
    is begin
       return Result : SMM.ID3.Frame_Lists.List do
-         Result.Append (Left);
-         Result.Append (Right);
+         Result.Append (Item);
       end return;
-   end "&";
+   end "+";
 
    function "&" (List : in SMM.ID3.Frame_Lists.List; Item : in SMM.ID3.Frame) return SMM.ID3.Frame_Lists.List
    is begin

@@ -2,7 +2,7 @@
 --
 --  Utilities for unit tests
 --
---  Copyright (C) 2007, 2009, 2016, 2018 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007, 2009, 2016, 2018, 2022 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -44,7 +44,7 @@ package Test_Utils is
       Category        : in String := "vocal");
    --  Insert a database element; other fields are null or "none".
 
-   function "&" (Left, Right : in SMM.ID3.Frame) return SMM.ID3.Frame_Lists.List;
+   function "+" (Item : in SMM.ID3.Frame) return SMM.ID3.Frame_Lists.List;
    function "&" (List : in SMM.ID3.Frame_Lists.List; Item : in SMM.ID3.Frame) return SMM.ID3.Frame_Lists.List;
    --  For SMM.ID3.Create
 
