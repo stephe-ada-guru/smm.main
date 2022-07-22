@@ -34,6 +34,10 @@ package SMM.Metadata is
 
    function End_Of_File (File : in SMM.Metadata.File) return Boolean;
 
+   function Index (File : in SMM.Metadata.File) return Ada.Streams.Stream_IO.Positive_Count;
+
+   function Name (File : in SMM.Metadata.File) return String;
+
    function Stream (File : in SMM.Metadata.File) return access Ada.Streams.Root_Stream_Type'Class;
 
    procedure Read
@@ -42,12 +46,6 @@ package SMM.Metadata is
       Last :    out Ada.Streams.Stream_Element_Offset);
 
    subtype ID_String is String (1 .. 4);
-
-   function To_Year (Orig_Year, Year, Recording_Time : in String) return Integer;
-   --  Orig_Year has preference, result has -1 for empty string
-
-   function To_Track (Item : in String) return Integer;
-   --  Handle <track>/<total>; -1 for empty string.
 
    --  Some common Frames, alphabetical by Ada var name
    Album          : constant ID_String := "TALB"; -- [1] Album/Movie/Show title
@@ -72,6 +70,12 @@ package SMM.Metadata is
 
    function Find (ID : in ID_String; Frames : in Frame_Lists.List) return Ada.Strings.Unbounded.Unbounded_String;
    --  Return empty string if not found.
+
+   function To_Track (Item : in String) return Integer;
+   --  Handle <track>/<total>; -1 for empty string.
+
+   function To_Year (Orig_Year, Year, Recording_Time : in String) return Integer;
+   --  Orig_Year has preference, result has -1 for empty string
 
 private
 

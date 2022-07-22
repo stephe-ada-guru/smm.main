@@ -2,7 +2,7 @@
 --
 --  Import new files into SMM db.
 --
---  Copyright (C) 2008 - 2010, 2012, 2014, 2018 - 2019 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2010, 2012, 2014, 2018 - 2019, 2022 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -23,6 +23,8 @@ with Ada.Text_IO;
 with SAL;
 with SMM.Database;
 with SMM.ID3;
+with SMM.M4a;
+with SMM.Metadata;
 procedure SMM.Import
   (DB          : in SMM.Database.Database;
    Source_Root : in String;
@@ -72,32 +74,35 @@ is
                end if;
             else
                declare
-                  use SMM.ID3;
-                  Ext        : constant String   := Extension (Name);
-                  ID3_Frames : Frame_Lists.List;
-                  Artist_ID  : SMM.ID3.ID_String := SMM.ID3.Artist;
+                  Ext       : constant String        := Extension (Name);
+                  Frames    : SMM.Metadata.Frame_Lists.List;
+                  Artist_ID : SMM.Metadata.ID_String := SMM.Metadata.Artist;
                begin
-                  if Ext = "mp3" then
+                  if Ext = "mp3" or Ext = "m4a" then
                      if Verbosity > 0 then
                         Ada.Text_IO.Put_Line ("adding file " & Name);
                      end if;
 
-                     Metadata (Abs_Name, ID3_Frames, Artist_ID);
+                     if Ext = "mp3" then
+                        SMM.ID3.Metadata (Abs_Name, Frames, Artist_ID);
+                     elsif Ext = "m4a" then
+                        SMM.M4a.Metadata (Abs_Name, Frames, Artist_ID);
+                     end if;
 
                      DB.Insert
                        (ID           => Index,
                         File_Name    => Name,
                         Category     => Category,
-                        Artist       => -Find (Artist_ID, ID3_Frames),
-                        Album        => -Find (SMM.ID3.Album, ID3_Frames),
-                        Album_Artist => -Find (SMM.ID3.Album_Artist, ID3_Frames),
-                        Composer     => -Find (SMM.ID3.Composer, ID3_Frames),
-                        Year         => SMM.ID3.To_Year
-                          (-Find (SMM.ID3.Orig_Year, ID3_Frames),
-                           -Find (SMM.ID3.Year, ID3_Frames),
-                           -Find (SMM.ID3.Recording_Time, ID3_Frames)),
-                        Title        => -Find (SMM.ID3.Title, ID3_Frames),
-                        Track        => SMM.ID3.To_Track (-Find (SMM.ID3.Track, ID3_Frames)));
+                        Artist       => -SMM.Metadata.Find (Artist_ID, Frames),
+                        Album        => -SMM.Metadata.Find (SMM.Metadata.Album, Frames),
+                        Album_Artist => -SMM.Metadata.Find (SMM.Metadata.Album_Artist, Frames),
+                        Composer     => -SMM.Metadata.Find (SMM.Metadata.Composer, Frames),
+                        Year         => SMM.Metadata.To_Year
+                          (-SMM.Metadata.Find (SMM.Metadata.Orig_Year, Frames),
+                           -SMM.Metadata.Find (SMM.Metadata.Year, Frames),
+                           -SMM.Metadata.Find (SMM.Metadata.Recording_Time, Frames)),
+                        Title        => -SMM.Metadata.Find (SMM.Metadata.Title, Frames),
+                        Track        => SMM.Metadata.To_Track (-SMM.Metadata.Find (SMM.Metadata.Track, Frames)));
 
                      Index := Index + 1;
                   else

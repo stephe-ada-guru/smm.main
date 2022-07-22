@@ -2,7 +2,7 @@
 --
 --  See spec.
 --
---  Copyright (C) 2018 - 2020 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2018 - 2020, 2022 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -20,13 +20,12 @@ pragma License (GPL);
 
 with Ada.Characters.Handling;
 with Ada.Exceptions;
-with Ada.IO_Exceptions;
-with Ada.Strings.Fixed;
 with Ada.Strings.UTF_Encoding.Conversions;
 with Ada.Text_IO;
 with GNATCOLL.Iconv;
 with SAL.Generic_Binary_Image;
 package body SMM.ID3 is
+   use SMM.Metadata;
 
    function Is_Alphanumeric (Item : in ID_String) return Boolean
    is
@@ -250,75 +249,7 @@ package body SMM.ID3 is
    ----------
    --  Public subprograms
 
-   overriding procedure Finalize (File : in out SMM.ID3.File)
-   is
-      use Ada.Streams.Stream_IO;
-   begin
-      if Is_Open (File.Stream) then
-         Close (File.Stream);
-      end if;
-   end Finalize;
-
-   procedure Open (File : in out SMM.ID3.File; Name : in String)
-   is
-      use Ada.Streams.Stream_IO;
-   begin
-      if Is_Open (File.Stream) then
-         raise Ada.IO_Exceptions.Use_Error with "file is already open with '" &
-           Ada.Streams.Stream_IO.Name (File.Stream) & "'";
-      end if;
-
-      Open (File.Stream, In_File, Name);
-   end Open;
-
-   procedure Close (File : in out SMM.ID3.File)
-   is
-      use Ada.Streams.Stream_IO;
-   begin
-      if Is_Open (File.Stream) then
-         Close (File.Stream);
-      end if;
-   end Close;
-
-   function To_Year (Orig_Year, Year, Recording_Time : in String) return Integer
-   is begin
-      if Orig_Year'Length > 0 then
-         return Integer'Value (Orig_Year);
-      end if;
-      if Year'Length > 0 then
-         return Integer'Value (Year);
-      end if;
-      if Recording_Time'Length > 0 then
-         return Integer'Value (Recording_Time);
-      end if;
-      return -1;
-   end To_Year;
-
-   function To_Track (Item : in String) return Integer
-   is
-      use Ada.Strings.Fixed;
-      Slash_Index : constant Integer := Index (Item, "/");
-   begin
-      if Item'Length = 0 then
-         return -1;
-      elsif Slash_Index = 0 then
-         return Integer'Value (Item);
-      else
-         return Integer'Value (Item (Item'First .. Slash_Index - 1));
-      end if;
-   end To_Track;
-
-   function Find (ID : in ID_String; Frames : in Frame_Lists.List) return Ada.Strings.Unbounded.Unbounded_String
-   is begin
-      for F of Frames loop
-         if ID = F.ID then
-            return F.Data;
-         end if;
-      end loop;
-      return +"";
-   end Find;
-
-   function All_Frames (File : in SMM.ID3.File) return Frame_Lists.List
+   function All_Frames (File : in SMM.Metadata.File) return Frame_Lists.List
    is
       use all type Ada.Streams.Stream_IO.Count;
       use all type Interfaces.Unsigned_8;
@@ -326,13 +257,13 @@ package body SMM.ID3 is
       File_Head  : File_Header;
       Total_Size : Ada.Streams.Stream_IO.Count;
       Frame_Head : Frame_Header;
-      Stream     : constant access Ada.Streams.Root_Stream_Type'Class := Ada.Streams.Stream_IO.Stream (File.Stream);
+      Stream     : constant access Ada.Streams.Root_Stream_Type'Class := File.Stream;
       Result     : Frame_Lists.List;
 
       function Valid_Header (Head : in Frame_Header) return Boolean
       is begin
          return Size (Head.Size) > 0 and
-           Index (File.Stream) + Size (Head.Size) - 1 <= Total_Size and
+           Index (File) + Size (Head.Size) - 1 <= Total_Size and
            Is_Alphanumeric (Head.ID);
       end Valid_Header;
 
@@ -376,7 +307,7 @@ package body SMM.ID3 is
             --  There might be padding that is less than one frame long.
             Frame_Header'Read (Stream, Temp_Frame_Head_1);
 
-            if Index (File.Stream) >= Total_Size then
+            if Index (File) >= Total_Size then
                Result.Append (To_Frame (Frame_Head, Data));
                return Result;
             end if;
@@ -394,7 +325,7 @@ package body SMM.ID3 is
                begin
                   Stream.Read (More_Data, Last);
 
-                  if Index (File.Stream) >= Total_Size then
+                  if File.Index >= Total_Size then
                      Result.Append (To_Frame (Frame_Head, Data, More_Data));
                      return Result;
                   end if;
@@ -427,21 +358,21 @@ package body SMM.ID3 is
          use Ada.Exceptions;
       begin
          Raise_Exception
-           (Exception_Identity (E), Ada.Streams.Stream_IO.Name (File.Stream) & ": " & Exception_Message (E));
+           (Exception_Identity (E), File.Name & ": " & Exception_Message (E));
       end;
    end All_Frames;
 
    procedure Metadata
      (Abs_File_Name : in     String;
-      ID3_Frames    :    out Frame_Lists.List;
-      Artist_ID     :    out ID_String)
+      ID3_Frames    :    out SMM.Metadata.Frame_Lists.List;
+      Artist_ID     :    out SMM.Metadata.ID_String)
    is
       use Ada.Strings.Unbounded;
-      File : SMM.ID3.File;
+      File : SMM.Metadata.File;
    begin
       Artist_ID := Artist;
       File.Open (Abs_File_Name);
-      ID3_Frames := File.All_Frames;
+      ID3_Frames := All_Frames (File);
 
       if Is_Present (Artist, ID3_Frames) and then
         Length (Find (Artist, ID3_Frames)) > 0

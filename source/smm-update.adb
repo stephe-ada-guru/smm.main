@@ -2,7 +2,7 @@
 --
 --  Update metadata
 --
---  Copyright (C) 2018, 2019 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2018, 2019, 2022 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -24,6 +24,8 @@ with Ada.Text_IO;
 with SAL;
 with SMM.Database;
 with SMM.ID3;
+with SMM.M4a;
+with SMM.Metadata;
 procedure SMM.Update
   (DB          : in SMM.Database.Database;
    Source_Root : in String;
@@ -33,30 +35,38 @@ is
 
    procedure Update_File (Name : in String)
    is
-      use SMM.ID3;
-      ID3_Frames : Frame_Lists.List;
-      Artist_ID  : ID_String := SMM.ID3.Artist;
-      I          : Database.Cursor; -- no init for exception handler
+      Frames    : SMM.Metadata.Frame_Lists.List;
+      Artist_ID : SMM.Metadata.ID_String := SMM.Metadata.Artist;
+      I         : Database.Cursor; -- no init for exception handler
    begin
       I := DB.Find_File_Name (Name);
       if not I.Has_Element then
          raise SAL.Not_Found with "not found in db: '" & Name & "'";
       end if;
 
-      Metadata (Source_Root & Name, ID3_Frames, Artist_ID);
+      declare
+         Abs_Name : constant String := Source_Root & Name;
+         Ext       : constant String        := Extension (Abs_Name);
+      begin
+         if Ext = "mp3" then
+            SMM.ID3.Metadata (Abs_Name, Frames, Artist_ID);
+         elsif Ext = "m4a" then
+            SMM.M4a.Metadata (Abs_Name, Frames, Artist_ID);
+         end if;
+      end;
 
       DB.Update
         (I,
-         Artist       => -Find (Artist_ID, ID3_Frames),
-         Album_Artist => -Find (SMM.ID3.Album_Artist, ID3_Frames),
-         Composer     => -Find (SMM.ID3.Composer, ID3_Frames),
-         Album        => -Find (SMM.ID3.Album, ID3_Frames),
-         Year         => SMM.ID3.To_Year
-           (-Find (SMM.ID3.Orig_Year, ID3_Frames),
-            -Find (SMM.ID3.Year, ID3_Frames),
-            -Find (SMM.ID3.Recording_Time, ID3_Frames)),
-         Title        => -Find (SMM.ID3.Title, ID3_Frames),
-         Track        => SMM.ID3.To_Track (-Find (SMM.ID3.Track, ID3_Frames)));
+         Artist       => -SMM.Metadata.Find (Artist_ID, Frames),
+         Album_Artist => -SMM.Metadata.Find (SMM.Metadata.Album_Artist, Frames),
+         Composer     => -SMM.Metadata.Find (SMM.Metadata.Composer, Frames),
+         Album        => -SMM.Metadata.Find (SMM.Metadata.Album, Frames),
+         Year         => SMM.Metadata.To_Year
+           (-SMM.Metadata.Find (SMM.Metadata.Orig_Year, Frames),
+            -SMM.Metadata.Find (SMM.Metadata.Year, Frames),
+            -SMM.Metadata.Find (SMM.Metadata.Recording_Time, Frames)),
+         Title        => -SMM.Metadata.Find (SMM.Metadata.Title, Frames),
+         Track        => SMM.Metadata.To_Track (-SMM.Metadata.Find (SMM.Metadata.Track, Frames)));
 
       if Verbosity > 0 then
          Ada.Text_IO.Put_Line ("updating file " & Name);
@@ -69,7 +79,7 @@ is
             end loop;
          end if;
          if Verbosity > 2 then
-            for Frame of ID3_Frames loop
+            for Frame of Frames loop
                Ada.Text_IO.Put_Line (Frame.ID & " '" & (-Frame.Data) & "'");
             end loop;
          end if;

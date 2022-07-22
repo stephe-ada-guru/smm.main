@@ -54,6 +54,20 @@ package body SMM.Metadata is
       return End_Of_File (File.Stream_File);
    end End_Of_File;
 
+   function Index (File : in SMM.Metadata.File) return Ada.Streams.Stream_IO.Positive_Count
+   is
+      use Ada.Streams.Stream_IO;
+   begin
+      return Index (File.Stream_File);
+   end Index;
+
+   function Name (File : in SMM.Metadata.File) return String
+   is
+      use Ada.Streams.Stream_IO;
+   begin
+      return Name (File.Stream_File);
+   end Name;
+
    function Stream (File : in SMM.Metadata.File) return access Ada.Streams.Root_Stream_Type'Class
    is begin
       return Ada.Streams.Stream_IO.Stream (File.Stream_File);

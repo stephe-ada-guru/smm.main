@@ -8,7 +8,7 @@
 --  [2] http://id3.org/id3v2.4.0-structure ID3 2.4.0 spec
 --  [3] http://id3.org/id3v2.4.0-frames    ID3 2.4.0 frames
 --
---  Copyright (C) 2018 - 2020 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2018 - 2020, 2022 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -24,78 +24,30 @@
 
 pragma License (GPL);
 
-with Ada.Containers.Doubly_Linked_Lists;
-with Ada.Finalization;
-with Ada.Strings.Unbounded;
+with SMM.Metadata;
 private with Ada.Streams.Stream_IO;
 private with Interfaces;
 package SMM.ID3 is
-
-   type File is new Ada.Finalization.Limited_Controlled with private;
 
    Ignore_Flags : Boolean := False;
    --  By default, ID3 file and frame header flags are checked for
    --  settings we nominally don't support. Setting Ignore_Flags True
    --  ignores those checks, which sometimes lets us read the frames.
 
-   overriding procedure Finalize (File : in out SMM.ID3.File);
-   --  Close file.
-
-   procedure Open (File : in out SMM.ID3.File; Name : in String);
-   --  Open for read.
-
-   procedure Close (File : in out SMM.ID3.File);
-
-   subtype ID_String is String (1 .. 4);
-   --  See [1] section 4, or [3], for frame definitions.
-
-   --  Some common Frames, alphabetical by Ada var name
-   Album          : constant ID_String := "TALB"; -- [1] Album/Movie/Show title
-   Album_Artist   : constant ID_String := "TPE2"; -- [1] Band/orchestra/accompaniment = Album Artist
-   Artist         : constant ID_String := "TPE1"; -- [1] Lead performer(s)/Soloist(s)
-   Composer       : constant ID_String := "TCOM"; -- [1] Composer
-   Orig_Year      : constant ID_String := "TORY"; -- [1] Original Release Year
-   Recording_Time : constant ID_String := "TDRC"; -- [1] Recording Time
-   Title          : constant ID_String := "TIT2"; -- [1] Title/songname/content description
-   Track          : constant ID_String := "TRCK"; -- [1] Track number/position in a set
-   Year           : constant ID_String := "TYER"; -- [1] Year
-
-   function To_Track (Item : in String) return Integer;
-   --  Handle <track>/<total>; -1 for empty string.
-
-   function To_Year (Orig_Year, Year, Recording_Time : in String) return Integer;
-   --  Orig_Year has preference, result has -1 for empty string
-
-   type Frame is record
-      ID   : ID_String;
-      Data : Ada.Strings.Unbounded.Unbounded_String; -- In UTF-8 encoding
-   end record;
-
-   package Frame_Lists is new Ada.Containers.Doubly_Linked_Lists (Frame);
-
-   function Is_Present (ID : in ID_String; Frames : in Frame_Lists.List) return Boolean
-     is (for some F of Frames => ID = F.ID);
-
-   function Find (ID : in ID_String; Frames : in Frame_Lists.List) return Ada.Strings.Unbounded.Unbounded_String;
-   --  Return empty string if not found.
-
-   function All_Frames (File : in SMM.ID3.File) return Frame_Lists.List;
+   function All_Frames (File : in SMM.Metadata.File) return SMM.Metadata.Frame_Lists.List;
+   --  FIXME: make private
 
    procedure Metadata
      (Abs_File_Name : in     String;
-      ID3_Frames    :    out Frame_Lists.List;
-      Artist_ID     :    out ID_String);
+      ID3_Frames    :    out SMM.Metadata.Frame_Lists.List;
+      Artist_ID     :    out SMM.Metadata.ID_String);
 
    procedure Create
      (Name    : in String;
-      Content : in Frame_Lists.List);
+      Content : in SMM.Metadata.Frame_Lists.List);
    --  Create a file with Content. Mostly useful for unit tests.
 
 private
-
-   type File is new Ada.Finalization.Limited_Controlled with record
-      Stream : Ada.Streams.Stream_IO.File_Type;
-   end record;
 
    ----------
    --  Visible for unit tests
