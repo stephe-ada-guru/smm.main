@@ -2,7 +2,7 @@
 --
 --  Stephe's Music Manager Server
 --
---  Copyright (C) 2016 - 2020 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2016 - 2020, 2022 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -297,6 +297,7 @@ package body SMM.Server is
         (if    Ext = "css" then "text/css"
          elsif Ext = "jpg" then "image/jpeg"
          elsif Ext = "js"  then "text/javascript"
+         elsif Ext = "m4a" then "audio/mpeg"
          elsif Ext = "mp3" then "audio/mpeg"
          elsif Ext = "pdf" then "application/pdf"
          elsif Ext = "png" then "image/png"
@@ -318,7 +319,7 @@ package body SMM.Server is
       if Exists (Filename) then
          Result := AWS.Response.File (Mime_Type, Filename);
 
-         if Ext = "mp3" and Name_In_Param then
+         if (Ext = "mp3" or Ext = "m4a") and Name_In_Param then
             DB.Open (-DB_Filename);
 
             --  Find does not want leading / on filename
