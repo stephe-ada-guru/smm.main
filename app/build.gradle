@@ -17,8 +17,8 @@ android
     applicationId "org.stephe_leake.android.stephes_music"
     minSdkVersion 29
     targetSdkVersion 29
-    versionName "23"
-    versionCode 23
+    versionName "24"
+    versionCode 24
   }
 
   signingConfigs
@@ -40,18 +40,10 @@ android
       signingConfig signingConfigs.release
     }
   }
+    lint {
+        disable 'RtlHardcoded', 'InvalidPackage'
+    }
 
-  lintOptions
-  {
-    // see also lint.xml
-
-    // Notification uses "left" for gravity
-    disable 'RtlHardcoded'
-
-    // okhttp3 references java.nio.file; not in Android. Let's hope it's not used.
-    disable 'InvalidPackage'
-
-  }
 }
 
 dependencies

@@ -1,13 +1,49 @@
 Makefile
 c:/Projects/org.emacs.java-wisi/notes.text
+app/src/main/java/org/stephe_leake/android/stephes_music/DownloadService.java
 
  current tasks
+update meditation doesn't delete files
+    just keeps adding more?
+    Meditation only has 69 songs - need separate update limit
+
 confirm reset playlist
 
-Music doesn't respect Aeropex headphone pause button
+delete playlist
+    ie to reset meditation
+
 
 add support for .webp image format
     beth wood patreon 2021
+
+.m4a file not downloaded
+    d:/Music/remote_cache/smm-server-debug.log says
+        [18/Aug/2022:12:22:20] Beth Wood/Love is Onto You/11 Keep The Change.m4a
+        app didn't save it?
+            DownloadUtils.java has mp3 without m4a
+            clean deletes files not = mp3, so deleted by subsequent download attempt.
+            edited, built
+                c:/Projects/Android/org.stephe_leake.music_player.java/app/build/outputs/apk/debug/app-debug.apk
+                    "app not installed" - no explanation. sigh
+                need to bump version?
+                    current is 23 - bumped to 24 in app/build.gradle; no help.
+                    delete/install on tablet - version is 24
+                    reinstall without delete on tablet - ok.
+                    tablet is android 12
+
+                could delete app - lose data
+                    deleted books; allowed install.
+                    deleted music; installed, downloading
+
+Android Studio doesn't see phone as usb debug device
+    does see tablet
+    can't download updated app to phone via debugger!
+    try to make an installable app file? works on tablet
+        starts to work on phone, then says "not installed" - see above
+
+
+
+Music doesn't respect Aeropex headphone pause button
 
 preferenceManager is deprecated in api 29
 
@@ -20,11 +56,6 @@ http://android-developers.googleblog.com/2018/08/verifying-your-google-assistant
 http://android-developers.googleblog.com/2018/06/a-new-universal-music-player.html
 
 https://codelabs.developers.google.com/advanced-android-training/
-
-navigation messages getting thru, but music does not get notified
-    phone interrupts music properly
-    android updated; now music muted (not paused?) but nav message not audible
-    pause for transient, register request for audio focus so get notified?
 
 https://github.com/hitenpratap/Task-Reminder-App/blob/master/src/com/TechSect/TaskReminderApp/ReminderManager.java
     uses android.app.AlarmManager

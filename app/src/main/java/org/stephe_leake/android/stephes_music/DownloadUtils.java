@@ -23,6 +23,7 @@ import android.content.Context;
 
 import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
@@ -38,6 +39,8 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.LineIterator;
 import org.apache.commons.io.filefilter.FalseFileFilter;
+import org.apache.commons.io.filefilter.FileFileFilter;
+import org.apache.commons.io.filefilter.OrFileFilter;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 
@@ -180,9 +183,10 @@ public class DownloadUtils
       if (entry.isDirectory())
       {
          // listFiles returns "." as the dir name; does not return ".."; cannot filter it!
+         OrFileFilter filter = new OrFileFilter(new SuffixFileFilter(".mp3"), new SuffixFileFilter(".m4a"));
 
          // Delete music files not in playlist
-         for (File subDir : FileUtils.listFiles(entry, new SuffixFileFilter(".mp3"), FalseFileFilter.FALSE))
+         for (File subDir : FileUtils.listFiles(entry, filter, FalseFileFilter.FALSE))
             deleteCount += processDirEntry(context, subDir);
 
          // Recurse into directories
@@ -200,7 +204,7 @@ public class DownloadUtils
          if (0 == entryCount)
          {
             // Count music files
-            for (File subDir : FileUtils.listFiles(entry, new SuffixFileFilter(".mp3"), FalseFileFilter.FALSE))
+            for (File subDir : FileUtils.listFiles(entry, filter, FalseFileFilter.FALSE))
                entryCount++;
          }
 
@@ -411,7 +415,7 @@ public class DownloadUtils
          FileOutputStream    out            = new FileOutputStream(fileName);
          byte[] buffer                      = new byte[BUFFER_SIZE];
          final String        contentLen     = response.header("Content-Length");
-         final String        prevDownloaded = response.header("X-prev_downloaded"); // only on mp3 files
+         final String        prevDownloaded = response.header("X-prev_downloaded"); // only on mp3/m4a files
          int                 contentLength  = Integer.parseInt(contentLen);
          int                 downloaded     = 0;
          int                 count          = 0;
@@ -441,7 +445,7 @@ public class DownloadUtils
 
             if (ext.equals("jpg"))
                mime = "image/jpeg";
-            else if (ext.equals("mp3"))
+            else if (ext.equals("mp3") || ext.equals("m4a"))
                mime = "audio/mpeg";
             else if (ext.equals("pdf"))
                mime = "application/pdf";
