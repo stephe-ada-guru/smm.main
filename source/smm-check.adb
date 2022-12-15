@@ -2,7 +2,7 @@
 --
 --  Check against db, report missing in either.
 --
---  Copyright (C) 2016 - 2019 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2016 - 2019, 2022 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -49,7 +49,9 @@ is
                Put_Line ("./" & I.File_Name); -- match 'find' output
             end if;
 
-            if Ada.Directories.Extension (File_Name) /= "mp3" then
+            if not (Ada.Directories.Extension (File_Name) = "mp3" or
+                      Ada.Directories.Extension (File_Name) = "m4a")
+            then
                Failed := Failed + 1;
                Put_Line ("db extension:" & Integer'Image (I.ID) & " '" & Ada.Directories.Extension (File_Name) & "'");
             end if;
@@ -142,7 +144,7 @@ is
             Check_Dir (File_Name);
 
          when Ordinary_File =>
-            if Extension (File_Name) = "mp3" then
+            if Extension (File_Name) = "mp3" or Extension (File_Name) = "m4a" then
                Disk_Count := Disk_Count + 1;
                Found_Mp3  := True;
 

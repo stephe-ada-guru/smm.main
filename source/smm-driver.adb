@@ -2,7 +2,7 @@
 --
 --  main procedure for SMM application
 --
---  Copyright (C) 2008 - 2013, 2015 - 2020 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2013, 2015 - 2020, 2022 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -60,7 +60,7 @@ is
       Put_Line ("    scan <dir> for new music; dir must be relative to database root dir");
       New_Line;
       Put_Line ("  update <file | dir>");
-      Put_Line ("    update metadata for <file>, or all .mp3 files in <dir>.");
+      Put_Line ("    update metadata for <file>, or all .mp3/.m4a files in <dir>.");
       New_Line;
       Put_Line ("  rename <old file name> <new file name>");
       Put_Line ("    change file name.");

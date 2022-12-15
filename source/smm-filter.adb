@@ -35,7 +35,7 @@ begin
             Put_Line ("does not exist: " & Song_File);
             To_Delete := I;
 
-         elsif Extension (Song_File) /= "mp3" then
+         elsif not (Extension (Song_File) = "mp3" or Extension (Song_File) = "m4a") then
             Put_Line ("invalid extension: " & Song_File);
             To_Delete := I;
 

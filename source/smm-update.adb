@@ -46,7 +46,7 @@ is
 
       declare
          Abs_Name : constant String := Source_Root & Name;
-         Ext       : constant String        := Extension (Abs_Name);
+         Ext      : constant String := Extension (Abs_Name);
       begin
          if Ext = "mp3" then
             SMM.ID3.Metadata (Abs_Name, Frames, Artist_ID);
@@ -114,7 +114,7 @@ is
 
          when Ordinary_File =>
 
-            if Ext = "mp3" then
+            if Ext = "mp3" or Ext = "m4a" then
                Update_File (Name);
             else
                --  not a recognized music file extension; ignore

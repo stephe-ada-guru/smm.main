@@ -835,7 +835,7 @@ package body SMM.Server is
                return Handle_Search (URI);
 
             else
-               --  It's a file request; mp3, liner_notes, image
+               --  It's a file request; mp3/m4a, liner_notes, image
                return Handle_File (URI, Name_In_Param => False);
             end if;
          end;
