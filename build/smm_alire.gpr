@@ -1,0 +1,36 @@
+--  For building smm using Alire.
+
+with "../config/smm_config.gpr"; -- 'with's all depends-on
+with "standard_common_alire";
+project Smm_Alire is
+   for Source_Dirs use ("../source");
+
+   for Object_Dir use "obj/" & Smm_Config.Build_Profile;
+   for Create_Missing_Dirs use "True";
+
+   for Main use ("smm-driver", "smm-server_driver", "smm-show_id3");
+
+   package Compiler is
+      case Smm_Config.Build_Profile is
+      when "release" =>
+         for Default_Switches ("Ada") use Standard_Common_Alire.Release_Switches & Standard_Common_Alire.Style_Checks;
+
+      when "validation" | "development" =>
+         for Default_Switches ("Ada") use Standard_Common_Alire.Debug_Switches & Standard_Common_Alire.Style_Checks;
+
+      end case;
+   end Compiler;
+
+   package Binder is
+      for Switches ("Ada") use ("-Es"); --  Symbolic traceback
+   end Binder;
+
+   package Builder is
+      --  We use ".exe" extension even on non-Windows, to simplify the makefiles.
+      for Executable_Suffix use ".exe";
+
+      for Executable ("smm-driver.adb") use "smm.exe";
+
+   end Builder;
+
+end Smm_Alire;

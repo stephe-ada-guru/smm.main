@@ -2,7 +2,7 @@
 --
 --  Stephe's Music Manager Server
 --
---  Copyright (C) 2016 - 2020, 2022 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2016 - 2020, 2022, 2023 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -170,6 +170,8 @@ package body SMM.Server is
 
    function Handle_Download (URI : in AWS.URL.Object) return AWS.Response.Data
    is
+      --  Send list of least recently heard songs; client will build a
+      --  playlist and maybe download the actual song files.
       use Ada.Containers;
       use Ada.Exceptions;
       use AWS.URL;
@@ -211,6 +213,10 @@ package body SMM.Server is
          begin
             if Cur.Has_Element then
                Response := Response & Normalize (Cur.File_Name) & ASCII.CR & ASCII.LF;
+
+               --  Do this here in case the client already has all the files
+               Cur.Write_Last_Downloaded (DB, SMM.Database.UTC_Image (Ada.Calendar.Clock));
+
             else
                --  Must be a bad play before/after link. Need an error message protocol.
                null;
@@ -330,8 +336,6 @@ package body SMM.Server is
                  (Status_Code  => AWS.Messages.S500,
                   Message_Body => "file not found");
             end if;
-
-            I.Write_Last_Downloaded (DB, SMM.Database.UTC_Image (Ada.Calendar.Clock));
 
             Prev_Downloaded := I.Prev_Downloaded;
 

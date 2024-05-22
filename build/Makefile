@@ -1,4 +1,4 @@
-# gnu make file
+# must be run from ../Alire.make for gpr 'with's.
 
 include rules.make
 

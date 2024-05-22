@@ -2,3 +2,7 @@ build/objects/
 build/*.exe
 build/*.out
 build/tmp/
+alire/
+alr.env
+build/obj/
+config/

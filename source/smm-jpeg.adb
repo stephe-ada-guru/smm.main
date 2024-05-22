@@ -2,7 +2,7 @@
 --
 --  See spec.
 --
---  Copyright (C) 2018 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2018, 2023 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -171,7 +171,8 @@ package body SMM.JPEG is
 
          declare
             Junk : Stream_Element_Array (1 .. Stream_Element_Offset (To_Integer (Length) - 2));
-            pragma Unreferenced (Junk);
+            --  GNAT 12 requires this present; GNAT 13 requires it absent. Sigh.
+            --  pragma Unreferenced (Junk);
          begin
             Stream.Read (Junk, Last);
          end;

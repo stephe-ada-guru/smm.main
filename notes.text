@@ -1,3 +1,4 @@
+Alire.make
 build/Makefile
 
 see ../Android/org.stephe_leake.music_player.java/notes.text
@@ -44,6 +45,11 @@ song: 6224 last downloaded more than a year ago: 2020-06-07 20:51:14
 
  current work
 c:/Projects/Android/org.stephe_leake.music_player.java/notes.text
+
+smm-show_id3.adb doesn't compile
+
+APIC header broken somehow; causes stack overflow in id3 read all frames
+    use Foobar2000 media player to delete all pictures; right click on file, Tagging | Remove all pictures.
 
 rename enforce relative to root
 
