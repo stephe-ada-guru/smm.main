@@ -1,4 +1,4 @@
-# must be run from ../Alire.make for gpr 'with's.
+# obsolete; move rules to ../alire.make
 
 include rules.make
 

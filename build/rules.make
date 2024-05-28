@@ -1,4 +1,4 @@
-# common parts of makefiles
+# obsolete; move rules to ../Alire.make
 
 all : obj/development/smm.exe
 all : obj/development/smm-server_driver.exe

@@ -24,30 +24,7 @@ d:/Music/remote_cache/smm-server_driver.log
  '(("../org.stephe_leake.sal.stephe-1" . "../org.stephe_leake.sal")
    ("../smm.work_1"                    . "../smm.main")))
 
- download status notes
-< nov 2020
-song: 2145 last downloaded more than a year ago: 2017-10-01 05:24:11
-    play after 2141
-    2141 has null prev_downloaded, last_downloaded 2013! set prev_downloaded to time_default.
-
-song: 2172 last downloaded more than a year ago: 2017-11-20 05:16:56
-    play after 2179
-    2179 has null prev_downloaded; set to default
-
-song: 2186 last downloaded more than a year ago: 2018-01-04 13:23:45
-    play after 2188 set prev_downloaded
-
-song: 2618 last downloaded more than a year ago: 2017-12-25 18:40:34
-song: 3201 last downloaded more than a year ago: 2018-01-09 06:39:36
-song: 5357 long period: 1.51
-song: 5357 last downloaded more than a year ago: 2019-01-24 00:16:55
-song: 6224 last downloaded more than a year ago: 2020-06-07 20:51:14
-
  current work
-c:/Projects/Android/org.stephe_leake.music_player.java/notes.text
-
-smm-show_id3.adb doesn't compile
-
 APIC header broken somehow; causes stack overflow in id3 read all frames
     use Foobar2000 media player to delete all pictures; right click on file, Tagging | Remove all pictures.
 
