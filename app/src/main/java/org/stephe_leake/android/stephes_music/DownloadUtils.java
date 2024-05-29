@@ -94,7 +94,7 @@ public class DownloadUtils
       return result;
    }
 
-   public static int editPlaylist(Context context, String playlistFilename, String lastFilename)
+   public static int prunePlaylist(Context context, String playlistFilename, String lastFilename)
       throws IOException
    // Delete lines from start of playlist file up to but not including
    // line in last file; that song is currently being played.
@@ -252,7 +252,7 @@ public class DownloadUtils
       //  Directory names end in '/'
 
       // We can't declare a File object for lastFile; that prevents
-      // delete in editPlaylist.
+      // delete in prunePlaylist.
       final String playlistFilename = FilenameUtils.concat(playlistDir, category + ".m3u");
       final String lastFilename     = FilenameUtils.concat(smmDir, category + ".last");
 
@@ -262,50 +262,13 @@ public class DownloadUtils
          if ("" != FilenameUtils.getPath(playlistFilename))
             if ("" != FilenameUtils.getPath(lastFilename))
             {
-               int deleteCount = editPlaylist(context, playlistFilename, lastFilename);
+               int deleteCount = prunePlaylist(context, playlistFilename, lastFilename);
                log(context, LogLevel.Info, category + " playlist cleaned: " + deleteCount + " songs deleted");
             }
       }
       catch (IOException e)
       {
-         // from editPlaylist (which calls readPlaylist)
-         log(context, LogLevel.Error, "cannot read/write playlist '" + playlistFilename + "'");
-      }
-   }
-
-   public static void cleanSongs(Context context, String category, String playlistDir, String smmDir)
-   {
-      //  Delete files from Playlist_Dir/Category that are not
-      //  mentioned in playlist file category.m3u.
-      //
-      //  Directory names end in '/'
-
-      // We can't declare a File object for playlistFile or lastFile;
-      // that prevents rename, delete in editPlaylist.
-      final String playlistFilename = FilenameUtils.concat(playlistDir, category + ".m3u");
-      final String lastFilename     = FilenameUtils.concat(smmDir, category + ".last");
-
-      DownloadUtils.playlistDir = playlistDir;
-
-      try
-      {
-         mentionedFiles = readPlaylist(playlistFilename, true);
-
-         //  Search playlist directory, delete files not in playlist
-         {
-            File targetDir   = new File(playlistDir, category);
-            int  deleteCount = 0;
-
-            for (File subDir : FileUtils.listFilesAndDirs(targetDir, FalseFileFilter.FALSE, TrueFileFilter.TRUE))
-               if (subDir != targetDir)
-                  deleteCount += processDirEntry(context, subDir);
-
-            log(context, LogLevel.Info, category + " song storage cleaned: " + deleteCount + " files deleted");
-         }
-      }
-      catch (IOException e)
-      {
-         // from editPlaylist (which calls readPlaylist)
+         // from prunePlaylist (which calls readPlaylist)
          log(context, LogLevel.Error, "cannot read/write playlist '" + playlistFilename + "'");
       }
    }
@@ -580,7 +543,6 @@ public class DownloadUtils
          for (String song : songs)
          {
             File destDir     = new File(songRoot, FilenameUtils.getPath(song));
-            File destination = new File(songRoot, song);
             File songFile;
 
             if (!destDir.exists())
@@ -651,6 +613,66 @@ public class DownloadUtils
       }
 
       log(context, LogLevel.Info, result.count + " " + category + " songs downloaded, " + newSongs + " new.");
+
+      return result;
+
+      // File objects hold the corresponding disk file locked; later
+      // unit test cannot delete them.
+   }
+
+   public static StatusCount appendPlaylist(Context  context,
+                                            String[] songs,
+                                            String   category,
+                                            String   root)
+   {
+      // Add 'songs' (assumed stored in 'root/<artist>/<album>/') 
+      // to playlist 'root/<category>.m3u'. 
+
+      final File    songRoot     = new File(root);
+      File          playlistFile = new File(new File(root), category + ".m3u");
+      FileWriter    playlistWriter;
+      StatusCount   result       = new StatusCount();
+
+      try
+      {
+         playlistWriter = new FileWriter(playlistFile, true); // append
+      }
+      catch (IOException e)
+      {
+         log(context, LogLevel.Error, "cannot open '" + playlistFile.getAbsolutePath() + "' for append.");
+         result.status = ProcessStatus.Fatal;
+         return result;
+      }
+
+      try
+      {
+         for (String song : songs)
+         {
+             playlistWriter.write(category + "/" + song + "\n");
+             result.count++;
+         }
+      }
+      catch (IOException e)
+      {
+         // From playlistWriter.write
+         log(context, LogLevel.Error, "cannot append to '" + playlistFile.getAbsolutePath() + "'; disk full?");
+         result.status = ProcessStatus.Fatal; // non-recoverable
+      }
+      finally
+      {
+         try
+         {
+            playlistWriter.close();
+         }
+         catch (IOException e)
+         {
+            // probably from flush cache
+            log(context, LogLevel.Error, "cannot close '" + playlistFile.getAbsolutePath() + "'; disk full?");
+            result.status = ProcessStatus.Fatal; // non-recoverable
+         }
+      }
+
+      log(context, LogLevel.Info, result.count + " " + category + " playlist edited");
 
       return result;
 

@@ -3,6 +3,13 @@ c:/Projects/org.emacs.java-wisi/notes.text
 app/src/main/java/org/stephe_leake/android/stephes_music/DownloadService.java
 
  current tasks
+update playlist assume all music is on phone; just edit playlist to point to it.
+    ready to download and test playing public visible songs; probably need some permissions, and/or use file provider
+    appendPlaylist written but not called
+
+
+crashes on image too big
+
 update meditation doesn't delete files
     just keeps adding more?
     Meditation only has 69 songs - need separate update limit
@@ -15,25 +22,7 @@ delete playlist
 
 add support for .webp image format
     beth wood patreon 2021
-
-.m4a file not downloaded
-    d:/Music/remote_cache/smm-server-debug.log says
-        [18/Aug/2022:12:22:20] Beth Wood/Love is Onto You/11 Keep The Change.m4a
-        app didn't save it?
-            DownloadUtils.java has mp3 without m4a
-            clean deletes files not = mp3, so deleted by subsequent download attempt.
-            edited, built
-                c:/Projects/Android/org.stephe_leake.music_player.java/app/build/outputs/apk/debug/app-debug.apk
-                    "app not installed" - no explanation. sigh
-                need to bump version?
-                    current is 23 - bumped to 24 in app/build.gradle; no help.
-                    delete/install on tablet - version is 24
-                    reinstall without delete on tablet - ok.
-                    tablet is android 12
-
-                could delete app - lose data
-                    deleted books; allowed install.
-                    deleted music; installed, downloading
+    in DownloadUtils.java getFile
 
 Android Studio doesn't see phone as usb debug device
     does see tablet

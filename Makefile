@@ -100,8 +100,8 @@ install-playlist-2 :
 	adb -e push "d:/Music/Joni Mitchell/Don Juan's Reckless Daughter/Paprika Plains.mp3" "/storage/emulated/0/Audio/vocal/Joni Mitchell/Don Juan's Reckless Daughter/Paprika Plains.mp3"
 	adb -e push "d:/Music/Mary Chapin Carpenter/State of the Heart/Down in Mary's Land.mp3" "/storage/emulated/0/Audio/vocal/Mary Chapin Carpenter/State of the Heart/Down in Mary's Land.mp3"
 
-# eval: (load (expand-file-name "prj.el")) trying eglot/jdtls
 # Local Variables:
+# eval: (load (expand-file-name "prj.el"))
 # End:
 
 # end of file

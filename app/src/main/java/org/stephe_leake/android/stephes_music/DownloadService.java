@@ -164,14 +164,6 @@ public class DownloadService extends Service
                return;
             }
 
-            status = DownloadUtils.getSongs
-              (context, serverIP, newSongs.strings, category, playlistDirFile.getAbsolutePath(), mediaScanner, notif);
-
-            if (status.status != ProcessStatus.Success)
-            {
-               return;
-            }
-
             if (utils.playlistAbsPath().equals(playlistAbsName))
             {
                // Restart playlist to show new song position, count
@@ -181,9 +173,6 @@ public class DownloadService extends Service
                     .putExtra(utils.EXTRA_COMMAND_PLAYLIST, playlistAbsName)
                     .putExtra(utils.EXTRA_COMMAND_STATE, PlayState.Paused.toInt()));
             }
-
-            // cleanSongs after download new, to minimize metadata download
-            DownloadUtils.cleanSongs(context, category, playlistDirFile.getAbsolutePath(), utils.smmDirectory);
 
             notif.Done("");
             DownloadUtils.log(context, LogLevel.Info, category + ": update done\n\n");
