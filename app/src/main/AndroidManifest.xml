@@ -19,8 +19,9 @@ along with GCC; see the file COPYING3.  If not see
 -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="org.stephe_leake.android.stephes_music"
-          >
+    xmlns:tools="http://schemas.android.com/tools"
+    package="org.stephe_leake.android.stephes_music"
+    >
 
   <!-- App version and Android API level set in ../../build.gradle -->
 
@@ -28,7 +29,6 @@ along with GCC; see the file COPYING3.  If not see
   <uses-permission android:name="android.permission.BROADCAST_STICKY" /> <!-- send data from service to activity -->
   <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/> <!-- PlayService is not killed -->
   <uses-permission android:name="android.permission.INTERNET" />             <!-- download -->
-  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>  <!-- download -->
   <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" /> <!-- media metadata -->
   <uses-permission android:name="android.permission.WRITE_SETTINGS" /> <!-- preferences -->
 
@@ -47,6 +47,7 @@ along with GCC; see the file COPYING3.  If not see
     -->
     <activity
         android:name=".activity"
+        android:exported="true"
         android:label="@string/app_name"
         android:launchMode="singleTask">
       <intent-filter>
@@ -71,7 +72,9 @@ along with GCC; see the file COPYING3.  If not see
         android:exported="false" />
 
     <!-- see comment in service.java at mediaSession object -->
-    <receiver android:name="MediaButtonReceiver" >
+    <receiver
+        android:name="MediaButtonReceiver"
+        android:exported="true" >
       <intent-filter android:priority="999">
 	<action android:name="android.intent.action.MEDIA_BUTTON" />
       </intent-filter>

@@ -7,6 +7,15 @@ update playlist assume all music is on phone; just edit playlist to point to it.
     ready to download and test playing public visible songs; probably need some permissions, and/or use file provider
     appendPlaylist written but not called
 
+    download, run in debugger
+        laptop: Run | Select Device | Pair Devices using WiFi
+        tablet: Android Settings | Developer Options | Wireless Debugging | pair via QR code
+
+        starts, crashes; need to set breakpoints
+
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 8.0.
+    use '--warning-mode all' to show the individual deprecation warnings
 
 crashes on image too big
 
@@ -23,14 +32,6 @@ delete playlist
 add support for .webp image format
     beth wood patreon 2021
     in DownloadUtils.java getFile
-
-Android Studio doesn't see phone as usb debug device
-    does see tablet
-    can't download updated app to phone via debugger!
-    try to make an installable app file? works on tablet
-        starts to work on phone, then says "not installed" - see above
-
-
 
 Music doesn't respect Aeropex headphone pause button
 

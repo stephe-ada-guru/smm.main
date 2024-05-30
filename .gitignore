@@ -1,8 +1,11 @@
-.gradle/
+*.iml
+.gradle
 .idea/
-GPATH
-GRTAGS
-GTAGS
-app/app.iml
+/local.properties
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
 app/build/
-org.stephe_leake.music_player.java.iml
