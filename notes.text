@@ -1,0 +1,12 @@
+change git branch to org.stephe_leake.music_player_2
+    start over, commit blank app, then add stuff
+
+tabbed view
+
+ Resources
+
+https://svg2vector.com/
+    create svg image with InkScape, convert to Android drawable resource file.
+
+https://developer.android.com/reference/android/R.drawable.html
+    names of predefined icons
