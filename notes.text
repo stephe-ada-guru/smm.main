@@ -1,7 +1,8 @@
-change git branch to org.stephe_leake.music_player_2
-    start over, commit blank app, then add stuff
+empty activity runs, displays "Hello Android!"
 
-tabbed view
+git commit
+
+add tabbed view
 
  Resources
 
