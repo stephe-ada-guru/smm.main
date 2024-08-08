@@ -1,6 +1,8 @@
-delete tabbed view; just use same design as old app
+just use same design as old app
     start search activity from menu
 
+still displays "Hello Android!"
+    edit MainActivity.kt to inflate mainactivity.xml; works
 
  Resources
 

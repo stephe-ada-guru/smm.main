@@ -1,3 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Abstract :
+
+  translatable strings for Stephe's Music Player.
+
+  Copyright (C) 2011 - 2017 Stephen Leake.  All Rights Reserved.
+
+  This program is free software; you can redistribute it and/or
+  modify it under terms of the GNU General Public License as
+  published by the Free Software Foundation; either version 3, or
+  (at your option) any later version. This program is distributed in
+  the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+  even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+  PARTICULAR PURPOSE. See the GNU General Public License for more
+  details. You should have received a copy of the GNU General Public
+  License distributed with this program; see file COPYING. If not,
+  write to the Free Software Foundation, 51 Franklin Street, Suite
+  500, Boston, MA 02110-1335, USA.
+-->
 <resources>
-    <string name="app_name">Stephe\'s Music Player 2</string>
+  <!-- translate -->
+
+  <!-- misc -->
+  <string name="app_name">Stephe\'s Music Player 2</string>
+
+  <string name="dialog_download_new_playlist">Enter a playlist category</string>
+  <string name="dialog_jump_song">Enter a song number to jump to</string>
+  <string name="dialog_play_playlist">Select a playlist</string>
+  <string name="dialog_create_playlist">Create a playlist</string>
+  <string name="download">Download</string>
+  <string name="cancel">Cancel</string>
+  <string name="jump_song">Jump</string>
+  <string name="null_playlist">(click to select a playlist)</string>
+
+  <!-- note buttons -->
+  <string name="note_best_list">Best List</string>
+  <string name="note_category">Category</string>
+  <string name="note_dont_play">Don\'t Play</string>
+  <string name="note_play_before">Play Before</string>
+  <string name="note_other">Other</string>
+  <string name="note_want_more">Want More</string>
+
+  <!-- menu -->
+  <string name="menu_copy">Copy</string>
+  <string name="menu_download_new_playlist">Download new playlist</string>
+  <string name="menu_jump_to_song">Jump to song</string>
+  <string name="menu_liner">Liner notes</string>
+  <string name="menu_preferences">Preferences</string>
+  <string name="menu_quit">Quit</string>
+  <string name="menu_reset_playlist">Reset playlist</string>
+  <string name="menu_search">Search</string>
+  <string name="menu_share">Share</string>
+  <string name="menu_show_download_log">Show download log</string>
+  <string name="menu_show_error_log">Show error log</string>
+  <string name="menu_update_playlist">Update playlist</string>
+
+  <!-- preference ; alphabetical after activity name-->
+  <string name="preferences_activity_name">&quot;Stephe's Music Player Preferences&quot;</string>
+
+  <string name="log_level_key">log_level</string>
+  <string name="log_level_title">Log Level</string>
+  <string name="log_level_summary">Verbose or Info messages in download log (always includes Error) </string>
+  <string name="log_level_dialog_title">Download Log level</string>
+
+  <string name="prev_threshold_key">prev_threshold</string>
+  <string name="prev_threshold_default">5000</string>
+  <string name="prev_threshold_title">previous threshold</string>
+  <string name="prev_threshold_summary">threshold for previous song vs beginning of current song (milliseconds)</string>
+  <string name="prev_threshold_dialog_title">previous threshold (milliseconds)</string>
+
+  <string name="server_IP_key">server_IP</string>
+  <string name="server_IP_default"></string>
+  <string name="server_IP_title">Server IP</string>
+  <string name="server_IP_summary">Server for download</string>
+  <string name="server_IP_dialog_title">Server IP</string>
+
+  <string name="song_count_max_key">song_count_max</string>
+  <string name="song_count_max_default">100</string>
+  <string name="song_count_max_title">Song count max</string>
+  <string name="song_count_max_summary">Maximum count of songs in playlist after download</string>
+  <string name="song_count_max_dialog_title">Song count max</string>
+
+  <string name="new_song_fraction_key">new_song_count</string> ;; backward compatible
+  <string name="new_song_fraction_default">0.333</string>
+  <string name="new_song_fraction_title">New song fraction</string>
+  <string name="new_song_fraction_summary">Fraction of new songs downloaded</string>
+  <string name="new_song_fraction_dialog_title">New song fraction</string>
+
+  <string name="over_select_ratio_key">over_select_ratio</string>
+  <string name="over_select_ratio_default">1.1</string>
+  <string name="over_select_ratio_title">Over select ratio</string>
+  <string name="over_select_ratio_summary">Multiple of needed songs selected before randomize and truncate</string>
+  <string name="over_select_ratio_dialog_title">Over select ratio</string>
+
+  <string name="song_count_threshold_key">song_count_threshold</string>
+  <string name="song_count_threshold_default">30</string>
+  <string name="song_count_threshold_title">Song count threshold</string>
+  <string name="song_count_threshold_summary">Count of songs played before next download</string>
+  <string name="song_count_threshold_dialog_title">Song count threshold</string>
+
+  <string name="text_scale_key">text_scale</string>
+  <string name="text_scale_default">0.8</string>
+  <string name="text_scale_title">text scale</string>
+  <string name="text_scale_summary">relative size of text</string>
+  <string name="text_scale_dialog_title">set text scale</string>
+
+  <!-- Do not translate, but may be locale-dependent. -->
+
+  <!-- Duration format for duration < 1 hour -->
+  <string translatable="false" name="durationformatshort">%M:%S</string>
+
+  <!-- Duration format for duration >= 1 hour -->
+  <string translatable="false" name="durationformatlong">%H:%M:%S</string>
+  <string name="Ok">OK</string>
+
 </resources>
