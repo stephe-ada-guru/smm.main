@@ -3,6 +3,14 @@ use same design as old app
 
 copy/update rest of old activity.java to new MainActivity.kt
     menu - test preferences
+    compiles, runs; no app title bar, no menu icon!
+
+    text in buttons is too light!
+
+review all android studio warnings
+
+Need "clear playlist" and "delete playlist"; instrumental got screwed up.
+    or just edit manually, since they are visible.
 
  Resources
 
