@@ -1,9 +1,22 @@
 use same design as old app
     start search activity from menu
 
+delete app/build/*
+
+move menu changes to branch org.stephe_leake.music_player_2.work_1
+    do incremental changes on main to find bug
+    AppCompatActivity
+        crash: MainActivity.kt:91 You need to use a Theme.AppCompat theme (or descendant) with this activity.
+            change theme in app/src/main/AndroidManifest.xml (two places): ok.
+
 copy/update rest of old activity.java to new MainActivity.kt
     menu - test preferences
     compiles, runs; no app title bar, no menu icon!
+        define menu in xml; no help
+        need androidx toolbar (sigh).
+            builds, installs, crashes
+                run in debugger
+                crashes in MainActivity.OnCreate.setContentView
 
     text in buttons is too light!
 

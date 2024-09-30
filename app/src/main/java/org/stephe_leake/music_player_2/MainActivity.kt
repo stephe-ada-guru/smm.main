@@ -31,7 +31,7 @@ import android.widget.ImageButton
 import android.widget.SeekBar
 import android.widget.SeekBar.OnSeekBarChangeListener
 import android.widget.TextView
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
@@ -47,7 +47,7 @@ import org.stephe_leake.music_player_2.PrefActivity
 import org.stephe_leake.music_player_2.utils.Companion
 import org.stephe_leake.music_player_2.utils.Companion.mainActivity
 
-class MainActivity : ComponentActivity()
+class MainActivity : AppCompatActivity()
 {
    // Menu constants
    // Alphabetical order here; display order set in onCreateOptionsMenu
@@ -109,14 +109,14 @@ class MainActivity : ComponentActivity()
       menu.add(0, MENU_QUIT, 0, R.string.menu_quit)
       menu.add(0, MENU_SEARCH, 0, R.string.menu_search)
       menu.add(0, MENU_SHARE, 0, R.string.menu_share)
-      menu.add(0, MENU_LINER_NOTES, 0, R.string.menu_liner)
+      menu.add(0, MENU_LINER_NOTES, 0, R.string.menu_liner_notes)
       menu.add(0, MENU_COPY, 0, R.string.menu_copy)
       menu.add(0, MENU_UPDATE_PLAYLIST, 0, R.string.menu_update_playlist)
       menu.add(0, MENU_RESET_PLAYLIST, 0, R.string.menu_reset_playlist)
       menu.add(0, MENU_SHOW_DOWNLOAD_LOG, 0, R.string.menu_show_download_log)
       menu.add(0, MENU_SHOW_ERROR_LOG, 0, R.string.menu_show_error_log)
       menu.add(0, MENU_PREFERENCES, 0, R.string.menu_preferences)
-      menu.add(0, MENU_NEW_PLAYLIST, 0, R.string.menu_download_new_playlist)
+      menu.add(0, MENU_NEW_PLAYLIST, 0, R.string.menu_new_playlist)
       return true // display menu
    }
 
