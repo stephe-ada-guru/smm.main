@@ -8,6 +8,11 @@ move menu changes to branch org.stephe_leake.music_player_2.work_1
     AppCompatActivity
         crash: MainActivity.kt:91 You need to use a Theme.AppCompat theme (or descendant) with this activity.
             change theme in app/src/main/AndroidManifest.xml (two places): ok.
+            fix committed in main, manually copied to work_1
+
+    AndroidStudio doesn't understand git worktree (sigh)
+    gradle sync in work_1 fails mysteriously (sigh)
+        back to editing on main via git stash
 
 copy/update rest of old activity.java to new MainActivity.kt
     menu - test preferences
