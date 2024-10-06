@@ -21,7 +21,7 @@ package org.stephe_leake.music_player_2
 import android.content.Context
 import android.view.View;
 import android.widget.TextView;
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
 
 class utils
 {
@@ -33,11 +33,11 @@ class utils
 
       // objects
 
-      var mainActivity: ComponentActivity? = null;
+      var mainActivity: AppCompatActivity? = null;
 
       // methods
 
-      fun findTextViewById (a: ComponentActivity, id: Int) : TextView
+      fun findTextViewById (a: AppCompatActivity, id: Int) : TextView
       {
          val v : View? = a.findViewById(id);
          

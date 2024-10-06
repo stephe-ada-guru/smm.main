@@ -26,6 +26,7 @@ import android.content.res.Resources
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.Menu
+import android.view.MenuInflater
 import android.view.MenuItem
 import android.widget.ImageButton
 import android.widget.SeekBar
@@ -46,23 +47,10 @@ import androidx.preference.EditTextPreferenceDialogFragmentCompat
 import org.stephe_leake.music_player_2.PrefActivity
 import org.stephe_leake.music_player_2.utils.Companion
 import org.stephe_leake.music_player_2.utils.Companion.mainActivity
+import java.util.zip.Inflater
 
 class MainActivity : AppCompatActivity()
 {
-   // Menu constants
-   // Alphabetical order here; display order set in onCreateOptionsMenu
-   private val MENU_COPY: Int                   = 1
-   private val MENU_NEW_PLAYLIST: Int  = 2
-   private val MENU_LINER_NOTES: Int                  = 3
-   private val MENU_PREFERENCES: Int            = 4
-   private val MENU_QUIT: Int                   = 5
-   private val MENU_RESET_PLAYLIST: Int         = 6
-   private val MENU_SEARCH: Int                 = 7
-   private val MENU_SHARE: Int                  = 8
-   private val MENU_SHOW_DOWNLOAD_LOG: Int      = 9
-   private val MENU_SHOW_ERROR_LOG: Int         = 10
-   private val MENU_UPDATE_PLAYLIST: Int        = 11
-
    // Main UI members
    // FIXME: delete these; use non-null local 'val's.
 
@@ -89,7 +77,7 @@ class MainActivity : AppCompatActivity()
        mainActivity = this
 
        setContentView(R.layout.mainactivity)
-
+       setSupportActionBar(findViewById(R.id.main_toolbar))
 
        // Set up displays, top to bottom left to right
        
@@ -105,18 +93,8 @@ class MainActivity : AppCompatActivity()
 
    override fun onCreateOptionsMenu(menu: Menu): Boolean
    {
-      super.onCreateOptionsMenu(menu)
-      menu.add(0, MENU_QUIT, 0, R.string.menu_quit)
-      menu.add(0, MENU_SEARCH, 0, R.string.menu_search)
-      menu.add(0, MENU_SHARE, 0, R.string.menu_share)
-      menu.add(0, MENU_LINER_NOTES, 0, R.string.menu_liner_notes)
-      menu.add(0, MENU_COPY, 0, R.string.menu_copy)
-      menu.add(0, MENU_UPDATE_PLAYLIST, 0, R.string.menu_update_playlist)
-      menu.add(0, MENU_RESET_PLAYLIST, 0, R.string.menu_reset_playlist)
-      menu.add(0, MENU_SHOW_DOWNLOAD_LOG, 0, R.string.menu_show_download_log)
-      menu.add(0, MENU_SHOW_ERROR_LOG, 0, R.string.menu_show_error_log)
-      menu.add(0, MENU_PREFERENCES, 0, R.string.menu_preferences)
-      menu.add(0, MENU_NEW_PLAYLIST, 0, R.string.menu_new_playlist)
+      val Inf: MenuInflater = getMenuInflater()
+      Inf.inflate(R.menu.main_menu, menu)
       return true // display menu
    }
 
@@ -136,7 +114,7 @@ class MainActivity : AppCompatActivity()
       {
       // Alphabetical order
 
-      MENU_COPY ->
+      R.id.menu_copy ->
       {
          var clipManage: ClipboardManager = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
 
@@ -155,7 +133,7 @@ class MainActivity : AppCompatActivity()
          clipManage.setPrimaryClip (ClipData.newPlainText ("song", Msg))
       }
 
-      MENU_NEW_PLAYLIST ->
+      R.id.menu_new_playlist ->
       {
          var res: Resources           = getResources()
          var prefs: SharedPreferences = this.getPreferences(Context.MODE_PRIVATE)
@@ -177,7 +155,7 @@ class MainActivity : AppCompatActivity()
             }
       }
 
-      MENU_LINER_NOTES ->
+      R.id.menu_liner_notes ->
       {
          //FIXME: retriever not there yet
          // var intent: Intent = Intent(Intent.ACTION_VIEW)
@@ -188,11 +166,11 @@ class MainActivity : AppCompatActivity()
          // startActivity(intent)
       }
 
-      MENU_PREFERENCES ->
+      R.id.menu_preferences ->
          // We don't need a result
          this.startActivity(Intent(utils.mainActivity, PrefActivity::class.java))
 
-      MENU_QUIT ->
+      R.id.menu_quit ->
          {//FIXME: don't have play service yet
          // sendBroadcast
          //   (Intent
@@ -204,17 +182,18 @@ class MainActivity : AppCompatActivity()
          // finish()
          }
 
-      MENU_RESET_PLAYLIST ->
+      R.id.menu_reset_playlist ->
          {  //FIXME: don't have play service yet
          // sendBroadcast(Intent(utils.ACTION_PLAY_COMMAND)
          //                 .putExtra(utils.EXTRA_COMMAND, utils.COMMAND_RESET_PLAYLIST))
          }
-      MENU_SEARCH ->
+
+      R.id.menu_search ->
          {
          //FIXME: start search activity, search local database
          }
 
-      MENU_SHARE ->
+      R.id.menu_share ->
       {
          //FIXME: don't have utils yet
          // utils.verboseLog("sharing " + utils.retriever.musicUri.toString())
@@ -227,17 +206,17 @@ class MainActivity : AppCompatActivity()
          // startActivity(Intent.createChooser(intent, "Share song via ..."))
       }
 
-      MENU_SHOW_DOWNLOAD_LOG ->
+      R.id.menu_show_download_log ->
          {  //FIXME: don't have utils yet
          // startActivity(utils.showDownloadLogIntent)
          }
 
-      MENU_SHOW_ERROR_LOG ->
+      R.id.menu_show_error_log ->
          {  //FIXME: don't have utils yet
          // startActivity(utils.showErrorLogIntent)
          }
 
-      MENU_UPDATE_PLAYLIST ->
+      R.id.menu_update_playlist ->
       {
          //FIXME: don't have this fragment yet
          // var res: Resources           = getResources()

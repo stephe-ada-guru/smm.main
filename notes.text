@@ -3,34 +3,23 @@ use same design as old app
 
 delete app/build/*
 
-move menu changes to branch org.stephe_leake.music_player_2.work_1
-    do incremental changes on main to find bug
-    AppCompatActivity
-        crash: MainActivity.kt:91 You need to use a Theme.AppCompat theme (or descendant) with this activity.
-            change theme in app/src/main/AndroidManifest.xml (two places): ok.
-            fix committed in main, manually copied to work_1
-
-    AndroidStudio doesn't understand git worktree (sigh)
-    gradle sync in work_1 fails mysteriously (sigh)
-        back to editing on main via git stash
-
 copy/update rest of old activity.java to new MainActivity.kt
     menu - test preferences
-    compiles, runs; no app title bar, no menu icon!
-        define menu in xml; no help
-        need androidx toolbar (sigh).
-            builds, installs, crashes
-                run in debugger
-                crashes in MainActivity.OnCreate.setContentView
-
-    text in buttons is too light!
+    compiles, runs, menu displays
 
 review all android studio warnings
 
 Need "clear playlist" and "delete playlist"; instrumental got screwed up.
     or just edit manually, since they are visible.
 
+text in buttons is too light!
+    test on phone
+
+
  Resources
+
+AndroidStudio doesn't understand git worktree (sigh)
+    gradle sync in work_1 fails mysteriously (sigh)
 
 https://svg2vector.com/
     create svg image with InkScape, convert to Android drawable resource file.
