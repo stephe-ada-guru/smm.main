@@ -8,7 +8,7 @@
 --
 --  gnu plot manual:    /usr/share/doc/gnuplot/manual/gnuplot.pdf
 --
---  Copyright (C) 2016 - 2018, 2020 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2016 - 2018, 2020, 2025 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -117,7 +117,7 @@ is
       end loop;
       if Unknown then
          raise SAL.Programmer_Error with "id" & Integer'Image (I.ID) & ": '" & I.Category &
-           "' does not contain one of " & Categories_Image;
+           "' (" & I.File_Name & ") does not contain one of " & Categories_Image;
       end if;
 
       declare

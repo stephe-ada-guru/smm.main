@@ -13,8 +13,11 @@ all : alr.env force
 install : force
 	$(MAKE) -c build install
 
+obj/development/smm.exe : alr.env force
+	. ./alr.env; gprbuild -P build/smm_alire.gpr smm-driver.adb
+
 obj/development/%.exe : alr.env force
-	. ./alr.env; gprbuild -P build/smm_alire.gpr $(*F)
+	. ./alr.env; echo $$PATH; type gprbuild; gprbuild -P build/smm_alire.gpr $(*F)
 
 # Local Variables:
 # eval: (unless dvc-doing-ediff-p (load-file "prj-alire.el"))

@@ -28,7 +28,7 @@ d:/Music/remote_cache/smm-server_driver.log
 APIC header broken somehow; causes stack overflow in id3 read all frames
     use Foobar2000 media player to delete all pictures; right click on file, Tagging | Remove all pictures.
 
-rename enforce relative to root
+rename enforce relative to root, check that file exists
 
 need update to null
     pete seeger flowers gone kisses sweeter than wine
