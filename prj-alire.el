@@ -8,4 +8,9 @@
   :xref-label 'gpr_query)
  "Alire.make")
 
+;; create-alire-prj doesn't have :case-exception-files, so we do this here
+(setf (wisi-prj-case-exception-files (project-current))
+      (list (expand-file-name "build/smm.casing")))
+
+(wisi--case-read-all-exceptions (project-current))
 ;; end of file

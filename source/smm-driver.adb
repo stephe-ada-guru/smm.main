@@ -2,7 +2,7 @@
 --
 --  main procedure for SMM application
 --
---  Copyright (C) 2008 - 2013, 2015 - 2020, 2022 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2013, 2015 - 2020, 2022, 2025 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -27,6 +27,7 @@ with Ada.Text_IO; use Ada.Text_IO;
 with GNAT.Traceback.Symbolic;
 with SAL.Command_Line_IO;
 with SMM.Check;
+with SMM.Compare_Best;
 with SMM.Copy;
 with SMM.Database;
 with SMM.History;
@@ -71,6 +72,9 @@ is
       Put_Line ("  history");
       Put_Line ("    output histogram (in gnuplot files) of download interval (last to previous).");
       Put_Line ("    list all new songs.");
+      New_Line;
+      Put_Line ("  compare_best");
+      Put_Line ("    compare list of music files marked 'best' in db to Spotify 'Stephes best' playlist.");
    end Put_Usage;
 
    procedure Check_Arg (Expected_Count : in Integer)
@@ -87,7 +91,7 @@ is
    DB           : SMM.Database.Database;
    Next_Arg     : Integer         := 1;
 
-   type Command_Type is (Copy_Playlist, Import, Update, Rename, Check, History);
+   type Command_Type is (Copy_Playlist, Import, Update, Rename, Check, History, Compare_Best);
 
    procedure Get_Command is new SAL.Command_Line_IO.Gen_Get_Discrete_Proc (Command_Type, "command", Next_Arg);
 
@@ -178,6 +182,9 @@ begin
 
    when History =>
       SMM.History (DB);
+
+   when Compare_Best =>
+      SMM.Compare_Best (DB);
    end case;
 
 exception
