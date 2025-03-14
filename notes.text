@@ -26,108 +26,14 @@ d:/Music/remote_cache/smm-server_driver.log
 
  compare Spotify best list
 testing: make t1
-    spotify response to get playlist:
 
-$4 = (last => 16, ea => ((key => (small => (is_big => false, size => 13,
-          data => "collaborative["00"]["00"]["00"]["00"]["00"]["00"]["00"]["00"]["00"]["00"]"), big => (is_big => false, half_capacity => 909619597,
-          size => 1868718444, data => 0x657669746172, first => 0)), val => (
-        data => (kind => json_boolean_type, bool_value => false))), (key => (
-        small => (is_big => false, size => 11,
-          data => "description", '["00"]' <repeats 12 times>), big => (
-          is_big => false, half_capacity => 968012299, size => 1885958755,
-          data => 0x6e6f6974, first => 0)), val => (data => (
-          kind => json_string_type, str_value => (small => (is_big => false,
-              size => 0, data => '["00"]' <repeats 23 times>), big => (
-              is_big => false, half_capacity => 0, size => 0, data => 0x0,
-              first => 0))))), (key => (small => (is_big => false,
-          size => 13,
-          data => "external_urls["00"]["00"]["00"]["00"]["00"]["00"]["00"]["00"]["00"]["00"]"), big => (is_big => false, half_capacity => 977023629,
-          size => 1634628197, data => 0x736c72755f6c, first => 0)), val => (
-        data => (kind => json_object_type, obj_value => 0x6338c0))), (key => (
-        small => (is_big => false, size => 9,
-          data => "followers", '["00"]' <repeats 14 times>), big => (
-          is_big => false, half_capacity => 909619977, size => 1702326124,
-          data => 0x7372, first => 0)), val => (data => (
-          kind => json_object_type, obj_value => 0x633930))), (key => (
-        small => (is_big => false, size => 4,
-          data => "href", '["00"]' <repeats 19 times>), big => (
-          is_big => false, half_capacity => 850998276, size => 102,
-          data => 0x0, first => 0)), val => (data => (
-          kind => json_string_type, str_value => (small => (is_big => true,
-              size => 41,
-              data => "["00"]["00"]["00"];["00"]["00"]["00"]["90"]9c["00"]["00"]["00"]["00"]["00"]["01"]["00"]["00"]["00"].com"), big => (is_big => true,
-              half_capacity => 41, size => 59, data => 0x633990,
-              first => 1))))), (key => (small => (is_big => false, size => 2,
-          data => "id", '["00"]' <repeats 21 times>), big => (
-          is_big => false, half_capacity => 3290242, size => 0, data => 0x0,
-          first => 0)), val => (data => (kind => json_string_type,
-          str_value => (small => (is_big => false, size => 22,
-              data => "7nfC9g7RtFQUWDGdsq1GYj["00"]"), big => (
-              is_big => false, half_capacity => 859249558, size => 929511747,
-              data => 0x4744575551467452, first => 829518692))))), (key => (
-        small => (is_big => false, size => 6,
-          data => "images", '["00"]' <repeats 17 times>), big => (
-          is_big => false, half_capacity => 817280134, size => 7562599,
-          data => 0x0, first => 0)), val => (data => (
-          kind => json_array_type, arr_value => 0x633e00))), (key => (
-        small => (is_big => false, size => 4,
-          data => "name", '["00"]' <repeats 19 times>), big => (
-          is_big => false, half_capacity => 917550852, size => 101,
-          data => 0x0, first => 0)), val => (data => (
-          kind => json_string_type, str_value => (small => (is_big => false,
-              size => 13,
-              data => "Stephe's Best["00"]["00"]["00"]["00"]["00"]["00"]["00"]["00"]["00"]["00"]"), big => (is_big => false, half_capacity => 851061133,
-              size => 660957296, data => 0x747365422073, first => 0))))), (
-      key => (small => (is_big => false, size => 5,
-          data => "owner", '["00"]' <repeats 18 times>), big => (
-          is_big => false, half_capacity => 926660485, size => 29285,
-          data => 0x0, first => 0)), val => (data => (
-          kind => json_object_type, obj_value => 0x2cb0b90))), (key => (
-        small => (is_big => false, size => 13,
-          data => "primary_color["00"]["00"]["00"]["00"]["00"]["00"]["00"]["00"]["00"]["00"]"), big => (is_big => false, half_capacity => 884553741,
-          size => 2037539181, data => 0x726f6c6f635f, first => 0)), val => (
-        data => (kind => json_null_type))), (key => (small => (
-          is_big => false, size => 6,
-          data => "public", '["00"]' <repeats 17 times>), big => (
-          is_big => false, half_capacity => 825931782, size => 6515052,
-          data => 0x0, first => 0)), val => (data => (
-          kind => json_boolean_type, bool_value => true))), (key => (
-        small => (is_big => false, size => 11,
-          data => "snapshot_id", '["00"]' <repeats 12 times>), big => (
-          is_big => false, half_capacity => 817314187, size => 1869116272,
-          data => 0x64695f74, first => 0)), val => (data => (
-          kind => json_string_type, str_value => (small => (is_big => true,
-              size => 18,
-              data => "["00"]["00"]["00"] ["00"]["00"]["00"]@["10"]["cb"]["02"]["00"]["00"]["00"]["00"]["01"]["00"]["00"]["00"]t7sI"), big => (
-              is_big => true, half_capacity => 18, size => 32,
-              data => 0x2cb1040, first => 1))))), (key => (small => (
-          is_big => false, size => 6,
-          data => "tracks", '["00"]' <repeats 17 times>), big => (
-          is_big => false, half_capacity => 817445382, size => 7564131,
-          data => 0x0, first => 0)), val => (data => (
-          kind => json_object_type, obj_value => 0x2cb10b0))), (key => (
-        small => (is_big => false, size => 4,
-          data => "type", '["00"]' <repeats 19 times>), big => (
-          is_big => false, half_capacity => 943503876, size => 101,
-          data => 0x0, first => 0)), val => (data => (
-          kind => json_string_type, str_value => (small => (is_big => false,
-              size => 8, data => "playlist", '["00"]' <repeats 15 times>),
-            big => (is_big => false, half_capacity => 817248264,
-              size => 1936288889, data => 0x74, first => 0))))), (key => (
-        small => (is_big => false, size => 3,
-          data => "uri", '["00"]' <repeats 20 times>), big => (
-          is_big => false, half_capacity => 884554371, size => 0,
-          data => 0x0, first => 0)), val => (data => (
-          kind => json_string_type, str_value => (small => (is_big => true,
-              size => 27,
-              data => "["00"]["00"]["00"]'["00"]["00"]["00"]0#["cb"]["02"]["00"]["00"]["00"]["00"]["01"]["00"]["00"]["00"]fC9g"), big => (is_big => true,
-              half_capacity => 27, size => 39, data => 0x2cb2330,
-              first => 1))))), (key => (small => (is_big => false, size => 0,
-          data => '["00"]' <repeats 23 times>), big => (is_big => false,
-          half_capacity => 0, size => 0, data => 0x0, first => 0)), val => (
-        data => (kind => json_null_type)))))
+not in spotify: store in config file?
+Al Petteway & Amy White, GRATITUDE groovemasters volume 3, Ghost On A Carousel
+Holly Near/Ronnie Gilbert, This Train Still Runs, Build High the Bridge
 
-
+Different album:
+Holly Near/Ronnie Gilbert, Lifeline, Two Good Arms
+Holly Near/Ronnie Gilbert, Lifeline, Hay Una Mujer
 
  other current work
 

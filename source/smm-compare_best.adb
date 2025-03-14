@@ -62,6 +62,7 @@ begin
 
       use SMM.Database;
       use Spotify;
+      Missing_Count : Integer := 0;
    begin
       Main :
       loop
@@ -69,25 +70,33 @@ begin
 
          if not Spotify_Session.Has_Element (Spotify_I) then
             --  remaining items in DB_I are new
-            Put_Line ("Spotify missing songs:");
             loop
-               Put_Line (DB_I.Artist & ", " & DB_I.Album & ", " & DB_I.Title);
+               if DB_I.Category_Contains ("best") then
+                  Put_Line ("Spotify missing song:" & DB_I.Artist & ", " & DB_I.Album & ", " & DB_I.Title);
+                  Missing_Count := @ + 1;
+               end if;
                DB_I.Next;
                exit when not Has_Element (DB_I);
             end loop;
             exit Main;
          else
-            if not (DB_I = Spotify_I) then
-               Put_Line ("Spotify missing song:" & DB_I.Artist & ", " & DB_I.Album & ", " & DB_I.Title);
-               DB_I.Next;
+            if DB_I.Category_Contains ("best") then
+               if not (DB_I = Spotify_I) then
+                  Put_Line ("Spotify missing song:" & DB_I.Artist & ", " & DB_I.Album & ", " & DB_I.Title);
+                  Missing_Count := @ + 1;
+                  DB_I.Next;
+               else
+                  DB_I.Next;
+                  Spotify_Session.Next (Spotify_I);
+               end if;
             else
                DB_I.Next;
                Spotify_Session.Next (Spotify_I);
             end if;
          end if;
-
-         Put_Line ("compare DB Best to Spotify best done");
       end loop Main;
+
+      Put_Line ("compare DB Best to Spotify best done: missing " & Missing_Count'Image);
    end;
 
 end SMM.Compare_Best;

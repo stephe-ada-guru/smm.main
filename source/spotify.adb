@@ -31,8 +31,6 @@ package body Spotify is
 
    use GNATCOLL.JSON;
 
-   Debug_Flag : constant Boolean := True; -- FIXME: false or delete
-
    function Curl (Args : in GNAT.OS_Lib.Argument_List) return String
    --  Spawn 'curl' with Args, return result.
    is
@@ -42,14 +40,6 @@ package body Spotify is
       Success          : Boolean;
       Return_Code      : Integer;
    begin
-      if Debug_Flag then
-         Ada.Text_IO.Put ("-> curl ");
-         for S of Args loop
-            Ada.Text_IO.Put (S.all & " | ");
-         end loop;
-         Ada.Text_IO.New_Line;
-      end if;
-
       Spawn ("curl", Args, Output_File_Name, Success, Return_Code);
 
       if not Success then
@@ -133,18 +123,21 @@ package body Spotify is
       end;
 
       --  First layer is an object containing playlist metadata.
-      case Kind (Temp) is
-      when JSON_Array_Type =>
-         Session.Playlist := Temp.Get;
+      --
+      --  IMPROVEME: Only includes first 100 tracks!
+      --  use command "https://api.spotify.com/v1/playlists/7nfC9g7RtFQUWDGdsq1GYj/tracks?offset=0&limit=100"
+      --  to fetch rest.
 
-         return (Index => Array_First (Session.Playlist));
+      Temp := Get (Temp, "tracks");
+      Session.Playlist := Get (Temp, "items");
 
-      end case;
+      return (Index => Array_First (Session.Playlist));
+
    exception
-         when others =>
-         raise Some_Error;
-         return (Index => Positive'First);
-end Get_Playlist;
+   when others =>
+      Ada.Text_IO.Put_Line (Write (Temp, Compact => False));
+      raise Some_Error;
+   end Get_Playlist;
 
    function Has_Element (Session : in Spotify.Session; Position : in out Cursor) return Boolean
    is begin
@@ -157,24 +150,21 @@ end Get_Playlist;
    end Next;
 
    function Album (Session : in Spotify.Session; Position : in Cursor) return String
-   is
-      --  Song : JSON_Value renames Get (Session.Playlist, Position.Index);
-   begin
-      --  Need typical structure; navigaet to Album
-      raise Some_Error with "not implemented";
-      return "";
+   is begin
+      return Get (Session.Playlist, Position.Index).Get ("track").Get ("album").Get ("name");
    end Album;
 
    function Album_Artist (Session : in Spotify.Session; Position : in Cursor) return String
-   is begin
-      raise Some_Error with "not implemented";
-      return "";
+   is
+      Temp_Array : constant JSON_Array :=
+        Get (Session.Playlist, Position.Index) .Get ("track").Get ("album").Get ("artists");
+   begin
+      return Get (Array_Element (Temp_Array, 1), "name");
    end Album_Artist;
 
    function Title (Session : in Spotify.Session; Position : in Cursor) return String
    is begin
-      raise Some_Error with "not implemented";
-      return "";
+      return Get (Session.Playlist, Position.Index).Get ("track").Get ("name");
    end Title;
 
 end Spotify;
