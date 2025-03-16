@@ -25,15 +25,8 @@ d:/Music/remote_cache/smm-server_driver.log
    ("../smm.work_1"                    . "../smm.main")))
 
  compare Spotify best list
-testing: make t1
+running
 
-not in spotify: store in config file?
-Al Petteway & Amy White, GRATITUDE groovemasters volume 3, Ghost On A Carousel
-Holly Near/Ronnie Gilbert, This Train Still Runs, Build High the Bridge
-
-Different album:
-Holly Near/Ronnie Gilbert, Lifeline, Two Good Arms
-Holly Near/Ronnie Gilbert, Lifeline, Hay Una Mujer
 
  other current work
 

@@ -47,6 +47,7 @@ package Spotify is
      return Cursor;
 
    function Has_Element (Session : in Spotify.Session; Position : in out Cursor) return Boolean;
+   function First (Session : in Spotify.Session) return Cursor;
    procedure Next (Session : in Spotify.Session; Position : in out Cursor);
 
    function Album (Session : in Spotify.Session; Position : in Cursor) return String;

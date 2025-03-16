@@ -1,4 +1,4 @@
-set args Compare_Best
+set args --verbosity=2 Compare_Best c:/home/Stephe/smm/spotify_missing.json
 
 set max-value-size unlimited
 

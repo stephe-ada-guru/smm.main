@@ -73,14 +73,14 @@ is
       Put_Line ("    output histogram (in gnuplot files) of download interval (last to previous).");
       Put_Line ("    list all new songs.");
       New_Line;
-      Put_Line ("  compare_best");
+      Put_Line ("  compare_best <missing_file>");
       Put_Line ("    compare list of music files marked 'best' in db to Spotify 'Stephes best' playlist.");
    end Put_Usage;
 
    procedure Check_Arg (Expected_Count : in Integer)
    is begin
       if Argument_Count < Expected_Count then
-         raise SAL.Parameter_Error;
+         raise SAL.Parameter_Error with "missing argument";
       end if;
    end Check_Arg;
 
@@ -142,7 +142,7 @@ begin
       Check_Arg (Next_Arg + 1);
       declare
          Playlist_Name : constant String := Argument (Next_Arg);
-         Playlist_Dir    : constant String := As_Directory (Argument (Next_Arg + 1));
+         Playlist_Dir  : constant String := As_Directory (Argument (Next_Arg + 1));
       begin
          SMM.Copy (Playlist_Name, Playlist_Dir);
       end;
@@ -184,11 +184,13 @@ begin
       SMM.History (DB);
 
    when Compare_Best =>
-      SMM.Compare_Best (DB);
+      Check_Arg (Next_Arg);
+      SMM.Compare_Best (DB, Spotify_Missing => Argument (Next_Arg));
    end case;
 
 exception
-when SAL.Parameter_Error =>
+when E : SAL.Parameter_Error =>
+   Put_Line (Ada.Exceptions.Exception_Message (E));
    Put_Usage;
    Set_Exit_Status (Failure);
 
@@ -204,6 +206,5 @@ when E : others =>
    Put_Line
      (Standard_Error,
       GNAT.Traceback.Symbolic.Symbolic_Traceback (Ada.Exceptions.Traceback.Tracebacks (E)));
-   Put_Usage;
    Set_Exit_Status (Failure);
 end SMM.Driver;

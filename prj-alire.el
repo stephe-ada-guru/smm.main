@@ -9,6 +9,7 @@
  "Alire.make")
 
 ;; create-alire-prj doesn't have :case-exception-files, so we do this here
+;; FIXME: lost on wisi-refresh-prj-cache. sigh.
 (setf (wisi-prj-case-exception-files (project-current))
       (list (expand-file-name "build/smm.casing")))
 

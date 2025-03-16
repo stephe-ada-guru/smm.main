@@ -2,7 +2,7 @@
 --
 --  Interface to SQLite3 database
 --
---  Copyright (C) 2018 - 2020 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2018 - 2020, 2025 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -43,6 +43,8 @@ package SMM.Database is
 
    type Database is new Ada.Finalization.Limited_Controlled with private;
 
+   subtype Song_ID is Integer;
+
    overriding procedure Finalize (DB : in out Database);
    --  Disconnect from database.
 
@@ -50,7 +52,7 @@ package SMM.Database is
 
    procedure Insert
      (DB              : in Database;
-      ID              : in Integer;
+      ID              : in Song_ID;
       File_Name       : in String;
       Category        : in String;
       Artist          : in String;
@@ -62,8 +64,8 @@ package SMM.Database is
       Track           : in Integer;
       Last_Downloaded : in Time_String := Default_Time_String;
       Prev_Downloaded : in Time_String := Default_Time_String;
-      Play_Before     : in Integer     := Null_ID;
-      Play_After      : in Integer     := Null_ID);
+      Play_Before     : in Song_ID     := Null_ID;
+      Play_After      : in Song_ID     := Null_ID);
 
    function UTC_Image (Item : in Ada.Calendar.Time) return Time_String;
 
@@ -127,7 +129,7 @@ package SMM.Database is
    --  Decreasing ID order.
 
    function Find_File_Name (DB : in Database'Class; File_Name : in String) return Cursor;
-   function Find_ID (DB : in Database'Class; ID : in Integer) return Cursor;
+   function Find_ID (DB : in Database'Class; ID : in Song_ID) return Cursor;
 
    procedure Update
      (DB              : in Database;
@@ -143,8 +145,8 @@ package SMM.Database is
       Track           : in Integer     := No_Track;
       Last_Downloaded : in Time_String := Default_Time_String;
       Prev_Downloaded : in Time_String := Default_Time_String;
-      Play_Before     : in Integer     := Null_ID;
-      Play_After      : in Integer     := Null_ID);
+      Play_Before     : in Song_ID     := Null_ID;
+      Play_After      : in Song_ID     := Null_ID);
    --  Items that are the defaults are not updated.
    --  Cursor must be refetched to reflect changes.
 
@@ -199,7 +201,7 @@ package SMM.Database is
 
    function Field (Position : in Cursor; Item : in Fields) return String;
 
-   function ID (Position : in Cursor) return Integer;
+   function ID (Position : in Cursor) return Song_ID;
    function ID_String (Position : in Cursor) return String;
    function File_Name (Position : in Cursor) return String;
    function Category (Position : in Cursor) return String;
@@ -232,8 +234,8 @@ package SMM.Database is
 
    procedure Write_Play_Before_After
      (DB        : in Database'Class;
-      Before_ID : in Integer;
-      After_ID  : in Integer);
+      Before_ID : in Song_ID;
+      After_ID  : in Song_ID);
 
 private
 

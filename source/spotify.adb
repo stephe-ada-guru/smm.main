@@ -122,9 +122,7 @@ package body Spotify is
          raise Some_Error with Exception_Message (E);
       end;
 
-      --  First layer is an object containing playlist metadata.
-      --
-      --  IMPROVEME: Only includes first 100 tracks!
+      --  FIXME: Only includes first 100 tracks, current list has 208
       --  use command "https://api.spotify.com/v1/playlists/7nfC9g7RtFQUWDGdsq1GYj/tracks?offset=0&limit=100"
       --  to fetch rest.
 
@@ -143,6 +141,11 @@ package body Spotify is
    is begin
       return Array_Has_Element (Session.Playlist, Position.Index);
    end Has_Element;
+
+   function First (Session : in Spotify.Session) return Cursor
+   is begin
+      return (Index => Array_First (Session.Playlist));
+   end First;
 
    procedure Next (Session : in Spotify.Session; Position : in out Cursor)
    is begin

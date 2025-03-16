@@ -22,8 +22,9 @@ clean : alire-clean
 really-clean : clean
 	rm -rf ~/.config/alire/cache/builds
 
+t1 : VERBOSITY ?= 0
 t1 : obj/development/smm.exe
-	build/obj/development/smm.exe compare_best
+	build/obj/development/smm.exe --verbosity=$(VERBOSITY) compare_best c:/home/Stephe/smm/spotify_missing.json
 
 .PHONEY : t1
 
