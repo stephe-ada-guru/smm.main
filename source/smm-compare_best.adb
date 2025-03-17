@@ -80,7 +80,7 @@ is
    function DB_Find (Item : in Song_Names) return SMM.Database.Song_ID
    is
       use SMM.Database;
-      I : Cursor := Find_Like
+      I : constant Cursor := Find_Like
         (DB,
          Param           =>
            (Album_Artist => Item.Album_Artist,
@@ -93,15 +93,9 @@ is
          raise SAL.Not_Found with "'" & Image (Item) & "' not found in DB";
       end if;
 
-      return ID : constant Song_ID := I.ID do
-         I.Next;
-         if I.Has_Element then
-            raise SAL.Programmer_Error with "song_names not unique: '" &
-              (-Item.Album_Artist) & ", " &
-              (-Item.Album) & ", " &
-              (-Item.Title) & "'";
-         end if;
-      end return;
+      return I.ID;
+      --  We don't check for more than one item in I; "The Köln
+      --  Concert, Part I" and "... Part II a" both match "... Part I".
    end DB_Find;
 
    type Missing_Data is record
@@ -222,7 +216,7 @@ begin
 
       use SMM.Database;
       use Spotify;
-      Missing_Count : Integer := 0;
+      Error_Count : Integer := 0;
 
       procedure Check_Missing
       is
@@ -255,18 +249,21 @@ begin
 
                         Spotify_Session.Next (Spotify_I);
                      else
-                        Put_Line ("Spotify missing: '" & Image (DB_I) & "' after '" & Image (Spotify_Names) & "'");
-                        Put_Line ("marked as '" & Image (Different_Names) & "'");
+                        Put_Line ("Spotify missing: '" & Image (DB_I) & "'");
+                        Put_Line ("after            '" & Image (Spotify_Names) & "'");
+                        Put_Line ("marked as        '" & Image (Different_Names) & "'");
+                        Error_Count := @ + 1;
                      end if;
                   end;
                end if;
             end;
          else
             Put_Line ("Spotify missing: " & Image (DB_I));
-            if Spotify_Session.Has_Element (Spotify_I) then
+            if Error_Count = 0 and then Spotify_Session.Has_Element (Spotify_I) then
+               --  Previous errors make this message meaningless.
                Put_Line ("Spotify at     : " & Image (Spotify_Session, Spotify_I));
             end if;
-            Missing_Count := @ + 1;
+            Error_Count := @ + 1;
          end if;
       end Check_Missing;
 
@@ -331,7 +328,7 @@ begin
          end if;
       end loop Main;
 
-      Put_Line ("compare DB Best to Spotify best done: missing " & Missing_Count'Image);
+      Put_Line ("compare DB Best to Spotify best done: errors " & Error_Count'Image);
    end;
 
 end SMM.Compare_Best;
