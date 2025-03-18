@@ -41,12 +41,22 @@ package Spotify is
 
    type Cursor is private;
 
+   function To_Integer (Item : in Cursor) return Integer;
+   --  For counting the number of items retrieved from a playlist.
+
+   subtype Playlist_Item_Count is Integer range 1 .. 100;
+   --  https://developer.spotify.com/documentation/web-api/reference/get-playlists-tracks
+   --  says limit is 50, but 100 works, 110 fails.
+
    function Get_Playlist
      (Session     : in out Spotify.Session;
-      Playlist_ID : in     String)
+      Playlist_ID : in     String;
+      Offset      : in     Natural;
+      Count       : in     Playlist_Item_Count)
      return Cursor;
+   --  Get up to Count items starting at Offset + 1 from Playlist_ID.
 
-   function Has_Element (Session : in Spotify.Session; Position : in out Cursor) return Boolean;
+   function Has_Element (Session : in Spotify.Session; Position : in Cursor) return Boolean;
    function First (Session : in Spotify.Session) return Cursor;
    procedure Next (Session : in Spotify.Session; Position : in out Cursor);
 

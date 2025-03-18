@@ -32,7 +32,7 @@ is
    Client_Secret            : constant String := "2a4f43acb73443b59dee9aabbbee9ab7";
 
    --  From https://open.spotify.com/playlist/7nfC9g7RtFQUWDGdsq1GYj
-   Stephes_Best_Playlist_Id : constant String := "7nfC9g7RtFQUWDGdsq1GYj";
+   Stephes_Best_Playlist_ID : constant String := "7nfC9g7RtFQUWDGdsq1GYj";
 
    function "+" (Item : in String) return Ada.Strings.Unbounded.Unbounded_String
         renames Ada.Strings.Unbounded.To_Unbounded_String;
@@ -77,7 +77,7 @@ is
         Spotify_Session.Title (Item);
    end Image;
 
-   function DB_Find (Item : in Song_Names) return SMM.Database.Song_ID
+   function DB_Find (Item : in Song_Names) return SMM.Database.Cursor
    is
       use SMM.Database;
       I : constant Cursor := Find_Like
@@ -93,9 +93,9 @@ is
          raise SAL.Not_Found with "'" & Image (Item) & "' not found in DB";
       end if;
 
-      return I.ID;
-      --  We don't check for more than one item in I; "The Köln
-      --  Concert, Part I" and "... Part II a" both match "... Part I".
+      return I;
+      --  We check for more than one item in I later (which is why we return
+      --  a cursor).
    end DB_Find;
 
    type Missing_Data is record
@@ -171,9 +171,22 @@ is
                   Title        => Get (Spotify_Names_Item, "title"))
                else Null_Song_Names);
 
-            DB_I : constant SMM.Database.Song_ID := DB_Find (DB_Names);
+            DB_I : SMM.Database.Cursor := DB_Find (DB_Names);
          begin
-            Missing_Tree.Insert (Element => (DB_I, Spotify_Names));
+            Multiple_DB_Match :
+            loop
+               if not DB_I.Has_Element then
+                  raise SAL.Initialization_Error with Image (DB_Names) & " not found in db";
+               else
+                  if Image (DB_I) = Image (DB_Names) then
+                     Missing_Tree.Insert (Element => (DB_I.ID, Spotify_Names));
+                     exit Multiple_DB_Match;
+                  else
+                     --  Handle "the babysitter's here intro" vs "the babysitter's here".
+                     DB_I.Next;
+                  end if;
+               end if;
+            end loop Multiple_DB_Match;
          end;
 
          I := Array_Next (Data, I);
@@ -212,11 +225,16 @@ begin
       --  We assume songs are marked Best in DB _before_ being added to
       --  Spotify list.
 
-      Spotify_I : Spotify.Cursor := Spotify_Session.Get_Playlist (Stephes_Best_Playlist_Id);
+      Playlist_Chunk  : constant Spotify.Playlist_Item_Count := Spotify.Playlist_Item_Count'Last;
+      Playlist_Offset : Natural                              := 0;
+
+      Spotify_I : Spotify.Cursor := Spotify_Session.Get_Playlist
+        (Stephes_Best_Playlist_ID, Offset => Playlist_Offset, Count => Playlist_Chunk);
 
       use SMM.Database;
       use Spotify;
       Error_Count : Integer := 0;
+      Total_Song_Count : Integer := 0;
 
       procedure Check_Missing
       is
@@ -230,7 +248,7 @@ begin
             begin
                if Different_Names = Null_Song_Names then
                   if Verbosity > 0 then
-                     Put_Line ("missing ok: " & Image (DB_I));
+                     Put_Line (Total_Song_Count'Image & " missing ok: " & Image (DB_I));
                   end if;
                else
                   declare
@@ -244,7 +262,7 @@ begin
                      end if;
                      if Different_Names = Spotify_Names then
                         if Verbosity > 0 then
-                           Put_Line ("different ok: " & Image (DB_I));
+                           Put_Line (Total_Song_Count'Image & " different ok: " & Image (DB_I));
                         end if;
 
                         Spotify_Session.Next (Spotify_I);
@@ -256,6 +274,9 @@ begin
                      end if;
                   end;
                end if;
+            exception
+            when Constraint_Error =>
+               raise Some_Error with Image (DB_I) & " in missing.json but not in Spotify?";
             end;
          else
             Put_Line ("Spotify missing: " & Image (DB_I));
@@ -285,7 +306,19 @@ begin
          exit Main when not Has_Element (DB_I);
 
          if not Spotify_Session.Has_Element (Spotify_I) then
-            --  remaining Best items in DB_I are new
+            --  Try to get more
+            Playlist_Offset := @ + To_Integer (Spotify_I) - 1;
+
+            if Verbosity > 0 then
+               Put_Line ("get more playlist" & Playlist_Offset'Image);
+            end if;
+
+            Spotify_I := Spotify_Session.Get_Playlist
+              (Stephes_Best_Playlist_ID, Offset => Playlist_Offset, Count => Playlist_Chunk);
+         end if;
+
+         if not Spotify_Session.Has_Element (Spotify_I) then
+            --  Past end of Spotify playlist; remaining Best items in DB_I are new
             if Verbosity > 1 then
                Put_Line ("spotify list done");
             end if;
@@ -296,6 +329,7 @@ begin
                end if;
 
                if DB_I.Category_Contains ("best") then
+                  Total_Song_Count := @ + 1;
                   Check_Missing;
                end if;
                DB_I.Next;
@@ -308,13 +342,14 @@ begin
             end if;
 
             if DB_I.Category_Contains ("best") then
+               Total_Song_Count := @ + 1;
                if DB_I = Spotify_I then
                   --  all ok
                   if Verbosity > 1 then
                      Put_Line ("checking spotify: " & Image (Spotify_Session, Spotify_I));
                   end if;
                   if Verbosity > 0 then
-                     Put_Line ("ok: " & Image (DB_I));
+                     Put_Line (Total_Song_Count'Image & " ok: " & Image (DB_I));
                   end if;
                   DB_I.Next;
                   Spotify_Session.Next (Spotify_I);
@@ -328,7 +363,8 @@ begin
          end if;
       end loop Main;
 
-      Put_Line ("compare DB Best to Spotify best done: errors " & Error_Count'Image);
+      Put_Line
+        ("compare DB Best to Spotify best done: songs/errors " & Total_Song_Count'Image & " /" & Error_Count'Image);
    end;
 
 end SMM.Compare_Best;

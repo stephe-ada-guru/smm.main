@@ -27,6 +27,7 @@ pragma License (GPL);
 with Ada.Exceptions;
 with Ada.Text_IO;
 with GNAT.OS_Lib;
+with SAL.Gen_Trimmed_Image;
 package body Spotify is
 
    use GNATCOLL.JSON;
@@ -94,15 +95,26 @@ package body Spotify is
       raise Some_Error;
    end Start_Session;
 
+   function To_Integer (Item : in Cursor) return Integer
+   is begin
+      return Item.Index;
+   end To_Integer;
+
    function Get_Playlist
      (Session     : in out Spotify.Session;
-      Playlist_ID : in     String)
+      Playlist_ID : in     String;
+      Offset      : in     Natural;
+      Count       : in     Playlist_Item_Count)
      return Cursor
    is
+      function Trimmed_Image is new SAL.Gen_Trimmed_Image (Natural);
+
       Args : GNAT.OS_Lib.String_List_Access :=
         new GNAT.OS_Lib.String_List'
           (new String'("-s"),
-           new String'("https://api.spotify.com/v1/playlists/" & Playlist_ID),
+           new String'
+             ("https://api.spotify.com/v1/playlists/" & Playlist_ID  &
+                "/tracks?offset=" & Trimmed_Image (Offset) & "&limit=" & Trimmed_Image (Count)),
            new String'("-H"),
            new String'("Authorization: Bearer  " & (-Session.Credentials)));
 
@@ -122,11 +134,6 @@ package body Spotify is
          raise Some_Error with Exception_Message (E);
       end;
 
-      --  FIXME: Only includes first 100 tracks, current list has 208
-      --  use command "https://api.spotify.com/v1/playlists/7nfC9g7RtFQUWDGdsq1GYj/tracks?offset=0&limit=100"
-      --  to fetch rest.
-
-      Temp := Get (Temp, "tracks");
       Session.Playlist := Get (Temp, "items");
 
       return (Index => Array_First (Session.Playlist));
@@ -137,7 +144,7 @@ package body Spotify is
       raise Some_Error;
    end Get_Playlist;
 
-   function Has_Element (Session : in Spotify.Session; Position : in out Cursor) return Boolean
+   function Has_Element (Session : in Spotify.Session; Position : in Cursor) return Boolean
    is begin
       return Array_Has_Element (Session.Playlist, Position.Index);
    end Has_Element;

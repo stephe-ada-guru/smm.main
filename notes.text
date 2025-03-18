@@ -24,11 +24,7 @@ d:/Music/remote_cache/smm-server_driver.log
  '(("../org.stephe_leake.sal.stephe-1" . "../org.stephe_leake.sal")
    ("../smm.work_1"                    . "../smm.main")))
 
- compare Spotify best list
-running
-
-
- other current work
+ current work
 
 APIC header broken somehow; causes stack overflow in id3 read all frames
     use Foobar2000 media player to delete all pictures; right click on file, Tagging | Remove all pictures.
