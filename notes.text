@@ -1,7 +1,7 @@
 Alire.make
 build/Makefile
 
-see ../Android/org.stephe_leake.music_player.java/notes.text
+see ../org.stephe_leake.music_player/notes.text
 
 branches:
     smm.main - installed in Windows
@@ -25,6 +25,7 @@ d:/Music/remote_cache/smm-server_driver.log
    ("../smm.work_1"                    . "../smm.main")))
 
  current work
+exception: SAL.INITIALIZATION_ERROR: Andy Stewart w/ Phil Cunningham & Manus Lunny, Fire In The Glen, Young Jimmy In Flanders not found in db
 
 APIC header broken somehow; causes stack overflow in id3 read all frames
     use Foobar2000 media player to delete all pictures; right click on file, Tagging | Remove all pictures.

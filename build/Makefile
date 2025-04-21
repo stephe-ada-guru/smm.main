@@ -38,25 +38,6 @@ histogram : c:/home/stephe/bin/smm.exe
 check : smm.exe
 	cd d:/Music; $(CURDIR)/smm check > missing.log
 
-install :: server-data
-install :: c:/home/stephe/bin/smm.exe
-install :: c:/home/stephe/bin/smm-server_driver.exe
-install :: c:/home/stephe/bin/smm-show_id3.exe
-
-.PHONY : server-data play-icons
-
-# SERVER_DATA defined in prj.el
-
-server-data :: $(SERVER_DATA)/app.ico
-server-data :: $(SERVER_DATA)/liner_notes_icon-desktop.png
-server-data :: $(SERVER_DATA)/liner_notes_icon-tablet.png
-server-data :: $(SERVER_DATA)/liner_notes_icon-phone.png
-server-data :: $(SERVER_DATA)/play_icon-desktop.png
-server-data :: $(SERVER_DATA)/play_icon-tablet.png
-server-data :: $(SERVER_DATA)/play_icon-phone.png
-server-data :: $(SERVER_DATA)/songs.css
-server-data :: $(SERVER_DATA)/songs.js
-
 # svg image is correct size for desktop screen, 96 dpi
 # tablet : * 4 = 384 dpi
 # phone  : * 9 = 864 dpi

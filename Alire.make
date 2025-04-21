@@ -12,6 +12,30 @@ include $(STEPHES_ADA_LIBRARY_ALIRE_PREFIX)/build/alire_rules.make
 all : alr.env force
 	source ./alr.env; /mingw64/bin/gprbuild -P build/smm_alire.gpr
 
+install :: server-data
+install :: c:/home/stephe/bin/smm.exe
+install :: c:/home/stephe/bin/smm-server_driver.exe
+install :: c:/home/stephe/bin/smm-show_id3.exe
+
+# SERVER_DATA defined in prj-alire.el
+
+server-data :: $(SERVER_DATA)/app.ico
+server-data :: $(SERVER_DATA)/liner_notes_icon-desktop.png
+server-data :: $(SERVER_DATA)/liner_notes_icon-tablet.png
+server-data :: $(SERVER_DATA)/liner_notes_icon-phone.png
+server-data :: $(SERVER_DATA)/play_icon-desktop.png
+server-data :: $(SERVER_DATA)/play_icon-tablet.png
+server-data :: $(SERVER_DATA)/play_icon-phone.png
+server-data :: $(SERVER_DATA)/songs.css
+server-data :: $(SERVER_DATA)/songs.js
+
+$(SERVER_DATA)/% : source/%
+	cp $^ $@
+
+# don't strip, so stack traceback is useful on errors
+c:/home/stephe/bin/% : build/obj/development/%
+	cp $^ $@
+
 obj/development/smm.exe : alr.env force
 	. ./alr.env; /mingw64/bin/gprbuild -P build/smm_alire.gpr smm-driver.adb
 
@@ -24,7 +48,7 @@ really-clean : clean
 
 t1 : VERBOSITY ?= 0
 t1 : obj/development/smm.exe
-	build/obj/development/smm.exe --verbosity=$(VERBOSITY) compare_best c:/home/Stephe/smm/spotify_missing.json
+	build/obj/development/smm.exe --verbosity=$(VERBOSITY) compare_playlist protest c:/home/Stephe/smm/spotify_missing_protest.json
 
 .PHONEY : t1
 

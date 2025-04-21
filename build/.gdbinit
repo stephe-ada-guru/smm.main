@@ -1,4 +1,4 @@
-set args --verbosity=2 Compare_Best c:/home/Stephe/smm/spotify_missing.json
+set args --verbosity=2 compare_playlist protest c:/home/Stephe/smm/spotify_missing_protest.json
 
 set max-value-size unlimited
 

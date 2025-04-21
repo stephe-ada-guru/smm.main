@@ -4,6 +4,8 @@
  "prj-alire.el"
  (create-alire-prj
   :name "smm main Alire"
+  :compile-env
+  '("SERVER_DATA=/d/Music/server_data") ;; msys2 syntax for make shell
   :gpr-file "build/smm_alire.gpr"
   :xref-label 'gpr_query)
  "Alire.make")

@@ -18,14 +18,20 @@
 
 pragma License (GPL);
 
+with Ada.Characters.Handling;
 with Ada.Text_IO; use Ada.Text_IO;
 with GNATCOLL.JSON;
 with SAL.Gen_Unbounded_Definite_Red_Black_Trees;
 with SMM.Database;
 with Spotify;
-procedure SMM.Compare_Best (DB : in out SMM.Database.Database; Spotify_Missing : in String)
+procedure SMM.Compare_Playlist
+  (DB              : in out SMM.Database.Database;
+   Category        : in     String;
+   Spotify_Missing : in     String)
+--  Category is the DB string identifying the playlist.
+--
 --  Spotify_Missing is the name of a file containing JSON-encoded list
---  of songs either missing or on a different album in Spotify.
+--  of songs either missing or on a different album in the Spotify playlist.
 is
    --  From https://developer.spotify.com/dashboard/5c012586b1214e33b7308648efb228e1/Settings
    Client_Id                : constant String := "5c012586b1214e33b7308648efb228e1";
@@ -33,6 +39,16 @@ is
 
    --  From https://open.spotify.com/playlist/7nfC9g7RtFQUWDGdsq1GYj
    Stephes_Best_Playlist_ID : constant String := "7nfC9g7RtFQUWDGdsq1GYj";
+
+   --  From https://open.spotify.com/playlist/36qJfLXS0A9kCio5MESskP
+   Kate_Protest_Playlist_ID : constant String := "36qJfLXS0A9kCio5MESskP";
+
+   Spotify_Playlist_ID : constant String :=
+     (if Category = "best"
+      then Stephes_Best_Playlist_ID
+      elsif Category = "protest"
+      then Kate_Protest_Playlist_ID
+      else raise SAL.Parameter_Error with "expecting 'best' or 'protest'");
 
    function "+" (Item : in String) return Ada.Strings.Unbounded.Unbounded_String
         renames Ada.Strings.Unbounded.To_Unbounded_String;
@@ -145,7 +161,17 @@ is
       end loop;
 
       Full_Data := Read (Text, Filename => Spotify_Missing);
-      Data      := Get (Full_Data);
+      case Full_Data.Kind is
+      when JSON_Object_Type =>
+         --  Nothing in missing file; Data also defaults to Null
+         return;
+
+      when JSON_Array_Type =>
+         Data := Get (Full_Data);
+
+      when others =>
+         raise SAL.Programmer_Error with "full_data.kind: " & JSON_Value_Type'Image (Full_Data.Kind);
+      end case;
 
       if Verbosity > 1 then
          Put_Line ("missing JSON:");
@@ -157,33 +183,37 @@ is
       loop
          exit when not Array_Has_Element (Data, I);
          declare
+            use Ada.Characters.Handling;
+
             Misc_Item          : JSON_Value renames Array_Element (Data, I);
             DB_Names_Item      : JSON_Value renames Misc_Item.Get ("db");
             Spotify_Names_Item : JSON_Value renames Misc_Item.Get ("spotify");
+
+            --  DB Find_Like uses SQL search, which is not case sensitive
             DB_Names           : constant Song_Names :=
-              (Album_Artist    => Get (DB_Names_Item, "album_artist"),
-               Album           => Get (DB_Names_Item, "album"),
-               Title           => Get (DB_Names_Item, "title"));
+              (Album_Artist    => +To_Lower (Get (DB_Names_Item, "album_artist")),
+               Album           => +To_Lower (Get (DB_Names_Item, "album")),
+               Title           => +To_Lower (Get (DB_Names_Item, "title")));
             Spotify_Names      : constant Song_Names :=
               (if Spotify_Names_Item.Kind = JSON_Object_Type then
-                 (Album_Artist => Get (Spotify_Names_Item, "album_artist"),
-                  Album        => Get (Spotify_Names_Item, "album"),
-                  Title        => Get (Spotify_Names_Item, "title"))
+                 (Album_Artist => +To_Lower (Get (Spotify_Names_Item, "album_artist")),
+                  Album        => +To_Lower (Get (Spotify_Names_Item, "album")),
+                  Title        => +To_Lower (Get (Spotify_Names_Item, "title")))
                else Null_Song_Names);
 
             DB_I : SMM.Database.Cursor := DB_Find (DB_Names);
          begin
             Multiple_DB_Match :
             loop
-               if not DB_I.Has_Element then
-                  raise SAL.Initialization_Error with Image (DB_Names) & " not found in db";
+               if To_Lower (Image (DB_I)) = Image (DB_Names) then
+                  Missing_Tree.Insert (Element => (DB_I.ID, Spotify_Names));
+                  exit Multiple_DB_Match;
                else
-                  if Image (DB_I) = Image (DB_Names) then
-                     Missing_Tree.Insert (Element => (DB_I.ID, Spotify_Names));
-                     exit Multiple_DB_Match;
-                  else
-                     --  Handle "the babysitter's here intro" vs "the babysitter's here".
-                     DB_I.Next;
+                  --  Handle "the babysitter's here intro" vs "the babysitter's here".
+                  DB_I.Next;
+
+                  if not DB_I.Has_Element then
+                     raise SAL.Initialization_Error with Image (DB_Names) & " not found in db";
                   end if;
                end if;
             end loop Multiple_DB_Match;
@@ -204,13 +234,15 @@ begin
    declare
       function "=" (Left : in SMM.Database.Cursor; Right : in Spotify.Cursor) return Boolean
       is
-         DB_Artist : constant String := Left.Album_Artist;
-         DB_Album  : constant String := Left.Album;
-         DB_Title  : constant String := Left.Title;
+         use Ada.Characters.Handling;
 
-         Spotify_Artist : constant String := Spotify_Session.Album_Artist (Right);
-         Spotify_Album  : constant String := Spotify_Session.Album (Right);
-         Spotify_Title  : constant String := Spotify_Session.Title (Right);
+         DB_Artist : constant String := To_Lower (Left.Album_Artist);
+         DB_Album  : constant String := To_Lower (Left.Album);
+         DB_Title  : constant String := To_Lower (Left.Title);
+
+         Spotify_Artist : constant String := To_Lower (Spotify_Session.Album_Artist (Right));
+         Spotify_Album  : constant String := To_Lower (Spotify_Session.Album (Right));
+         Spotify_Title  : constant String := To_Lower (Spotify_Session.Title (Right));
       begin
          return
            DB_Artist = Spotify_Artist and
@@ -222,14 +254,15 @@ begin
       --  Iterates in song ID order; playlist is created in that order. We
       --  need album_artist, album, title to match Spotify playlist entry.
       --
-      --  We assume songs are marked Best in DB _before_ being added to
-      --  Spotify list.
+      --  We assume songs are marked with Category in DB _before_ being
+      --  added to Spotify list. FIXME: not true; added Superman to spotify best.
 
       Playlist_Chunk  : constant Spotify.Playlist_Item_Count := Spotify.Playlist_Item_Count'Last;
       Playlist_Offset : Natural                              := 0;
 
       Spotify_I : Spotify.Cursor := Spotify_Session.Get_Playlist
-        (Stephes_Best_Playlist_ID, Offset => Playlist_Offset, Count => Playlist_Chunk);
+        (Spotify_Playlist_ID,
+         Offset => Playlist_Offset, Count => Playlist_Chunk);
 
       use SMM.Database;
       use Spotify;
@@ -252,10 +285,12 @@ begin
                   end if;
                else
                   declare
+                     use Ada.Characters.Handling;
+
                      Spotify_Names : constant Song_Names :=
-                       (+Spotify_Session.Album_Artist (Spotify_I),
-                        +Spotify_Session.Album (Spotify_I),
-                        +Spotify_Session.Title (Spotify_I));
+                       (+To_Lower (Spotify_Session.Album_Artist (Spotify_I)),
+                        +To_Lower (Spotify_Session.Album (Spotify_I)),
+                        +To_Lower (Spotify_Session.Title (Spotify_I)));
                   begin
                      if Verbosity > 1 then
                         Put_Line ("checking spotify: " & Image (Spotify_Names));
@@ -314,11 +349,11 @@ begin
             end if;
 
             Spotify_I := Spotify_Session.Get_Playlist
-              (Stephes_Best_Playlist_ID, Offset => Playlist_Offset, Count => Playlist_Chunk);
+              (Spotify_Playlist_ID, Offset => Playlist_Offset, Count => Playlist_Chunk);
          end if;
 
          if not Spotify_Session.Has_Element (Spotify_I) then
-            --  Past end of Spotify playlist; remaining Best items in DB_I are new
+            --  Past end of Spotify playlist; remaining category items in DB_I are new
             if Verbosity > 1 then
                Put_Line ("spotify list done");
             end if;
@@ -328,7 +363,7 @@ begin
                   Put_Line ("checking db: " & Image (DB_I));
                end if;
 
-               if DB_I.Category_Contains ("best") then
+               if DB_I.Category_Contains (Category) then
                   Total_Song_Count := @ + 1;
                   Check_Missing;
                end if;
@@ -341,7 +376,7 @@ begin
                Put_Line ("checking db: " & Image (DB_I));
             end if;
 
-            if DB_I.Category_Contains ("best") then
+            if DB_I.Category_Contains (Category) then
                Total_Song_Count := @ + 1;
                if DB_I = Spotify_I then
                   --  all ok
@@ -367,4 +402,4 @@ begin
         ("compare DB Best to Spotify best done: songs/errors " & Total_Song_Count'Image & " /" & Error_Count'Image);
    end;
 
-end SMM.Compare_Best;
+end SMM.Compare_Playlist;

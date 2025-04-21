@@ -27,7 +27,7 @@ with Ada.Text_IO; use Ada.Text_IO;
 with GNAT.Traceback.Symbolic;
 with SAL.Command_Line_IO;
 with SMM.Check;
-with SMM.Compare_Best;
+with SMM.Compare_Playlist;
 with SMM.Copy;
 with SMM.Database;
 with SMM.History;
@@ -73,8 +73,9 @@ is
       Put_Line ("    output histogram (in gnuplot files) of download interval (last to previous).");
       Put_Line ("    list all new songs.");
       New_Line;
-      Put_Line ("  compare_best <missing_file>");
-      Put_Line ("    compare list of music files marked 'best' in db to Spotify 'Stephes best' playlist.");
+      Put_Line ("  compare_playlist <category> <missing_file>");
+      Put_Line ("    compare list of music files marked category in db to corresponding Spotify playlist.");
+      Put_Line ("    category must be one of 'best', 'protest'.");
    end Put_Usage;
 
    procedure Check_Arg (Expected_Count : in Integer)
@@ -91,7 +92,7 @@ is
    DB           : SMM.Database.Database;
    Next_Arg     : Integer         := 1;
 
-   type Command_Type is (Copy_Playlist, Import, Update, Rename, Check, History, Compare_Best);
+   type Command_Type is (Copy_Playlist, Import, Update, Rename, Check, History, Compare_Playlist);
 
    procedure Get_Command is new SAL.Command_Line_IO.Gen_Get_Discrete_Proc (Command_Type, "command", Next_Arg);
 
@@ -183,9 +184,14 @@ begin
    when History =>
       SMM.History (DB);
 
-   when Compare_Best =>
-      Check_Arg (Next_Arg);
-      SMM.Compare_Best (DB, Spotify_Missing => Argument (Next_Arg));
+   when Compare_Playlist =>
+      Check_Arg (Next_Arg + 1);
+      declare
+         Category        : constant String := Argument (Next_Arg);
+         Spotify_Missing : constant String := Argument (Next_Arg + 1);
+      begin
+         SMM.Compare_Playlist (DB, Category, Spotify_Missing);
+      end;
    end case;
 
 exception
