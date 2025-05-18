@@ -43,12 +43,17 @@ is
    --  From https://open.spotify.com/playlist/36qJfLXS0A9kCio5MESskP
    Kate_Protest_Playlist_ID : constant String := "36qJfLXS0A9kCio5MESskP";
 
+   --  From https://open.spotify.com/playlist/1rk2PNFo8BlRnq6YmLNjEc
+   Parenthood_Playlist_ID : constant String := "1rk2PNFo8BlRnq6YmLNjEc";
+
    Spotify_Playlist_ID : constant String :=
      (if Category = "best"
       then Stephes_Best_Playlist_ID
       elsif Category = "protest"
       then Kate_Protest_Playlist_ID
-      else raise SAL.Parameter_Error with "expecting 'best' or 'protest'");
+      elsif Category = "parenthood"
+      then Parenthood_Playlist_ID
+      else raise SAL.Parameter_Error with "expecting 'best', 'protest', 'parenthood'");
 
    function "+" (Item : in String) return Ada.Strings.Unbounded.Unbounded_String
         renames Ada.Strings.Unbounded.To_Unbounded_String;

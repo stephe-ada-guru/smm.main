@@ -52,7 +52,7 @@ package body SMM.Server is
 
    DB_Filename : Unbounded_String;
    Enable_Log  : Boolean := False;
-   Debug_Log   : AWS.Log.Object;
+   Debug_Log   : AWS.Log.Object; -- SMM.Least_Recent_Songs writes song names here if enabled.
 
    function Decode_Plus (Item : in String) return String
    is begin
