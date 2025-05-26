@@ -13,6 +13,8 @@ project-files = ["build/smm_alire.gpr"]
 executables = ["smm.exe"]
 
 [[depends-on]]
+aunit = "^25.0.0"
+
 # ada_web_server
 aws = "^23.0.0"
 
@@ -33,4 +35,4 @@ stephes_ada_library = "~3.7.2"
 gnat = "(>=11 & <2000) | >=2021"
 
 [[pins]]
-stephes_ada_library = { path='../org.stephe_leake.sal' }
+aunit_ext = { path='../org.stephe_leake.aunit_ext' }

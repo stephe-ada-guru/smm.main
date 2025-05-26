@@ -36,8 +36,11 @@ $(SERVER_DATA)/% : source/%
 c:/home/stephe/bin/% : build/obj/development/%
 	cp $^ $@
 
-obj/development/smm.exe : alr.env force
+build/obj/development/smm.exe : alr.env force
 	. ./alr.env; /mingw64/bin/gprbuild -P build/smm_alire.gpr smm-driver.adb
+
+build/obj/development/test_one_harness.exe : alr.env force
+	source ./alr.env; /mingw64/bin/gprbuild -P build/smm_test.gpr test_one_harness.adb
 
 clean : alire-clean
 	rm -f alr.env
@@ -47,10 +50,13 @@ really-clean : clean
 	rm -rf ~/.config/alire/cache/builds
 
 t1 : VERBOSITY ?= 0
-t1 : obj/development/smm.exe
+t1 : build/obj/development/smm.exe
 	build/obj/development/smm.exe --verbosity=$(VERBOSITY) compare_playlist protest c:/home/Stephe/smm/spotify_missing_protest.json
 
-.PHONEY : t1
+t2 : build/obj/development/test_one_harness.exe
+	build/obj/development/test_one_harness.exe
+
+.PHONEY : t1 t2
 
 # Local Variables:
 # eval: (unless dvc-doing-ediff-p (load-file "prj-alire.el"))

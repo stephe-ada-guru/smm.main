@@ -31,6 +31,7 @@ with GNAT.OS_Lib;
 with SAL.Calendar_More.AUnit;
 with SMM.Database;
 with SMM.ID3;
+with SMM.Metadata;
 with Test_Utils;
 package body Test_Server is
 
@@ -250,7 +251,8 @@ package body Test_Server is
       use Ada.Directories;
       use SMM;
       use SMM.ID3;
-      use SMM.ID3.Frame_Lists;
+      use SMM.Metadata;
+      use SMM.Metadata.Frame_Lists;
       use Test_Utils;
 
       DB  : SMM.Database.Database;
@@ -297,8 +299,9 @@ package body Test_Server is
          Create_Test_File ("tmp/source/artist_1/album_1/AlbumArt_1.jpg");
 
          Create
-           ("tmp/source/artist_1/album_1/1 - song_1.mp3",
-            +(Artist, +"artist_1") &
+           (Name => "tmp/source/artist_1/album_1/1 - song_1.mp3",
+            Content =>
+              +(Artist, +"artist_1") &
               (Album, +"album_1") &
               (Title, +"1 - song_1"));
 

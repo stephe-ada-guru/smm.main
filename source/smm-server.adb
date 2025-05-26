@@ -46,6 +46,11 @@ with SMM.JPEG;
 with SMM.Song_Lists;
 package body SMM.Server is
 
+   subtype API_Versions is Integer range 1 .. 2;
+   --  1 - API not specified in GET. Client always downloads all songs. 'download' => list of filenames
+   --  2 - API specified in GET. Client only downloads new songs (all others previously downloaded).
+   --      'get_new_songs_list => list of "Album_Artist", "album", "title", "filename"
+
    Source_Root : Unbounded_String; -- Root of music files; does not end in /
    Server_Data : Unbounded_String;
    --  Relative to Source_Root; contains server html, css, js files; does not end in /
@@ -168,7 +173,10 @@ package body SMM.Server is
    ----------
    --  Specific request handlers, alphabetical
 
-   function Handle_Download (URI : in AWS.URL.Object) return AWS.Response.Data
+   function Handle_Get_New_Songs_List
+     (URI : in AWS.URL.Object;
+      API : in API_versions)
+     return AWS.Response.Data
    is
       --  Send list of least recently heard songs; client will build a
       --  playlist and maybe download the actual song files.
@@ -195,6 +203,8 @@ package body SMM.Server is
       DB       : SMM.Database.Database;
       Songs    : List;
       Response : Unbounded_String;
+
+      Need_Separator : Boolean := False;
    begin
       DB.Open (-DB_Filename);
 
@@ -212,10 +222,25 @@ package body SMM.Server is
             Cur : constant SMM.Database.Cursor := DB.Find_ID (I);
          begin
             if Cur.Has_Element then
-               Response := Response & Normalize (Cur.File_Name) & ASCII.CR & ASCII.LF;
+               if Need_Separator then
+                  Response := Response & ASCII.CR & ASCII.LF;
+               else
+                  Need_Separator := True;
+               end if;
 
-               --  Do this here in case the client already has all the files
-               Cur.Write_Last_Downloaded (DB, SMM.Database.UTC_Image (Ada.Calendar.Clock));
+               case API is
+               when 1 =>
+                  Response := Response & Normalize (Cur.File_Name);
+                  -- Write_Last_Downloaded done in Handle_File
+
+               when 2 =>
+                  Response := Response & """" & Cur.Album_Artist & """, ";
+                  Response := Response & """" & Cur.Album & """, ";
+                  Response := Response & """" & Cur.Title & """, ";
+                  Response := Response & Normalize (Cur.File_Name);
+
+                  Cur.Write_Last_Downloaded (DB, SMM.Database.UTC_Image (Ada.Calendar.Clock));
+               end case;
 
             else
                --  Must be a bad play before/after link. Need an error message protocol.
@@ -230,7 +255,7 @@ package body SMM.Server is
       return AWS.Response.Acknowledge
         (Status_Code  => AWS.Messages.S500,
          Message_Body => "exception " & Exception_Name (E) & ": " & Exception_Message (E));
-   end Handle_Download;
+   end Handle_Get_New_Songs_List;
 
    function Handle_Field (URI : in AWS.URL.Object) return AWS.Response.Data
    is
@@ -279,7 +304,11 @@ package body SMM.Server is
       return AWS.Response.Acknowledge (AWS.Messages.S400, "invalid id '" & URI_Param.Get ("id") & "'");
    end Handle_Field;
 
-   function Handle_File (URI : in AWS.URL.Object; Name_In_Param : in Boolean) return AWS.Response.Data
+   function Handle_File
+     (URI           : in AWS.URL.Object;
+      Name_In_Param : in Boolean;
+      API           : in API_versions)
+     return AWS.Response.Data
    is
       --  If Name_In_Param, assume it's from Android app updating playlist;
       --  record download time.
@@ -336,6 +365,15 @@ package body SMM.Server is
                  (Status_Code  => AWS.Messages.S500,
                   Message_Body => "file not found");
             end if;
+
+            case API is
+            when 1 =>
+               Cur.Write_Last_Downloaded (DB, SMM.Database.UTC_Image (Ada.Calendar.Clock));
+
+            when 2 =>
+               --  Done in Handle_Get_New_Songs_List
+               null;
+            end case;
 
             Prev_Downloaded := I.Prev_Downloaded;
 
@@ -814,10 +852,19 @@ package body SMM.Server is
       case Method (Request) is
       when GET =>
          declare
-            URI_File : constant String := File (URI);
+            URI_File   : constant String       := File (URI);
+            API_String : constant String       := Parameter (URI, "API");
+            API        : constant API_Versions :=
+              (if API_String'Length = 0 then 1
+               else API_Versions'Value (API_String));
          begin
             if URI_File = "download" then
-               return Handle_Download (URI);
+               --  API 1
+               return Handle_Get_New_Songs_List (URI, API);
+
+            if URI_File = "get_new_songs_list" then
+               --  API 2
+               return Handle_Get_New_Songs_List (URI, API);
 
             elsif URI_File = "favicon.ico" then
                return AWS.Response.File ("image/x-icon", (-Source_Root) & "/" & (-Server_Data) & "/app.ico");
@@ -826,8 +873,7 @@ package body SMM.Server is
                return Handle_Field (URI);
 
             elsif URI_File = "file" then
-               --  record download time in db
-               return Handle_File (URI, Name_In_Param => True);
+               return Handle_File (URI, Name_In_Param => True, API => API);
 
             elsif URI_File = "id" then
                return Handle_ID (URI);
@@ -840,7 +886,7 @@ package body SMM.Server is
 
             else
                --  It's a file request; mp3/m4a, liner_notes, image
-               return Handle_File (URI, Name_In_Param => False);
+               return Handle_File (URI, Name_In_Param => False, API => API);
             end if;
          end;
 

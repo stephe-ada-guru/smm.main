@@ -2,7 +2,7 @@
 --
 --  Utilities for unit tests
 --
---  Copyright (C) 2007, 2009, 2016, 2018, 2022 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007, 2009, 2016, 2018, 2022, 2025 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -19,7 +19,7 @@
 pragma License (GPL);
 
 with SMM.Database;
-with SMM.ID3;
+with SMM.Metadata;
 package Test_Utils is
    pragma Elaborate_Body; -- Ada.Text_IO
 
@@ -44,8 +44,11 @@ package Test_Utils is
       Category        : in String := "vocal");
    --  Insert a database element; other fields are null or "none".
 
-   function "+" (Item : in SMM.ID3.Frame) return SMM.ID3.Frame_Lists.List;
-   function "&" (List : in SMM.ID3.Frame_Lists.List; Item : in SMM.ID3.Frame) return SMM.ID3.Frame_Lists.List;
+   function "+" (Item : in SMM.Metadata.Frame) return SMM.Metadata.Frame_Lists.List;
+   function "&"
+     (List : in SMM.Metadata.Frame_Lists.List;
+      Item : in SMM.Metadata.Frame)
+     return SMM.Metadata.Frame_Lists.List;
    --  For SMM.ID3.Create
 
    procedure Check_Exists (Path : in String; Expected_Exists : in Boolean);

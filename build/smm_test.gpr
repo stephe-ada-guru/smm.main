@@ -1,32 +1,29 @@
 with "aunit";
-with "aunit_ext";
-with "smm";
-with "standard_common";
+with "aunit_ext_alire";
+with "smm_alire";
+with "../config/smm_config.gpr"; -- 'with's all depends-on
+with "standard_common_alire";
 project SMM_Test is
    for Source_Dirs use ("../test");
 
-   for Object_Dir use "objects";
-   for Exec_Dir use ".";
+   for Object_Dir use "obj/" & Smm_Config.Build_Profile;
+   for Create_Missing_Dirs use "True";
 
-   for Main use ("test_all_harness");
+   for Main use ("test_all_harness", "test_one_harness");
 
    package Compiler is
-      case Standard_Common.Build is
-      when "Debug" =>
-         for Default_Switches ("Ada") use
-           Standard_Common.Compiler'Default_Switches ("Ada") &
-           Standard_Common.Compiler.Debug_Switches &
-           Standard_Common.Compiler.Style_Checks;
-      when "Normal" =>
-         for Default_Switches ("Ada") use
-           Standard_Common.Compiler'Default_Switches ("Ada") &
-           Standard_Common.Compiler.Release_Switches &
-           Standard_Common.Compiler.Style_Checks;
+      case Smm_Config.Build_Profile is
+      when "release" =>
+         for Default_Switches ("Ada") use Standard_Common_Alire.Release_Switches & Standard_Common_Alire.Style_Checks;
+
+      when "validation" | "development" =>
+         for Default_Switches ("Ada") use Standard_Common_Alire.Debug_Switches & Standard_Common_Alire.Style_Checks;
+
       end case;
    end Compiler;
 
    package Binder is
-      for Default_Switches ("Ada") use Standard_Common.Binder'Default_Switches ("Ada");
+      for Default_Switches ("Ada") use Smm_Alire.Binder'Default_Switches ("Ada");
    end Binder;
 
    package Builder is
