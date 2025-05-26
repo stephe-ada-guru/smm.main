@@ -40,8 +40,8 @@ package body Test_Server is
    DB_File_Name : constant String := "tmp/smm.db";
 
    Server      : GNAT.OS_Lib.Process_Id;
-   Server_IP   : constant String := "Takver4"; -- must match ../build/smm_server_test_1.config Server_IP
-   Server_Port : constant String := "8081";    -- "" Server_Port
+   Server_IP   : constant String := "localhost"; -- must match ../build/smm_server_test_1.config Server_IP
+   Server_Port : constant String := "8081";      -- "" Server_Port
 
    Verbose : Boolean := False;
 
@@ -60,6 +60,7 @@ package body Test_Server is
 
       pragma Unreferenced (T);
 
+      --  API 1
       URL      : constant String := "http://" & Server_IP &
         ":" & Server_Port & "/download?category=vocal&count=5&new_count=1&seed=0";
       Response : constant Data   := AWS.Client.Get (URL);
@@ -72,7 +73,7 @@ package body Test_Server is
           "artist_1/album_1/1 - song_1.mp3" & ASCII.CR & ASCII.LF &
           "artist_1/album_1/2 - song_2.mp3" & ASCII.CR & ASCII.LF &
           "artist_2/album_1/2 - song_2.mp3" & ASCII.CR & ASCII.LF &
-          "artist_2/album_1/3 - song_3.mp3" & ASCII.CR & ASCII.LF;
+          "artist_2/album_1/3 - song_3.mp3";
    begin
       if Verbose then
          Ada.Text_IO.Put (URL);
@@ -110,12 +111,12 @@ package body Test_Server is
         ("1",
          "artist_1/album_1",
          "artist_1/album_1/AlbumArt_1.jpg" & CRLF &
-           "artist_1/album_1/liner_notes.pdf" & CRLF);
+           "artist_1/album_1/liner_notes.pdf");
 
       Check
         ("2",
          "Jason Castro [Deluxe] [+Video] [+Digital Booklet]",
-         "Jason Castro [Deluxe] [+Video] [+Digital Booklet]/liner_notes.pdf" & CRLF);
+         "Jason Castro [Deluxe] [+Video] [+Digital Booklet]/liner_notes.pdf");
    end Test_Meta;
 
    procedure Test_Get_File (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
@@ -166,7 +167,8 @@ package body Test_Server is
       end Check_One;
 
    begin
-      Check_One ("artist_1/album_1/", "AlbumArt_1.jpg", "image/jpeg");
+      --  We don't have a way to compare a string image to a file image
+      --  Check_One ("artist_1/album_1/", "AlbumArt_1.jpg", "image/jpeg");
 
       Check_One ("artist_1/album_1/", "1 - song_1.mp3", "audio/mpeg");
 
@@ -296,12 +298,14 @@ package body Test_Server is
          Create_Directory ("tmp/source/artist_1");
          Create_Directory ("tmp/source/artist_1/album_1");
          Create_Test_File ("tmp/source/artist_1/album_1/liner_notes.pdf");
-         Create_Test_File ("tmp/source/artist_1/album_1/AlbumArt_1.jpg");
+
+         --  If we use 'Create_Test_File' for *.jpg, the file is too small for
+         --  the check in SMM.Server.Handle_Meta.
+         Copy_File ("../test/AlbumArt_huge_0.jpg", "tmp/source/artist_1/album_1/AlbumArt_1.jpg");
 
          Create
-           (Name => "tmp/source/artist_1/album_1/1 - song_1.mp3",
-            Content =>
-              +(Artist, +"artist_1") &
+           ("tmp/source/artist_1/album_1/1 - song_1.mp3",
+            +(Artist, +"artist_1") &
               (Album, +"album_1") &
               (Title, +"1 - song_1"));
 

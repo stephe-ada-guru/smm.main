@@ -21,12 +21,13 @@ pragma License (GPL);
 with AUnit.Options;
 with AUnit.Reporter.Text;
 with AUnit.Run;
+with AUnit.Test_Cases;
 with AUnit.Test_Filters.Verbose;
 with AUnit.Test_Suites; use AUnit.Test_Suites;
 with Ada.Command_Line;
 with Ada.Exceptions;
+with Ada.Strings.Unbounded;
 with Ada.Text_IO;
-with AUnit.Test_Cases;
 with GNAT.Traceback.Symbolic;
 with Test_Server;
 procedure Test_One_Harness
@@ -66,21 +67,11 @@ begin
          null;
 
       when 2 =>
-         Filter.Set_Name (Argument (2));
+         Filter.Test_Name := Ada.Strings.Unbounded.To_Unbounded_String (Argument (2));
 
       when others =>
-         declare
-            Test_Name    : String renames Argument (2);
-            Routine_Name : String renames Argument (3);
-         begin
-            if Test_Name = "" then
-               Filter.Set_Name (Routine_Name);
-            elsif Routine_Name = "" then
-               Filter.Set_Name (Test_Name);
-            else
-               Filter.Set_Name (Test_Name & " : " & Routine_Name);
-            end if;
-         end;
+         Filter.Test_Name    := Ada.Strings.Unbounded.To_Unbounded_String (Argument (2));
+         Filter.Routine_Name := Ada.Strings.Unbounded.To_Unbounded_String (Argument (3));
       end case;
 
       Debug := (if Argument_Count >= 4 then Integer'Value (Argument (4)) else 0);

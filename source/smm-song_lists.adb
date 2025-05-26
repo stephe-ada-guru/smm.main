@@ -2,7 +2,7 @@
 --
 --  See spec.
 --
---  Copyright (C) 2018 - 2019 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2018 - 2019, 2025 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -139,7 +139,9 @@ package body SMM.Song_Lists is
 
          if Time_List.Length = 1 then
             --  New db; all songs have default Last_Downloaded
-            Ada.Text_IO.Put_Line ("new db; all new songs");
+            if Verbosity > 0 then
+               Ada.Text_IO.Put_Line ("new db; all new songs");
+            end if;
             Songs := Element (Time_List_I).Songs;
             Finish;
             return;

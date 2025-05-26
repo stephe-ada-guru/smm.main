@@ -54,7 +54,7 @@ t1 : build/obj/development/smm.exe
 	build/obj/development/smm.exe --verbosity=$(VERBOSITY) compare_playlist protest c:/home/Stephe/smm/spotify_missing_protest.json
 
 t2 : build/obj/development/test_one_harness.exe
-	build/obj/development/test_one_harness.exe
+	cd build; obj/development/test_one_harness.exe 1 test_server.adb ""
 
 .PHONEY : t1 t2
 

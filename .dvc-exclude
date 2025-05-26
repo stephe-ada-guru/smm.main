@@ -1,3 +1,4 @@
+build/.gdbinit
 build/Makefile
 build/prj.el
 build/smm.prj

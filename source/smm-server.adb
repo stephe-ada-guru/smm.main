@@ -2,7 +2,7 @@
 --
 --  Stephe's Music Manager Server
 --
---  Copyright (C) 2016 - 2020, 2022, 2023 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2016 - 2020, 2022, 2023, 2025 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -99,7 +99,13 @@ package body SMM.Server is
    begin
       Search
         (Directory => -Source_Root & "/" & Source_Dir,
-         Pattern   => "AlbumArt*.jpg",
+         Pattern   => "*.jpg",
+         Filter    => (Ordinary_File => True, others => False),
+         Process   => Copy_Aux'Access);
+
+      Search
+        (Directory => -Source_Root & "/" & Source_Dir,
+         Pattern   => "*.png",
          Filter    => (Ordinary_File => True, others => False),
          Process   => Copy_Aux'Access);
 
@@ -175,7 +181,7 @@ package body SMM.Server is
 
    function Handle_Get_New_Songs_List
      (URI : in AWS.URL.Object;
-      API : in API_versions)
+      API : in API_Versions)
      return AWS.Response.Data
    is
       --  Send list of least recently heard songs; client will build a
@@ -231,7 +237,7 @@ package body SMM.Server is
                case API is
                when 1 =>
                   Response := Response & Normalize (Cur.File_Name);
-                  -- Write_Last_Downloaded done in Handle_File
+                  --  Write_Last_Downloaded done in Handle_File
 
                when 2 =>
                   Response := Response & """" & Cur.Album_Artist & """, ";
@@ -307,7 +313,7 @@ package body SMM.Server is
    function Handle_File
      (URI           : in AWS.URL.Object;
       Name_In_Param : in Boolean;
-      API           : in API_versions)
+      API           : in API_Versions)
      return AWS.Response.Data
    is
       --  If Name_In_Param, assume it's from Android app updating playlist;
@@ -368,7 +374,7 @@ package body SMM.Server is
 
             case API is
             when 1 =>
-               Cur.Write_Last_Downloaded (DB, SMM.Database.UTC_Image (Ada.Calendar.Clock));
+               I.Write_Last_Downloaded (DB, SMM.Database.UTC_Image (Ada.Calendar.Clock));
 
             when 2 =>
                --  Done in Handle_Get_New_Songs_List
@@ -446,11 +452,18 @@ package body SMM.Server is
 
       Min_Jpg_Size : constant File_Size := 40_000; -- exclude tiny images
 
+      Need_Separator : Boolean := False;
+
       procedure Copy_Aux (Dir_Ent : in Directory_Entry_Type)
       is begin
          if Size (Dir_Ent) > Min_Size then
+            if Need_Separator then
+               Response := Response & ASCII.CR & ASCII.LF;
+            else
+               Need_Separator := True;
+            end if;
             Response := Response &
-              Relative_Name (-Source_Root, Normalize (Full_Name (Dir_Ent))) & ASCII.CR & ASCII.LF;
+              Relative_Name (-Source_Root, Normalize (Full_Name (Dir_Ent)));
          end if;
       end Copy_Aux;
    begin
@@ -862,7 +875,7 @@ package body SMM.Server is
                --  API 1
                return Handle_Get_New_Songs_List (URI, API);
 
-            if URI_File = "get_new_songs_list" then
+            elsif URI_File = "get_new_songs_list" then
                --  API 2
                return Handle_Get_New_Songs_List (URI, API);
 
