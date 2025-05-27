@@ -53,7 +53,7 @@ package body Test_Server is
    ----------
    --  Test procedures
 
-   procedure Test_Playlist (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
+   procedure Test_Playlist_1 (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
    is
       use AUnit.Checks;
       use AWS.Response;
@@ -80,7 +80,38 @@ package body Test_Server is
          Ada.Text_IO.Put (Msg);
       end if;
       Check ("playlist", Msg, Expected);
-   end Test_Playlist;
+   end Test_Playlist_1;
+
+   procedure Test_Playlist_2 (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
+   is
+      use AUnit.Checks;
+      use AWS.Response;
+
+      pragma Unreferenced (T);
+
+      --  API 2. This test is run immediately after Test_Playlist_1, so the
+      --  songs are not marked as downloaded; they are all still new. But
+      --  the random number generator gives us a slightly different list.
+      URL      : constant String := "http://" & Server_IP &
+        ":" & Server_Port & "/get_new_songs_list?API=2&category=vocal&count=5&new_count=1&seed=0";
+      Response : constant Data   := AWS.Client.Get (URL);
+      Msg      : constant String := Message_Body (Response);
+
+      --  Song order depends on random engine. This is correct for GNAT GPL
+      --  2017.
+      Expected : constant String :=
+        """album_artist 2"", ""album 1"", ""1 - song_1"", artist_2/album_1/1 - song_1.mp3" & ASCII.CR & ASCII.LF &
+          """album_artist 1"", ""album 1"", ""1 - song_1"", artist_1/album_1/1 - song_1.mp3" & ASCII.CR & ASCII.LF &
+          """album_artist 1"", ""album 1"", ""2 - song_2"", artist_1/album_1/2 - song_2.mp3" & ASCII.CR & ASCII.LF &
+          """album_artist 2"", ""album 1"", ""2 - song_2"", artist_2/album_1/2 - song_2.mp3" & ASCII.CR & ASCII.LF &
+          """album_artist 3"", ""album 1"", ""1 - song_1"", artist_3/album_1/1 - song_1.mp3";
+   begin
+      if Verbose then
+         Ada.Text_IO.Put (URL);
+         Ada.Text_IO.Put (Msg);
+      end if;
+      Check ("playlist", Msg, Expected);
+   end Test_Playlist_2;
 
    procedure Test_Meta (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
    is
@@ -242,7 +273,8 @@ package body Test_Server is
    is
       use Standard.AUnit.Test_Cases.Registration;
    begin
-      Register_Routine (T, Test_Playlist'Access, "Test_Playlist");
+      Register_Routine (T, Test_Playlist_1'Access, "Test_Playlist_1");
+      Register_Routine (T, Test_Playlist_2'Access, "Test_Playlist_2");
       Register_Routine (T, Test_Meta'Access, "Test_Meta");
       Register_Routine (T, Test_Get_File'Access, "Test_Get_File");
       Register_Routine (T, Test_Send_Notes'Access, "Test_Send_Notes");
@@ -276,21 +308,33 @@ package body Test_Server is
          DB.Open (DB_File_Name);
 
          DB.Insert
-           (1, "artist_1/album_1/1 - song_1.mp3", "vocal", "artist 1", "album 1", "album_artist 1",
-            "composer 1", 1999, "1 - song_1", 1);
+           (ID           => 1,
+            File_Name    => "artist_1/album_1/1 - song_1.mp3",
+            Category     => "vocal",
+            Artist       => "artist 1",
+            Album_Artist => "album_artist 1",
+            Composer     => "composer 1",
+            Album        => "album 1",
+            Year         => 1999,
+            Title        => "1 - song_1",
+            Track        => 1);
+
          DB.Write_Play_Before_After (1, 2);
+
          DB.Insert
-           (2, "artist_1/album_1/2 - song_2.mp3", "vocal", "artist 1", "album 1", "album_artist 1", "composer 1",
+           (2, "artist_1/album_1/2 - song_2.mp3", "vocal", "artist 1", "album_artist 1", "composer 1", "album 1",
             1999, "2 - song_2", 2);
          DB.Insert
-           (3, "artist_1/album_1/03 The Dance #1.mp3", "instrumental", "artist 1", "album 1", "album_artist 1",
-            "composer 1", 1999, "03 The Dance #1", 3);
-         DB.Insert (4, "artist_2/album_1/1 - song_1.mp3", "vocal", "artist 2", "album 1", "album_artist 2",
-                    "composer 2", 2000, "1 - song_1", 1);
-         DB.Insert (5, "artist_2/album_1/2 - song_2.mp3", "vocal", "artist 2", "album 1", "album_artist 2",
-                    "composer 2", 2000, "2 - song_2", 2);
-         DB.Insert (6, "artist_2/album_1/3 - song_3.mp3", "vocal", "artist 2", "album 1", "album_artist 2",
-                    "composer 2", 2000, "3 - song_3", 3);
+           (3, "artist_1/album_1/03 The Dance #1.mp3", "instrumental", "artist 1", "album_artist 1",
+            "composer 1", "album 1", 1999, "03 The Dance #1", 3);
+         DB.Insert (4, "artist_2/album_1/1 - song_1.mp3", "vocal", "artist 2", "album_artist 2",
+                    "composer 2", "album 1", 2000, "1 - song_1", 1);
+         DB.Insert (5, "artist_2/album_1/2 - song_2.mp3", "vocal", "artist 2", "album_artist 2",
+                    "composer 2", "album 1", 2000, "2 - song_2", 2);
+         DB.Insert (6, "artist_2/album_1/3 - song_3.mp3", "vocal", "artist 2", "album_artist 2",
+                    "composer 2", "album 1", 2000, "3 - song_3", 3);
+         DB.Insert (7, "artist_3/album_1/1 - song_1.mp3", "vocal", "artist 3", "album_artist 3",
+                    "composer 3", "album 1", 2000, "1 - song_1", 1);
 
          DB.Finalize;
 
@@ -343,6 +387,14 @@ package body Test_Server is
             +(Artist, +"artist_2") &
               (Album, +"album_1") &
               (Title, +"3 - song_3"));
+
+         Create_Directory ("tmp/source/artist_3");
+         Create_Directory ("tmp/source/artist_3/album_1");
+         Create
+           ("tmp/source/artist_3/album_1/1 - song_1.mp3",
+            +(Artist, +"artist_3") &
+              (Album, +"album_1") &
+              (Title, +"1 - song_1"));
 
          Create_Directory ("tmp/source/Jason Castro [Deluxe] [+Video] [+Digital Booklet]");
          Create_Test_File ("tmp/source/Jason Castro [Deluxe] [+Video] [+Digital Booklet]/liner_notes.pdf");

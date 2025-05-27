@@ -26,8 +26,7 @@ d:/Music/remote_cache/smm-server_driver.log
 
  current work
 url "...?API=2" breaks server?
-    Alire.make t2 all pass
-    add tests of API 2
+    nope.
 
 exception: SAL.INITIALIZATION_ERROR: Andy Stewart w/ Phil Cunningham & Manus Lunny, Fire In The Glen, Young Jimmy In Flanders not found in db
 
