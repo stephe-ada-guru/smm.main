@@ -25,8 +25,6 @@ d:/Music/remote_cache/smm-server_driver.log
    ("../smm.work_1"                    . "../smm.main")))
 
  current work
-use JSON for playlist lines.
-
 compare music spotify doesn't check new in spotify (crash test dummies superman).
 
 Don't randomize five oldest

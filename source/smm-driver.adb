@@ -66,7 +66,10 @@ is
       Put_Line ("  rename <old file name> <new file name>");
       Put_Line ("    change file name.");
       New_Line;
-      Put_Line ("  check");
+      Put_Line ("  delete <file name>");
+      Put_Line ("    delete the db entry for <file name>.");
+      New_Line;
+      Put_Line ("  check [--ignore_metadata]");
       Put_Line ("    compare music files to db, report any missing files/fields.");
       New_Line;
       Put_Line ("  history");
@@ -92,7 +95,7 @@ is
    DB           : SMM.Database.Database;
    Next_Arg     : Integer         := 1;
 
-   type Command_Type is (Copy_Playlist, Import, Update, Rename, Check, History, Compare_Playlist);
+   type Command_Type is (Copy_Playlist, Import, Update, Rename, Delete, Check, History, Compare_Playlist);
 
    procedure Get_Command is new SAL.Command_Line_IO.Gen_Get_Discrete_Proc (Command_Type, "command", Next_Arg);
 
@@ -178,8 +181,28 @@ begin
          end if;
       end;
 
+   when Delete =>
+      Check_Arg (Next_Arg);
+      declare
+         Name : constant String := Relative_Name (Source_Root, Argument (Next_Arg));
+
+         use SMM.Database;
+         I : constant Cursor := Find_File_Name (DB, Name);
+      begin
+         if I.Has_Element then
+            DB.Delete (I);
+         else
+            raise Ada.IO_Exceptions.Name_Error with "file name '" & Name & "' not found in db";
+         end if;
+      end;
+
    when Check =>
-      SMM.Check (DB, Source_Root);
+      declare
+         Ignore_Metadata : constant Boolean :=
+           (if Argument_Count >= Next_Arg then True else False);
+      begin
+         SMM.Check (DB, Source_Root, Ignore_Metadata);
+      end;
 
    when History =>
       SMM.History (DB);

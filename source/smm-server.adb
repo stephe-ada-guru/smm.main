@@ -38,7 +38,6 @@ with Ada.IO_Exceptions;
 with Ada.Strings.Fixed;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with Ada.Text_IO;
-with GNATCOLL.JSON;
 with SAL.Config_Files.Integer;
 with SAL.Time_Conversions;
 with SAL.Web_Utils;
@@ -196,7 +195,10 @@ package body SMM.Server is
       Category          : constant String     := Parameter (URI, "category");
       Count             : constant Count_Type := Count_Type'Value (Parameter (URI, "count"));
       New_Count         : constant Count_Type := Count_Type'Value (Parameter (URI, "new_count"));
-      Record_Downloaded : constant Boolean    := Boolean'Value (Parameter (URI, "record_downloaded"));
+      Record_Downloaded : constant Boolean    :=
+        (if API > 1
+         then Boolean'Value (Parameter (URI, "record_downloaded"))
+         else False);
 
       Seed_Param : constant String     := Parameter (URI, "seed"); -- only used in unit tests
       Seed       : constant Integer    :=
@@ -236,28 +238,11 @@ package body SMM.Server is
                   Need_Separator := True;
                end if;
 
-               case API is
-               when 1 =>
-                  Response := Response & Normalize (Cur.File_Name);
-                  --  Write_Last_Downloaded done in Handle_File
+               Response := Response & Normalize (Cur.File_Name);
 
-               when 2 =>
-                  declare
-                     use GNATCOLL.JSON;
-                     Data : constant GNATCOLL.JSON.JSON_Value := Create_Object;
-                  begin
-                     Data.Set_Field ("Album_Artist", Create (Cur.Album_Artist));
-                     Data.Set_Field ("Album", Create (Cur.Album));
-                     Data.Set_Field ("Title", Create (Cur.Title));
-                     Data.Set_Field ("File_Name", Create (Normalize (Cur.File_Name)));
-
-                     Response := Response & String'(Data.Write);
-                  end;
-
-                  if Record_Downloaded then
-                     Cur.Write_Last_Downloaded (DB, SMM.Database.UTC_Image (Ada.Calendar.Clock));
-                  end if;
-               end case;
+               if Record_Downloaded then
+                  Cur.Write_Last_Downloaded (DB, SMM.Database.UTC_Image (Ada.Calendar.Clock));
+               end if;
 
             else
                --  Must be a bad play before/after link. Need an error message protocol.

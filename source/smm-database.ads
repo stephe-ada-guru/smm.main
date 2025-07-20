@@ -150,8 +150,15 @@ package SMM.Database is
    --  Items that are the defaults are not updated.
    --  Cursor must be refetched to reflect changes.
 
+   procedure Delete
+     (DB       : in Database;
+      Position : in Cursor'Class);
+   --  Delete item at Position.
+   --  Position is invalid on return.
+
    type Fields is (Artist, Album, Album_Artist, Composer, Title, Year, Category, Track, Play_Before, Play_After);
    subtype Required_Fields is Fields range Artist .. Track;
+   subtype Min_Required_Fields is Fields range Artist .. Album_Artist;
 
    type Field_Values is array (Fields) of Ada.Strings.Unbounded.Unbounded_String;
 

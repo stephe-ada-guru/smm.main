@@ -2,7 +2,7 @@
 --
 --  Check against db, report missing in either.
 --
---  Copyright (C) 2016 - 2019, 2022 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2016 - 2019, 2022, 2025 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -20,13 +20,16 @@ pragma License (GPL);
 
 with Ada.Command_Line;
 with Ada.Directories;
+with Ada.Exceptions;
+with Ada.IO_Exceptions;
 with Ada.Strings.Fixed;
 with Ada.Text_IO; use Ada.Text_IO;
 with SAL;
 with SMM.Database;
 procedure SMM.Check
-  (DB          : in out SMM.Database.Database;
-   Source_Root : in     String)
+  (DB              : in out SMM.Database.Database;
+   Source_Root     : in     String;
+   Ignore_Metadata : in     Boolean)
 is
    DB_Count   : Integer := 0;
    Disk_Count : Integer := 0;
@@ -122,9 +125,9 @@ is
    is
       use Ada.Directories;
 
-      Found_Mp3           : Boolean := False;
-      Found_Liner_Notes   : Boolean := False;
-      Found_AlbumArt_Huge : Boolean := False;
+      Found_Mp3         : Boolean := False;
+      Found_Liner_Notes : Boolean := False;
+      Found_AlbumArt    : Boolean := False;
 
       procedure Process_Dir_Entry (Dir_Entry : in Directory_Entry_Type)
       is
@@ -152,7 +155,9 @@ is
                   I : constant Cursor := DB.Find_File_Name (File_Name);
                begin
                   if I.Has_Element then
-                     for J in Required_Fields loop
+                     for J in Artist .. (if Ignore_Metadata then Min_Required_Fields'Last else Required_Fields'Last)
+
+                     loop
                         if I.Field (J)'Length = 0 then
                            Put_Line ("db missing " & (-Field_Image (J)) & ": " & File_Name);
                         end if;
@@ -161,11 +166,12 @@ is
                      Put_Line ("db missing file: " & File_Name);
                   end if;
                end;
+
             elsif 0 < Index (File_Name, "liner_notes.pdf") then
                Found_Liner_Notes := True;
 
-            elsif 0 < Index (File_Name, "AlbumArt_huge") then
-               Found_AlbumArt_Huge := True;
+            elsif Extension (File_Name) = "jpg" or Extension (File_Name) = "png" then
+               Found_AlbumArt := True;
             end if;
 
          when Special_File =>
@@ -186,14 +192,18 @@ is
             Special_File  => False),
          Process          => Process_Dir_Entry'Access);
 
-      if Found_Mp3 then
+      if Found_Mp3 and not Ignore_Metadata then
          if not Found_Liner_Notes then
             Put_Line ("liner_notes missing  : " & Dir);
          end if;
-         if not Found_AlbumArt_Huge then
-            Put_Line ("AlbumArt_huge missing: " & Dir);
+         if not Found_AlbumArt then
+            Put_Line ("AlbumArt missing: " & Dir);
          end if;
       end if;
+   exception
+   when E : Ada.IO_Exceptions.Use_Error =>
+      --  From Search; filename has bad chars? too long?
+      Put_Line (Ada.Exceptions.Exception_Message (E));
    end Check_Dir;
 
 begin

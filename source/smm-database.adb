@@ -2,7 +2,7 @@
 --
 --  See spec.
 --
---  Copyright (C) 2018 - 2020 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2018 - 2020, 2025 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -351,6 +351,21 @@ package body SMM.Database is
          Play_Before     => Play_Before,
          Play_After      => Play_After);
    end Update;
+
+   procedure Delete
+     (DB       : in Database;
+      Position : in Cursor'Class)
+   is
+      use GNATCOLL.SQL.Exec;
+   begin
+      Checked_Execute
+        (DB,
+         Statement => "DELETE FROM Song WHERE ID = ?",
+         Params => (1 => +Position.ID));
+
+      --  Can't figure out how to make this work
+      --  Position := SMM.Database.Cursor with (Cursor => No_Direct_Element);
+   end Delete;
 
    function Image (Item : Field_Values) return String
    is
