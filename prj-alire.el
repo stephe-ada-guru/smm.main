@@ -1,9 +1,12 @@
 ;; Set up building with Alire -*- no-byte-compile : t -*-
 
+;; WORKAROUND: wisi parser keeps dying
+(setq-default wisi-parser-verbosity "parse=1 debug=1")
+
 (wisi-prj-select-cache
- "prj-alire.el"
+ "smm-alire.prj"
  (create-alire-prj
-  :name "smm main Alire"
+  :name "smm work_1 Alire"
   :compile-env
   '("SERVER_DATA=/d/Music/server_data" ;; msys2 syntax for make shell
     "SOCKET=openssl")                  ;; support https connections
@@ -12,10 +15,4 @@
   :xref-label 'gpr_query)
  "Alire.make")
 
-;; create-alire-prj doesn't have :case-exception-files, so we do this here
-;; FIXME: lost on wisi-refresh-prj-cache. sigh.
-(setf (wisi-prj-case-exception-files (project-current))
-      (list (expand-file-name "build/smm.casing")))
-
-(wisi--case-read-all-exceptions (project-current))
 ;; end of file

@@ -27,7 +27,8 @@ with Ada.Text_IO; use Ada.Text_IO;
 with GNAT.Traceback.Symbolic;
 with SAL.Command_Line_IO;
 with SMM.Check;
-with SMM.Compare_Playlist;
+with SMM.Compare_Playlist.HTML;
+with SMM.Compare_Playlist.Spotify;
 with SMM.Copy;
 with SMM.Database;
 with SMM.History;
@@ -76,7 +77,7 @@ is
       Put_Line ("    output histogram (in gnuplot files) of download interval (last to previous).");
       Put_Line ("    list all new songs.");
       New_Line;
-      Put_Line ("  compare_playlist <category> <missing_file>");
+      Put_Line ("  compare_playlist <category> <spotify <missing_file> | html html_file>");
       Put_Line ("    compare list of music files marked category in db to corresponding Spotify playlist.");
       Put_Line ("    category must be one of 'best', 'protest'.");
    end Put_Usage;
@@ -208,12 +209,17 @@ begin
       SMM.History (DB);
 
    when Compare_Playlist =>
-      Check_Arg (Next_Arg + 1);
+      Check_Arg (Next_Arg + 2);
       declare
-         Category        : constant String := Argument (Next_Arg);
-         Spotify_Missing : constant String := Argument (Next_Arg + 1);
+         Category   : constant String := Argument (Next_Arg);
+         Other_Loc  : constant String := Argument (Next_Arg + 1);
+         Other_File : constant String := Argument (Next_Arg + 2);
       begin
-         SMM.Compare_Playlist (DB, Category, Spotify_Missing);
+         if Other_Loc = "spotify" then
+               SMM.Compare_Playlist.Spotify (DB, Category, Spotify_Missing => Other_File);
+         else
+            SMM.Compare_Playlist.HTML (DB, Category, HTML_File => Other_File);
+         end if;
       end;
    end case;
 

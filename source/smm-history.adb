@@ -206,7 +206,7 @@ is
       end case;
    end Put_Category;
 
-   I : SMM.Database.Cursor := SMM.Database.First (DB);
+   I : SMM.Database.Cursor := SMM.Database.First_By_ID (DB);
 begin
    loop
       exit when not I.Has_Element;

@@ -2,7 +2,7 @@
 --
 --  Modify the schema of the database.
 --
---  Copyright (C) 2018 - 2019 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2018 - 2019, 2025 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -21,17 +21,12 @@ pragma License (GPL);
 with Ada.Command_Line;
 with Ada.Exceptions;
 with Ada.Strings.Fixed;
-with Ada.Strings.Unbounded;
 with Ada.Text_IO;
 with GNAT.Traceback.Symbolic;
 with SAL.Config_Files;
 with SMM.Database;
-with SMM.ID3;
 procedure Modify_Schema
 is
-   function "-" (Item : in Ada.Strings.Unbounded.Unbounded_String) return String
-     renames Ada.Strings.Unbounded.To_String;
-
    procedure Usage
    is
       use Ada.Text_IO;
@@ -66,12 +61,8 @@ begin
    end;
 
    declare
-      use Ada.Strings.Unbounded;
       use SMM;
       use SMM.Database;
-      use SAL.Config_Files;
-
-      Root_Dir : constant String := As_Directory (Read (Server_Config, SMM.Root_Key));
 
       I          : Cursor  := Old_DB.First;
       Warm_Fuzzy : Integer := 0;
@@ -79,51 +70,22 @@ begin
    begin
       loop
          exit when not I.Has_Element;
-         declare
-            use SMM.ID3;
-            File_Name  : constant String := I.File_Name;
-            File       : SMM.ID3.File;
-            ID3_Frames : Frame_Lists.List;
          begin
-            File.Open (Root_Dir & File_Name);
-
-            ID3_Frames := File.All_Frames;
-
-            declare
-               Year : constant String := -Find (SMM.ID3.Year, ID3_Frames);
-
-               function Year_To_Integer return Integer
-               is
-                  use Ada.Text_IO;
-               begin
-                  if Year'Length = 0 then
-                     return No_Year;
-                  else
-                     return Integer'Value (Year);
-                  end if;
-               exception
-               when Constraint_Error =>
-                  --  From 'Value
-                  Put_Line (Standard_Error, I.File_Name & " : bad year: '" & Year & "'");
-                  return No_Year;
-               end Year_To_Integer;
-            begin
-               New_DB.Insert
-                 (ID              => I.ID,
-                  File_Name       => I.File_Name,
-                  Category        => I.Category,
-                  Artist          => I.Artist,
-                  Album           => I.Album,
-                  Album_Artist    => I.Album_Artist,
-                  Composer        => -Find (SMM.ID3.Composer, ID3_Frames),
-                  Title           => I.Title,
-                  Year            => Year_To_Integer,
-                  Track           => I.Track,
-                  Last_Downloaded => I.Last_Downloaded,
-                  Prev_Downloaded => I.Prev_Downloaded,
-                  Play_Before     => I.Play_Before,
-                  Play_After      => I.Play_After);
-            end;
+            New_DB.Insert
+              (ID              => I.ID,
+               File_Name       => I.File_Name,
+               Category        => I.Category,
+               Artist          => I.Artist,
+               Album           => I.Album,
+               Album_Artist    => I.Album_Artist,
+               Composer        => I.Composer,
+               Title           => I.Title,
+               Year            => I.Year,
+               Track           => I.Track,
+               Last_Downloaded => I.Last_Downloaded,
+               Prev_Downloaded => I.Prev_Downloaded,
+               Play_Before     => I.Play_Before,
+               Play_After      => I.Play_After);
          exception
          when E : SMM.Database.Entry_Error =>
             declare
@@ -141,7 +103,7 @@ begin
             end;
 
          when others =>
-            Ada.Text_IO.Put_Line (File_Name & ": exception");
+            Ada.Text_IO.Put_Line (I.File_Name & ": exception");
             raise;
          end;
          Next (I);

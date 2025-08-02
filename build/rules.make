@@ -22,9 +22,6 @@ create_test_db :
 	mkdir -p tmp/source
 	echo "Root = " $(CURDIR) "/tmp/source" > tmp/smm.db
 
-smm%.db : ../source/create_schema.sql
-	sqlite3 -init $< $@ ".quit"
-
 sqlite-clean :
 	rm -f smm*.db
 	rm -f tmp/smm*.db

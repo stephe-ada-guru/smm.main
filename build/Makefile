@@ -1,4 +1,4 @@
-# obsolete; move rules to ../alire.make
+n# obsolete; move rules to ../alire.make
 
 include rules.make
 
@@ -17,9 +17,6 @@ one-clean :
 
 one : smm.exe
 	cd d:/Music; $(CURDIR)/smm.exe update "Barry Miles, Eric Claus/Pittsburg 1980/"
-
-modify : modify_schema.exe smm_new.db
-	./modify_schema.exe c:/home/stephe/smm/smm_server.config smm_new.db
 
 two : smm-server_driver.exe
 #	cd d:/Music; $(CURDIR)/smm.exe update "Beth Wood/20-20-2017/"

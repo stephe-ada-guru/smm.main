@@ -38,7 +38,7 @@ is
    procedure Check_Before_After_Exists
    is
       use SMM.Database;
-      I : Cursor := First (DB);
+      I : Cursor := First_By_ID (DB);
    begin
       loop
          exit when not I.Has_Element;

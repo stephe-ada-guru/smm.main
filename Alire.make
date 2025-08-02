@@ -3,9 +3,13 @@
 #default is debug
 #ALIRE_BUILD_ARGS :? --release
 
+ALIRE_GPR := build/smm_alire.gpr
+
 STEPHES_ADA_LIBRARY_ALIRE_PREFIX ?= $(CURDIR)/../org.stephe_leake.sal
 
 include $(STEPHES_ADA_LIBRARY_ALIRE_PREFIX)/build/alire_rules.make
+
+vpath %.adb source
 
 # if 'all' target fails due to alire stuff, use 'alire-build'. otherwise, this is faster.
 
@@ -41,6 +45,13 @@ build/obj/development/smm.exe : alr.env force
 
 build/obj/development/test_one_harness.exe : alr.env force
 	source ./alr.env; /mingw64/bin/gprbuild -P build/smm_test.gpr test_one_harness.adb
+
+modify : build/obj/development/modify_schema.exe smm_new.db
+	build/obj/development/modify_schema.exe c:/home/stephe/smm/smm_server.config smm_new.db
+
+smm%.db : source/create_schema.sql
+	sqlite3 -init $< $@ ".quit"
+
 
 clean : alire-clean
 	rm -f alr.env

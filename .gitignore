@@ -6,3 +6,4 @@ alire/
 alr.env
 build/obj/
 config/
+*.db

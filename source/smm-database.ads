@@ -122,11 +122,14 @@ package SMM.Database is
 
    function Has_Element (Position : in Cursor) return Boolean;
 
-   function First (DB : in Database'Class) return Cursor;
+   function First_By_ID (DB : in Database'Class) return Cursor;
    --  Increasing ID order.
 
-   function Last (DB : in Database'Class) return Cursor;
+   function Last_By_ID (DB : in Database'Class) return Cursor;
    --  Decreasing ID order.
+
+   function First_By_Name (DB : in Database'Class) return Cursor;
+   --  Increasing <album_artist>_<album>_<title> order.
 
    function Find_File_Name (DB : in Database'Class; File_Name : in String) return Cursor;
    function Find_ID (DB : in Database'Class; ID : in Song_ID) return Cursor;

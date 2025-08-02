@@ -28,5 +28,5 @@ CREATE INDEX File_Name on Song (File_Name);
 CREATE INDEX Artist on Song (Artist);
 CREATE INDEX Album  on Song (Album);
 CREATE INDEX Title  on Song (Title);
-
+CREATE UNIQUE INDEX Song_Name on Song (Album_Artist, Album, Title)
 -- end of file
