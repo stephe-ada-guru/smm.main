@@ -34,6 +34,7 @@ with SMM.History;
 with SMM.ID3;
 with SMM.Import;
 with SMM.Update;
+with SMM.Update_Playlist;
 procedure SMM.Driver
 is
    procedure Put_Usage
@@ -47,11 +48,10 @@ is
       Put_Line ("  categories: {instrumental | vocal | ...}");
       New_Line;
       Put_Line ("  operations:");
-      Put_Line ("  playlist <category> [<file>] [--replace]");
-      Put_Line ("    create a playlist in <file> (same songs as 'download' would do)");
-      Put_Line ("    <file> default specified in smm.db by Playlists key");
+      Put_Line ("  update_playlist <category> <count> <playlist_file> [--replace]");
+      Put_Line ("    add to a playlist in <file> <count> least recently played songs of <category> ");
       Put_Line ("    --replace - overwrite file; otherwise append");
-      Put_Line ("    if <file> is in database root, paths in playlist are relative");
+      Put_Line ("    if <file> is in music root, paths in playlist are relative");
       New_Line;
       Put_Line ("  copy_playlist <playlist> <playlist_dir>");
       Put_Line ("    copy playlist and referenced files to playlist_dir");
@@ -95,7 +95,8 @@ is
    DB           : SMM.Database.Database;
    Next_Arg     : Integer         := 1;
 
-   type Command_Type is (Copy_Playlist, Import, Update, Rename, Delete, Check, History, Compare_Playlist);
+   type Command_Type is
+     (Update_Playlist, Copy_Playlist, Import, Update, Rename, Delete, Check, History, Compare_Playlist);
 
    procedure Get_Command is new SAL.Command_Line_IO.Gen_Get_Discrete_Proc (Command_Type, "command", Next_Arg);
 
@@ -142,6 +143,20 @@ begin
    end;
 
    case Command is
+   when Update_Playlist =>
+      Check_Arg (Next_Arg + 2);
+      declare
+         Playlist_File     : constant String                    := Argument (Next_Arg);
+         Category          : constant String                    := Argument (Next_Arg + 1);
+         Count             : constant Ada.Containers.Count_Type :=
+           Ada.Containers.Count_Type'Value (Argument (Next_Arg + 2));
+         Replace           : constant Boolean                   := Next_Arg + 3 <= Argument_Count;
+         New_Song_Count    : constant Ada.Containers.Count_Type := 5;
+         Over_Select_Ratio : constant Float                     := 1.1;
+      begin
+         SMM.Update_Playlist (DB, Playlist_File, Category, Count, New_Song_Count, Over_Select_Ratio, Replace);
+      end;
+
    when Copy_Playlist =>
       Check_Arg (Next_Arg + 1);
       declare

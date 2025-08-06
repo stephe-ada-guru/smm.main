@@ -2,7 +2,7 @@
 --
 --  Types and operations for lists of songs.
 --
---  Copyright (C) 2018 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2018, 2025 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -19,7 +19,6 @@
 pragma License (GPL);
 
 with Ada.Containers.Doubly_Linked_Lists;
-with AWS.Log;
 with SAL.Gen_Randomize_Doubly_Linked_Lists;
 with SMM.Database;
 package SMM.Song_Lists is
@@ -32,16 +31,11 @@ package SMM.Song_Lists is
 
    procedure Randomize is new SAL.Gen_Randomize_Doubly_Linked_Lists (Song_Lists);
 
-   procedure Least_Recent_Songs
-     (DB                : in     SMM.Database.Database;
-      Category          : in     String;
-      Songs             :    out Song_Lists.List;
-      Song_Count        : in     Ada.Containers.Count_Type;
-      New_Song_Count    : in     Ada.Containers.Count_Type;
-      Over_Select_Ratio : in     Float;
-      Seed              : in     Integer := 0;
-      Debug             : in     Boolean := False;
-      Debug_Log         : in out AWS.Log.Object);
+   procedure Least_Recent_Songs (DB : in SMM.Database.Database;
+     Category : in String; Songs : out Song_Lists.List; Song_Count :
+     in Ada.Containers.Count_Type; New_Song_Count : in
+     Ada.Containers.Count_Type; Over_Select_Ratio : in Float; Seed :
+     in Integer := 0);
    --  Return randomized list of Song_Count least-recently downloaded
    --  songs in Category. If any Songs have .Play_Before attribute,
    --  enforce it.

@@ -1,21 +1,18 @@
 # Build smm with Alire
 
-#default is debug
-#ALIRE_BUILD_ARGS :? --release
+# default is development (= debug). Without --quiet, the linker is very noisy.
+ALIRE_BUILD_ARGS :? --release --quiet
 
 STEPHES_ADA_LIBRARY_ALIRE_PREFIX ?= $(CURDIR)/../org.stephe_leake.sal
 
 include $(STEPHES_ADA_LIBRARY_ALIRE_PREFIX)/build/alire_rules.make
 
-# if 'all' target fails due to alire stuff, use 'alire-build'. otherwise, this is faster.
-
-all : alr.env force
-	source ./alr.env; /mingw64/bin/gprbuild -P build/smm_alire.gpr
+all : alire-build install
 
 install :: server-data
-install :: c:/home/stephe/bin/smm.exe
-install :: c:/home/stephe/bin/smm-server_driver.exe
-install :: c:/home/stephe/bin/smm-show_id3.exe
+install :: $(HOME)/bin/smm.exe
+install :: $(HOME)/bin/smm-server_driver.exe
+install :: $(HOME)/bin/smm-show_id3.exe
 
 # SERVER_DATA defined in prj-alire.el
 
@@ -33,7 +30,7 @@ $(SERVER_DATA)/% : source/%
 	cp $^ $@
 
 # don't strip, so stack traceback is useful on errors
-c:/home/stephe/bin/% : build/obj/development/%
+$(HOME)/bin/% : build/bin/%
 	cp $^ $@
 
 build/obj/development/smm.exe : alr.env force
@@ -51,7 +48,7 @@ really-clean : clean
 
 t1 : VERBOSITY ?= 0
 t1 : build/obj/development/smm.exe
-	build/obj/development/smm.exe --verbosity=$(VERBOSITY) compare_playlist protest c:/home/Stephe/smm/spotify_missing_protest.json
+	build/obj/development/smm.exe --verbosity=$(VERBOSITY) compare_playlist protest $(HOME)/smm/spotify_missing_protest.json
 
 t2 : build/obj/development/test_one_harness.exe
 	cd build; obj/development/test_one_harness.exe 1 test_server.adb ""

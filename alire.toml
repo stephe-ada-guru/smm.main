@@ -15,8 +15,8 @@ executables = ["smm.exe"]
 [[depends-on]]
 aunit = "^25.0.0"
 
-# ada_web_server
-aws = "^23.0.0"
+# ada_web_server gets confused about gnatcoll versions because it uses system gcc in post-fetch actions!
+# aws = "^23.0.0"
 
 # 'gnatcoll' includes json
 gnatcoll        = "^23.0.0"
@@ -36,3 +36,4 @@ gnat = "(>=11 & <2000) | >=2021"
 
 [[pins]]
 aunit_ext = { path='../org.stephe_leake.aunit_ext' }
+stephes_ada_library = { path='../org.stephe_leake.sal' }
