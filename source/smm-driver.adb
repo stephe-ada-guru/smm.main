@@ -28,7 +28,7 @@ with GNAT.Traceback.Symbolic;
 with SAL.Command_Line_IO;
 with SMM.Check;
 with SMM.Compare_Playlist;
-with SMM.Copy;
+with SMM.Compare_Phone;
 with SMM.Database;
 with SMM.History;
 with SMM.ID3;
@@ -53,10 +53,6 @@ is
       Put_Line ("    --replace - overwrite file; otherwise append");
       Put_Line ("    if <file> is in music root, paths in playlist are relative");
       New_Line;
-      Put_Line ("  copy_playlist <playlist> <playlist_dir>");
-      Put_Line ("    copy playlist and referenced files to playlist_dir");
-      Put_Line ("    current directory must be database root dir");
-      New_Line;
       Put_Line ("  import <category> <dir>");
       Put_Line ("    scan <dir> for new music; dir must be relative to database root dir");
       New_Line;
@@ -79,6 +75,9 @@ is
       Put_Line ("  compare_playlist <category> <missing_file>");
       Put_Line ("    compare list of music files marked category in db to corresponding Spotify playlist.");
       Put_Line ("    category must be one of 'best', 'protest'.");
+      New_Line;
+      Put_Line ("  compare_phone <phone_ls_file>");
+      Put_Line ("    compare dates of local music files against music files on phone; report those changed.");
    end Put_Usage;
 
    procedure Check_Arg (Expected_Count : in Integer)
@@ -96,7 +95,7 @@ is
    Next_Arg     : Integer         := 1;
 
    type Command_Type is
-     (Update_Playlist, Copy_Playlist, Import, Update, Rename, Delete, Check, History, Compare_Playlist);
+     (Update_Playlist, Compare_Phone, Import, Update, Rename, Delete, Check, History, Compare_Playlist);
 
    procedure Get_Command is new SAL.Command_Line_IO.Gen_Get_Discrete_Proc (Command_Type, "command", Next_Arg);
 
@@ -155,15 +154,6 @@ begin
          Over_Select_Ratio : constant Float                     := 1.1;
       begin
          SMM.Update_Playlist (DB, Playlist_File, Category, Count, New_Song_Count, Over_Select_Ratio, Replace);
-      end;
-
-   when Copy_Playlist =>
-      Check_Arg (Next_Arg + 1);
-      declare
-         Playlist_Name : constant String := Argument (Next_Arg);
-         Playlist_Dir  : constant String := As_Directory (Argument (Next_Arg + 1));
-      begin
-         SMM.Copy (Playlist_Name, Playlist_Dir);
       end;
 
    when Import =>
@@ -230,6 +220,10 @@ begin
       begin
          SMM.Compare_Playlist (DB, Category, Spotify_Missing);
       end;
+
+   when Compare_Phone =>
+      Check_Arg (Next_Arg);
+      SMM.Compare_Phone (Source_Root, Phone_Filename => Argument (Next_Arg));
    end case;
 
 exception

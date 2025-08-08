@@ -1,7 +1,12 @@
 # Build smm with Alire
 
-# default is development (= debug). Without --quiet, the linker is very noisy.
-ALIRE_BUILD_ARGS :? --release --quiet
+# default is development (= debug).
+# ALIRE_BUILD_ARGS ?= --release
+
+# Without -q, the linker is very noisy. But it screws up the error outputs!
+#ALIRE_ARGS ?= -q
+
+ALIRE_EXEC_DIR := build/bin
 
 STEPHES_ADA_LIBRARY_ALIRE_PREFIX ?= $(CURDIR)/../org.stephe_leake.sal
 
@@ -30,25 +35,22 @@ $(SERVER_DATA)/% : source/%
 	cp $^ $@
 
 # don't strip, so stack traceback is useful on errors
-$(HOME)/bin/% : build/bin/%
+$(HOME)/bin/% : $(ALIRE_EXEC_DIR)/%
 	cp $^ $@
 
-build/obj/development/smm.exe : alr.env force
-	. ./alr.env; /mingw64/bin/gprbuild -P build/smm_alire.gpr smm-driver.adb
-
-build/obj/development/test_one_harness.exe : alr.env force
-	source ./alr.env; /mingw64/bin/gprbuild -P build/smm_test.gpr test_one_harness.adb
-
 clean : alire-clean
-	rm -f alr.env
 
 # this also cleans dependencies
 really-clean : clean
 	rm -rf ~/.config/alire/cache/builds
 
+# Source file is smm-driver.adb, so alire_rules %.exe doesn't match
+$(ALIRE_EXEC_DIR)/smm.exe : force
+	alr $(ALIRE_ARGS) build $(ALIRE_BUILD_ARGS) -- $(GPRBUILD_ARGS) smm-driver.adb
+
 t1 : VERBOSITY ?= 0
-t1 : build/obj/development/smm.exe
-	build/obj/development/smm.exe --verbosity=$(VERBOSITY) compare_playlist protest $(HOME)/smm/spotify_missing_protest.json
+t1 : $(ALIRE_EXEC_DIR)/smm.exe
+	cd /Projects/Music; $(CURDIR)/$(ALIRE_EXEC_DIR)/smm.exe compare_phone /tmp/phone.log
 
 t2 : build/obj/development/test_one_harness.exe
 	cd build; obj/development/test_one_harness.exe 1 test_server.adb ""
