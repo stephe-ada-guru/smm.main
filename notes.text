@@ -23,9 +23,6 @@ branches:
    ("../smm.work_1"                    . "../smm.main")))
 
  current work
-all local files are newer than all phone files; copy all
-    done thru:
-
 add 'smm update_playlist'
     compiles
 

@@ -1,8 +1,9 @@
-build/objects/
-build/*.exe
-build/*.out
-build/tmp/
 alire/
 alr.env
+build/*.exe
+build/*.out
+build/bin/
 build/obj/
+build/objects/
+build/tmp/
 config/

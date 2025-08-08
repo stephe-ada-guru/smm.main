@@ -76,7 +76,9 @@ begin
             null;
 
          elsif Line (Line'Last) = ':' then
-            if Line'Length > 2 and then Line (Line'First + 0 .. Line'First + 1) = "./" then
+            if Line'Length = 2 then
+               Current_Dir := +".";
+            elsif Line (Line'First + 0 .. Line'First + 1) = "./" then
                --  Local filenames don't start with ./
                Current_Dir := +Line (Line'First + 2 .. Line'Last - 1);
             end if;
@@ -91,36 +93,39 @@ begin
 
          elsif Line (Line'First) = '-' then
             --  A file. We compare all files; all are important, any could change.
-            declare
-               --  Line looks like:
-               --  drwxrwx---  4 u0_a288 u0_a288  3452 2023-06-28 14:44 Aaron Copland
-               --  but the column widths are not fixed.
-               --  Calendar.Formatting.Value requires a seconds field
-               function Find_Date_First return Integer
-               is
-                  use Ada.Strings.Fixed;
-                  First_Space : constant Integer := Index (Line, Pattern => " ");
+            --  Except ignore files in root; they are only on the phone
+            if -Current_Dir /= "." then
+               declare
+                  --  Line looks like:
+                  --  drwxrwx---  4 u0_a288 u0_a288  3452 2023-06-28 14:44 Aaron Copland
+                  --  but the column widths are not fixed.
+                  --  Calendar.Formatting.Value requires a seconds field
+                  function Find_Date_First return Integer
+                  is
+                     use Ada.Strings.Fixed;
+                     First_Space : constant Integer := Index (Line, Pattern => " ");
+                  begin
+                     return Index (Line, Pattern => "-", From => First_Space + 1) - 4;
+                  end Find_Date_First;
+
+                  Date_First : constant Integer := Find_Date_First;
+                  Date_String : constant String := Line (Date_First .. Date_First + 15) & ":00";
+                  Filename    : constant String := -Current_Dir & "/" & Line (Date_First + 17 .. Line'Last);
                begin
-                  return Index (Line, Pattern => "-", From => First_Space + 1) - 4;
-               end Find_Date_First;
+                  Phone_Data.Insert
+                    (Data'
+                       (Date => Ada.Calendar.Formatting.Value (Date_String),
+                        Name => +Filename));
+               exception
+               when Constraint_Error =>
+                  --  From Value
+                  raise SAL.Programmer_Error with "bad date format: '" & Date_String & "'";
 
-               Date_First : constant Integer := Find_Date_First;
-               Date_String : constant String := Line (Date_First .. Date_First + 15) & ":00";
-               Filename    : constant String := -Current_Dir & "/" & Line (Date_First + 17 .. Line'Last);
-            begin
-               Phone_Data.Insert
-                 (Data'
-                    (Date => Ada.Calendar.Formatting.Value (Date_String),
-                     Name => +Filename));
-            exception
-            when Constraint_Error =>
-               --  From Value
-               raise SAL.Programmer_Error with "bad date format: '" & Date_String & "'";
-
-            when SAL.Duplicate_Key =>
-               --  From Insert
-               raise SAL.Programmer_Error with "duplicate filename? '" & Filename & "'";
-            end;
+               when SAL.Duplicate_Key =>
+                  --  From Insert
+                  raise SAL.Programmer_Error with "duplicate filename? '" & Filename & "'";
+               end;
+            end if;
          else
             raise SAL.Programmer_Error;
          end if;
@@ -180,11 +185,13 @@ begin
       Phone_Cur      : Cursor   := First (Phone_Iterator);
 
       Local_Iterator : constant Iterator := Iterate (Local_Data);
-      Local_Cur      : Cursor   := First (Local_Iterator);
+      Local_Cur      : Cursor            := First (Local_Iterator);
+      Error_Count    : Integer           := 0;
    begin
       --  We assume all changes occur on the local side.
       loop
          exit when not Has_Element (Phone_Cur) or not Has_Element (Local_Cur);
+         exit when Max_Errors > 0 and then Error_Count >= Max_Errors;
          declare
             use type Ada.Strings.Unbounded.Unbounded_String; --  "/="
             use type Ada.Calendar.Time; -- "<"
@@ -192,34 +199,62 @@ begin
             Phone : Data renames Element (Phone_Cur);
             Local : Data renames Element (Local_Cur);
          begin
+            if Verbosity > 0 then
+               Put_Line ("comparing '" & (-Phone.Name) & "'");
+               Put_Line ("          '" & (-Local.Name) & "'");
+            end if;
+
             if Phone.Name /= Local.Name then
-               Put_Line ("new song '" & (-Local.Name) & "'");
+               if Verbosity = 0 then
+                  declare
+                     --  We can't show the previous phone and local,
+                     --  because cursor is ascending.
+                     Next_Phone : constant Cursor := Next (Phone_Iterator, Phone_Cur);
+                     Next_Local : constant Cursor := Next (Local_Iterator, Local_Cur);
+                  begin
+                     Put_Line ("next phone:'" & (-Element (Next_Phone).Name) & "'");
+                     Put_Line ("next local:'" & (-Element (Next_Local).Name) & "'");
+                  end;
+               end if;
+
+               Put_Line ("new file:  '" & (-Local.Name) & "'");
+               New_Line;
+               Error_Count := @ + 1;
                Local_Cur := Next (Local_Iterator, Local_Cur);
 
             elsif Phone.Date < Local.Date then
-               Put_Line ("song updated '" & (-Local.Name) & "'");
+               Put_Line ("file updated '" & (-Local.Name) & "'");
+               New_Line;
+               Phone_Cur := Next (Phone_Iterator, Phone_Cur);
+               Local_Cur := Next (Local_Iterator, Local_Cur);
+               Error_Count := @ + 1;
+            else
                Phone_Cur := Next (Phone_Iterator, Phone_Cur);
                Local_Cur := Next (Local_Iterator, Local_Cur);
             end if;
          end;
       end loop;
 
-      if Has_Element (Phone_Cur) then
-         Put_Line ("phone has extra files:");
-         loop
-            exit when not Has_Element (Phone_Cur);
-            Put_Line ((-Element (Phone_Cur).Name) & "'");
-            Phone_Cur := Next (Phone_Iterator, Phone_Cur);
-         end loop;
-      end if;
+      if Max_Errors > 0 and then Error_Count >= Max_Errors then
+         Put_Line ("all done - max errors");
+      else
+         if Has_Element (Phone_Cur) then
+            Put_Line ("phone has extra files:");
+            loop
+               exit when not Has_Element (Phone_Cur);
+               Put_Line ((-Element (Phone_Cur).Name) & "'");
+               Phone_Cur := Next (Phone_Iterator, Phone_Cur);
+            end loop;
+         end if;
 
-      if Has_Element (Local_Cur) then
-         loop
-            exit when not Has_Element (Local_Cur);
-            Put_Line ("new song '" & (-Element (Local_Cur).Name) & "'");
-            Local_Cur := Next (Local_Iterator, Local_Cur);
-         end loop;
+         if Has_Element (Local_Cur) then
+            loop
+               exit when not Has_Element (Local_Cur);
+               Put_Line ("new file '" & (-Element (Local_Cur).Name) & "'");
+               Local_Cur := Next (Local_Iterator, Local_Cur);
+            end loop;
+         end if;
+         Put_Line ("all done");
       end if;
    end Compare_Trees;
-   Put_Line ("all done");
 end SMM.Compare_Phone;

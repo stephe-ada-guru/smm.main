@@ -103,31 +103,35 @@ is
 
 begin
    loop
-      exit when Argument (Next_Arg)'Length < 2 or else Argument (Next_Arg) (1 .. 2) /= "--";
+      exit when Next_Arg > Argument_Count or else
+        Argument (Next_Arg)'Length < 2 or else
+        Argument (Next_Arg) (1 .. 2) /= "--";
 
       if Argument (Next_Arg)'Length > 5 and then
         Argument (Next_Arg)(1 .. 5) = "--db="
       then
          DB_File_Name := new String'(Argument (Next_Arg)(6 .. Argument (Next_Arg)'Last));
          Next_Arg     := Next_Arg + 1;
-      end if;
-
-      if Argument (Next_Arg)'Length > 12 and then
-        Argument (Next_Arg)(1 .. 12) = "--verbosity="
-      then
-         Verbosity := Integer'Value (Argument (Next_Arg)(13 .. Argument (Next_Arg)'Last));
-         Next_Arg := Next_Arg + 1;
-      else
-         Verbosity := 0;
-      end if;
-
-      if Argument (Next_Arg) = "--ignore_id3_flags" then
-         SMM.ID3.Ignore_Flags := True;
-         Next_Arg := Next_Arg + 1;
 
       elsif Argument (Next_Arg) = "--help" then
          Put_Usage;
          return;
+
+      elsif Argument (Next_Arg) = "--ignore_id3_flags" then
+         SMM.ID3.Ignore_Flags := True;
+         Next_Arg := Next_Arg + 1;
+
+      elsif Argument (Next_Arg)'Length > 13 and then
+        Argument (Next_Arg)(1 .. 13) = "--max_errors="
+      then
+         Max_Errors := Integer'Value (Argument (Next_Arg)(14 .. Argument (Next_Arg)'Last));
+         Next_Arg := Next_Arg + 1;
+
+      elsif Argument (Next_Arg)'Length > 12 and then
+        Argument (Next_Arg)(1 .. 12) = "--verbosity="
+      then
+         Verbosity := Integer'Value (Argument (Next_Arg)(13 .. Argument (Next_Arg)'Last));
+         Next_Arg := Next_Arg + 1;
       end if;
    end loop;
 

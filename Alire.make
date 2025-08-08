@@ -14,10 +14,10 @@ include $(STEPHES_ADA_LIBRARY_ALIRE_PREFIX)/build/alire_rules.make
 
 all : alire-build install
 
-install :: server-data
+#install :: server-data
 install :: $(HOME)/bin/smm.exe
-install :: $(HOME)/bin/smm-server_driver.exe
-install :: $(HOME)/bin/smm-show_id3.exe
+#install :: $(HOME)/bin/smm-server_driver.exe
+#install :: $(HOME)/bin/smm-show_id3.exe
 
 # SERVER_DATA defined in prj-alire.el
 
@@ -50,7 +50,7 @@ $(ALIRE_EXEC_DIR)/smm.exe : force
 
 t1 : VERBOSITY ?= 0
 t1 : $(ALIRE_EXEC_DIR)/smm.exe
-	cd /Projects/Music; $(CURDIR)/$(ALIRE_EXEC_DIR)/smm.exe compare_phone /tmp/phone.log
+	cd /Projects/Music; $(CURDIR)/$(ALIRE_EXEC_DIR)/smm.exe --verbosity=$(VERBOSITY) --max_errors=5 compare_phone /tmp/phone.log
 
 t2 : build/obj/development/test_one_harness.exe
 	cd build; obj/development/test_one_harness.exe 1 test_server.adb ""
