@@ -2,7 +2,7 @@
 --
 --  Root of Stephe's Music Manager packages
 --
---  Copyright (C) 2008 - 2018 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2018, 2025 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -32,7 +32,8 @@ package SMM is
    function "-" (Item : in Ada.Strings.Unbounded.Unbounded_String) return String
      renames Ada.Strings.Unbounded.To_String;
 
-   Verbosity : Integer;
+   Verbosity  : Integer := 0;
+   Max_Errors : Integer := 0;
 
    function Find_Home return String;
 

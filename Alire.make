@@ -1,7 +1,12 @@
 # Build smm with Alire
 
-#default is debug
-#ALIRE_BUILD_ARGS :? --release
+# default is development (= debug).
+# ALIRE_BUILD_ARGS ?= --release
+
+# Without -q, the linker is very noisy. But it screws up the error outputs!
+#ALIRE_ARGS ?= -q
+
+ALIRE_EXEC_DIR := build/bin
 
 ALIRE_GPR := build/smm_alire.gpr
 
@@ -11,15 +16,12 @@ include $(STEPHES_ADA_LIBRARY_ALIRE_PREFIX)/build/alire_rules.make
 
 vpath %.adb source
 
-# if 'all' target fails due to alire stuff, use 'alire-build'. otherwise, this is faster.
+all : alire-build install
 
-all : alr.env force
-	source ./alr.env; /mingw64/bin/gprbuild -P build/smm_alire.gpr
-
-install :: server-data
-install :: c:/home/stephe/bin/smm.exe
-install :: c:/home/stephe/bin/smm-server_driver.exe
-install :: c:/home/stephe/bin/smm-show_id3.exe
+#install :: server-data
+install :: $(HOME)/bin/smm.exe
+#install :: $(HOME)/bin/smm-server_driver.exe
+#install :: $(HOME)/bin/smm-show_id3.exe
 
 # SERVER_DATA defined in prj-alire.el
 
@@ -37,14 +39,8 @@ $(SERVER_DATA)/% : source/%
 	cp $^ $@
 
 # don't strip, so stack traceback is useful on errors
-c:/home/stephe/bin/% : build/obj/development/%
+$(HOME)/bin/% : $(ALIRE_EXEC_DIR)/%
 	cp $^ $@
-
-build/obj/development/smm.exe : alr.env force
-	. ./alr.env; /mingw64/bin/gprbuild -P build/smm_alire.gpr smm-driver.adb
-
-build/obj/development/test_one_harness.exe : alr.env force
-	source ./alr.env; /mingw64/bin/gprbuild -P build/smm_test.gpr test_one_harness.adb
 
 modify : build/obj/development/modify_schema.exe smm_new.db
 	build/obj/development/modify_schema.exe c:/home/stephe/smm/smm_server.config smm_new.db
@@ -52,17 +48,19 @@ modify : build/obj/development/modify_schema.exe smm_new.db
 smm%.db : source/create_schema.sql
 	sqlite3 -init $< $@ ".quit"
 
-
 clean : alire-clean
-	rm -f alr.env
 
 # this also cleans dependencies
 really-clean : clean
 	rm -rf ~/.config/alire/cache/builds
 
+# Source file is smm-driver.adb, so alire_rules %.exe doesn't match
+$(ALIRE_EXEC_DIR)/smm.exe : force
+	alr $(ALIRE_ARGS) build $(ALIRE_BUILD_ARGS) -- $(GPRBUILD_ARGS) smm-driver.adb
+
 t1 : VERBOSITY ?= 0
-t1 : build/obj/development/smm.exe
-	build/obj/development/smm.exe --verbosity=$(VERBOSITY) compare_playlist protest c:/home/Stephe/smm/spotify_missing_protest.json
+t1 : $(ALIRE_EXEC_DIR)/smm.exe
+	cd /Projects/Music; $(CURDIR)/$(ALIRE_EXEC_DIR)/smm.exe --verbosity=$(VERBOSITY) --max_errors=5 compare_phone /tmp/phone.log
 
 t2 : build/obj/development/test_one_harness.exe
 	cd build; obj/development/test_one_harness.exe 1 test_server.adb ""

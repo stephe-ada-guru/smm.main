@@ -29,12 +29,13 @@ with SAL.Command_Line_IO;
 with SMM.Check;
 with SMM.Compare_Playlist.HTML;
 with SMM.Compare_Playlist.Spotify;
-with SMM.Copy;
+with SMM.Compare_Phone;
 with SMM.Database;
 with SMM.History;
 with SMM.ID3;
 with SMM.Import;
 with SMM.Update;
+with SMM.Update_Playlist;
 procedure SMM.Driver
 is
    procedure Put_Usage
@@ -48,15 +49,10 @@ is
       Put_Line ("  categories: {instrumental | vocal | ...}");
       New_Line;
       Put_Line ("  operations:");
-      Put_Line ("  playlist <category> [<file>] [--replace]");
-      Put_Line ("    create a playlist in <file> (same songs as 'download' would do)");
-      Put_Line ("    <file> default specified in smm.db by Playlists key");
+      Put_Line ("  update_playlist <category> <count> <playlist_file> [--replace]");
+      Put_Line ("    add to a playlist in <file> <count> least recently played songs of <category> ");
       Put_Line ("    --replace - overwrite file; otherwise append");
-      Put_Line ("    if <file> is in database root, paths in playlist are relative");
-      New_Line;
-      Put_Line ("  copy_playlist <playlist> <playlist_dir>");
-      Put_Line ("    copy playlist and referenced files to playlist_dir");
-      Put_Line ("    current directory must be database root dir");
+      Put_Line ("    if <file> is in music root, paths in playlist are relative");
       New_Line;
       Put_Line ("  import <category> <dir>");
       Put_Line ("    scan <dir> for new music; dir must be relative to database root dir");
@@ -80,6 +76,9 @@ is
       Put_Line ("  compare_playlist <category> <spotify <missing_file> | html html_file>");
       Put_Line ("    compare list of music files marked category in db to corresponding Spotify playlist.");
       Put_Line ("    category must be one of 'best', 'protest'.");
+      New_Line;
+      Put_Line ("  compare_phone <phone_ls_file>");
+      Put_Line ("    compare dates of local music files against music files on phone; report those changed.");
    end Put_Usage;
 
    procedure Check_Arg (Expected_Count : in Integer)
@@ -96,7 +95,8 @@ is
    DB           : SMM.Database.Database;
    Next_Arg     : Integer         := 1;
 
-   type Command_Type is (Copy_Playlist, Import, Update, Rename, Delete, Check, History, Compare_Playlist);
+   type Command_Type is
+     (Update_Playlist, Compare_Phone, Import, Update, Rename, Delete, Check, History, Compare_Playlist);
 
    procedure Get_Command is new SAL.Command_Line_IO.Gen_Get_Discrete_Proc (Command_Type, "command", Next_Arg);
 
@@ -104,31 +104,35 @@ is
 
 begin
    loop
-      exit when Argument (Next_Arg)'Length < 2 or else Argument (Next_Arg) (1 .. 2) /= "--";
+      exit when Next_Arg > Argument_Count or else
+        Argument (Next_Arg)'Length < 2 or else
+        Argument (Next_Arg) (1 .. 2) /= "--";
 
       if Argument (Next_Arg)'Length > 5 and then
         Argument (Next_Arg)(1 .. 5) = "--db="
       then
          DB_File_Name := new String'(Argument (Next_Arg)(6 .. Argument (Next_Arg)'Last));
          Next_Arg     := Next_Arg + 1;
-      end if;
-
-      if Argument (Next_Arg)'Length > 12 and then
-        Argument (Next_Arg)(1 .. 12) = "--verbosity="
-      then
-         Verbosity := Integer'Value (Argument (Next_Arg)(13 .. Argument (Next_Arg)'Last));
-         Next_Arg := Next_Arg + 1;
-      else
-         Verbosity := 0;
-      end if;
-
-      if Argument (Next_Arg) = "--ignore_id3_flags" then
-         SMM.ID3.Ignore_Flags := True;
-         Next_Arg := Next_Arg + 1;
 
       elsif Argument (Next_Arg) = "--help" then
          Put_Usage;
          return;
+
+      elsif Argument (Next_Arg) = "--ignore_id3_flags" then
+         SMM.ID3.Ignore_Flags := True;
+         Next_Arg := Next_Arg + 1;
+
+      elsif Argument (Next_Arg)'Length > 13 and then
+        Argument (Next_Arg)(1 .. 13) = "--max_errors="
+      then
+         Max_Errors := Integer'Value (Argument (Next_Arg)(14 .. Argument (Next_Arg)'Last));
+         Next_Arg := Next_Arg + 1;
+
+      elsif Argument (Next_Arg)'Length > 12 and then
+        Argument (Next_Arg)(1 .. 12) = "--verbosity="
+      then
+         Verbosity := Integer'Value (Argument (Next_Arg)(13 .. Argument (Next_Arg)'Last));
+         Next_Arg := Next_Arg + 1;
       end if;
    end loop;
 
@@ -143,13 +147,18 @@ begin
    end;
 
    case Command is
-   when Copy_Playlist =>
-      Check_Arg (Next_Arg + 1);
+   when Update_Playlist =>
+      Check_Arg (Next_Arg + 2);
       declare
-         Playlist_Name : constant String := Argument (Next_Arg);
-         Playlist_Dir  : constant String := As_Directory (Argument (Next_Arg + 1));
+         Playlist_File     : constant String                    := Argument (Next_Arg);
+         Category          : constant String                    := Argument (Next_Arg + 1);
+         Count             : constant Ada.Containers.Count_Type :=
+           Ada.Containers.Count_Type'Value (Argument (Next_Arg + 2));
+         Replace           : constant Boolean                   := Next_Arg + 3 <= Argument_Count;
+         New_Song_Count    : constant Ada.Containers.Count_Type := 5;
+         Over_Select_Ratio : constant Float                     := 1.1;
       begin
-         SMM.Copy (Playlist_Name, Playlist_Dir);
+         SMM.Update_Playlist (DB, Playlist_File, Category, Count, New_Song_Count, Over_Select_Ratio, Replace);
       end;
 
    when Import =>
@@ -221,6 +230,10 @@ begin
             SMM.Compare_Playlist.HTML (DB, Category, HTML_File => Other_File);
          end if;
       end;
+
+   when Compare_Phone =>
+      Check_Arg (Next_Arg);
+      SMM.Compare_Phone (Source_Root, Phone_Filename => Argument (Next_Arg));
    end case;
 
 exception

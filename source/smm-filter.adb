@@ -1,3 +1,4 @@
+-- Used once during a db migration.
 with Ada.Directories;
 with Ada.Text_IO;      use Ada.Text_IO;
 with SAL.Config_Files; use SAL.Config_Files;

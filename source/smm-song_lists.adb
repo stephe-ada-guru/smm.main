@@ -28,9 +28,7 @@ package body SMM.Song_Lists is
       Song_Count        : in     Ada.Containers.Count_Type;
       New_Song_Count    : in     Ada.Containers.Count_Type;
       Over_Select_Ratio : in     Float;
-      Seed              : in     Integer := 0;
-      Debug             : in     Boolean := False;
-      Debug_Log         : in out AWS.Log.Object)
+      Seed              : in     Integer := 0)
    is
       --  Requirements:
       --
@@ -62,30 +60,11 @@ package body SMM.Song_Lists is
       Min_Randomize_Count : constant Count_Type := Count_Type (Over_Select_Ratio * Float (Song_Count));
       Time_List           : Time_Lists.List;
 
-      procedure Put_Songs
-      is begin
-         for I of Songs loop
-            declare
-               Cur : constant SMM.Database.Cursor := DB.Find_ID (I);
-            begin
-               AWS.Log.Write (Debug_Log, Cur.File_Name);
-            end;
-         end loop;
-      end Put_Songs;
-
       procedure Finish
       is begin
          Randomize (Songs, Seed);
-         if Debug then
-            AWS.Log.Write (Debug_Log, "songs before truncate:");
-            Put_Songs;
-         end if;
          if Songs.Length > Song_Count then
             Songs.Delete_Last (Songs.Length - Song_Count);
-            if Debug then
-               AWS.Log.Write (Debug_Log, "songs after truncate:");
-               Put_Songs;
-            end if;
          end if;
          Play_Before (DB, Songs);
       end Finish;

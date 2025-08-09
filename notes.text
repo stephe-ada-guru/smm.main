@@ -2,20 +2,18 @@ Alire.make
 
 build/Makefile obsolete
 
-see ../org.stephe_leake.music_player/notes.text
+see windows org.stephe_leake.music_player_2/notes.text
 
 branches:
-    smm.main - installed in Windows
+    smm.main - installed in Debian
     smm.work - ssh download; terminated
-    smm.work_1 - available
-
-d:/Music/remote_cache/smm-server_driver.log
+    smm.work_1 - fix compare playlists
 
 (dvc-state-multiple
-    '((xmtn . "../org.stephe_leake.aunit_ext")
-      (xmtn . "../org.stephe_leake.makerules")
-      (xmtn . "../org.stephe_leake.sal")
-      (xmtn . "../smm.main")))
+    '((xgit . "../org.stephe_leake.aunit_ext")
+      (xgit . "../org.stephe_leake.makerules")
+      (xgit . "../org.stephe_leake.sal")
+      (xgit . "../smm.main")))
 
 (dvc-propagate-multiple
  '(("../org.stephe_leake.sal" . "../org.stephe_leake.sal.stephe-1")
@@ -26,20 +24,6 @@ d:/Music/remote_cache/smm-server_driver.log
    ("../smm.work_1"                    . "../smm.main")))
 
  current work
-Ada parser really slow
-    verbosity parse=2 !
-
-Ada parser keeps dying
-    verbosity/debug set in prj-alire.el
-    see c:/Projects/org.emacs.ada-mode/notes.text
-        c:/Projects/org.emacs.ada-mode/tests/debug.adb
-
-    try eglot?
-        no face, no indent
-
-    try tree-sitter?
-        need indent rules
-
 smm.work_1: ~/bin/compare_music.sh
     output not helpful
     doesn't check new in spotify (crash test dummies superman).
@@ -49,9 +33,20 @@ smm.work_1: ~/bin/compare_music.sh
         add db index on album_artist/album/title
             editing source/modify_schema.adb
 
+smm check reports missing files that are not in fact missing
+    recompile with gnat 15?
 
+replace web server with socket listener
+    or see how hard it is to use the Debian server = Apache
+    use common Gateway Interface https://datatracker.ietf.org/doc/html/rfc3875
+    see gemini_use_apache.text
+    url contains the name of the script; it's _not_ transparent
+
+    socket listener is also not transparent
 
 Don't randomize five oldest
+
+compare music spotify doesn't check new in spotify (crash test dummies superman).
 
 exception: SAL.INITIALIZATION_ERROR: Andy Stewart w/ Phil Cunningham & Manus Lunny, Fire In The Glen, Young Jimmy In Flanders not found in db
 
