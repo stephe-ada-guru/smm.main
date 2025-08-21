@@ -2,7 +2,7 @@
 --
 --  Import new files into SMM db.
 --
---  Copyright (C) 2008 - 2010, 2012, 2014, 2018 - 2019, 2022 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2010, 2012, 2014, 2018 - 2019, 2022, 2025 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -36,7 +36,7 @@ is
    procedure Get_Initial_Index
    is
       use SMM.Database;
-      I : constant Cursor := Last (DB);
+      I : constant Cursor := Last_By_ID (DB);
    begin
       if I.Has_Element then
          Index := I.ID + 1;

@@ -56,111 +56,53 @@ package body SMM.Song_Lists is
       --  Randomize list, return Song_Count songs from it.
 
       use Ada.Containers;
-
-      Min_Randomize_Count : constant Count_Type := Count_Type (Over_Select_Ratio * Float (Song_Count));
-      Time_List           : Time_Lists.List;
-
-      procedure Finish
-      is begin
-         Randomize (Songs, Seed);
-         if Songs.Length > Song_Count then
-            Songs.Delete_Last (Songs.Length - Song_Count);
-         end if;
-         Play_Before (DB, Songs);
-      end Finish;
-
-      procedure Add_All (Time_List_I : in Time_Lists.Cursor)
-      is begin
-         if Verbosity > 0 then
-            Ada.Text_IO.Put_Line ("adding songs from " & Time_Lists.Element (Time_List_I).Last_Downloaded);
-         end if;
-
-         Song_Lists.Splice
-           (Source => Time_Lists.Reference (Time_List, Time_List_I).Songs,
-            Target => Songs,
-            Before => Song_Lists.No_Element);
-      end Add_All;
-
-      Time_List_I : Time_Lists.Cursor;
-
       use Song_Lists;
-      use Time_Lists;
+
+      Count_Limit  : constant Count_Type := Count_Type (Float (Song_Count) * Over_Select_Ratio);
+
+      DB_I      : SMM.Database.Cursor := SMM.Database.First_By_Last_Downloaded (DB); -- oldest date
+      New_Songs : Song_Lists.List;
+      New_Song_Added_Count : Count_Type := 0;
    begin
-      declare
-         All_Songs_I : SMM.Database.Cursor := SMM.Database.First (DB);
-      begin
-         loop
-            --  Note that we can't exit on finding Count songs; there may be more
-            --  later that were downloaded less recently. All_Songs_I is sorted on
-            --  ID. FIXME: sort on Last_Downloaded, add index.
-            exit when not All_Songs_I.Has_Element;
-
-            if All_Songs_I.Category_Contains (Category) and
-              (not All_Songs_I.Category_Contains ("dont_play")) and
-              (not All_Songs_I.Play_After_Is_Present) -- only play this when Play_Before is included.
-            then
-               Insert (DB, All_Songs_I.ID, Time_List);
-            end if;
-
-            All_Songs_I.Next;
-         end loop;
-      end;
-
-      Time_List_I := Time_List.First;
-
-      if Time_List_I = Time_Lists.No_Element then
-         --  Time_List_I can be null if Category doesn't match any songs (ie spelled wrong).
-         return;
-      end if;
-
-      if Element (Time_List_I).Last_Downloaded = SMM.Database.Default_Time_String then
-         --  New songs
-
-         if Time_List.Length = 1 then
-            --  New db; all songs have default Last_Downloaded
-            if Verbosity > 0 then
-               Ada.Text_IO.Put_Line ("new db; all new songs");
-            end if;
-            Songs := Element (Time_List_I).Songs;
-            Finish;
-            return;
-
-         elsif Element (Time_List_I).Songs.Length > New_Song_Count then
-            --  Only include a few new songs
-            if Verbosity > 0 then
-               Ada.Text_IO.Put_Line ("adding " & Count_Type'Image (New_Song_Count) & " new songs");
-            end if;
-
-            declare
-               Source  : Song_Lists.List renames Element (Time_List_I).Songs;
-               Songs_I : Song_Lists.Cursor := Source.First;
-            begin
-               for I in 1 .. New_Song_Count loop
-                  Songs.Prepend (Element (Songs_I));
-                  Next (Songs_I);
-               end loop;
-            end;
-            Next (Time_List_I);
-         else
-            --  There are only a few new songs; include them all
-            if Verbosity > 0 then
-               Ada.Text_IO.Put_Line ("adding " & Count_Type'Image (Element (Time_List_I).Songs.Length) & " new songs");
-            end if;
-            Songs := Element (Time_List_I).Songs;
-            Next (Time_List_I);
-         end if;
-      end if;
-
       loop
-         exit when Songs.Length >= Min_Randomize_Count or Time_List_I = Time_Lists.No_Element;
+         exit when Songs.Length >= Count_Limit;
 
-         Add_All (Time_List_I);
+         if not DB_I.Has_Element then
+            raise SAL.Parameter_Error with "'" & Category & "' doesn't match" &
+              (if Songs.Length = 0 then "any" else "enough") & " songs";
+         end if;
 
-         Next (Time_List_I);
+         if DB_I.Category_Contains (Category) and
+           (not DB_I.Category_Contains ("dont_play")) and
+           (not DB_I.Play_After_Is_Present) -- only play this when Play_Before is included.
+         then
+            if DB_I.Last_Downloaded = SMM.Database.Default_Time_String then
+               if New_Song_Added_Count < New_Song_Count then
+                  if Verbosity >= 2 then
+                     Ada.Text_IO.Put_Line ("New:" & DB_I.ID'Image & " " & DB_I.Last_Downloaded);
+                  end if;
+                  New_Songs.Append (DB_I.ID);
+                  New_Song_Added_Count := @ + 1;
+               end if;
+            else
+               if Verbosity >= 2 then
+                  Ada.Text_IO.Put_Line ("adding" & DB_I.ID'Image & " " & DB_I.Last_Downloaded);
+               end if;
+               Songs.Append (DB_I.ID);
+            end if;
+         end if;
+
+         DB_I.Next;
       end loop;
 
-      Finish;
+      Randomize (Songs, Seed);
+      if Songs.Length > Song_Count then
+         --  This may delete some new songs, but they'll get added
+         --  next time.
+         Songs.Delete_Last (Songs.Length - Song_Count);
+      end if;
 
+      Play_Before (DB, Songs);
    end Least_Recent_Songs;
 
    procedure Play_Before
@@ -253,6 +195,9 @@ package body SMM.Song_Lists is
          begin
             if Item.Second_Song_Songs = Song_Lists.No_Element then
                --  not in Songs yet
+               if Verbosity >= 2 then
+                  Ada.Text_IO.Put_Line ("adding" & Item.Second_Song_ID'Image);
+               end if;
                Insert
                  (Container => Songs,
                   Before    => Next (Item.First_Song_Songs),
@@ -269,34 +214,5 @@ package body SMM.Song_Lists is
       end loop Place_Second_Song;
 
    end Play_Before;
-
-   procedure Insert
-     (DB   : in     SMM.Database.Database;
-      Item : in     Integer;
-      List : in out Time_Lists.List)
-   is
-      use SMM.Database;
-      use Time_Lists;
-
-      Item_Cur                : constant SMM.Database.Cursor    := Find_ID (DB, Item);
-      Last_Downloaded         : constant Time_String            := Item_Cur.Last_Downloaded;
-      Last_Downloaded_Element : constant Time_List_Element_Type := (Last_Downloaded, Song_Lists.Empty_List);
-
-      I : Time_Lists.Cursor := List.Find (Last_Downloaded_Element);
-   begin
-      if I = No_Element then
-         declare
-            Temp_List : Time_Lists.List;
-         begin
-            Temp_List.Prepend ((Last_Downloaded, Song_Lists.Empty_List));
-            Time_Lists_Sorting.Merge
-              (Target => List,
-               Source => Temp_List);
-         end;
-         I := List.Find (Last_Downloaded_Element);
-      end if;
-
-      List.Reference (I).Songs.Append (Item);
-   end Insert;
 
 end SMM.Song_Lists;

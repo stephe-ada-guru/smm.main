@@ -91,7 +91,7 @@ package body SMM.Database is
 
       Values : Unbounded_String := +"VALUES (";
 
-      Params : SQL_Parameters (1 .. 13) := (others => Null_Parameter);
+      Params : SQL_Parameters (1 .. 14) := (others => Null_Parameter);
 
       Need_Comma : Boolean := False;
       Last       : Integer := 0;
@@ -286,19 +286,33 @@ package body SMM.Database is
       return Position.Cursor.Has_Row;
    end Has_Element;
 
-   function First (DB : in Database'Class) return Cursor
+   function First_By_ID (DB : in Database'Class) return Cursor
    is
       Statement : constant String := "SELECT * FROM Song ORDER BY ID ASC";
    begin
       return Checked_Fetch (DB, Statement);
-   end First;
+   end First_By_ID;
 
-   function Last (DB : in Database'Class) return Cursor
+   function Last_By_ID (DB : in Database'Class) return Cursor
    is
       Statement : constant String := "SELECT * FROM Song ORDER BY ID DESC";
    begin
       return Checked_Fetch (DB, Statement);
-   end Last;
+   end Last_By_ID;
+
+   function First_By_Last_Downloaded (DB : in Database'Class) return Cursor
+   is
+      Statement : constant String := "SELECT * FROM Song ORDER BY Last_Downloaded ASC";
+   begin
+      return Checked_Fetch (DB, Statement);
+   end First_By_Last_Downloaded;
+
+   function Last_By_Last_Downloaded (DB : in Database'Class) return Cursor
+   is
+      Statement : constant String := "SELECT * FROM Song ORDER BY Last_Downloaded DESC";
+   begin
+      return Checked_Fetch (DB, Statement);
+   end Last_By_Last_Downloaded;
 
    function Find_File_Name (DB : in Database'Class; File_Name : in String) return Cursor
    is

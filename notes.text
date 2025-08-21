@@ -2,6 +2,8 @@ Alire.make all
 build/Makefile obsolete
 
 see windows org.stephe_leake.music_player_2/notes.text
+    Doing Android on debian would just slow down everything
+    get a Debian computer?
 
 branches:
     smm.main - installed in Debian
@@ -22,15 +24,11 @@ branches:
  '(("../org.stephe_leake.sal.stephe-1" . "../org.stephe_leake.sal")
    ("../smm.work_1"                    . "../smm.main")))
 
+(dvc-propagate-one "../smm.work_1" "../smm.main")
+
  current work
-add 'smm update_playlist'
-    compiles
-
-    android app add 'clean playlist' => delete played songs from playlist file
-        running
-
-    write shell script to fetch playlist (and notes), run smm update_playlist, replace playlist.
-        ~/bin/music_update_playlist.sh
+old last_downloaded due to play_after a dont_play!
+    add that check to smm check
 
 smm check reports missing files that are not in fact missing
     recompile with gnat 15?
@@ -42,6 +40,8 @@ replace web server with socket listener
     url contains the name of the script; it's _not_ transparent
 
     socket listener is also not transparent
+
+    web server supports web interface
 
 Don't randomize five oldest
 

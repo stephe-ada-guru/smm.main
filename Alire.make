@@ -12,6 +12,8 @@ STEPHES_ADA_LIBRARY_ALIRE_PREFIX ?= $(CURDIR)/../org.stephe_leake.sal
 
 include $(STEPHES_ADA_LIBRARY_ALIRE_PREFIX)/build/alire_rules.make
 
+vpath %.adb source
+
 all : alire-build install
 
 #install :: server-data
@@ -38,6 +40,12 @@ $(SERVER_DATA)/% : source/%
 $(HOME)/bin/% : $(ALIRE_EXEC_DIR)/%
 	cp $^ $@
 
+modify : $(ALIRE_EXEC_DIR)/modify_schema.exe smm_new.db
+	$(ALIRE_EXEC_DIR)/modify_schema.exe $(HOME)/smm/smm.db smm_new.db
+
+smm%.db : source/create_schema.sql
+	sqlite3 -init $< $@ ".quit"
+
 clean : alire-clean
 
 # this also cleans dependencies
@@ -50,10 +58,13 @@ $(ALIRE_EXEC_DIR)/smm.exe : force
 
 t1 : VERBOSITY ?= 0
 t1 : $(ALIRE_EXEC_DIR)/smm.exe
-	cd /Projects/Music; $(CURDIR)/$(ALIRE_EXEC_DIR)/smm.exe --verbosity=$(VERBOSITY) --max_errors=5 compare_phone /tmp/phone.log
+	cd /Projects/Music; $(CURDIR)/$(ALIRE_EXEC_DIR)/smm.exe --db=/Projects/smm.main/smm_new.db --verbosity=$(VERBOSITY) update_playlist /tmp/vocal.m3u vocal 20 --replace
 
-t2 : build/obj/development/test_one_harness.exe
-	cd build; obj/development/test_one_harness.exe 1 test_server.adb ""
+t2 : $(ALIRE_EXEC_DIR)/debug.exe
+	$(ALIRE_EXEC_DIR)/debug.exe ~/smm/smm.db vocal
+
+t3 : $(ALIRE_EXEC_DIR)/smm.exe
+	$(ALIRE_EXEC_DIR)/smm.exe history
 
 .PHONEY : t1 t2
 

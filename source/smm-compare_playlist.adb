@@ -255,7 +255,7 @@ begin
            DB_Title = Spotify_Title;
       end "=";
 
-      DB_I : SMM.Database.Cursor := DB.First;
+      DB_I : SMM.Database.Cursor := DB.First_By_ID;
       --  Iterates in song ID order; playlist is created in that order. We
       --  need album_artist, album, title to match Spotify playlist entry.
       --

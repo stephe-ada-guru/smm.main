@@ -38,7 +38,7 @@ is
    procedure Check_Before_After_Exists
    is
       use SMM.Database;
-      I : Cursor := First (DB);
+      I : Cursor := First_By_ID (DB);
    begin
       loop
          exit when not I.Has_Element;
@@ -70,6 +70,9 @@ is
                After_ID  : constant Integer := I.ID;
                Before_ID : constant Integer := I.Play_After;
                Before_J  : constant Cursor  := Find_ID (DB, Before_ID);
+
+               After_Dont_Play  : constant Boolean  := I.Category_Contains ("dont_play");
+               Before_Dont_Play : constant  Boolean := Before_J.Category_Contains ("dont_play");
             begin
                if not Before_J.Has_Element then
                   Failed := Failed + 1;
@@ -82,6 +85,15 @@ is
                        ("db mismatch" & Integer'Image (I.ID) & " Play_Before:" & Integer'Image (Before_ID) &
                           "; Play_After" & Integer'Image (After_ID));
                   end if;
+
+                  if (After_Dont_Play and not Before_Dont_Play) or
+                    (not After_Dont_Play and Before_Dont_Play)
+                  then
+                     Put_Line
+                       ("db mismatch before/after dont_play Before:" & Integer'Image (Before_ID) &
+                          "; After" & Integer'Image (After_ID));
+                  end if;
+
                else
                   Failed := Failed + 1;
                   Put_Line

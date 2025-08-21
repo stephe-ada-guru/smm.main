@@ -49,28 +49,4 @@ package SMM.Song_Lists is
       Songs : in out Song_Lists.List);
    --  If any Songs have .Play_Before attribute, enforce it.
 
-   ----------
-   --  Time lists
-
-   type Time_List_Element_Type is record
-      Last_Downloaded : SMM.Database.Time_String;
-      Songs           : Song_Lists.List;
-   end record;
-
-   function Is_Equal (Left : in Time_List_Element_Type; Right : in Time_List_Element_Type) return Boolean is
-      (Left.Last_Downloaded = Right.Last_Downloaded);
-
-   function Is_Less (Left : in Time_List_Element_Type; Right : in Time_List_Element_Type) return Boolean is
-      (Left.Last_Downloaded < Right.Last_Downloaded);
-
-   package Time_Lists is new Ada.Containers.Doubly_Linked_Lists (Time_List_Element_Type, Is_Equal);
-
-   package Time_Lists_Sorting is new Time_Lists.Generic_Sorting (Is_Less);
-
-   procedure Insert
-     (DB   : in     SMM.Database.Database;
-      Item : in     Integer;
-      List : in out Time_Lists.List);
-   --  Insert Item into List.
-
 end SMM.Song_Lists;

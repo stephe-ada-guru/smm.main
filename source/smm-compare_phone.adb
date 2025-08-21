@@ -22,6 +22,7 @@ with Ada.Calendar.Formatting;
 with Ada.Directories;
 with Ada.Strings.Fixed;
 with Ada.Text_IO; use Ada.Text_IO;
+with SAL.Gen_Trimmed_Image;
 with SAL.Gen_Unbounded_Definite_Red_Black_Trees;
 procedure SMM.Compare_Phone
   (Source_Root    : in String;
@@ -76,10 +77,10 @@ begin
             null;
 
          elsif Line (Line'Last) = ':' then
+            --  New directory. must be relative to Music
             if Line'Length = 2 then
                Current_Dir := +".";
             elsif Line (Line'First + 0 .. Line'First + 1) = "./" then
-               --  Local filenames don't start with ./
                Current_Dir := +Line (Line'First + 2 .. Line'Last - 1);
             end if;
 
@@ -96,8 +97,14 @@ begin
             --  Except ignore files in root; they are only on the phone
             if -Current_Dir /= "." then
                declare
-                  --  Line looks like:
-                  --  drwxrwx---  4 u0_a288 u0_a288  3452 2023-06-28 14:44 Aaron Copland
+                  --  phone: Line from 'ls -lR' looks like:
+                  --  drwxrwx--- 4 u0_a288 u0_a288  3452 2023-06-28 14:44 Aaron Copland
+
+                  --  portable mounted in Debian: Line from
+                  --  'ls -lR --time-style "+%F %H:%M:%S" --quoting-style=literal'
+                  --  looks like:
+                  --  drwxrwxrwx 1 stephe stephe 8192 2024-04-28 09:26:23 Appalachian Spring
+
                   --  but the column widths are not fixed.
                   --  Calendar.Formatting.Value requires a seconds field
                   function Find_Date_First return Integer
@@ -108,9 +115,26 @@ begin
                      return Index (Line, Pattern => "-", From => First_Space + 1) - 4;
                   end Find_Date_First;
 
-                  Date_First : constant Integer := Find_Date_First;
-                  Date_String : constant String := Line (Date_First .. Date_First + 15) & ":00";
-                  Filename    : constant String := -Current_Dir & "/" & Line (Date_First + 17 .. Line'Last);
+                  function Find_Date_Last (Date_First : in Integer) return Integer
+                  is
+                     use Ada.Strings.Fixed;
+                     First_Space : constant Integer := Index (Line, Pattern => " ", From => Date_First);
+                  begin
+                     return Index (Line, Pattern => " ", From => First_Space + 1) - 1;
+                  end Find_Date_Last;
+
+                  function Error_Line return String
+                  is
+                     function Trimmed_Image is new SAL.Gen_Trimmed_Image (Positive_Count);
+                  begin
+                     return Phone_Filename & ":" & Trimmed_Image (Ada.Text_IO.Line (Phone_File)) & ":";
+                  end Error_Line;
+
+                  Date_First  : constant Integer := Find_Date_First;
+                  Date_Last   : constant Integer := Find_Date_Last (Date_First);
+                  Date_String : constant String  := Line (Date_First .. Date_Last) &
+                    (if Date_Last - Date_First > 15 then "" else ":00");
+                  Filename    : constant String  := -Current_Dir & "/" & Line (Date_Last + 2 .. Line'Last);
                begin
                   Phone_Data.Insert
                     (Data'
@@ -123,7 +147,7 @@ begin
 
                when SAL.Duplicate_Key =>
                   --  From Insert
-                  raise SAL.Programmer_Error with "duplicate filename? '" & Filename & "'";
+                  raise SAL.Programmer_Error with Error_Line & "duplicate filename? '" & Filename & "'";
                end;
             end if;
          else
