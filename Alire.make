@@ -16,10 +16,11 @@ vpath %.adb source
 
 all : alire-build install
 
-#install :: server-data
+install :: server-data
 install :: $(HOME)/bin/smm.exe
-#install :: $(HOME)/bin/smm-server_driver.exe
-#install :: $(HOME)/bin/smm-show_id3.exe
+install :: $(HOME)/bin/smm-server_driver.exe
+install :: /usr/lib/cgi-bin/smm
+install :: $(HOME)/bin/smm-show_id3.exe
 
 # SERVER_DATA defined in prj-alire.el
 
@@ -34,6 +35,9 @@ server-data :: $(SERVER_DATA)/songs.css
 server-data :: $(SERVER_DATA)/songs.js
 
 $(SERVER_DATA)/% : source/%
+	cp $^ $@
+
+/usr/lib/cgi-bin/smm : source/smm
 	cp $^ $@
 
 # don't strip, so stack traceback is useful on errors

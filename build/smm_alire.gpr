@@ -8,7 +8,7 @@ project Smm_Alire is
    for Object_Dir use "obj/" & Smm_Config.Build_Profile;
    for Create_Missing_Dirs use "True";
    for Exec_Dir use "bin";
-   for Main use ("smm-driver", "smm-show_id3");
+   for Main use ("smm-driver", "smm-show_id3", "smm-server_driver");
 
    package Compiler is
       case Smm_Config.Build_Profile is

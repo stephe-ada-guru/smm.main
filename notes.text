@@ -27,23 +27,21 @@ branches:
 (dvc-propagate-one "../smm.work_1" "../smm.main")
 
  current work
-old last_downloaded due to play_after a dont_play!
-    add that check to smm check
+replace web server with Debian server = Apache
+    use Common Gateway Interface (cgi) https://datatracker.ietf.org/doc/html/rfc3875
+    see gemini_use_apache.text
 
-smm check reports missing files that are not in fact missing
+    install shell script 'smm' to /usr/lib/cgi-bin/
+        which invokes $(HOME)/bin/smm-server_driver.exe $(HOME)/smm/smm-server.config
+
+    smm-server_driver.exe compiles
+
+smm check
+    reports missing files that are not in fact missing
+        get a Debian computer
     recompile with gnat 15?
 
-replace web server with socket listener
-    or see how hard it is to use the Debian server = Apache
-    use common Gateway Interface https://datatracker.ietf.org/doc/html/rfc3875
-    see gemini_use_apache.text
-    url contains the name of the script; it's _not_ transparent
-
-    socket listener is also not transparent
-
-    web server supports web interface
-
-Don't randomize five oldest
+    ignore missing album if in album_artist directory?
 
 compare music spotify doesn't check new in spotify (crash test dummies superman).
 

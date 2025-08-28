@@ -2,6 +2,8 @@
 --
 --  Stephe's Music Manager Server
 --
+--  Implement a CGI script.
+--
 --  Copyright (C) 2016 - 2020, 2022, 2023, 2025 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
@@ -18,27 +20,19 @@
 
 pragma License (GPL);
 
-with AWS.Config.Set;
-with AWS.Containers.Tables;
-with AWS.Log;
-with AWS.MIME;
-with AWS.Messages;
-with AWS.Parameters;
-with AWS.Response.Set;
-with AWS.Server.Log;
-with AWS.Status;
-with AWS.URL;
 with Ada.Calendar.Formatting;
 with Ada.Calendar;
 with Ada.Characters.Handling;
 with Ada.Command_Line;
 with Ada.Directories;
+with Ada.Environment_Variables;
 with Ada.Exceptions;
 with Ada.IO_Exceptions;
 with Ada.Strings.Fixed;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
-with Ada.Text_IO;
-with SAL.Config_Files.Integer;
+with Ada.Text_IO.Text_Streams;
+with SAL.Config_Files;
+with SAL.Gen_Definite_Doubly_Linked_Lists;
 with SAL.Time_Conversions;
 with SAL.Web_Utils;
 with SMM.Database;
@@ -51,50 +45,25 @@ package body SMM.Server is
    --  2 - API specified in GET. Client only downloads new songs (all others previously downloaded).
    --      'get_new_songs_list => list of "Album_Artist", "album", "title", "filename"
 
-   Source_Root : Unbounded_String; -- Root of music files; does not end in /
+   package String_Lists is new SAL.Gen_Definite_Doubly_Linked_Lists (Ada.Strings.Unbounded.Unbounded_String);
+
+   Source_Root : Unbounded_String; -- Absolute root of music files; does not end in /
    Server_Data : Unbounded_String;
-   --  Relative to Source_Root; contains server html, css, js files; does not end in /
+   --  Absolute; contains server html, css, js files; does not end in /
 
    DB_Filename : Unbounded_String;
-   Enable_Log  : Boolean := False;
-   Debug_Log   : AWS.Log.Object; -- SMM.Least_Recent_Songs writes song names here if enabled.
 
-   function Decode_Plus (Item : in String) return String
-   is begin
-      return Result : String := Item do
-         for I in Result'Range loop
-            if Result (I) = '+' then
-               Result (I) := ' ';
-            end if;
-         end loop;
-      end return;
-   end Decode_Plus;
-
-   function Decode_Plus (Param : in AWS.Parameters.List) return AWS.Parameters.List
-   is
-      --  We have patched AWS.URL.Decode to not decode +, since that is not
-      --  appropriate outside the query.
-      Result : AWS.Parameters.List;
-   begin
-      for I in 1 .. Param.Count loop
-         Result.Add (Param.Get_Name (I), Decode_Plus (Param.Get_Value (I)));
-      end loop;
-      return Result;
-   end Decode_Plus;
-
-   function Meta_Files (Source_Dir : in String) return AWS.Containers.Tables.Table_Type
+   function Meta_Files (Source_Dir : in String) return String_Lists.List
    is
       use Ada.Directories;
 
-      Result : AWS.Containers.Tables.Table_Type;
+      Result : String_Lists.List;
 
       procedure Copy_Aux (Dir_Ent : in Directory_Entry_Type)
       is
          Path_Name : constant String := Relative_Name (-Source_Root, Normalize (Full_Name (Dir_Ent)));
       begin
-         Result.Add
-           (Name => Simple_Name (Path_Name),
-            Value => Path_Name);
+         Result.Append (+Path_Name);
       end Copy_Aux;
    begin
       Search
@@ -180,31 +149,32 @@ package body SMM.Server is
    --  Specific request handlers, alphabetical
 
    function Handle_Get_New_Songs_List
-     (URI : in AWS.URL.Object;
-      API : in API_Versions)
-     return AWS.Response.Data
+     (Parameters : in SAL.Web_Utils.Parameter_Lists.Map;
+      API        : in API_Versions)
+     return String
    is
-      --  Send list of least recently heard songs; client will build a
-      --  playlist and maybe download the actual song files.
+      --  Return an HTTP response that contains a list of least recently
+      --  heard songs; client will build a playlist and maybe download the
+      --  actual song files.
       use Ada.Containers;
       use Ada.Exceptions;
-      use AWS.URL;
+      use SAL.Web_Utils;
       use SMM.Database;
       use SMM.Song_Lists.Song_Lists;
 
-      Category          : constant String     := Parameter (URI, "category");
-      Count             : constant Count_Type := Count_Type'Value (Parameter (URI, "count"));
-      New_Count         : constant Count_Type := Count_Type'Value (Parameter (URI, "new_count"));
+      Category          : constant String     := Parameters.Element ("category");
+      Count             : constant Count_Type := Count_Type'Value (Parameters.Element ("count"));
+      New_Count         : constant Count_Type := Count_Type'Value (Parameters.Element ("new_count"));
       Record_Downloaded : constant Boolean    :=
         (if API > 1
-         then Boolean'Value (Parameter (URI, "record_downloaded"))
+         then Boolean'Value (Parameters.Element ("record_downloaded"))
          else False);
 
-      Seed_Param : constant String     := Parameter (URI, "seed"); -- only used in unit tests
+      Seed_Param : constant String     := Parameters.Element ("seed"); -- only used in unit tests
       Seed       : constant Integer    :=
         (if Seed_Param'Length > 0 then Integer'Value (Seed_Param) else 0);
 
-      Over_Select_Ratio_Param : constant String := Parameter (URI, "over_select_ratio");
+      Over_Select_Ratio_Param : constant String := Parameters.Element ("over_select_ratio");
       Over_Select_Ratio       : constant Float  :=
         (if Over_Select_Ratio_Param'Length > 0 then Float'Value (Over_Select_Ratio_Param) else 1.1);
       --  Larger over_select_ratio causes more mixing of total song order,
@@ -223,9 +193,7 @@ package body SMM.Server is
          Song_Count        => Count,
          New_Song_Count    => New_Count,
          Over_Select_Ratio => Over_Select_Ratio,
-         Seed              => Seed,
-         Debug             => Enable_Log,
-         Debug_Log         => Debug_Log);
+         Seed              => Seed);
 
       for I of Songs loop
          declare
@@ -233,7 +201,7 @@ package body SMM.Server is
          begin
             if Cur.Has_Element then
                if Need_Separator then
-                  Response := Response & ASCII.CR & ASCII.LF;
+                  Response := Response & New_Line;
                else
                   Need_Separator := True;
                end if;
@@ -251,202 +219,112 @@ package body SMM.Server is
          end;
       end loop;
 
-      return AWS.Response.Build ("text/plain", Response);
+      return HTTP_Response (S200, Content_Text_Plain, -Response);
    exception
    when E : others =>
-      return AWS.Response.Acknowledge
-        (Status_Code  => AWS.Messages.S500,
-         Message_Body => "exception " & Exception_Name (E) & ": " & Exception_Message (E));
+      return HTML_Response
+        (Status_Code => S500,
+         Content => "exception " & Exception_Name (E) & ": " & Exception_Message (E));
    end Handle_Get_New_Songs_List;
 
-   function Handle_Field (URI : in AWS.URL.Object) return AWS.Response.Data
+   function Handle_Field
+     (URI_Param : in SAL.Web_Utils.Parameter_Lists.Map;
+      Query     : in String)
+     return String
+   --  Query is only used in error messages.
    is
       use SMM.Database;
+      use SAL.Web_Utils;
 
-      URI_Param : constant AWS.Parameters.List := AWS.URL.Parameters (URI);
-      DB        : SMM.Database.Database;
+      DB : SMM.Database.Database;
    begin
       --  From Emacs notes, query looks like:
       --
       --  field?id=<id>&field=<field-name>
 
       if URI_Param.Is_Empty then
-         return AWS.Response.Acknowledge (AWS.Messages.S400, "no params; usage field?id=<id>&field=<field_name>");
+         return HTML_Response (S400, "no params; usage field?id=<id>&field=<field_name>");
 
-      elsif URI_Param.Exist ("id") and URI_Param.Exist ("field") then
+      elsif Exist (Map => URI_Param, Key => "id") and Exist (URI_Param, "field") then
          DB.Open (-DB_Filename);
 
          declare
-            I          : constant Cursor := Find_ID (DB, Integer'Value (URI_Param.Get ("id")));
-            Field_Name : constant String := URI_Param.Get ("field");
+            I          : constant Cursor := Find_ID (DB, Integer'Value (Get (URI_Param, "id")));
+            Field_Name : constant String := Get (URI_Param, "field");
          begin
             if not I.Has_Element then
-               return AWS.Response.Acknowledge (AWS.Messages.S400, "id " & URI_Param.Get ("id") & " not found");
+               return HTML_Response (S400, "id " & Get (URI_Param, "id") & " not found");
             end if;
 
             if Field_Name = "artist" then
-               return AWS.Response.Build ("text/plain", I.Artist);
+               return HTTP_Response (S200, Content_Text_Plain, I.Artist);
             elsif Field_Name = "album" then
-               return AWS.Response.Build ("text/plain", I.Album);
+               return HTTP_Response (S200, Content_Text_Plain, I.Album);
             elsif Field_Name = "category" then
-               return AWS.Response.Build ("text/plain", I.Category);
+               return HTTP_Response (S200, Content_Text_Plain, I.Category);
             elsif Field_Name = "title" then
-               return AWS.Response.Build ("text/plain", I.Title);
+               return HTTP_Response (S200, Content_Text_Plain, I.Title);
             else
-               return AWS.Response.Acknowledge (AWS.Messages.S400, "id " & URI_Param.Get ("id") & " not found");
+               return HTML_Response (S400, "id " & Get (URI_Param, "id") & " not found");
             end if;
          end; --  Free cursor
 
       else
-         return AWS.Response.Acknowledge (AWS.Messages.S400, "invalid query params '" & AWS.URL.Parameters (URI) & "'");
+         return HTML_Response (S400, "invalid query params '" & Query & "'");
       end if;
    exception
    when Constraint_Error =>
       --  from Integer'Value (id)
-      return AWS.Response.Acknowledge (AWS.Messages.S400, "invalid id '" & URI_Param.Get ("id") & "'");
+      return HTML_Response (S400, "invalid id '" & Get (URI_Param, "id") & "'");
    end Handle_Field;
 
-   function Handle_File
-     (URI           : in AWS.URL.Object;
-      Name_In_Param : in Boolean;
-      API           : in API_Versions)
-     return AWS.Response.Data
-   is
-      --  If Name_In_Param, assume it's from Android app updating playlist;
-      --  record download time.
-
-      use Ada.Directories;
-      use Ada.Exceptions;
-      use AWS.URL;
-      use SMM.Database;
-
-      Param : constant AWS.Parameters.List := AWS.URL.Parameters (URI);
-
-      Filename : constant String := -Source_Root &
-        (if Name_In_Param
-         then Param.Get ("name")
-         else Path (URI) & File (URI));
-
-      Ext       : constant String := Extension (Filename);
-      Mime_Type : constant String :=
-        --  MIME types from https://www.iana.org/assignments/media-types/media-types.xhtml
-        --  also GNAT/share/examples/aws/web_elements/mime.types
-        (if    Ext = "css" then "text/css"
-         elsif Ext = "jpg" then "image/jpeg"
-         elsif Ext = "js"  then "text/javascript"
-         elsif Ext = "m4a" then "audio/mpeg"
-         elsif Ext = "mp3" then "audio/mpeg"
-         elsif Ext = "pdf" then "application/pdf"
-         elsif Ext = "png" then "image/png"
-         elsif Ext = "svg" then "image/svg+xml"
-         else "");
-
-      DB              : SMM.Database.Database;
-      Result          : AWS.Response.Data;
-      I               : Cursor;
-      Prev_Downloaded : Time_String;
-
-   begin
-      if Mime_Type'Length = 0 then
-         return AWS.Response.Acknowledge
-           (Status_Code  => AWS.Messages.S500,
-            Message_Body => "<p>file extension '" & Ext & "' not supported.");
-      end if;
-
-      if Exists (Filename) then
-         Result := AWS.Response.File (Mime_Type, Filename);
-
-         if (Ext = "mp3" or Ext = "m4a") and Name_In_Param then
-            DB.Open (-DB_Filename);
-
-            --  Find does not want leading / on filename
-            I := DB.Find_File_Name (Filename (Length (Source_Root) + 2 .. Filename'Last));
-
-            if not I.Has_Element then
-               return AWS.Response.Acknowledge
-                 (Status_Code  => AWS.Messages.S500,
-                  Message_Body => "file not found");
-            end if;
-
-            case API is
-            when 1 =>
-               I.Write_Last_Downloaded (DB, SMM.Database.UTC_Image (Ada.Calendar.Clock));
-
-            when 2 =>
-               --  Done in Handle_Get_New_Songs_List
-               null;
-            end case;
-
-            Prev_Downloaded := I.Prev_Downloaded;
-
-            Finalize (DB);
-
-            AWS.Response.Set.Add_Header (Result, "X-prev_downloaded", Prev_Downloaded);
-         end if;
-
-         return Result;
-
-      else
-         return AWS.Response.Acknowledge
-           (Status_Code  => AWS.Messages.S404,
-            Message_Body => "<p>file '" & Filename & "' not found.");
-      end if;
-   exception
-   when Name_Error =>
-      --  Exists raises Name_Error if the directory does not exist
-      return AWS.Response.Acknowledge
-        (Status_Code  => AWS.Messages.S404,
-         Message_Body => "<p>file '" & Filename & "' not found.");
-   when E : others =>
-      return AWS.Response.Acknowledge
-        (Status_Code  => AWS.Messages.S500,
-         Message_Body => "exception " & Exception_Name (E) & ": " & Exception_Message (E));
-   end Handle_File;
-
-   function Handle_ID (URI : in AWS.URL.Object) return AWS.Response.Data
+   function Handle_ID
+     (URI_Param : in SAL.Web_Utils.Parameter_Lists.Map;
+      Query     : in String)
+     return String
+   --  Query is only used in error messages.
    is
       use SMM.Database;
+      use SAL.Web_Utils;
 
-      URI_Param : constant AWS.Parameters.List := AWS.URL.Parameters (URI);
-      DB        : SMM.Database.Database;
+      DB : SMM.Database.Database;
    begin
       if URI_Param.Is_Empty then
-         return AWS.Response.Acknowledge (AWS.Messages.S400, "no params; usage id?file=<file_name>");
+         return HTML_Response (S400, "no params; usage id?file=<file_name>");
 
       else
          --  From Emacs notes buffer page, query looks like
          --  'id?file=<file_name>'
 
-         if not URI_Param.Exist ("file") then
-            return AWS.Response.Acknowledge
-              (AWS.Messages.S400, "missing 'file' param: '" & AWS.URL.Parameters (URI) & "'");
+         if not Exist (URI_Param, "file") then
+            return HTML_Response (S400, "missing 'file' param: '" & Query & "'");
          end if;
 
          DB.Open (-DB_Filename);
 
          declare
-            File_Name : constant String := URI_Param.Get ("file");
+            File_Name : constant String := Get (URI_Param, "file");
             I         : constant Cursor := DB.Find_File_Name (File_Name);
          begin
             if I.Has_Element then
-               return AWS.Response.Build ("text/plain", Integer'Image (I.ID));
+               return HTTP_Response (S200, Content_Text_Plain, Integer'Image (I.ID));
             else
-               return AWS.Response.Acknowledge (AWS.Messages.S400, "file not in db: '" & File_Name & "'");
+               return HTML_Response (S400, "file not in db: '" & File_Name & "'");
             end if;
          end;
       end if;
    end Handle_ID;
 
-   function Handle_Meta (URI : in AWS.URL.Object) return AWS.Response.Data
+   function Handle_Meta (Path : in String) return String
    is
       use Ada.Directories;
-      use AWS.URL;
+      use SAL.Web_Utils;
 
-      Source_Dir : constant String := -Source_Root & Path (URI);
+      Source_Dir : constant String := -Source_Root & Path;
       Response   : Unbounded_String;
-      Min_Size : File_Size := 0;
+      Min_Size   : File_Size       := 0;
 
-      Min_Jpg_Size : constant File_Size := 40_000; -- exclude tiny images
+      Min_Jpg_Size : constant File_Size := 40_000; -- exclude tiny images, icons
 
       Need_Separator : Boolean := False;
 
@@ -454,7 +332,7 @@ package body SMM.Server is
       is begin
          if Size (Dir_Ent) > Min_Size then
             if Need_Separator then
-               Response := Response & ASCII.CR & ASCII.LF;
+               Response := Response & New_Line;
             else
                Need_Separator := True;
             end if;
@@ -466,7 +344,7 @@ package body SMM.Server is
       Min_Size := Min_Jpg_Size;
       Search
         (Directory => Source_Dir,
-         Pattern   => "AlbumArt*.jpg",
+         Pattern   => "*.jpg",
          Filter    => (Ordinary_File => True, others => False),
          Process   => Copy_Aux'Access);
 
@@ -477,25 +355,24 @@ package body SMM.Server is
          Filter    => (Ordinary_File => True, others => False),
          Process   => Copy_Aux'Access);
 
-      return AWS.Response.Build ("text/plain", Response);
+      return HTTP_Response (S200, Content_Text_Plain, -Response);
    exception
    when Ada.IO_Exceptions.Name_Error =>
       --  GNAT runtime sets message to "(unknown directory "")"; no file name!
-      raise Ada.IO_Exceptions.Name_Error with "unknown directory '" & Path (URI) & "'";
+      raise Ada.IO_Exceptions.Name_Error with "unknown directory '" & Path & "'";
 
    end Handle_Meta;
 
-   function Handle_Put_Notes (Request : in AWS.Status.Data; URI : in AWS.URL.Object) return AWS.Response.Data
+   function Handle_Put_Notes (Data : in String; Path : in String) return String
    is
       use Ada.Directories;
       use Ada.Exceptions;
       use Ada.Strings.Fixed;
       use Ada.Text_IO;
-      use AWS.URL;
+      use SAL.Web_Utils;
 
-      Pathname : constant String := -Source_Root & Path (URI);
-      Filename : constant String := Pathname & File (URI);
-      Data     : constant String := -AWS.Status.Binary_Data (Request);
+      Filename : constant String := (-Server_Data) & Path;
+      Pathname : constant String := Ada.Directories.Containing_Directory (Filename);
       First    : Integer         := Data'First;
       Last     : Integer;
       File     : File_Type;
@@ -517,34 +394,35 @@ package body SMM.Server is
       end loop;
       Close (File);
 
-      return AWS.Response.Acknowledge (Status_Code  => AWS.Messages.S200);
+      return HTTP_Response (S200, Content_Text_Plain, "");
    exception
    when E : others =>
-      return AWS.Response.Acknowledge
-        (Status_Code  => AWS.Messages.S500,
-         Message_Body => "exception " & Exception_Name (E) & ": " & Exception_Message (E));
+      return HTML_Response (S400, "exception " & Exception_Name (E) & ": " & Exception_Message (E));
    end Handle_Put_Notes;
 
-   function Handle_Search (URI : in AWS.URL.Object) return AWS.Response.Data
+   function Handle_Search
+     (URI_Param : in SAL.Web_Utils.Parameter_Lists.Map;
+      Query     : in String)
+     return String
+   --  Query is only used in error messages.
    is
       use Ada.Characters.Handling;
       use Ada.Directories;
       use Ada.Strings.Fixed;
       use Ada.Strings;
-      use SMM.Database;
+      use SAL.Web_Utils;
 
-      URI_Param : constant AWS.Parameters.List := Decode_Plus (AWS.URL.Parameters (URI));
-      DB        : SMM.Database.Database;
+      DB : SMM.Database.Database;
 
       Search_Result_ID : constant String := "search_result";
 
-      Response_1 : constant String := "<!DOCTYPE html>" & ASCII.LF &
+      Response_1 : constant String := "<!DOCTYPE html>" & New_Line &
         "<html lang=""en"">" &
-        "<meta http-equiv=""Content-Type"" content=""text/html; charset=utf-8"">" & ASCII.LF &
-        "<head>" & ASCII.LF &
-        "<script src=""/" & (-Server_Data) & "/songs.js""></script>" & ASCII.LF &
+        "<meta http-equiv=""Content-Type"" content=""text/html; charset=utf-8"">" & New_Line &
+        "<head>" & New_Line &
+        "<script src=""/" & (-Server_Data) & "/songs.js""></script>" & New_Line &
         "<title>Stephe's music</title>" &
-        "<link type=""text/css"" rel=""stylesheet"" href=""/" & (-Server_Data) & "/songs.css""/>" & ASCII.LF &
+        "<link type=""text/css"" rel=""stylesheet"" href=""/" & (-Server_Data) & "/songs.css""/>" & New_Line &
         "</head>";
 
       Response_2 : constant String := "<div class=""tabbar"">" &
@@ -554,36 +432,38 @@ package body SMM.Server is
         "<button class=""tabbutton"" id=""detailed_search_button""" &
         " onclick=""SelectTab('detailed_search_button', 'detailed_search_tab', '" & Search_Result_ID &
         "')"">Detailed Search</button>" &
-        "</div>" & ASCII.LF &
+        "</div>" & New_Line &
         "<div class=""tabcontent"" id=""general_search_tab""><form action=""/search"" method=get>" &
         "<input type=submit value=""Search"">" &
-        "<input type=search autofocus name=""search"" value=""" & URI_Param.Get ("search") & """>" &
-        "</form></div>" & ASCII.LF &
+        "<input type=search autofocus name=""search"" value=""" & Get (URI_Param, "search") & """>" &
+        "</form></div>" & New_Line &
         "<div class=""tabcontent"" id=""detailed_search_tab"">" &
         "<form action=""/search"" method=get><div class=""table"">" &
         "<div class=""row""><label>Title </label>" &
-        "<input type=search name=""title"" value=""" & URI_Param.Get ("title") & """></div>" &
+        "<input type=search name=""title"" value=""" & Get (URI_Param, "title") & """></div>" &
         "<div class=""row""><label>Artist </label>" &
-        "<input type=search name=""artist"" value=""" & URI_Param.Get ("artist") & """></div>" &
+        "<input type=search name=""artist"" value=""" & Get (URI_Param, "artist") & """></div>" &
         "<div class=""row""><label>Album </label>" &
-        "<input type=search name=""album"" value=""" & URI_Param.Get ("album") & """></div>" &
+        "<input type=search name=""album"" value=""" & Get (URI_Param, "album") & """></div>" &
         "<div class=""row""><label>Album Artist</label>" &
-        "<input type=search name=""album_artist"" value=""" & URI_Param.Get ("album_artist") & """></div>" &
+        "<input type=search name=""album_artist"" value=""" & Get (URI_Param, "album_artist") & """></div>" &
         "<div class=""row""><label>Composer</label>" &
-        "<input type=search name=""composer"" value=""" & URI_Param.Get ("composer") & """></div>" &
+        "<input type=search name=""composer"" value=""" & Get (URI_Param, "composer") & """></div>" &
         "<div class=""row""><label>Category </label>" &
-        "<input type=search name=""category"" value=""" & URI_Param.Get ("category") & """></div>" &
+        "<input type=search name=""category"" value=""" & Get (URI_Param, "category") & """></div>" &
         "</div><input type=submit value=""Search"">" &
-        "</form></div><hr>" & ASCII.LF;
+        "</form></div><hr>" & New_Line;
 
       Response      : Unbounded_String;
       Current_Album : Unbounded_String;
       Album_ID      : Integer := 0;
 
-      function Search_Result (I : in Cursor) return String
+      function Search_Result (I : in SMM.Database.Cursor) return String
       is
+         use SMM.Database;
+
          Title_Row : constant Unbounded_String := +"<tr>" &
-           "<td><a href=""/" & AWS.URL.Encode (I.File_Name, SMM.File_Name_Encode_Set) &
+           "<td><a href=""/" & HTTP_Encode (I.File_Name) &
            """>" & Server_Img_Set (-Server_Data & "/play_icon", ".png", "play") &
            "</a></td>" &
            "<td class=""text"">" & I.Artist & "</td>" &
@@ -597,7 +477,7 @@ package body SMM.Server is
            (if I.Play_Before /= Null_ID then "v"
             elsif I.Play_After /= Null_ID then "^"
             else "") & "</td>" &
-           "</tr>" & ASCII.LF;
+           "</tr>" & New_Line;
 
          Result : Unbounded_String;
       begin
@@ -621,29 +501,29 @@ package body SMM.Server is
             declare
                Album_Item : Unbounded_String := +"<li id=""album_" & Trim (Integer'Image (Album_ID), Both) &
                  """ class=""album_li"">" &
-                 "<div class=""album_row""><a class=""text"" href=""search?album=" & AWS.URL.Encode
-                   (I.Album, SMM.File_Name_Encode_Set) & """>" & I.Album & "</a>" &
+                 "<div class=""album_row""><a class=""text"" href=""search?album=" & HTTP_Encode
+                   (I.Album) & """>" & I.Album & "</a>" &
                  "<div class=""text"">" & I.Album_Artist &
                  (if I.Year /= No_Year then Integer'Image (I.Year) else "") & "</div>";
 
-               Meta : constant AWS.Containers.Tables.Table_Type := Meta_Files (Containing_Directory (I.File_Name));
+               Meta : constant String_Lists.List := Meta_Files (Containing_Directory (I.File_Name));
             begin
-               for J in 1 .. Meta.Count loop
-                  if To_Lower (Extension (Meta.Get_Name (J))) = "jpg" then
+               for File of Meta loop
+                  if To_Lower (Extension (-File)) = "jpg" then
                      Album_Item := Album_Item & Server_Img
-                       (Meta.Get_Value (J), "album art", 100, 100, Class => "album_art_item");
+                       (-File, "album art", 100, 100, Class => "album_art_item");
                   end if;
                end loop;
 
-               for J in 1 .. Meta.Count loop
-                  if To_Lower (Meta.Get_Name (J)) = "liner_notes.pdf" then
+               for File of Meta loop
+                  if To_Lower (-File) = "liner_notes.pdf" then
                      Album_Item := Album_Item & SAL.Web_Utils.Local_Href
-                       (Meta.Get_Value (J), Server_Img_Set
+                       (-File, Server_Img_Set
                           (-Server_Data & "/liner_notes_icon", ".png", "liner notes",
                            Class => "album_art_item"));
                   end if;
                end loop;
-               Album_Item := Album_Item & "</div>" & ASCII.LF;
+               Album_Item := Album_Item & "</div>" & New_Line;
 
                Result := Result & Album_Item & "<table><tbody>" & Title_Row;
                return -Result;
@@ -651,15 +531,17 @@ package body SMM.Server is
          end if;
       end Search_Result;
 
-      function To_SQL_Param (Param : in AWS.Parameters.List) return SMM.Database.Field_Values
-      is begin
+      function To_SQL_Param (Param : in Parameter_Lists.Map) return SMM.Database.Field_Values
+      is
+         use Parameter_Lists;
+      begin
          return Result : SMM.Database.Field_Values do
-            for I in Fields loop
+            for I in SMM.Database.Fields loop
                declare
-                  Value : constant String := Param.Get (-Field_Image (I)); -- empty string if not present
+                  Cur : constant Cursor := Param.Find (-SMM.Database.Field_Image (I));
                begin
-                  if Value'Length > 0 then
-                     Result (I) := +Value;
+                  if Cur /= No_Element then
+                     Result (I) := +Element (Cur);
                   end if;
                end;
             end loop;
@@ -678,22 +560,23 @@ package body SMM.Server is
       if URI_Param.Is_Empty then
          --  Return search page with no results.
          Response := +Response_1 & "<body onload=""InitTabs()"">" & Response_2 & "</body></html>";
-         return AWS.Response.Build ("text/html", Response);
+         return HTTP_Response (S200, Content_Text_HTML, -Response);
 
-      elsif URI_Param.Exist ("search") or
-        URI_Param.Exist ("title") or URI_Param.Exist ("artist") or URI_Param.Exist ("album") or
-        URI_Param.Exist ("album_artist") or URI_Param.Exist ("category")
+      elsif Exist (URI_Param, "search") or
+        Exist (URI_Param, "title") or Exist (URI_Param, "artist") or Exist (URI_Param, "album") or
+        Exist (URI_Param, "album_artist") or Exist (URI_Param, "category")
       then
          DB.Open (-DB_Filename);
 
          declare
+            use SMM.Database;
             I                : Cursor;
             Button           : Unbounded_String;
             Tab              : Unbounded_String;
          begin
-            if URI_Param.Exist ("search") then
+            if Exist (URI_Param, "search") then
                --  General search
-               I      := DB.Find_Like (URI_Param.Get ("search"), Order_By => (Album, Track));
+               I      := DB.Find_Like (Decode_Plus (Get (URI_Param, "search")), Order_By => (Album, Track));
                Button := +"general_search_button";
                Tab    := +"general_search_tab";
             else
@@ -709,13 +592,13 @@ package body SMM.Server is
 
             if not I.Has_Element then
                Response := Response  & "<p>no matching entries found</p></body></html>";
-               return AWS.Response.Build ("text/html", Response);
+               return HTTP_Response (S200, Content_Text_HTML, -Response);
             end if;
 
             Response := Response & "<div id=""" & Search_Result_ID & """ class=""" & Search_Result_ID & """><ul>";
             loop
                exit when not I.Has_Element;
-               Response := Response & Search_Result (I) & ASCII.LF;
+               Response := Response & Search_Result (I) & New_Line;
 
                I.Next;
             end loop;
@@ -727,40 +610,40 @@ package body SMM.Server is
          --  Terminate album list, search result scroll, body, doc.
          Response := Response & "</ul></div></body></html>";
 
-         return AWS.Response.Build ("text/html", Response);
+         return HTTP_Response (S200, Content_Text_HTML, -Response);
 
       else
-         return AWS.Response.Acknowledge (AWS.Messages.S400, "invalid query params '" & AWS.URL.Parameters (URI) & "'");
+         return HTML_Response (S400, "invalid query params '" & Query & "'");
       end if;
    end Handle_Search;
 
-   function Handle_Update (URI : in AWS.URL.Object) return AWS.Response.Data
+   function Handle_Update
+     (URI_Param : in SAL.Web_Utils.Parameter_Lists.Map;
+      Query     : in String)
+     return String
    is
       use SMM.Database;
+      use SAL.Web_Utils;
 
-      URI_Param : constant AWS.Parameters.List := Decode_Plus (AWS.URL.Parameters (URI));
       DB        : SMM.Database.Database;
       SQL_Param : SMM.Database.Field_Values;
       Key_Field : Unbounded_String;
       Ref       : Unbounded_String;
-      Cancel    : Boolean                      := False;
+      Cancel    : Boolean := False;
 
-      function Redirect_Search return AWS.Response.Data
+      function Redirect_Search return String
       is
-         use AWS.Response;
+         use Header_Lists;
+         Headers : Header_Lists.List;
       begin
-         return Result : Data do
-            Set.Location     (Result, AWS.URL.Decode (-Ref));
-            Set.Status_Code  (Result, AWS.Messages.S303);
-            Set.Content_Type (Result, AWS.MIME.Text_HTML);
-            Set.Message_Body (Result, "back to search");
-         end return;
+         Headers.Append ((Status, +"back to search", S303));
+         Headers.Append ((Location, Ref));
+         Headers.Append ((Content_Type, +Content_Text_HTML));
+         return HTTP_Response (Headers, "back to search");
       end Redirect_Search;
-
    begin
       if URI_Param.Is_Empty then
-         return AWS.Response.Acknowledge
-           (AWS.Messages.S400, "invalid query params: '" & AWS.URL.Parameters (URI) & "'");
+         return HTML_Response (S400, "invalid query params: '" & Query & "'");
 
       else
          --  From Emacs notes buffer page, query looks like
@@ -773,37 +656,35 @@ package body SMM.Server is
          --
          --  Only update field if present. If a "cancel" param is present, don't update anything.
 
-         if URI_Param.Exist ("id") then
+         if Exist (URI_Param, "id") then
             Key_Field := +"id";
-         elsif URI_Param.Exist ("file") then
+         elsif Exist (URI_Param, "file") then
             Key_Field := +"file";
          else
-            return AWS.Response.Acknowledge
-              (AWS.Messages.S400, "missing 'id' or 'file' param: '" & AWS.URL.Parameters (URI) & "'");
+            return HTML_Response (S400, "missing 'id' or 'file' param: '" & Query & "'");
          end if;
 
-         for I in 1 .. URI_Param.Count loop
+         for I in URI_Param.Iterate loop
             declare
-               Field_Name : String renames URI_Param.Get_Name (I);
+               Field_Name : String renames Parameter_Lists.Key (I);
             begin
                if Field_Name = "cancel" then
                   Cancel := True;
                elsif Field_Name = -Key_Field then
                   null;
                elsif Field_Name = "ref" then
-                  Ref := +URI_Param.Get_Value (I);
+                  Ref := +Parameter_Lists.Element (I);
                elsif Valid_Field (Field_Name) then
                   null;
                else
-                  return AWS.Response.Acknowledge
-                    (AWS.Messages.S400, "bad param name: '" & String'(Field_Name) & "'");
+                  return HTML_Response (S400, "bad param name: '" & Field_Name & "'");
                end if;
             end;
          end loop;
 
          if Cancel then
             if Length (Ref) = 0 then
-               return AWS.Response.Acknowledge (AWS.Messages.S200, "canceled");
+               return HTML_Response (S200, "canceled");
             else
                return Redirect_Search;
             end if;
@@ -811,7 +692,7 @@ package body SMM.Server is
 
          for I in Fields loop
             declare
-               Value : constant String := URI_Param.Get (-Field_Image (I)); -- empty string if not present
+               Value : constant String := Get (URI_Param, -Field_Image (I)); -- empty string if not present
             begin
                if Value'Length > 0 then
                   SQL_Param (I) := +Value;
@@ -824,23 +705,23 @@ package body SMM.Server is
          declare
             I : constant Cursor :=
               (if -Key_Field = "id"
-               then DB.Find_ID (Integer'Value (URI_Param.Get ("id")))
-               else DB.Find_File_Name (URI_Param.Get ("file")));
+               then DB.Find_ID (Integer'Value (Get (URI_Param, "id")))
+               else DB.Find_File_Name (Get (URI_Param, "file")));
          begin
             if I.Has_Element then
                DB.Update (I, SQL_Param);
             else
-               return AWS.Response.Acknowledge
-                 (AWS.Messages.S400, "not found in db: '" &
+               return HTML_Response
+                 (S400, "not found in db: '" &
                     (if -Key_Field = "id"
-                     then URI_Param.Get ("id")
-                     else URI_Param.Get ("file"))
+                     then Get (URI_Param, "id")
+                     else Get (URI_Param, "file"))
                     & "'");
             end if;
          end;
 
          if Length (Ref) = 0 then
-            return AWS.Response.Acknowledge (AWS.Messages.S200, "updated");
+            return HTML_Response (S200, "updated");
          else
             return Redirect_Search;
          end if;
@@ -850,81 +731,91 @@ package body SMM.Server is
    ----------
    --  Top level
 
-   function Handle_Request (Request : in AWS.Status.Data) return AWS.Response.Data
+   function Handle_Request return String
    is
       use Ada.Exceptions;
-      use AWS.Response;
-      use AWS.Status;
-      use AWS.URL;
-      URI : constant AWS.URL.Object := AWS.Status.URI (Request);
+      use SAL.Web_Utils;
+
+      --  Handle a Common Gateway Interface request
+      --  https://datatracker.ietf.org/doc/html/rfc3875
+      --
+      --  The full URI sent by the client looks like:
+      --  https:/<host>/cgi-bin/smm-server_driver.exe/<path>?<query>
+
+      Path   : constant String         := Ada.Environment_Variables.Value ("PATH_INFO");
+      Query  : constant String         := Ada.Environment_Variables.Value ("QUERY_STRING");
+      Method : constant Request_Method := Request_Method'Value (Ada.Environment_Variables.Value ("REQUEST_METHOD"));
    begin
-      case Method (Request) is
+      case Method is
       when GET =>
          declare
-            URI_File   : constant String       := File (URI);
-            API_String : constant String       := Parameter (URI, "API");
+            URI_File   : constant String       := Ada.Directories.Simple_Name (Path);
+            Parameters : constant Parameter_Lists.Map := Parse_Parameters (Query);
+            API_String : constant String       := Get (Parameters, "API");
             API        : constant API_Versions :=
               (if API_String'Length = 0 then 1
                else API_Versions'Value (API_String));
          begin
+            --  Simple file requests (mp3/m4a, liner_notes, image) are handled by
+            --  the parent server, not here.
+
             if URI_File = "download" then
                --  API 1
-               return Handle_Get_New_Songs_List (URI, API);
+               return Handle_Get_New_Songs_List (Parameters, API);
 
             elsif URI_File = "get_new_songs_list" then
                --  API 2
-               return Handle_Get_New_Songs_List (URI, API);
+               return Handle_Get_New_Songs_List (Parameters, API);
 
-            elsif URI_File = "favicon.ico" then
-               return AWS.Response.File ("image/x-icon", (-Source_Root) & "/" & (-Server_Data) & "/app.ico");
+            --  elsif URI_File = "favicon.ico" then
+            --     --  FIXME: parent server handles this? it's a simple file request
+            --     --  Rename app.ico to favicon.ico?
+            --     return HTTP_response (S200, Content_Image_Icon, (-Server_Data) & "/app.ico");
 
             elsif URI_File = "field" then
-               return Handle_Field (URI);
-
-            elsif URI_File = "file" then
-               return Handle_File (URI, Name_In_Param => True, API => API);
+               return Handle_Field (Parameters, Query);
 
             elsif URI_File = "id" then
-               return Handle_ID (URI);
+               return Handle_ID (Parameters, Query);
 
             elsif URI_File = "meta" then
-               return Handle_Meta (URI);
+               --  Path looks like <album_artist>/<album>/meta
+               return Handle_Meta (Path (Path'First .. Path'Last - 5));
 
             elsif URI_File = "search" then
-               return Handle_Search (URI);
+               return Handle_Search (Parameters, Query);
 
             else
-               --  It's a file request; mp3/m4a, liner_notes, image
-               return Handle_File (URI, Name_In_Param => False, API => API);
+               return HTML_Response (S400, "invalid GET query '" & URI_File & "'");
             end if;
          end;
 
       when PUT =>
-         return Handle_Put_Notes (Request, URI);
+         declare
+            Content_Length : constant Integer := Integer'Value (Ada.Environment_Variables.Value ("CONTENT_LENGTH"));
+            Content : String (1 .. Content_Length);
+         begin
+            String'Read (Ada.Text_IO.Text_Streams.Stream (Ada.Text_IO.Standard_Input), Content);
+            return Handle_Put_Notes (Content, Path);
+         end;
 
       when POST =>
          declare
-            URI_File : constant String := File (URI);
+            URI_File : constant String := Ada.Directories.Simple_Name (Path);
          begin
             if URI_File = "update" then
-               return Handle_Update (URI);
+               return Handle_Update (Parse_Parameters (Query), Query);
             else
-               return Acknowledge
-                 (Status_Code  => AWS.Messages.S400, -- bad request
-                  Message_Body => "unrecognized POST path '" & URI_File & "'");
+               return HTML_Response (S400, "unrecognized POST path '" & URI_File & "'");
             end if;
          end;
 
       when others =>
-         return Acknowledge
-           (Status_Code  => AWS.Messages.S400, -- bad request
-            Message_Body => "unrecognized request " & Request_Method'Image (Method (Request)));
+         return HTML_Response (S400, "unrecognized request " & Request_Method'Image (Method));
       end case;
    exception
    when E : others =>
-      return Acknowledge
-        (Status_Code  => AWS.Messages.S500,
-         Message_Body => "exception " & Exception_Name (E) & ": " & Exception_Message (E));
+      return HTML_Response (S500, "exception " & Exception_Name (E) & ": " & Exception_Message (E));
    end Handle_Request;
 
    procedure Server
@@ -933,108 +824,48 @@ package body SMM.Server is
       is
          use Ada.Text_IO;
       begin
-         Put_Line ("usage: smm-server-driver <server config filename> [enable_log]");
-         Put_Line ("enable_log : if present, enable web sever log");
-         Put_Line ("config file:");
-         Put_Line ("DB_Filename");
+         Put_Line ("usage: smm-server-driver [server config filename]");
+         Put_Line ("config file defaults to /home/stephe/smm/music_server.config");
+         Put_Line ("config file contains absolute paths:");
+         Put_Line ("DB_Filename : database ");
+         Put_Line ("Root : music files ");
+         Put_Line ("Server_Data : other files (css, js, notes etc)");
       end Usage;
-
-      Config : SAL.Config_Files.Configuration_Type;
-      Ws     : AWS.Server.HTTP;
    begin
       declare
          use Ada.Command_Line;
          use SAL.Config_Files;
+
+         Default : constant String := "/home/stephe/smm/music_server.Config";
+         Config  : SAL.Config_Files.Configuration_Type;
       begin
          case Argument_Count is
-         when 1 | 2 =>
+         when 0 =>
+            Open (Config, Default);
+
+         when 1 =>
             Open (Config, Argument (1));
-
-            Enable_Log := Argument_Count = 2;
-
-            DB_Filename := +Read (Config, "DB_Filename", Missing_Key => Raise_Exception);
-
-            Source_Root := +As_File
-              (Ada.Directories.Full_Name (Read (Config, SMM.Root_Key, Missing_Key => Raise_Exception)));
-            Server_Data := +Read (Config, "Server_Data", "server_data");
 
          when others =>
             Usage;
             Set_Exit_Status (Failure);
             raise SAL.Parameter_Error;
+
          end case;
-      end;
+         DB_Filename := +Read (Config, "DB_Filename", Missing_Key => Raise_Exception);
 
-      declare
-         use Ada.Text_IO;
-         use AWS.Config;
-         use AWS.Config.Set;
-         use SAL.Config_Files;
-         use SAL.Config_Files.Integer;
-         Obj : Object := Default_Config;
-      begin
-         Server_Name (Obj, "SMM Server");
+         Source_Root := +As_File
+           (Ada.Directories.Full_Name (Read (Config, "Root", Missing_Key => Raise_Exception)));
 
-         --  Get_Host_By_Name includes VMware IP addresses, which are not
-         --  useful for sync from outside this box. But there doesn't
-         --  seem to be a way to tell which ones those are from here. So
-         --  we get the address to use from the config file.
-         --
-         --  In GNAT GPL 2018, AWS uses GNAT.Sockets, and Bind does not support
-         --  IPv6. Sigh.
-         Server_Host (Obj, Read (Config, "Server_IP", Missing_Key => Raise_Exception));
-
-         --  AWS default server port is AWS.Default.Server_Port (= 8080)
-         Server_Port (Obj, Read (Config, "Server_Port", Default => 8080, Missing_Key => Ignore));
+         Server_Data := +Read (Config, "Server_Data", "server_data");
 
          Close (Config);
-
-         if Enable_Log then
-            declare
-               use Ada.Directories;
-               Log_Dir_Name : constant String := -Source_Root & "/remote_cache/";
-            begin
-               if not Exists (Log_Dir_Name) then
-                  Create_Directory (Log_Dir_Name);
-               end if;
-
-               Log_File_Directory (Obj, Log_Dir_Name);
-               Log_Filename_Prefix (Obj, "smm-server");
-
-               AWS.Log.Start
-                 (Debug_Log,
-                  File_Directory  => Log_Dir_Name,
-                  Filename_Prefix => "smm-server-debug",
-                  Auto_Flush      => True);
-            end;
-         else
-            Put_Line ("not logging");
-         end if;
-
-         AWS.Server.Start
-           (Ws,
-            Callback => Handle_Request'Access,
-            Config   => Obj);
-
-         if Enable_Log then
-            AWS.Server.Log.Start (Ws, Auto_Flush => True);
-
-            Put_Line ("logging to   " & Log_File_Directory (Obj) & "smm-server.log, smm-server-debug.log");
-         end if;
       end;
-
       declare
-         use Ada.Text_IO;
-         use AWS.Config;
-         Ws_Config : constant Object := AWS.Server.Config (Ws);
+         Result : constant String := Handle_Request;
       begin
-         Put_Line
-           ("listening on " & Server_Host (Ws_Config) & ":" & Integer'Image (Server_Port (Ws_Config)) &
-              " db : '" & (-DB_Filename) & "' source_root: '" & (-Source_Root) & "' server_data: '" &
-              (-Server_Data) & "'");
+         String'Write (Ada.Text_IO.Text_Streams.Stream (Ada.Text_IO.Standard_Output), Result);
       end;
-
-      AWS.Server.Wait;
    end Server;
 end SMM.Server;
 --  Local Variables:

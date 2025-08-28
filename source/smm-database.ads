@@ -206,6 +206,7 @@ package SMM.Database is
       Order_By : in Field_Array)
      return Cursor;
    --  Match Search against Fields.
+   --  Search is a space-separated list of values for Fields.
 
    procedure Next (Position : in out Cursor);
 
