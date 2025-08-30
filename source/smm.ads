@@ -31,7 +31,7 @@ package SMM is
    Verbosity  : Integer := 0;
    Max_Errors : Integer := 0;
 
-   function Find_Home return String;
+   function Find_DB_Filename return String;
 
    function Normalize (Path : in String) return String;
    --  convert '\' to '/'

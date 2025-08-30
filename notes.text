@@ -27,14 +27,13 @@ branches:
 (dvc-propagate-one "../smm.work_1" "../smm.main")
 
  current work
-replace web server with Debian server = Apache
-    use Common Gateway Interface (cgi) https://datatracker.ietf.org/doc/html/rfc3875
-    see gemini_use_apache.text
+http://192.168.188.128/cgi-bin/smm/search
+    took a really long time, but returned the detailed search page
+        which is wrong - should be the general page
 
-    install shell script 'smm' to /usr/lib/cgi-bin/
-        which invokes $(HOME)/bin/smm-server_driver.exe $(HOME)/smm/smm-server.config
+Rename app.ico to favicon.ico?
 
-    smm-server_driver.exe compiles
+
 
 smm check
     reports missing files that are not in fact missing
@@ -203,18 +202,20 @@ recompile compare_best_music.exe
  references
 Chrome "refresh" does not reload *.css; clear browsing data
 
-https://inkscape.org/en/release/0.92.3/windows/64-bit/msi/dl/
-
 https://zurb.com/playground/responsive-tables
 https://css-tricks.com/complete-guide-table-element/
 
 https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio
-https://www.w3.org/TR/2017/REC-html52-20171214/index.html#contents
+https://html.spec.whatwg.org/multipage/
 https://www.w3schools.com/jsref/
 
-d:/Apps/GNAT-gpl_2017/aws-gpl-2017-src/docs/aws.pdf
-d:/Apps/GNAT-gpl_2017/aws-gpl-2017-src/docs/templates_parser/index.html
+https://datatracker.ietf.org/doc/rfc9112/ HTTP/1.1:
 
 http://taglib.org/ C ID3 library (simpler than ffmpeg)
 
-to update source/encode_urls.patch, see Google Drive windows-install-notes
+/etc/apache2/ports.conf
+/var/log/apache2/error.log
+/usr/lib/cgi-bin/smm
+http://192.168.188.128/cgi-bin/smm/search
+systemctl restart apache2
+see header comment in smm-server.adb

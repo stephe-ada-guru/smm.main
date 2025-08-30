@@ -2,7 +2,7 @@
 --
 --  see spec
 --
---  Copyright (C) 2008, 2009, 2011 - 2018 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008, 2009, 2011 - 2018, 2025 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -26,20 +26,20 @@ with Ada.Text_IO;
 with SAL;
 package body SMM is
 
-   function Find_Home return String
+   function Find_DB_Filename return String
    is
       use Ada.Environment_Variables;
    begin
       if Exists ("SMM_HOME") then
-         return Value ("SMM_HOME");
+         return Value ("SMM_HOME") & "/smm.db";
       elsif Exists ("HOME") then
-         return Value ("HOME") & "/smm";
+         return Value ("HOME") & "/smm/smm.db";
       elsif Exists ("APPDATA") then
-         return Value ("APPDATA") & "/smm";
+         return Value ("APPDATA") & "/smm/smm.db";
       else
-         raise SAL.Not_Found with "must define either APPDATA or HOME environment variable";
+         raise SAL.Not_Found with "no database file found";
       end if;
-   end Find_Home;
+   end Find_DB_Filename;
 
    function Normalize (Path : in String) return String
    is

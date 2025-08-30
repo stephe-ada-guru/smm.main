@@ -4,6 +4,19 @@
 --
 --  Implement a CGI script.
 --
+--  The default config for the Apache web server requires files
+--  touched this program to be in directories known to the server.
+--
+--  Executables : /usr/lib/cgi-bin.
+--  Music and meta data files (read only): Config.Root
+--  Config, db, notes, log (read/write): Config.Server_Data
+--
+--  Read-only directories must be declared in
+--  /etc/apache2/apache2.conf, add a <Directory ... >.
+--
+--  Read-write must be declared there, and the directory must be owned
+--  by the user that runs the server: www-data.
+--
 --  Copyright (C) 2016 - 2020, 2022, 2023, 2025 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
@@ -52,6 +65,9 @@ package body SMM.Server is
    --  Absolute; contains server html, css, js files; does not end in /
 
    DB_Filename : Unbounded_String;
+
+   Debug      : Boolean := False;
+   Debug_File : Ada.Text_IO.File_Type;
 
    function Meta_Files (Source_Dir : in String) return String_Lists.List
    is
@@ -219,10 +235,10 @@ package body SMM.Server is
          end;
       end loop;
 
-      return HTTP_Response (S200, Content_Text_Plain, -Response);
+      return CGI_Response (S200, Content_Text_Plain, -Response);
    exception
    when E : others =>
-      return HTML_Response
+      return HTML_CGI_Response
         (Status_Code => S500,
          Content => "exception " & Exception_Name (E) & ": " & Exception_Message (E));
    end Handle_Get_New_Songs_List;
@@ -243,7 +259,7 @@ package body SMM.Server is
       --  field?id=<id>&field=<field-name>
 
       if URI_Param.Is_Empty then
-         return HTML_Response (S400, "no params; usage field?id=<id>&field=<field_name>");
+         return HTML_CGI_Response (S400, "no params; usage field?id=<id>&field=<field_name>");
 
       elsif Exist (Map => URI_Param, Key => "id") and Exist (URI_Param, "field") then
          DB.Open (-DB_Filename);
@@ -253,29 +269,29 @@ package body SMM.Server is
             Field_Name : constant String := Get (URI_Param, "field");
          begin
             if not I.Has_Element then
-               return HTML_Response (S400, "id " & Get (URI_Param, "id") & " not found");
+               return HTML_CGI_Response (S400, "id " & Get (URI_Param, "id") & " not found");
             end if;
 
             if Field_Name = "artist" then
-               return HTTP_Response (S200, Content_Text_Plain, I.Artist);
+               return CGI_Response (S200, Content_Text_Plain, I.Artist);
             elsif Field_Name = "album" then
-               return HTTP_Response (S200, Content_Text_Plain, I.Album);
+               return CGI_Response (S200, Content_Text_Plain, I.Album);
             elsif Field_Name = "category" then
-               return HTTP_Response (S200, Content_Text_Plain, I.Category);
+               return CGI_Response (S200, Content_Text_Plain, I.Category);
             elsif Field_Name = "title" then
-               return HTTP_Response (S200, Content_Text_Plain, I.Title);
+               return CGI_Response (S200, Content_Text_Plain, I.Title);
             else
-               return HTML_Response (S400, "id " & Get (URI_Param, "id") & " not found");
+               return HTML_CGI_Response (S400, "id " & Get (URI_Param, "id") & " not found");
             end if;
          end; --  Free cursor
 
       else
-         return HTML_Response (S400, "invalid query params '" & Query & "'");
+         return HTML_CGI_Response (S400, "invalid field query params '" & Query & "'");
       end if;
    exception
    when Constraint_Error =>
       --  from Integer'Value (id)
-      return HTML_Response (S400, "invalid id '" & Get (URI_Param, "id") & "'");
+      return HTML_CGI_Response (S400, "invalid id '" & Get (URI_Param, "id") & "'");
    end Handle_Field;
 
    function Handle_ID
@@ -290,14 +306,14 @@ package body SMM.Server is
       DB : SMM.Database.Database;
    begin
       if URI_Param.Is_Empty then
-         return HTML_Response (S400, "no params; usage id?file=<file_name>");
+         return HTML_CGI_Response (S400, "no params; usage id?file=<file_name>");
 
       else
          --  From Emacs notes buffer page, query looks like
          --  'id?file=<file_name>'
 
          if not Exist (URI_Param, "file") then
-            return HTML_Response (S400, "missing 'file' param: '" & Query & "'");
+            return HTML_CGI_Response (S400, "missing 'file' param: '" & Query & "'");
          end if;
 
          DB.Open (-DB_Filename);
@@ -307,9 +323,9 @@ package body SMM.Server is
             I         : constant Cursor := DB.Find_File_Name (File_Name);
          begin
             if I.Has_Element then
-               return HTTP_Response (S200, Content_Text_Plain, Integer'Image (I.ID));
+               return CGI_Response (S200, Content_Text_Plain, Integer'Image (I.ID));
             else
-               return HTML_Response (S400, "file not in db: '" & File_Name & "'");
+               return HTML_CGI_Response (S400, "file not in db: '" & File_Name & "'");
             end if;
          end;
       end if;
@@ -355,7 +371,7 @@ package body SMM.Server is
          Filter    => (Ordinary_File => True, others => False),
          Process   => Copy_Aux'Access);
 
-      return HTTP_Response (S200, Content_Text_Plain, -Response);
+      return CGI_Response (S200, Content_Text_Plain, -Response);
    exception
    when Ada.IO_Exceptions.Name_Error =>
       --  GNAT runtime sets message to "(unknown directory "")"; no file name!
@@ -394,10 +410,10 @@ package body SMM.Server is
       end loop;
       Close (File);
 
-      return HTTP_Response (S200, Content_Text_Plain, "");
+      return CGI_Response (S200, Content_Text_Plain, "");
    exception
    when E : others =>
-      return HTML_Response (S400, "exception " & Exception_Name (E) & ": " & Exception_Message (E));
+      return HTML_CGI_Response (S400, "exception " & Exception_Name (E) & ": " & Exception_Message (E));
    end Handle_Put_Notes;
 
    function Handle_Search
@@ -560,7 +576,7 @@ package body SMM.Server is
       if URI_Param.Is_Empty then
          --  Return search page with no results.
          Response := +Response_1 & "<body onload=""InitTabs()"">" & Response_2 & "</body></html>";
-         return HTTP_Response (S200, Content_Text_HTML, -Response);
+         return CGI_Response (S200, Content_Text_HTML, -Response);
 
       elsif Exist (URI_Param, "search") or
         Exist (URI_Param, "title") or Exist (URI_Param, "artist") or Exist (URI_Param, "album") or
@@ -587,12 +603,12 @@ package body SMM.Server is
             end if;
 
             Response := +Response_1 &
-                "<body onload=""SelectTab('" & Button & "', '" & Tab & "', '" & Search_Result_ID & "')"">" &
+              "<body onload=""SelectTab('" & Button & "', '" & Tab & "', '" & Search_Result_ID & "')"">" &
               Response_2;
 
             if not I.Has_Element then
                Response := Response  & "<p>no matching entries found</p></body></html>";
-               return HTTP_Response (S200, Content_Text_HTML, -Response);
+               return CGI_Response (S200, Content_Text_HTML, -Response);
             end if;
 
             Response := Response & "<div id=""" & Search_Result_ID & """ class=""" & Search_Result_ID & """><ul>";
@@ -610,10 +626,10 @@ package body SMM.Server is
          --  Terminate album list, search result scroll, body, doc.
          Response := Response & "</ul></div></body></html>";
 
-         return HTTP_Response (S200, Content_Text_HTML, -Response);
+         return CGI_Response (S200, Content_Text_HTML, -Response);
 
       else
-         return HTML_Response (S400, "invalid query params '" & Query & "'");
+         return HTML_CGI_Response (S400, "invalid search query params '" & Query & "'");
       end if;
    end Handle_Search;
 
@@ -633,17 +649,16 @@ package body SMM.Server is
 
       function Redirect_Search return String
       is
-         use Header_Lists;
          Headers : Header_Lists.List;
       begin
-         Headers.Append ((Status, +"back to search", S303));
          Headers.Append ((Location, Ref));
          Headers.Append ((Content_Type, +Content_Text_HTML));
-         return HTTP_Response (Headers, "back to search");
+         return CGI_Response
+           (S303, Headers, Content => HTML_Body ("back to search"), Status_Reason => "back to search");
       end Redirect_Search;
    begin
       if URI_Param.Is_Empty then
-         return HTML_Response (S400, "invalid query params: '" & Query & "'");
+         return HTML_CGI_Response (S400, "invalid query params: '" & Query & "'");
 
       else
          --  From Emacs notes buffer page, query looks like
@@ -661,7 +676,7 @@ package body SMM.Server is
          elsif Exist (URI_Param, "file") then
             Key_Field := +"file";
          else
-            return HTML_Response (S400, "missing 'id' or 'file' param: '" & Query & "'");
+            return HTML_CGI_Response (S400, "missing 'id' or 'file' param: '" & Query & "'");
          end if;
 
          for I in URI_Param.Iterate loop
@@ -677,14 +692,14 @@ package body SMM.Server is
                elsif Valid_Field (Field_Name) then
                   null;
                else
-                  return HTML_Response (S400, "bad param name: '" & Field_Name & "'");
+                  return HTML_CGI_Response (S400, "bad param name: '" & Field_Name & "'");
                end if;
             end;
          end loop;
 
          if Cancel then
             if Length (Ref) = 0 then
-               return HTML_Response (S200, "canceled");
+               return HTML_CGI_Response (S200, "canceled");
             else
                return Redirect_Search;
             end if;
@@ -711,7 +726,7 @@ package body SMM.Server is
             if I.Has_Element then
                DB.Update (I, SQL_Param);
             else
-               return HTML_Response
+               return HTML_CGI_Response
                  (S400, "not found in db: '" &
                     (if -Key_Field = "id"
                      then Get (URI_Param, "id")
@@ -721,7 +736,7 @@ package body SMM.Server is
          end;
 
          if Length (Ref) = 0 then
-            return HTML_Response (S200, "updated");
+            return HTML_CGI_Response (S200, "updated");
          else
             return Redirect_Search;
          end if;
@@ -746,6 +761,13 @@ package body SMM.Server is
       Query  : constant String         := Ada.Environment_Variables.Value ("QUERY_STRING");
       Method : constant Request_Method := Request_Method'Value (Ada.Environment_Variables.Value ("REQUEST_METHOD"));
    begin
+      if Debug then
+         Ada.Text_IO.Put_Line
+           (Debug_File,
+            Ada.Calendar.Formatting.Image (Ada.Calendar.Clock) & ": '" & Path & "' " &
+              Method'Img & " '" & Query & "'");
+      end if;
+
       case Method is
       when GET =>
          declare
@@ -767,11 +789,6 @@ package body SMM.Server is
                --  API 2
                return Handle_Get_New_Songs_List (Parameters, API);
 
-            --  elsif URI_File = "favicon.ico" then
-            --     --  FIXME: parent server handles this? it's a simple file request
-            --     --  Rename app.ico to favicon.ico?
-            --     return HTTP_response (S200, Content_Image_Icon, (-Server_Data) & "/app.ico");
-
             elsif URI_File = "field" then
                return Handle_Field (Parameters, Query);
 
@@ -786,7 +803,7 @@ package body SMM.Server is
                return Handle_Search (Parameters, Query);
 
             else
-               return HTML_Response (S400, "invalid GET query '" & URI_File & "'");
+               return HTML_CGI_Response (S400, "invalid GET query '" & URI_File & "'");
             end if;
          end;
 
@@ -806,16 +823,16 @@ package body SMM.Server is
             if URI_File = "update" then
                return Handle_Update (Parse_Parameters (Query), Query);
             else
-               return HTML_Response (S400, "unrecognized POST path '" & URI_File & "'");
+               return HTML_CGI_Response (S400, "unrecognized POST path '" & URI_File & "'");
             end if;
          end;
 
       when others =>
-         return HTML_Response (S400, "unrecognized request " & Request_Method'Image (Method));
+         return HTML_CGI_Response (S400, "unrecognized request " & Request_Method'Image (Method));
       end case;
    exception
    when E : others =>
-      return HTML_Response (S500, "exception " & Exception_Name (E) & ": " & Exception_Message (E));
+      return HTML_CGI_Response (S500, "exception " & Exception_Name (E) & ": " & Exception_Message (E));
    end Handle_Request;
 
    procedure Server
@@ -824,8 +841,8 @@ package body SMM.Server is
       is
          use Ada.Text_IO;
       begin
-         Put_Line ("usage: smm-server-driver [server config filename]");
-         Put_Line ("config file defaults to /home/stephe/smm/music_server.config");
+         Put_Line ("usage: smm-server-driver [--debug=<filename>] <server config filename>");
+         Put_Line ("--debug logs all requests, responses to <server_data>/debug.log");
          Put_Line ("config file contains absolute paths:");
          Put_Line ("DB_Filename : database ");
          Put_Line ("Root : music files ");
@@ -836,15 +853,16 @@ package body SMM.Server is
          use Ada.Command_Line;
          use SAL.Config_Files;
 
-         Default : constant String := "/home/stephe/smm/music_server.Config";
          Config  : SAL.Config_Files.Configuration_Type;
+         Next_Arg : Integer := 1;
       begin
          case Argument_Count is
-         when 0 =>
-            Open (Config, Default);
-
-         when 1 =>
-            Open (Config, Argument (1));
+         when 1 | 2 =>
+            if Argument (1)(1 .. 7) = "--debug" then
+               Debug := True;
+               Next_Arg := 2;
+            end if;
+            Open (Config, Argument (Next_Arg), Missing_File => Raise_Exception);
 
          when others =>
             Usage;
@@ -861,11 +879,37 @@ package body SMM.Server is
 
          Close (Config);
       end;
+      if Debug then
+         declare
+            Filename : constant String := (-Server_Data) & "/debug.log";
+         begin
+            Ada.Text_IO.Open
+              (Debug_File,
+               (if Ada.Directories.Exists (Filename)
+                then Ada.Text_IO.Append_File
+                else Ada.Text_IO.Out_File),
+               Filename);
+         end;
+      end if;
+
       declare
          Result : constant String := Handle_Request;
       begin
+         if Debug then
+            Ada.Text_IO.Put_Line
+              (Debug_File,
+               "          response : " &
+                 (if Result'Length > 100
+                  then Result (1 .. 100) & "..."
+                  else Result));
+         end if;
+
          String'Write (Ada.Text_IO.Text_Streams.Stream (Ada.Text_IO.Standard_Output), Result);
       end;
+
+      if Debug then
+         Ada.Text_IO.Close (Debug_File);
+      end if;
    end Server;
 end SMM.Server;
 --  Local Variables:

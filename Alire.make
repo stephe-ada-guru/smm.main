@@ -13,31 +13,44 @@ STEPHES_ADA_LIBRARY_ALIRE_PREFIX ?= $(CURDIR)/../org.stephe_leake.sal
 include $(STEPHES_ADA_LIBRARY_ALIRE_PREFIX)/build/alire_rules.make
 
 vpath %.adb source
+vpath %.svg source
 
 all : alire-build install
 
-install :: server-data
-install :: $(HOME)/bin/smm.exe
-install :: $(HOME)/bin/smm-server_driver.exe
-install :: /usr/lib/cgi-bin/smm
-install :: $(HOME)/bin/smm-show_id3.exe
+install : server-data
+install : $(HOME)/bin/smm.exe
+install : /usr/lib/cgi-bin/smm-server_driver.exe
+install : /usr/lib/cgi-bin/smm
+#install : $(HOME)/bin/smm-show_id3.exe
 
 # SERVER_DATA defined in prj-alire.el
 
-server-data :: $(SERVER_DATA)/app.ico
-server-data :: $(SERVER_DATA)/liner_notes_icon-desktop.png
-server-data :: $(SERVER_DATA)/liner_notes_icon-tablet.png
-server-data :: $(SERVER_DATA)/liner_notes_icon-phone.png
-server-data :: $(SERVER_DATA)/play_icon-desktop.png
-server-data :: $(SERVER_DATA)/play_icon-tablet.png
-server-data :: $(SERVER_DATA)/play_icon-phone.png
-server-data :: $(SERVER_DATA)/songs.css
-server-data :: $(SERVER_DATA)/songs.js
+server-data : $(SERVER_DATA)/app.ico
+server-data : $(SERVER_DATA)/liner_notes_icon-desktop.png
+server-data : $(SERVER_DATA)/liner_notes_icon-tablet.png
+server-data : $(SERVER_DATA)/liner_notes_icon-phone.png
+server-data : $(SERVER_DATA)/play_icon-desktop.png
+server-data : $(SERVER_DATA)/play_icon-tablet.png
+server-data : $(SERVER_DATA)/play_icon-phone.png
+server-data : $(SERVER_DATA)/songs.css
+server-data : $(SERVER_DATA)/songs.js
+
+%-desktop.png : %.svg
+	rsvg-convert -h 500 -a $< > $@
+
+%-tablet.png : %.svg
+	rsvg-convert -h 500 -a $< > $@
+
+%-phone.png : %.svg
+	rsvg-convert -h 500 -a $< > $@
 
 $(SERVER_DATA)/% : source/%
 	cp $^ $@
 
 /usr/lib/cgi-bin/smm : source/smm
+	cp $^ $@
+
+/usr/lib/cgi-bin/smm-server_driver.exe : $(ALIRE_EXEC_DIR)/smm-server_driver.exe
 	cp $^ $@
 
 # don't strip, so stack traceback is useful on errors

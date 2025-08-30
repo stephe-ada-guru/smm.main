@@ -41,7 +41,7 @@ is
    is begin
       Put_Line ("smm [options] <operation> [arg]...");
       Put_Line ("  options:");
-      Put_Line ("  --db=<db_file> : defaults to ~/smm/smm.db or $APPDATA/smm or $SMM_HOME");
+      Put_Line ("  --db=<db_file> : defaults to $SMM_HOME/smm.db or $HOME/smm/smm.db or $APPDATA/smm/smm.db");
       Put_Line ("  --verbosity=<int>");
       Put_Line ("  --ignore_id3_flags : ignore ID3 file, frame flag settings that we nominally don't support.");
       New_Line;
@@ -90,7 +90,7 @@ is
    Home : constant String := Find_Home;
 
    Source_Root  : constant String := As_Directory (Ada.Directories.Current_Directory);
-   DB_File_Name : Ada.Strings.Unbounded.String_Access := new String'(Home & "/smm.db");
+   DB_File_Name : Ada.Strings.Unbounded.String_Access := new String'(Find_DB_Filename);
    DB           : SMM.Database.Database;
    Next_Arg     : Integer         := 1;
 
