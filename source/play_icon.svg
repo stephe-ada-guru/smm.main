@@ -2,23 +2,23 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   xmlns:dc="http://purl.org/dc/elements/1.1/"
-   xmlns:cc="http://creativecommons.org/ns#"
-   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-   xmlns:svg="http://www.w3.org/2000/svg"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="210mm"
-   height="297mm"
-   viewBox="0 0 210 297"
+   width="3.4897463mm"
+   height="3.5365183mm"
+   viewBox="0 0 3.4897463 3.5365183"
    version="1.1"
    id="svg8"
-   inkscape:version="0.92.3 (2405546, 2018-03-11)"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
    sodipodi:docname="play_icon.svg"
    inkscape:export-filename="D:\Music\server_data\play_icon-57x57.png"
    inkscape:export-xdpi="285"
-   inkscape:export-ydpi="285">
+   inkscape:export-ydpi="285"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
   <defs
      id="defs2" />
   <sodipodi:namedview
@@ -28,18 +28,21 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="5.6568542"
-     inkscape:cx="15.24188"
-     inkscape:cy="93.997865"
+     inkscape:zoom="0.4665165"
+     inkscape:cx="12.861282"
+     inkscape:cy="92.172518"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
-     inkscape:window-width="788"
-     inkscape:window-height="1401"
-     inkscape:window-x="2695"
-     inkscape:window-y="6"
+     inkscape:window-width="790"
+     inkscape:window-height="1389"
+     inkscape:window-x="1766"
+     inkscape:window-y="0"
      inkscape:window-maximized="0"
-     showguides="false" />
+     showguides="false"
+     inkscape:showpageshadow="2"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1" />
   <metadata
      id="metadata5">
     <rdf:RDF>
@@ -48,14 +51,14 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
   <g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
-     id="layer1">
+     id="layer1"
+     transform="translate(-0.60062647,-0.81684365)">
     <path
        sodipodi:type="star"
        id="path3713"
@@ -71,11 +74,11 @@
        inkscape:randomized="0"
        d="M 68.035715,38.464287 34.017857,58.104507 0,77.744725 0,38.464286 0,-0.81615163 34.017859,18.824068 Z"
        inkscape:transform-center-x="-0.58162432"
-       style="stroke-width:0.26458332"
+       style="stroke-width:0.264583"
        inkscape:export-filename="D:\Music\server_data_work_1\play_icon-phone.png"
        inkscape:export-xdpi="861.86462"
        inkscape:export-ydpi="861.86462"
-       transform="matrix(0.05129286,0,0,0.04501628,0.04677218,293.50022)"
-       inkscape:transform-center-y="1.2345309e-006" />
+       transform="matrix(0.05129286,0,0,0.04501628,0.60062647,0.85358376)"
+       inkscape:transform-center-y="1.2345309e-06" />
   </g>
 </svg>

@@ -63,11 +63,19 @@ package body SMM.Server is
    Source_Root : Unbounded_String; -- Absolute root of music files; does not end in /
    Server_Data : Unbounded_String;
    --  Absolute; contains server html, css, js files; does not end in /
+   --  Must be "served" by the web server, not just accesible:
+   --  Alias /music_server_data/ "/Projects/music_server_data/"
+   --  <Directory /Projects/music_server_data>
+   --   Options Indexes FollowSymLinks
+   --   AllowOverride None
+   --   Require all granted
+   --  </Directory>
 
    DB_Filename : Unbounded_String;
 
-   Debug      : Boolean := False;
-   Debug_File : Ada.Text_IO.File_Type;
+   Debug          : Boolean         := False;
+   Debug_Filename : Ada.Strings.Unbounded.Unbounded_String;
+   Debug_File     : Ada.Text_IO.File_Type;
 
    function Meta_Files (Source_Dir : in String) return String_Lists.List
    is
@@ -118,12 +126,12 @@ package body SMM.Server is
       Size : constant SMM.JPEG.Size_Type := SMM.JPEG.Size (-Source_Root & "/" & Relative_Resource);
    begin
       if Size.X <= Width and Size.Y <= Height then
-         return "<img src=""/" & Relative_Resource & """ alt=""" & Label & """ class=""" & Class & """>";
+         return "<img src=""/Music/" & Relative_Resource & """ alt=""" & Label & """ class=""" & Class & """>";
       else
          --  The size specified here is overwritten by Scale_Px. It limits the
          --  display size before Scale_Px runs, to avoid large-scale
          --  reformatting as the page loads.
-         return "<img src=""/" & Relative_Resource & """" &
+         return "<img src=""/Music/" & Relative_Resource & """" &
            " onload=""Scale_Px(event," & Integer'Image (Width) & "," & Integer'Image (Height) & ")""" &
            " alt=""" & Label & """ class=""" & Class & """ width=" & Integer'Image (Width) & """ height=" &
            Integer'Image (Height) & """>";
@@ -141,8 +149,9 @@ package body SMM.Server is
       Size_Med  : constant String := "tablet";
       Size_High : constant String := "phone";
    begin
-      return "<img src=""/" & Root & "-" & Size_Low & Ext & """" &
-        " srcset=""/" & Root & "-" & Size_Med & Ext & " 2x, /" & Root & "-" & Size_High & Ext & " 3x""" &
+      return "<img src=""/Music/" & Root & "-" & Size_Low & Ext & """" &
+        " srcset=""/Music/" & Root & "-" & Size_Med & Ext & " 2x," &
+        " /Music/" & Root & "-" & Size_High & Ext & " 3x""" &
         " alt=""" & Label & """" & (if Class = "" then "" else " class=""" & Class & """") & ">";
    end Server_Img_Set;
 
@@ -436,11 +445,12 @@ package body SMM.Server is
         "<html lang=""en"">" &
         "<meta http-equiv=""Content-Type"" content=""text/html; charset=utf-8"">" & New_Line &
         "<head>" & New_Line &
-        "<script src=""/" & (-Server_Data) & "/songs.js""></script>" & New_Line &
+        "<script src=""" & (-Server_Data) & "/songs.js""></script>" & New_Line &
         "<title>Stephe's music</title>" &
-        "<link type=""text/css"" rel=""stylesheet"" href=""/" & (-Server_Data) & "/songs.css""/>" & New_Line &
+        "<link type=""text/css"" rel=""stylesheet"" href=""" & (-Server_Data) & "/songs.css""/>" & New_Line &
         "</head>";
 
+      --  From https://www.w3schools.com/howto/howto_js_tabs.asp
       Response_2 : constant String := "<div class=""tabbar"">" &
         "<button class=""tabbutton"" id=""general_search_button""" &
         " onclick=""SelectTab('general_search_button', 'general_search_tab', '" & Search_Result_ID &
@@ -449,12 +459,13 @@ package body SMM.Server is
         " onclick=""SelectTab('detailed_search_button', 'detailed_search_tab', '" & Search_Result_ID &
         "')"">Detailed Search</button>" &
         "</div>" & New_Line &
-        "<div class=""tabcontent"" id=""general_search_tab""><form action=""/search"" method=get>" &
+        "<div class=""tabcontent"" id=""general_search_tab"">" &
+        "<form action=""search"" method=get>" &
         "<input type=submit value=""Search"">" &
         "<input type=search autofocus name=""search"" value=""" & Get (URI_Param, "search") & """>" &
         "</form></div>" & New_Line &
         "<div class=""tabcontent"" id=""detailed_search_tab"">" &
-        "<form action=""/search"" method=get><div class=""table"">" &
+        "<form action=""search"" method=get><div class=""table"">" &
         "<div class=""row""><label>Title </label>" &
         "<input type=search name=""title"" value=""" & Get (URI_Param, "title") & """></div>" &
         "<div class=""row""><label>Artist </label>" &
@@ -479,7 +490,7 @@ package body SMM.Server is
          use SMM.Database;
 
          Title_Row : constant Unbounded_String := +"<tr>" &
-           "<td><a href=""/" & HTTP_Encode (I.File_Name) &
+           "<td><a href=""/Music/" & HTTP_Encode (I.File_Name) &
            """>" & Server_Img_Set (-Server_Data & "/play_icon", ".png", "play") &
            "</a></td>" &
            "<td class=""text"">" & I.Artist & "</td>" &
@@ -525,12 +536,17 @@ package body SMM.Server is
                Meta : constant String_Lists.List := Meta_Files (Containing_Directory (I.File_Name));
             begin
                for File of Meta loop
-                  if To_Lower (Extension (-File)) = "jpg" then
-                     Album_Item := Album_Item & Server_Img
-                       (-File, "album art", 100, 100, Class => "album_art_item");
-                  end if;
+                  declare
+                     Ext : constant String := To_Lower (Extension (-File));
+                  begin
+                     if Ext = "jpg" or Ext = ".png" or Ext = ".webp" then
+                        Album_Item := Album_Item & Server_Img
+                          (-File, "album art", 100, 100, Class => "album_art_item");
+                     end if;
+                  end;
                end loop;
 
+               --  Always display the liner notes at the end of the line.
                for File of Meta loop
                   if To_Lower (-File) = "liner_notes.pdf" then
                      Album_Item := Album_Item & SAL.Web_Utils.Local_Href
@@ -651,10 +667,10 @@ package body SMM.Server is
       is
          Headers : Header_Lists.List;
       begin
+         Headers.Append ((Status, +"back to search", S303));
          Headers.Append ((Location, Ref));
          Headers.Append ((Content_Type, +Content_Text_HTML));
-         return CGI_Response
-           (S303, Headers, Content => HTML_Body ("back to search"), Status_Reason => "back to search");
+         return CGI_Response (Headers, Content => HTML_Body ("back to search"));
       end Redirect_Search;
    begin
       if URI_Param.Is_Empty then
@@ -755,7 +771,7 @@ package body SMM.Server is
       --  https://datatracker.ietf.org/doc/html/rfc3875
       --
       --  The full URI sent by the client looks like:
-      --  https:/<host>/cgi-bin/smm-server_driver.exe/<path>?<query>
+      --  https:/<host>/cgi-bin/smm/<path>?<query>
 
       Path   : constant String         := Ada.Environment_Variables.Value ("PATH_INFO");
       Query  : constant String         := Ada.Environment_Variables.Value ("QUERY_STRING");
@@ -842,7 +858,7 @@ package body SMM.Server is
          use Ada.Text_IO;
       begin
          Put_Line ("usage: smm-server-driver [--debug=<filename>] <server config filename>");
-         Put_Line ("--debug logs all requests, responses to <server_data>/debug.log");
+         Put_Line ("--debug logs all requests, responses to the file");
          Put_Line ("config file contains absolute paths:");
          Put_Line ("DB_Filename : database ");
          Put_Line ("Root : music files ");
@@ -859,8 +875,9 @@ package body SMM.Server is
          case Argument_Count is
          when 1 | 2 =>
             if Argument (1)(1 .. 7) = "--debug" then
-               Debug := True;
-               Next_Arg := 2;
+               Debug          := True;
+               Debug_Filename := +Argument (1)(9 .. Argument (1)'Last);
+               Next_Arg       := 2;
             end if;
             Open (Config, Argument (Next_Arg), Missing_File => Raise_Exception);
 
@@ -880,16 +897,12 @@ package body SMM.Server is
          Close (Config);
       end;
       if Debug then
-         declare
-            Filename : constant String := (-Server_Data) & "/debug.log";
-         begin
-            Ada.Text_IO.Open
-              (Debug_File,
-               (if Ada.Directories.Exists (Filename)
-                then Ada.Text_IO.Append_File
-                else Ada.Text_IO.Out_File),
-               Filename);
-         end;
+         Ada.Text_IO.Open
+           (Debug_File,
+            (if Ada.Directories.Exists (-Debug_Filename)
+             then Ada.Text_IO.Append_File
+             else Ada.Text_IO.Out_File),
+            -Debug_Filename);
       end if;
 
       declare

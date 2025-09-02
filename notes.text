@@ -27,11 +27,18 @@ branches:
 (dvc-propagate-one "../smm.work_1" "../smm.main")
 
  current work
-http://192.168.188.128/cgi-bin/smm/search
-    took a really long time, but returned the detailed search page
-        which is wrong - should be the general page
+http://192.168.188.128/cgi-bin/smm/search=David+Wilcox
+    working.
+
+test phone update playlist.
+
+
+check check that .mp3 is not corrupted
+    just read id3 headers.
+    and check them against db?
 
 Rename app.ico to favicon.ico?
+    done, no effect; ask gemini
 
 
 

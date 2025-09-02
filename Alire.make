@@ -1,7 +1,7 @@
 # Build smm with Alire
 
-# default is development (= debug).
 # ALIRE_BUILD_ARGS ?= --release
+ALIRE_BUILD_ARGS ?= --development
 
 # Without -q, the linker is very noisy. But it screws up the error outputs!
 #ALIRE_ARGS ?= -q
@@ -35,14 +35,11 @@ server-data : $(SERVER_DATA)/play_icon-phone.png
 server-data : $(SERVER_DATA)/songs.css
 server-data : $(SERVER_DATA)/songs.js
 
-%-desktop.png : %.svg
-	rsvg-convert -h 500 -a $< > $@
+$(SERVER_DATA)/liner_notes_icon-desktop.png $(SERVER_DATA)/liner_notes_icon-tablet.png $(SERVER_DATA)/liner_notes_icon-phone.png : liner_notes_icon.svg
+	rsvg-convert -h 50 -a $< > $@
 
-%-tablet.png : %.svg
-	rsvg-convert -h 500 -a $< > $@
-
-%-phone.png : %.svg
-	rsvg-convert -h 500 -a $< > $@
+$(SERVER_DATA)/play_icon-desktop.png $(SERVER_DATA)/play_icon-tablet.png $(SERVER_DATA)/play_icon-phone.png : play_icon.svg
+	rsvg-convert -h 10 -a $< > $@
 
 $(SERVER_DATA)/% : source/%
 	cp $^ $@
@@ -78,7 +75,7 @@ t1 : $(ALIRE_EXEC_DIR)/smm.exe
 	cd /Projects/Music; $(CURDIR)/$(ALIRE_EXEC_DIR)/smm.exe --db=/Projects/smm.main/smm_new.db --verbosity=$(VERBOSITY) update_playlist /tmp/vocal.m3u vocal 20 --replace
 
 t2 : $(ALIRE_EXEC_DIR)/debug.exe
-	$(ALIRE_EXEC_DIR)/debug.exe ~/smm/smm.db vocal
+	$(ALIRE_EXEC_DIR)/debug.exe
 
 t3 : $(ALIRE_EXEC_DIR)/smm.exe
 	$(ALIRE_EXEC_DIR)/smm.exe history

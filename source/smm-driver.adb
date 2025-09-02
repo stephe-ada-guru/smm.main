@@ -87,8 +87,6 @@ is
       end if;
    end Check_Arg;
 
-   Home : constant String := Find_Home;
-
    Source_Root  : constant String := As_Directory (Ada.Directories.Current_Directory);
    DB_File_Name : Ada.Strings.Unbounded.String_Access := new String'(Find_DB_Filename);
    DB           : SMM.Database.Database;

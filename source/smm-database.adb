@@ -502,7 +502,7 @@ package body SMM.Database is
       use GNATCOLL.SQL.Exec;
       Spaces      : array (1 .. 20) of Integer;
       Spaces_Last : Integer := Spaces'First - 1;
-      First       : Integer := Spaces'First;
+      First       : Integer := Search'First;
 
       Statement   : Unbounded_String := +"SELECT * FROM Song WHERE";
       Need_And    : Boolean          := False;

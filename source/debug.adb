@@ -1,40 +1,33 @@
-with Ada.Command_Line; use Ada.Command_Line;
-with Ada.Text_IO;
+with Ada.Text_IO; use Ada.Text_IO;
+with SAL.Web_Utils; use SAL.Web_Utils;
 with SMM.Database;
 procedure Debug
 is
-   DB_File_Name : constant String := Argument (1);
-   Category     : constant String := Argument (2);
-   DB           : SMM.Database.Database;
-   DB_I         : SMM.Database.Cursor;
-   --  Count        : Integer         := 0;
-begin
-   DB.Open (DB_File_Name);
-   DB_I := SMM.Database.First_By_Last_Downloaded (DB); -- oldest date
+   Query : constant String := "search=Two+Worlds";
+   URI_Param : constant Parameter_Lists.Map := Parse_Parameters (Query);
+   DB : SMM.Database.Database;
 
-   loop
---      exit when Count > 10;
-      exit when not DB_I.Has_Element;
-      if DB_I.Category_Contains (Category) and
-        (not DB_I.Category_Contains ("dont_play")) and
-        (not DB_I.Play_After_Is_Present) -- only play this when Play_Before is included.
-      then
-         Ada.Text_IO.Put_Line (DB_I.ID'Image & " " & DB_I.Last_Downloaded & " " & DB_I.File_Name);
-      end if;
-      DB_I.Next;
+begin
+
+   Put_Line ("URI_Param:");
+   for I in URI_Param.Iterate loop
+      Put_Line
+        (" '" & Parameter_Lists.Key (I) & ", " & Parameter_Lists.Element (I) & "'");
    end loop;
 
-   --  DB_I := SMM.Database.Last_By_Last_Downloaded (DB); -- newest date
-   --  Count := 0;
-   --  loop
-   --     exit when Count > 10;
-   --     if DB_I.Category_Contains (Category) and
-   --       (not DB_I.Category_Contains ("dont_play")) and
-   --       (not DB_I.Play_After_Is_Present) -- only play this when Play_Before is included.
-   --     then
-   --        Count := @ + 1;
-   --        Ada.Text_IO.Put_Line ("newest:" & DB_I.ID'Image & " " & DB_I.Last_Downloaded & " " & DB_I.File_Name);
-   --     end if;
-   --     DB_I.Next;
-   --  end loop;
+   DB.Open ("/Projects/music_server_data/smm.db");
+   declare
+      use SMM.Database;
+      I : Cursor := DB.Find_Like (Decode_Plus (Get (URI_Param, "search")), Order_By => (Album, Track));
+   begin
+      if not I.Has_Element then
+         Put_Line ("no matching entries found");
+      else
+         loop
+            exit when not I.Has_Element;
+            Put_Line (I.Artist & " " & I.Title);
+            I.Next;
+         end loop;
+      end if;
+   end;
 end Debug;
