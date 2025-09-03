@@ -139,19 +139,19 @@ package body SMM.Server is
    end Server_Img;
 
    function Server_Img_Set
-     (Root  : in String;
-      Ext   : in String;
-      Label : in String;
-      Class : in String := "")
+     (Basename : in String;
+      Ext      : in String;
+      Label    : in String;
+      Class    : in String := "")
      return String
    is
       Size_Low  : constant String := "desktop";
       Size_Med  : constant String := "tablet";
       Size_High : constant String := "phone";
    begin
-      return "<img src=""/Music/" & Root & "-" & Size_Low & Ext & """" &
-        " srcset=""/Music/" & Root & "-" & Size_Med & Ext & " 2x," &
-        " /Music/" & Root & "-" & Size_High & Ext & " 3x""" &
+      return "<img src=""/music_server_data/" & Basename & "-" & Size_Low & Ext & """" &
+        " srcset=""/music_server_data/" & Basename & "-" & Size_Med & Ext & " 2x," &
+        " /music_server_data/" & Basename & "-" & Size_High & Ext & " 3x""" &
         " alt=""" & Label & """" & (if Class = "" then "" else " class=""" & Class & """") & ">";
    end Server_Img_Set;
 
@@ -447,6 +447,7 @@ package body SMM.Server is
         "<head>" & New_Line &
         "<script src=""" & (-Server_Data) & "/songs.js""></script>" & New_Line &
         "<title>Stephe's music</title>" &
+        "<link rel=""icon"" type=""image/png"" href=""/music_server_data/app_icon.png"">" &
         "<link type=""text/css"" rel=""stylesheet"" href=""" & (-Server_Data) & "/songs.css""/>" & New_Line &
         "</head>";
 
@@ -491,7 +492,7 @@ package body SMM.Server is
 
          Title_Row : constant Unbounded_String := +"<tr>" &
            "<td><a href=""/Music/" & HTTP_Encode (I.File_Name) &
-           """>" & Server_Img_Set (-Server_Data & "/play_icon", ".png", "play") &
+           """>" & Server_Img_Set ("/play_icon", ".png", "play") &
            "</a></td>" &
            "<td class=""text"">" & I.Artist & "</td>" &
            "<td class=""text"">" & I.Composer & "</td>" &
@@ -551,7 +552,7 @@ package body SMM.Server is
                   if To_Lower (-File) = "liner_notes.pdf" then
                      Album_Item := Album_Item & SAL.Web_Utils.Local_Href
                        (-File, Server_Img_Set
-                          (-Server_Data & "/liner_notes_icon", ".png", "liner notes",
+                          ("/liner_notes_icon", ".png", "liner notes",
                            Class => "album_art_item"));
                   end if;
                end loop;

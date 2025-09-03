@@ -11,9 +11,7 @@ branches:
     smm.work_1 - fix compare playlists
 
 (dvc-state-multiple
-    '((xgit . "../org.stephe_leake.aunit_ext")
-      (xgit . "../org.stephe_leake.makerules")
-      (xgit . "../org.stephe_leake.sal")
+    '((xgit . "../org.stephe_leake.sal")
       (xgit . "../smm.main")))
 
 (dvc-propagate-multiple
@@ -27,20 +25,15 @@ branches:
 (dvc-propagate-one "../smm.work_1" "../smm.main")
 
  current work
-http://192.168.188.128/cgi-bin/smm/search=David+Wilcox
+http://192.168.188.128/app/smm/search=David+Wilcox
     working.
 
 test phone update playlist.
 
 
-check check that .mp3 is not corrupted
+smm check check that .mp3 is not corrupted
     just read id3 headers.
     and check them against db?
-
-Rename app.ico to favicon.ico?
-    done, no effect; ask gemini
-
-
 
 smm check
     reports missing files that are not in fact missing

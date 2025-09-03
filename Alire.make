@@ -25,7 +25,7 @@ install : /usr/lib/cgi-bin/smm
 
 # SERVER_DATA defined in prj-alire.el
 
-server-data : $(SERVER_DATA)/app.ico
+server-data : $(SERVER_DATA)/app_icon.png
 server-data : $(SERVER_DATA)/liner_notes_icon-desktop.png
 server-data : $(SERVER_DATA)/liner_notes_icon-tablet.png
 server-data : $(SERVER_DATA)/liner_notes_icon-phone.png
@@ -40,6 +40,9 @@ $(SERVER_DATA)/liner_notes_icon-desktop.png $(SERVER_DATA)/liner_notes_icon-tabl
 
 $(SERVER_DATA)/play_icon-desktop.png $(SERVER_DATA)/play_icon-tablet.png $(SERVER_DATA)/play_icon-phone.png : play_icon.svg
 	rsvg-convert -h 10 -a $< > $@
+
+$(SERVER_DATA)/app_icon.png : app_icon.svg
+	rsvg-convert -h 20 -a $< > $@
 
 $(SERVER_DATA)/% : source/%
 	cp $^ $@
