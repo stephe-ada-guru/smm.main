@@ -293,20 +293,26 @@ package body SMM.Database is
       return Checked_Fetch (DB, Statement);
    end First_By_ID;
 
-   function First_By_Name (DB : in Database'Class) return Cursor
-   is
-      Statement : constant String := "SELECT * FROM Song ORDER BY Album_Artist, Album, Title ASC";
-      --  Uses Song_Name index.
-   begin
-      return Checked_Fetch (DB, Statement);
-   end First_By_Name;
-
    function Last_By_ID (DB : in Database'Class) return Cursor
    is
       Statement : constant String := "SELECT * FROM Song ORDER BY ID DESC";
    begin
       return Checked_Fetch (DB, Statement);
    end Last_By_ID;
+
+   function First_By_Last_Downloaded (DB : in Database'Class) return Cursor
+   is
+      Statement : constant String := "SELECT * FROM Song ORDER BY Last_Downloaded ASC";
+   begin
+      return Checked_Fetch (DB, Statement);
+   end First_By_Last_Downloaded;
+
+   function Last_By_Last_Downloaded (DB : in Database'Class) return Cursor
+   is
+      Statement : constant String := "SELECT * FROM Song ORDER BY Last_Downloaded DESC";
+   begin
+      return Checked_Fetch (DB, Statement);
+   end Last_By_Last_Downloaded;
 
    function Find_File_Name (DB : in Database'Class; File_Name : in String) return Cursor
    is
@@ -496,7 +502,7 @@ package body SMM.Database is
       use GNATCOLL.SQL.Exec;
       Spaces      : array (1 .. 20) of Integer;
       Spaces_Last : Integer := Spaces'First - 1;
-      First       : Integer := Spaces'First;
+      First       : Integer := Search'First;
 
       Statement   : Unbounded_String := +"SELECT * FROM Song WHERE";
       Need_And    : Boolean          := False;

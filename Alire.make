@@ -1,7 +1,7 @@
 # Build smm with Alire
 
-# default is development (= debug).
 # ALIRE_BUILD_ARGS ?= --release
+ALIRE_BUILD_ARGS ?= --development
 
 # Without -q, the linker is very noisy. But it screws up the error outputs!
 #ALIRE_ARGS ?= -q
@@ -15,35 +15,52 @@ STEPHES_ADA_LIBRARY_ALIRE_PREFIX ?= $(CURDIR)/../org.stephe_leake.sal
 include $(STEPHES_ADA_LIBRARY_ALIRE_PREFIX)/build/alire_rules.make
 
 vpath %.adb source
+vpath %.svg source
 
 all : alire-build install
 
-#install :: server-data
-install :: $(HOME)/bin/smm.exe
-#install :: $(HOME)/bin/smm-server_driver.exe
-#install :: $(HOME)/bin/smm-show_id3.exe
+install : server-data
+install : $(HOME)/bin/smm.exe
+install : /usr/lib/cgi-bin/smm-server_driver.exe
+install : /usr/lib/cgi-bin/smm
+#install : $(HOME)/bin/smm-show_id3.exe
 
 # SERVER_DATA defined in prj-alire.el
 
-server-data :: $(SERVER_DATA)/app.ico
-server-data :: $(SERVER_DATA)/liner_notes_icon-desktop.png
-server-data :: $(SERVER_DATA)/liner_notes_icon-tablet.png
-server-data :: $(SERVER_DATA)/liner_notes_icon-phone.png
-server-data :: $(SERVER_DATA)/play_icon-desktop.png
-server-data :: $(SERVER_DATA)/play_icon-tablet.png
-server-data :: $(SERVER_DATA)/play_icon-phone.png
-server-data :: $(SERVER_DATA)/songs.css
-server-data :: $(SERVER_DATA)/songs.js
+server-data : $(SERVER_DATA)/app_icon.png
+server-data : $(SERVER_DATA)/liner_notes_icon-desktop.png
+server-data : $(SERVER_DATA)/liner_notes_icon-tablet.png
+server-data : $(SERVER_DATA)/liner_notes_icon-phone.png
+server-data : $(SERVER_DATA)/play_icon-desktop.png
+server-data : $(SERVER_DATA)/play_icon-tablet.png
+server-data : $(SERVER_DATA)/play_icon-phone.png
+server-data : $(SERVER_DATA)/songs.css
+server-data : $(SERVER_DATA)/songs.js
+
+$(SERVER_DATA)/liner_notes_icon-desktop.png $(SERVER_DATA)/liner_notes_icon-tablet.png $(SERVER_DATA)/liner_notes_icon-phone.png : liner_notes_icon.svg
+	rsvg-convert -h 50 -a $< > $@
+
+$(SERVER_DATA)/play_icon-desktop.png $(SERVER_DATA)/play_icon-tablet.png $(SERVER_DATA)/play_icon-phone.png : play_icon.svg
+	rsvg-convert -h 10 -a $< > $@
+
+$(SERVER_DATA)/app_icon.png : app_icon.svg
+	rsvg-convert -h 20 -a $< > $@
 
 $(SERVER_DATA)/% : source/%
+	cp $^ $@
+
+/usr/lib/cgi-bin/smm : source/smm
+	cp $^ $@
+
+/usr/lib/cgi-bin/smm-server_driver.exe : $(ALIRE_EXEC_DIR)/smm-server_driver.exe
 	cp $^ $@
 
 # don't strip, so stack traceback is useful on errors
 $(HOME)/bin/% : $(ALIRE_EXEC_DIR)/%
 	cp $^ $@
 
-modify : build/obj/development/modify_schema.exe smm_new.db
-	build/obj/development/modify_schema.exe c:/home/stephe/smm/smm_server.config smm_new.db
+modify : $(ALIRE_EXEC_DIR)/modify_schema.exe smm_new.db
+	$(ALIRE_EXEC_DIR)/modify_schema.exe $(HOME)/smm/smm.db smm_new.db
 
 smm%.db : source/create_schema.sql
 	sqlite3 -init $< $@ ".quit"
@@ -60,10 +77,13 @@ $(ALIRE_EXEC_DIR)/smm.exe : force
 
 t1 : VERBOSITY ?= 0
 t1 : $(ALIRE_EXEC_DIR)/smm.exe
-	cd /Projects/Music; $(CURDIR)/$(ALIRE_EXEC_DIR)/smm.exe --verbosity=$(VERBOSITY) --max_errors=5 compare_phone /tmp/phone.log
+	cd /Projects/Music; $(CURDIR)/$(ALIRE_EXEC_DIR)/smm.exe --db=/Projects/smm.main/smm_new.db --verbosity=$(VERBOSITY) update_playlist /tmp/vocal.m3u vocal 20 --replace
 
-t2 : build/obj/development/test_one_harness.exe
-	cd build; obj/development/test_one_harness.exe 1 test_server.adb ""
+t2 : $(ALIRE_EXEC_DIR)/debug.exe
+	$(ALIRE_EXEC_DIR)/debug.exe
+
+t3 : $(ALIRE_EXEC_DIR)/smm.exe
+	$(ALIRE_EXEC_DIR)/smm.exe history
 
 .PHONEY : t1 t2
 

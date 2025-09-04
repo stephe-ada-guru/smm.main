@@ -166,7 +166,14 @@ is
 
                if Last /= Default_Time and then Now - Last > Seconds_Per_Year then
                   Put_Line
-                    ("song:" & Integer'Image (I.ID) & " last downloaded more than a year ago: " & Image (Last));
+                    ("song:" & Integer'Image (I.ID) & " last downloaded: " & I.Last_Downloaded &
+                       " " &
+                       (if I.Category_Contains ("dont_play")
+                        then "dont_play - "
+                        elsif I.Play_After_Is_Present
+                        then "play_after - "
+                        else "") &
+                       I.File_Name);
                end if;
             end;
          when False =>

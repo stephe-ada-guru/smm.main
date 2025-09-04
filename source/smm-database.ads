@@ -128,6 +128,13 @@ package SMM.Database is
    function Last_By_ID (DB : in Database'Class) return Cursor;
    --  Decreasing ID order.
 
+
+   function First_By_Last_Downloaded (DB : in Database'Class) return Cursor;
+   --  Increasing Last_Downloaded order.
+
+   function Last_By_Last_Downloaded (DB : in Database'Class) return Cursor;
+   --  Decreasing Last_Downloaded order.
+
    function First_By_Name (DB : in Database'Class) return Cursor;
    --  Increasing <album_artist>_<album>_<title> order.
 
@@ -203,6 +210,7 @@ package SMM.Database is
       Order_By : in Field_Array)
      return Cursor;
    --  Match Search against Fields.
+   --  Search is a space-separated list of values for Fields.
 
    procedure Next (Position : in out Cursor);
 

@@ -73,10 +73,12 @@ function SelectTab(buttonId, tabId, remainingId) {
             if (buttons[i].classList.contains("active")) {
                 // already active; do nothing
             } else {
+                // activate
                 buttons[i].style.backgroundColor = 'palegreen';
                 buttons[i].classList.add("active");
             }
         } else {
+            // deactivate
             if (buttons[i].classList.contains("active")) {
                 buttons[i].style.backgroundColor = 'darkseagreen';
                 buttons[i].classList.remove("active");
@@ -90,10 +92,12 @@ function SelectTab(buttonId, tabId, remainingId) {
             if (tabs[i].classList.contains("active")) {
                 // already active; do nothing
             } else {
+                // activate
                 tabs[i].style.display = "block";
                 tabs[i].classList.add("active");
             }
         } else {
+            // deactivate
             if (tabs[i].classList.contains("active")) {
                 tabs[i].style.display = "none";
                 tabs[i].classList.remove("active");
@@ -101,10 +105,12 @@ function SelectTab(buttonId, tabId, remainingId) {
         }
     }
 
-    Fill_Remaining(tabId, remainingId);
+    if (remainingId != '') {
+        Fill_Remaining(tabId, remainingId);
+    }
 }
 
 function InitTabs() {
-    SelectTab('general_search_button', 'general_search_tab');
+    SelectTab('general_search_button', 'general_search_tab', '')
 }
 // end of file

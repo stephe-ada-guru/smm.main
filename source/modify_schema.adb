@@ -23,7 +23,6 @@ with Ada.Exceptions;
 with Ada.Strings.Fixed;
 with Ada.Text_IO;
 with GNAT.Traceback.Symbolic;
-with SAL.Config_Files;
 with SMM.Database;
 procedure Modify_Schema
 is
@@ -31,10 +30,8 @@ is
    is
       use Ada.Text_IO;
    begin
-      Put_Line ("modify_schema <old db server config file> <new db file name>");
+      Put_Line ("modify_schema <old db file name> <new db file name>");
    end Usage;
-
-   Server_Config : SAL.Config_Files.Configuration_Type;
 
    Old_DB : SMM.Database.Database;
    New_DB : SMM.Database.Database;
@@ -42,7 +39,6 @@ is
 begin
    declare
       use Ada.Command_Line;
-      use SAL.Config_Files;
    begin
       if Argument_Count /= 2 then
          Usage;
@@ -50,13 +46,7 @@ begin
          return;
       end if;
 
-      SAL.Config_Files.Open
-        (Server_Config, Argument (1),
-         Duplicate_Key         => SAL.Config_Files.Raise_Exception,
-         Read_Only             => True,
-         Case_Insensitive_Keys => True);
-
-      Old_DB.Open (Read (Server_Config, "DB_Filename", Missing_Key => Raise_Exception));
+      Old_DB.Open (Argument (1));
       New_DB.Open (Argument (2));
    end;
 
@@ -64,7 +54,7 @@ begin
       use SMM;
       use SMM.Database;
 
-      I          : Cursor  := Old_DB.First;
+      I          : Cursor  := Old_DB.First_By_ID;
       Warm_Fuzzy : Integer := 0;
 
    begin

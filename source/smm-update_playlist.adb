@@ -67,7 +67,9 @@ begin
             --  Must be a bad play before/after link. Not clear how to print a
             --  helpful message here; we don't know what song contains the bad
             --  link.
-            null;
+            if Verbosity >= 1 then
+               Ada.Text_IO.Put_Line ("bad before/ater link:" & I'Image);
+            end if;
          end if;
       end;
    end loop;

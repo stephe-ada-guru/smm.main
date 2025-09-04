@@ -1,0 +1,4 @@
+#!/usr/bin/sh
+/home/stephe/bin/smm-server_driver.exe /home/stephe/smm/smm-server.config
+
+#end of file
