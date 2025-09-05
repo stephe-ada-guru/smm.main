@@ -44,6 +44,7 @@ with Ada.IO_Exceptions;
 with Ada.Strings.Fixed;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with Ada.Text_IO.Text_Streams;
+with GNAT.Traceback.Symbolic;
 with SAL.Config_Files;
 with SAL.Gen_Definite_Doubly_Linked_Lists;
 with SAL.Time_Conversions;
@@ -78,6 +79,8 @@ package body SMM.Server is
    Debug_File     : Ada.Text_IO.File_Type;
 
    function Meta_Files (Source_Dir : in String) return String_Lists.List
+   --  Source_Dir is relative to Source_Root
+   --  Return list of file names (relative to Source_Root) of image and liner_notes files.
    is
       use Ada.Directories;
 
@@ -99,6 +102,12 @@ package body SMM.Server is
       Search
         (Directory => -Source_Root & "/" & Source_Dir,
          Pattern   => "*.png",
+         Filter    => (Ordinary_File => True, others => False),
+         Process   => Copy_Aux'Access);
+
+      Search
+        (Directory => -Source_Root & "/" & Source_Dir,
+         Pattern   => "*.webp",
          Filter    => (Ordinary_File => True, others => False),
          Process   => Copy_Aux'Access);
 
@@ -463,22 +472,23 @@ package body SMM.Server is
         "<div class=""tabcontent"" id=""general_search_tab"">" &
         "<form action=""search"" method=get>" &
         "<input type=submit value=""Search"">" &
-        "<input type=search autofocus name=""search"" value=""" & Get (URI_Param, "search") & """>" &
+        "<input type=search autofocus name=""search"" value=""" & Decode_Plus (Get (URI_Param, "search")) & """>" &
         "</form></div>" & New_Line &
         "<div class=""tabcontent"" id=""detailed_search_tab"">" &
         "<form action=""search"" method=get><div class=""table"">" &
         "<div class=""row""><label>Title </label>" &
-        "<input type=search name=""title"" value=""" & Get (URI_Param, "title") & """></div>" &
+        "<input type=search name=""title"" value=""" & Decode_Plus (Get (URI_Param, "title")) & """></div>" &
         "<div class=""row""><label>Artist </label>" &
-        "<input type=search name=""artist"" value=""" & Get (URI_Param, "artist") & """></div>" &
+        "<input type=search name=""artist"" value=""" & Decode_Plus (Get (URI_Param, "artist")) & """></div>" &
         "<div class=""row""><label>Album </label>" &
-        "<input type=search name=""album"" value=""" & Get (URI_Param, "album") & """></div>" &
+        "<input type=search name=""album"" value=""" & Decode_Plus (Get (URI_Param, "album")) & """></div>" &
         "<div class=""row""><label>Album Artist</label>" &
-        "<input type=search name=""album_artist"" value=""" & Get (URI_Param, "album_artist") & """></div>" &
+        "<input type=search name=""album_artist"" value=""" & Decode_Plus (Get (URI_Param, "album_artist")) &
+        """></div>" &
         "<div class=""row""><label>Composer</label>" &
-        "<input type=search name=""composer"" value=""" & Get (URI_Param, "composer") & """></div>" &
+        "<input type=search name=""composer"" value=""" & Decode_Plus (Get (URI_Param, "composer")) & """></div>" &
         "<div class=""row""><label>Category </label>" &
-        "<input type=search name=""category"" value=""" & Get (URI_Param, "category") & """></div>" &
+        "<input type=search name=""category"" value=""" & Decode_Plus (Get (URI_Param, "category")) & """></div>" &
         "</div><input type=submit value=""Search"">" &
         "</form></div><hr>" & New_Line;
 
@@ -549,9 +559,9 @@ package body SMM.Server is
 
                --  Always display the liner notes at the end of the line.
                for File of Meta loop
-                  if To_Lower (-File) = "liner_notes.pdf" then
+                  if To_Lower (Simple_Name (-File)) = "liner_notes.pdf" then
                      Album_Item := Album_Item & SAL.Web_Utils.Local_Href
-                       (-File, Server_Img_Set
+                       (("Music/" & (-File)), Server_Img_Set
                           ("/liner_notes_icon", ".png", "liner notes",
                            Class => "album_art_item"));
                   end if;
@@ -574,7 +584,7 @@ package body SMM.Server is
                   Cur : constant Cursor := Param.Find (-SMM.Database.Field_Image (I));
                begin
                   if Cur /= No_Element then
-                     Result (I) := +Element (Cur);
+                     Result (I) := +Decode_Plus (Element (Cur));
                   end if;
                end;
             end loop;
@@ -849,7 +859,9 @@ package body SMM.Server is
       end case;
    exception
    when E : others =>
-      return HTML_CGI_Response (S500, "exception " & Exception_Name (E) & ": " & Exception_Message (E));
+      return HTML_CGI_Response
+        (S500, "exception " & Exception_Name (E) & ": " & Exception_Message (E) & New_Line &
+           GNAT.Traceback.Symbolic.Symbolic_Traceback (E));
    end Handle_Request;
 
    procedure Server

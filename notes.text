@@ -25,11 +25,7 @@ branches:
 (dvc-propagate-one "../smm.work_1" "../smm.main")
 
  current work
-http://192.168.188.128/app/smm/search=David+Wilcox
-    working.
-
 test phone update playlist.
-
 
 smm check check that .mp3 is not corrupted
     just read id3 headers.
