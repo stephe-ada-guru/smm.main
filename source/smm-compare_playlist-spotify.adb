@@ -18,7 +18,6 @@
 
 pragma License (GPL);
 
-with Ada.Characters.Handling;
 with Ada.Text_IO; use Ada.Text_IO;
 with GNATCOLL.JSON;
 with SAL.Gen_Unbounded_Definite_Red_Black_Trees;
@@ -130,9 +129,7 @@ is
       loop
          exit when not Array_Has_Element (Data, I);
          declare
-            use Ada.Characters.Handling;
-
-            Misc_Item          : JSON_Value renames Array_Element (Data, I);
+            Misc_Item         : JSON_Value renames Array_Element (Data, I);
             DB_Name_Item      : JSON_Value renames Misc_Item.Get ("db");
             Spotify_Name_Item : JSON_Value renames Misc_Item.Get ("spotify");
 

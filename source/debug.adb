@@ -1,33 +1,23 @@
 with Ada.Text_IO; use Ada.Text_IO;
-with SAL.Web_Utils; use SAL.Web_Utils;
-with SMM.Database;
+with HTML_Parse; use HTML_Parse;
+with HTML_Utils; use HTML_Utils;
 procedure Debug
 is
-   Query : constant String := "search=Two+Worlds";
-   URI_Param : constant Parameter_Lists.Map := Parse_Parameters (Query);
-   DB : SMM.Database.Database;
-
+   HTML : HTML_Tree;
+   Node : P_Body_Node;
 begin
+   HTML_Parse.Verbosity := 2;
 
-   Put_Line ("URI_Param:");
-   for I in URI_Param.Iterate loop
-      Put_Line
-        (" '" & Parameter_Lists.Key (I) & ", " & Parameter_Lists.Element (I) & "'");
-   end loop;
+   HTML_Utils.Parse_File ("debug.html", HTML);
+   Node := Find_Node (HTML.Root, Target_Kind => li);
+   Put_Line ("album_artist: '" & (-Concat_Text (Node)) & "'");
 
-   DB.Open ("/Projects/music_server_data/smm.db");
-   declare
-      use SMM.Database;
-      I : Cursor := DB.Find_Like (Decode_Plus (Get (URI_Param, "search")), Order_By => (Album, Track));
-   begin
-      if not I.Has_Element then
-         Put_Line ("no matching entries found");
-      else
-         loop
-            exit when not I.Has_Element;
-            Put_Line (I.Artist & " " & I.Title);
-            I.Next;
-         end loop;
-      end if;
-   end;
+   Node := Find_Node
+     (First_Child (Node), Target_Kind => li, Target_Class => "album", Level => 1);
+   Put_Line ("album: '" & (-Concat_Text (Node)) & "'");
+
+   Node := Find_Node
+     (Next_Sibling (Node), Target_Kind => li, Level => 2);
+   Put_Line ("Title: '" & (-Concat_Text (Node)) & "'");
+
 end Debug;

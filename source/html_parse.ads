@@ -2,7 +2,7 @@
 --
 --  Parse HTML into an object tree.
 --
---  Copyright (C) 2017 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2017, 2025 Stephen Leake All Rights Reserved.
 --
 --  copied from https://sourceforge.net/projects/wasabee/ zrt_dev branch
 --
@@ -127,7 +127,11 @@ package HTML_Parse is
 
    function First_Child (Node : in P_Body_Node) return P_Body_Node;
    function Next_Sibling (Node : in P_Body_Node) return P_Body_Node;
-   function Text (Node : in P_Body_Node; Trim_Blank : in Boolean := True) return Ada.Strings.Unbounded.Unbounded_String;
+   function Text
+     (Node            : in P_Body_Node;
+      Trim_Space      : in Boolean := False;
+      Trim_Formatting : in Boolean := True)
+     return Ada.Strings.Unbounded.Unbounded_String;
 
 private
 

@@ -29,7 +29,9 @@ package HTML_Utils is
    procedure Parse_File (File_Name : in String; Tree : out HTML_Parse.HTML_Tree);
 
    function Concat_Text
-     (Root : in HTML_Parse.P_Body_Node)
+     (Root            : in HTML_Parse.P_Body_Node;
+      Trim_Space      : in Boolean := False;
+      Trim_Formatting : in Boolean := True)
      return Ada.Strings.Unbounded.Unbounded_String;
    --  All contained text
 

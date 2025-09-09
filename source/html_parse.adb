@@ -2,7 +2,7 @@
 --
 --  See spec.
 --
---  Copyright (C) 2017 - 2019 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2017 - 2019, 2025 Stephen Leake All Rights Reserved.
 --
 --  copied from https://sourceforge.net/projects/wasabee/ zrt_dev branch
 --
@@ -121,45 +121,35 @@ package body HTML_Parse is
         => True,
       others => False);
 
-   Blank : constant array (Character) of Boolean :=
-     (' ' | Character'Val (9) | Character'Val (10) | Character'Val (13) => True,
+   Formatting : constant array (Character) of Boolean :=
+     (Character'Val (9) | Character'Val (10) | Character'Val (13) => True,
       others => False);
 
    function All_Blank (S : in String) return Boolean
    is begin
       for C of S loop
-         if not Blank (C) then return False; end if;
+         if C /= ' ' and not Formatting (C) then return False; end if;
       end loop;
       return True;
    end All_Blank;
 
-   function Simplify_Blanks (S : String) return String
+   function Trim_Blanks (S : String; Trim_Space : in Boolean; Trim_Formatting : in Boolean) return String
    is
       T : String (S'Range);
       J : Integer := T'First - 1;
-      In_Blank : Boolean := True;
    begin
-      for i in S'Range loop
-         if Blank (S (i)) then
-            if In_Blank then
+      for I in S'Range loop
+         if (Trim_Space and S (I) = ' ') or
+           (Trim_Formatting and Formatting (S (I)))
+         then
                null;  --  Skip
-            else
-               J := J + 1;
-               T (J) := ' ';
-            end if;
-            In_Blank := True;
          else
             J := J + 1;
-            T (J) := S (i);
-            In_Blank := False;
+            T (J) := S (I);
          end if;
       end loop;
-      if J >= T'First and then Blank (T (J)) then  --  A last space to trim
-         return T (T'First .. J - 1);
-      else
-         return T (T'First .. J);
-      end if;
-   end Simplify_Blanks;
+      return T (T'First .. J);
+   end Trim_Blanks;
 
    function Simplify_URL (s : String) return String is
       s2 : constant String (s'First .. s'Last + 2) := s & "XX";
@@ -766,7 +756,7 @@ package body HTML_Parse is
       else
          case Node.Kind is
          when body_text =>
-            return "body_text: [" & Simplify_Blanks (-Node.Content) & ']';
+            return "body_text: [" & Trim_Blanks (-Node.Content, Trim_Space => False, Trim_Formatting => True) & ']';
 
          when Body_singleton_tag =>
             return '<' & HTML_kind'Image (Node.Kind) &
@@ -875,7 +865,7 @@ package body HTML_Parse is
 
    function Class (Node : in P_Body_Node) return String
    is begin
-      return Simplify_Blanks (-Node.Class);
+      return -Node.Class;
    end Class;
 
    function Attribute (Node : in P_Body_Node; Name : in String) return String
@@ -900,13 +890,16 @@ package body HTML_Parse is
       return Node.next;
    end Next_Sibling;
 
-   function Text (Node : in P_Body_Node; Trim_Blank : in Boolean := True) return Ada.Strings.Unbounded.Unbounded_String
+   function Text
+     (Node            : in P_Body_Node;
+      Trim_Space      : in Boolean := False;
+      Trim_Formatting : in Boolean := True)
+     return Ada.Strings.Unbounded.Unbounded_String
    is begin
-      if Trim_Blank then
-         return +Translate_Character_Entities (Simplify_Blanks (-Node.Content));
-      else
-         return +Translate_Character_Entities (-Node.Content);
-      end if;
+      return +Translate_Character_Entities
+        (if Trim_Space or Trim_Formatting
+         then Trim_Blanks (-Node.Content, Trim_Space, Trim_Formatting)
+         else -Node.Content);
    end Text;
 
 end HTML_Parse;

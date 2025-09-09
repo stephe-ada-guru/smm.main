@@ -77,6 +77,9 @@ t1 : VERBOSITY ?= 0
 t1 : $(ALIRE_EXEC_DIR)/smm.exe
 	$(ALIRE_EXEC_DIR)/smm.exe --verbosity=$(VERBOSITY) --max_errors=6 compare_playlist best html /Projects/web/stephe-leake/best_stuff-music.html
 
+t2 : $(ALIRE_EXEC_DIR)/debug.exe
+	$(ALIRE_EXEC_DIR)/debug.exe
+
 .PHONEY : t1 t2
 
 # Local Variables:

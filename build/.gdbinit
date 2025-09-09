@@ -1,4 +1,4 @@
-set args --verbosity=2 compare_playlist protest c:/home/Stephe/smm/spotify_missing_protest.json
+set args --verbosity=2 compare_playlist best html /Projects/web/stephe-leake/best_stuff-music.html
 
 set max-value-size unlimited
 
@@ -8,4 +8,7 @@ define show_unbounded
 end
 
 set print thread-events off
+
+# disable "kill process?"
+set confirm off
 # end of file

@@ -2,7 +2,7 @@
 --
 --  See spec.
 --
---  Copyright (C) 2018 - 2019 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2018 - 2019, 2025 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -34,15 +34,16 @@ package body HTML_Utils is
    end Parse_File;
 
    function Concat_Text
-     (Root : in HTML_Parse.P_Body_Node)
+     (Root            : in HTML_Parse.P_Body_Node;
+      Trim_Space      : in Boolean := False;
+      Trim_Formatting : in Boolean := True)
      return Ada.Strings.Unbounded.Unbounded_String
    is
       use Ada.Strings.Unbounded;
       use HTML_Parse;
 
-      Result     : Unbounded_String;
-      Need_Space : Boolean     := False;
-      Node       : P_Body_Node :=
+      Result : Unbounded_String;
+      Node   : P_Body_Node :=
         (if Root = null then Root else
            (case Kind (Root) is
             when Body_bracketing_tag => First_Child (Root),
@@ -54,21 +55,19 @@ package body HTML_Utils is
          case Kind (Node) is
          when body_text =>
             declare
-               Txt : constant Unbounded_String := Text (Node);
+               Txt : constant Unbounded_String := Text (Node, Trim_Space, Trim_Formatting);
             begin
                if Length (Txt) > 0 then
-                  Result := Result & (if Need_Space then " " else "") & Txt;
-                  Need_Space := True;
+                  Result := Result & Txt;
                end if;
             end;
 
          when a | Span =>
             declare
-               Txt : constant Unbounded_String := Concat_Text (Node);
+               Txt : constant Unbounded_String := Concat_Text (Node, Trim_Space, Trim_Formatting);
             begin
                if Length (Txt) > 0 then
-                  Result := Result & (if Need_Space then " " else "") & Txt;
-                  Need_Space := True;
+                  Result := Result & Txt;
                end if;
             end;
 
