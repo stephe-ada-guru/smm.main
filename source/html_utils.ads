@@ -2,7 +2,7 @@
 --
 --  Utils for html parsing.
 --
---  Copyright (C) 2018 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2018, 2025 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -40,6 +40,7 @@ package HTML_Utils is
       Target_Class : in String  := "";
       Level        : in Integer := 0)
      return HTML_Parse.P_Body_Node;
-   --  If not found, result is null.
+   --  Search siblings of Node and their children for a node with Target_*. If not found,
+   --  result is null.
 
 end HTML_Utils;

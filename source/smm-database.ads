@@ -128,7 +128,6 @@ package SMM.Database is
    function Last_By_ID (DB : in Database'Class) return Cursor;
    --  Decreasing ID order.
 
-
    function First_By_Last_Downloaded (DB : in Database'Class) return Cursor;
    --  Increasing Last_Downloaded order.
 
@@ -226,6 +225,8 @@ package SMM.Database is
    function Artist (Position : in Cursor) return String;
    function Album (Position : in Cursor) return String;
    function Album_Artist (Position : in Cursor) return String;
+   function Song_Name (Position : in Cursor) return SMM.Song_Name
+   with Pre => Has_Element (Position);
    function Composer (Position : in Cursor) return String;
    function Title (Position : in Cursor) return String;
    function Year (Position : in Cursor) return Integer;

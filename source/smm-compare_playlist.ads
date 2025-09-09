@@ -18,34 +18,13 @@
 
 pragma License (GPL);
 
-with Ada.Characters.Handling;
-with Ada.Text_IO; use Ada.Text_IO;
-with GNATCOLL.JSON;
 with SAL.Gen_Unbounded_Definite_Red_Black_Trees;
 with SMM.Database;
 package SMM.Compare_Playlist is
 
-   type Song_Name is record
-      Album_Artist : Ada.Strings.Unbounded.Unbounded_String;
-      Album        : Ada.Strings.Unbounded.Unbounded_String;
-      Title        : Ada.Strings.Unbounded.Unbounded_String;
-   end record;
-
-   overriding
-   function "=" (Left, Right : in Song_Name) return Boolean;
-
-   Null_Song_Name : constant Song_Name := (others => Ada.Strings.Unbounded.Null_Unbounded_String);
-
-   function Image (Item : in Song_Name) return String;
-
    function Identity (Item : in Song_Name) return Song_Name is (Item);
 
    function Image (Item : in SMM.Database.Cursor) return String;
-
-   function DB_Find (Item : in Song_Name) return SMM.Database.Cursor;
-
-   function Song_Name_Compare (Left, Right : in Song_Name) return SAL.Compare_Result;
-   --  If a field is blank on one side, it is ignored on the other.
 
    package Song_Name_Trees is new SAL.Gen_Unbounded_Definite_Red_Black_Trees
      (Element_Type => Song_Name,
@@ -55,15 +34,12 @@ package SMM.Compare_Playlist is
 
    function Song_ID_Compare is new SAL.Gen_Compare_Integer (SMM.Database.Song_ID);
 
-   function Get_Album_Artist (Cur : in SMM.DataBase.Cursor) return String;
-
-   procedure Read_DB_Tree (DB : in out SMM.DataBase.Database; DB_Tree : in out Song_Name_Trees.Tree);
-
-   procedure Compare_Trees
-     (Left       : in Song_Name_Trees.Tree;
-      Left_Name  : in String;
-      Right      : in Song_Name_Trees.Tree;
-      Right_Name : in String);
+   procedure Compare_To_DB
+     (DB        : in SMM.Database.Database;
+      Category  : in String;
+      Tree      : in Song_Name_Trees.Tree;
+      Tree_Name : in String;
+      Missing   : in Song_Name_Trees.Tree);
    --  Report missing/different on standard output.
 
 end SMM.Compare_Playlist;

@@ -18,55 +18,162 @@
 
 pragma License (GPL);
 
-with Ada.Characters.Handling;
-with Ada.Text_IO; use Ada.Text_IO;
-with GNATCOLL.JSON;
-with SAL.Gen_Unbounded_Definite_Red_Black_Trees;
-with SMM.Database;
+with Ada.Text_IO;
 package body SMM.Compare_Playlist is
-
-   overriding
-   function "=" (Left, Right : in Song_Names) return Boolean
-   is
-      use all type Ada.Strings.Unbounded.Unbounded_String;
-   begin
-      return
-        Left.Album_Artist = Right.Album_Artist and
-        Left.Album = Right.Album and
-        Left.Title = Right.Title;
-   end "=";
-
-   Null_Song_Names : constant Song_Names := (others => Ada.Strings.Unbounded.Null_Unbounded_String);
-
-   function Image (Item : in Song_Names) return String
-   is begin
-      return -Item.Album_Artist & ", " & (-Item.Album) & ", " & (-Item.Title);
-   end Image;
 
    function Image (Item : in SMM.Database.Cursor) return String
    is begin
       return Item.Album_Artist & ", " & Item.Album & ", " & Item.Title;
    end Image;
 
-   function DB_Find (Item : in Song_Names) return SMM.Database.Cursor
+   procedure DB_Next (DB_I : in out SMM.Database.Cursor; Category : in String)
+   --  Increment DB_I to next item containing Category
    is
       use SMM.Database;
-      I : constant Cursor := Find_Like
-        (DB,
-         Param           =>
-           (Album_Artist => Item.Album_Artist,
-            Album        => Item.Album,
-            Title        => Item.Title,
-            others       => Ada.Strings.Unbounded.Null_Unbounded_String),
-         Order_By        => (1 => Album_Artist));
    begin
-      if not I.Has_Element then
-         raise SAL.Not_Found with "'" & Image (Item) & "' not found in DB";
+      loop
+         Next (DB_I);
+         exit when not Has_Element (DB_I);
+         exit when DB_I.Category_Contains (Category);
+      end loop;
+   end DB_Next;
+
+   procedure Compare_To_DB
+     (DB        : in SMM.Database.Database;
+      Category  : in String;
+      Tree      : in Song_Name_Trees.Tree;
+      Tree_Name : in String;
+      Missing   : in Song_Name_Trees.Tree)
+   is
+      use Song_Name_Trees, SMM.Database, Ada.Text_IO;
+
+      DB_I          : SMM.Database.Cursor    := First_By_Name (DB);
+      Tree_Iterator : constant Iterator      := Iterate (Tree);
+      Tree_I        : Song_Name_Trees.Cursor := First (Tree_Iterator);
+
+      Next_DB_I   : SMM.Database.Cursor := First_By_Name (DB); -- Independent of DB_I
+      Next_Tree_I : Song_Name_Trees.Cursor;
+
+      Error_Count : Integer := 0;
+   begin
+      if Verbosity >= 2 then
+         Put_Line ("db best list, sorted:");
+         loop
+            exit when not Has_Element (DB_I);
+            Put_Line (Image (DB_I.Song_Name));
+            DB_Next (DB_I, Category);
+         end loop;
+         DB_I := First_By_Name (DB);
+
+         New_Line;
+         Put_Line (Tree_Name & " best list, sorted:");
+         for Song of Tree loop
+            Put_Line (Image (Song));
+         end loop;
+         New_Line;
       end if;
 
-      return I;
-      --  We check for more than one item in I later (which is why we return
-      --  a cursor).
-   end DB_Find;
+      loop
+         exit when not Has_Element (DB_I) or not Has_Element (Tree_I);
+         exit when Max_Errors > 0 and then Error_Count >= Max_Errors;
+
+         if Verbosity >= 2 then
+            Put_Line ("db at  : " & Image (DB_I.Song_Name));
+            Put_Line (Tree_Name & " at: " & Image (Element (Tree_I)));
+         end if;
+
+         if DB_I.Song_Name = Element (Tree_I) then
+            DB_Next (DB_I, Category);
+            DB_Next (Next_DB_I, Category);
+            Tree_I := Next (Tree_Iterator, Tree_I);
+         else
+            --  Could be new, deleted, or missing on either side. We assume there
+            --  is only one consecutive difference.
+
+            DB_Next (Next_DB_I, Category);
+            Next_Tree_I := Next (Tree_Iterator, Tree_I);
+
+            if Has_Element (Next_DB_I) and then Next_DB_I.Song_Name = Element (Tree_I) then
+               --  New in DB:
+               --       DB  Tree
+               --  prev A   A
+               --  I    new B
+               --  next B
+               --
+               --  Deleted or missing in Tree:
+               --       DB   Tree
+               --  prev A    A
+               --  I    B    C
+               --  next C
+               if Contains (Missing, DB_I.Song_Name) then
+                  --  Ignore
+                  null;
+
+               elsif DB_I.Last_Downloaded /= Default_Time_String then
+                  Error_Count := @ + 1;
+                  Put_Line ("deleted or missing in " & Tree_Name & ": " & Image (DB_I.Song_Name));
+               else
+                  Error_Count := @ + 1;
+                  Put_Line ("either new in db or deleted in " & Tree_Name & ": " & Image (DB_I.Song_Name));
+               end if;
+
+               DB_Next (DB_I, Category);
+
+            elsif Has_Element (Next_Tree_I) and then DB_I.Song_Name = Element (Next_Tree_I) then
+               --  New in Tree:
+               --       DB  Tree
+               --  prev A   A
+               --  I    B   new
+               --  next     B
+               --
+               --  Deleted in DB:
+               --       DB   Tree
+               --  prev A    A
+               --  I    C    B
+               --  next      C
+               Error_Count := @ + 1;
+               Put_Line ("either new in " & Tree_Name & " or deleted in db: " & Image (Element (Tree_I)));
+               Tree_I := Next_Tree_I;
+            else
+               --  Probably just spelled differently:
+               --  db at  : Abby Newton, Castles, Kirks, and Caves, A Hero Never Dies/Willie's Auld Trews
+               --  HTML at: Abby Newton,                          , A Hero Never Dies / Willies Auld Trews
+               Error_Count := @ + 1;
+
+               Put_Line ("db at  : " & Image (DB_I.Song_Name));
+               Put_Line (Tree_Name & " at: " & Image (Element (Tree_I)));
+               Put_Line ("spelled differently?");
+
+               DB_Next (DB_I, Category);
+               DB_Next (Next_DB_I, Category);
+               Tree_I := Next (Tree_Iterator, Tree_I);
+            end if;
+         end if;
+      end loop;
+
+      if Max_Errors > 0 and then Error_Count >= Max_Errors then
+         Put_Line ("stopped at max errors");
+      else
+         if Has_Element (DB_I) then
+            Put_Line ("extra db items:");
+            loop
+               exit when not Has_Element (DB_I);
+               exit when Max_Errors > 0 and then Error_Count >= Max_Errors;
+               Put_Line (Image (DB_I));
+               DB_Next (DB_I, Category);
+            end loop;
+         end if;
+
+         if Has_Element (Tree_I) then
+            Put_Line ("extra " & Tree_Name & " items:");
+            loop
+               exit when not Has_Element (Tree_I);
+               exit when Max_Errors > 0 and then Error_Count >= Max_Errors;
+               Put_Line (Image (Element (Tree_I)));
+               Tree_I := Next (Tree_Iterator, Tree_I);
+            end loop;
+         end if;
+      end if;
+   end Compare_To_DB;
 
 end SMM.Compare_Playlist;

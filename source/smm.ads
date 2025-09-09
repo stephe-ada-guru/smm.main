@@ -20,6 +20,7 @@ pragma License (GPL);
 
 with Ada.Containers.Indefinite_Doubly_Linked_Lists;
 with Ada.Strings.Unbounded;
+with SAL;
 package SMM is
 
    function "+" (Item : in String) return Ada.Strings.Unbounded.Unbounded_String
@@ -44,6 +45,22 @@ package SMM is
 
    function As_File (Path : in String) return String;
    --  delete trailing '/' if needed.
+
+   type Song_Name is record
+      Album_Artist : Ada.Strings.Unbounded.Unbounded_String;
+      Album        : Ada.Strings.Unbounded.Unbounded_String;
+      Title        : Ada.Strings.Unbounded.Unbounded_String;
+   end record;
+
+   overriding
+   function "=" (Left, Right : in Song_Name) return Boolean;
+   function Song_Name_Compare (Left, Right : in Song_Name) return SAL.Compare_Result;
+   --  If a field is blank on one side, it is ignored on the other. Case
+   --  insensitive.
+
+   Null_Song_Name : constant Song_Name := (others => Ada.Strings.Unbounded.Null_Unbounded_String);
+
+   function Image (Item : in Song_Name) return String;
 
    package String_Lists is new Ada.Containers.Indefinite_Doubly_Linked_Lists (String);
 

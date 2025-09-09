@@ -23,7 +23,6 @@ with Ada.Directories;
 with Ada.Environment_Variables;
 with Ada.IO_Exceptions;
 with Ada.Text_IO;
-with SAL;
 package body SMM is
 
    function Find_DB_Filename return String
@@ -95,6 +94,63 @@ package body SMM is
          return Temp;
       end if;
    end As_File;
+
+   overriding
+   function "=" (Left, Right : in Song_Name) return Boolean
+   is
+      use Ada.Characters.Handling;
+      use Ada.Strings.Unbounded;
+   begin
+      return
+        (Left.Album_Artist = Null_Unbounded_String or
+           Right.Album_Artist = Null_Unbounded_String or
+           To_Lower (-Left.Album_Artist) = To_Lower (-Right.Album_Artist)) and
+        (Left.Album = Null_Unbounded_String or
+           Right.Album = Null_Unbounded_String or
+           To_Lower (-Left.Album) = To_Lower (-Right.Album)) and
+        (Left.Title = Null_Unbounded_String or
+           Right.Title = Null_Unbounded_String or
+           To_Lower (-Left.Title) = To_Lower (-Right.Title));
+   end "=";
+
+   function Song_Name_Compare (Left, Right : in Song_Name) return SAL.Compare_Result
+   is
+      use Ada.Characters.Handling;
+      use Ada.Strings.Unbounded;
+   begin
+      if Left.Album_Artist = Null_Unbounded_String or
+        Right.Album_Artist = Null_Unbounded_String or
+        To_Lower (-Left.Album_Artist) = To_Lower (-Right.Album_Artist)
+      then
+         if Left.Album = Null_Unbounded_String or
+           Right.Album = Null_Unbounded_String or
+           To_Lower (-Left.Album) = To_Lower (-Right.Album)
+         then
+            if Left.Title = Null_Unbounded_String or
+              Right.Title = Null_Unbounded_String or
+              To_Lower (-Left.Title) = To_Lower (-Right.Title)
+            then
+               return SAL.Equal;
+            elsif To_Lower (-Left.Title) < To_Lower (-Right.Title) then
+               return SAL.Less;
+            else
+               return SAL.Greater;
+            end if;
+         elsif To_Lower (-Left.Album) < To_Lower (-Right.Album) then
+            return SAL.Less;
+         else return SAL.Greater;
+         end if;
+      elsif To_Lower (-Left.Album_Artist) < To_Lower (-Right.Album_Artist) then
+         return SAL.Less;
+      else
+         return SAL.Greater;
+      end if;
+   end Song_Name_Compare;
+
+   function Image (Item : in Song_Name) return String
+   is begin
+      return -Item.Album_Artist & ", " & (-Item.Album) & ", " & (-Item.Title);
+   end Image;
 
    procedure Edit_Playlist
      (Playlist_File_Name : in String;

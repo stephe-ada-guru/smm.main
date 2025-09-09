@@ -44,6 +44,7 @@ is
       Put_Line ("  options:");
       Put_Line ("  --db=<db_file> : defaults to $SMM_HOME/smm.db or $HOME/smm/smm.db or $APPDATA/smm/smm.db");
       Put_Line ("  --verbosity=<int>");
+      Put_Line ("  --max_errors=<int> : in Compare_Playlist, stop after <int> errors.");
       Put_Line ("  --ignore_id3_flags : ignore ID3 file, frame flag settings that we nominally don't support.");
       New_Line;
       Put_Line ("  categories: {instrumental | vocal | ...}");
@@ -225,7 +226,7 @@ begin
          if Other_Loc = "spotify" then
                SMM.Compare_Playlist.Spotify (DB, Category, Spotify_Missing => Other_File);
          else
-            SMM.Compare_Playlist.HTML (DB, Category, HTML_File => Other_File);
+            SMM.Compare_Playlist.HTML (DB, Category, HTML_Filename => Other_File);
          end if;
       end;
 

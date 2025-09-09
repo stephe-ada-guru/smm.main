@@ -314,6 +314,14 @@ package body SMM.Database is
       return Checked_Fetch (DB, Statement);
    end Last_By_Last_Downloaded;
 
+   function First_By_Name (DB : in Database'Class) return Cursor
+   is
+      Statement : constant String := "SELECT * FROM Song ORDER BY Album_Artist, Album, Title ASC";
+      --  Order matches Song_Name index; create_schema.sql.
+   begin
+      return Checked_Fetch (DB, Statement);
+   end First_By_Name;
+
    function Find_File_Name (DB : in Database'Class; File_Name : in String) return Cursor
    is
       use GNATCOLL.SQL.Exec;
@@ -624,6 +632,25 @@ package body SMM.Database is
          then ""
          else Position.Cursor.Value (Album_Artist_Field));
    end Album_Artist;
+
+   function Song_Name (Position : in Cursor) return SMM.Song_Name
+   is
+      use Ada.Strings.Unbounded;
+   begin
+      return SMM.Song_Name'
+        (Album_Artist =>
+           (if Position.Cursor.Is_Null (Album_Artist_Field)
+            then Null_Unbounded_String
+            else +Position.Cursor.Value (Album_Artist_Field)),
+         Album =>
+           (if Position.Cursor.Is_Null (Album_Field)
+            then Null_Unbounded_String
+            else +Position.Cursor.Value (Album_Field)),
+         Title =>
+           (if Position.Cursor.Is_Null (Title_Field)
+            then Null_Unbounded_String
+            else +Position.Cursor.Value (Title_Field)));
+   end Song_Name;
 
    function Composer (Position : in Cursor) return String
    is begin

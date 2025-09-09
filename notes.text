@@ -27,11 +27,7 @@ branches:
 
  current work
 smm.work_1: ~/bin/compare_music.sh
-    output not helpful
-    doesn't check new in spotify (crash test dummies superman).
-
-    move html parse here
-    read both lists, sort by name order, report diff
+    running html
 
 http://192.168.188.128/app/smm/search=David+Wilcox
     working.
