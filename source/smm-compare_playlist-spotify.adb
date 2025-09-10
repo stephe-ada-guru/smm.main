@@ -34,6 +34,7 @@ procedure SMM.Compare_Playlist.Spotify
 --  differences in the Spotify playlist.
 is
    --  From https://developer.spotify.com/dashboard/5c012586b1214e33b7308648efb228e1/Settings
+   --  If get an empty response on start session, visit the Settings URL and see what it wants.
    Client_Id                : constant String := "5c012586b1214e33b7308648efb228e1";
    Client_Secret            : constant String := "2a4f43acb73443b59dee9aabbbee9ab7";
 
@@ -134,18 +135,18 @@ is
             Spotify_Name_Item : JSON_Value renames Misc_Item.Get ("spotify");
 
             --  We want to ignore case when matching names; that is done in "=" and Compare.
-            DB_Name           : constant Song_Name :=
+            DB_Name      : constant Song_Name :=
               (Album_Artist    => Get (DB_Name_Item, "album_artist"),
                Album           => Get (DB_Name_Item, "album"),
                Title           => Get (DB_Name_Item, "title"));
-            Spotify_Name      : constant Song_Name :=
+            Spotify_Name : constant Song_Name :=
               (if Spotify_Name_Item.Kind = JSON_Object_Type then
                  (Album_Artist => Get (Spotify_Name_Item, "album_artist"),
                   Album        => Get (Spotify_Name_Item, "album"),
                   Title        => Get (Spotify_Name_Item, "title"))
                else Null_Song_Name);
          begin
-            if Spotify_Name = Null_Song_Name then
+            if Is_Null (Spotify_Name) then
                Missing_Tree.Insert (DB_Name);
             else
                Rename_Tree.Insert (Missing_Data'(DB_Name, Spotify_Name));
@@ -163,6 +164,20 @@ is
 
 begin
    Read_Missing;
+
+   if Verbosity >= 2 then
+      New_Line;
+      Put_Line ("rename tree:");
+      for Data of Rename_Tree loop
+         Put_Line (Image (Data.DB_Name));
+         Put_Line ("=> " & Image (Data.Spotify_Name));
+      end loop;
+      New_Line;
+      Put_Line ("missing tree:");
+      for Song of Missing_Tree loop
+         Put_Line (Image (Song));
+      end loop;
+   end if;
 
    Standard.Spotify.Start_Session (Spotify_Session, Client_Id, Client_Secret);
 

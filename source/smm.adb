@@ -113,6 +113,16 @@ package body SMM is
            To_Lower (-Left.Title) = To_Lower (-Right.Title));
    end "=";
 
+   function Is_Null (Item : in Song_Name) return Boolean
+   is
+      use Ada.Strings.Unbounded;
+   begin
+      return
+        Item.Album_Artist = Null_Unbounded_String and
+        Item.Album = Null_Unbounded_String and
+        Item.Title = Null_Unbounded_String;
+   end Is_Null;
+
    function Song_Name_Compare (Left, Right : in Song_Name) return SAL.Compare_Result
    is
       use Ada.Characters.Handling;

@@ -93,7 +93,15 @@ package body SMM.Compare_Playlist is
             DB_Next (Next_DB_I, Category);
             Next_Tree_I := Next (Tree_Iterator, Tree_I);
 
-            if Has_Element (Next_DB_I) and then Next_DB_I.Song_Name = Element (Tree_I) then
+            if Contains (Missing, DB_I.Song_Name) then
+               --  Ignore
+               if Verbosity >= 2 then
+                  Put_Line ("... known missing");
+               end if;
+
+               DB_Next (DB_I, Category);
+
+            elsif Has_Element (Next_DB_I) and then Next_DB_I.Song_Name = Element (Tree_I) then
                --  New in DB:
                --       DB  Tree
                --  prev A   A
@@ -105,16 +113,12 @@ package body SMM.Compare_Playlist is
                --  prev A    A
                --  I    B    C
                --  next C
-               if Contains (Missing, DB_I.Song_Name) then
-                  --  Ignore
-                  null;
-
-               elsif DB_I.Last_Downloaded /= Default_Time_String then
+               if DB_I.Last_Downloaded /= Default_Time_String then
                   Error_Count := @ + 1;
-                  Put_Line ("deleted or missing in " & Tree_Name & ": " & Image (DB_I.Song_Name));
+                  Put_Line ("error: deleted or missing in " & Tree_Name & ": " & Image (DB_I.Song_Name));
                else
                   Error_Count := @ + 1;
-                  Put_Line ("either new in db or deleted in " & Tree_Name & ": " & Image (DB_I.Song_Name));
+                  Put_Line ("error: either new in db or deleted in " & Tree_Name & ": " & Image (DB_I.Song_Name));
                end if;
 
                DB_Next (DB_I, Category);
@@ -132,7 +136,7 @@ package body SMM.Compare_Playlist is
                --  I    C    B
                --  next      C
                Error_Count := @ + 1;
-               Put_Line ("either new in " & Tree_Name & " or deleted in db: " & Image (Element (Tree_I)));
+               Put_Line ("error: either new in " & Tree_Name & " or deleted in db: " & Image (Element (Tree_I)));
                Tree_I := Next_Tree_I;
             else
                --  Probably just spelled differently:
@@ -140,9 +144,9 @@ package body SMM.Compare_Playlist is
                --  HTML at: Abby Newton,                          , A Hero Never Dies / Willies Auld Trews
                Error_Count := @ + 1;
 
-               Put_Line ("db at  : " & Image (DB_I.Song_Name));
+               Put_Line ((Tree_Name'Length - 2) * ' ' & "db at  : " & Image (DB_I.Song_Name));
                Put_Line (Tree_Name & " at: " & Image (Element (Tree_I)));
-               Put_Line ("spelled differently?");
+               Put_Line ("error: spelled differently?");
 
                DB_Next (DB_I, Category);
                DB_Next (Next_DB_I, Category);
@@ -159,6 +163,7 @@ package body SMM.Compare_Playlist is
             loop
                exit when not Has_Element (DB_I);
                exit when Max_Errors > 0 and then Error_Count >= Max_Errors;
+               Error_Count := @ + 1;
                Put_Line (Image (DB_I));
                DB_Next (DB_I, Category);
             end loop;
@@ -169,6 +174,7 @@ package body SMM.Compare_Playlist is
             loop
                exit when not Has_Element (Tree_I);
                exit when Max_Errors > 0 and then Error_Count >= Max_Errors;
+               Error_Count := @ + 1;
                Put_Line (Image (Element (Tree_I)));
                Tree_I := Next (Tree_Iterator, Tree_I);
             end loop;
