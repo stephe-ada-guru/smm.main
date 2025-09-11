@@ -472,23 +472,23 @@ package body SMM.Server is
         "<div class=""tabcontent"" id=""general_search_tab"">" &
         "<form action=""search"" method=get>" &
         "<input type=submit value=""Search"">" &
-        "<input type=search autofocus name=""search"" value=""" & Decode_Plus (Get (URI_Param, "search")) & """>" &
+        "<input type=search autofocus name=""search"" value=""" & Decode_Param (Get (URI_Param, "search")) & """>" &
         "</form></div>" & New_Line &
         "<div class=""tabcontent"" id=""detailed_search_tab"">" &
         "<form action=""search"" method=get><div class=""table"">" &
         "<div class=""row""><label>Title </label>" &
-        "<input type=search name=""title"" value=""" & Decode_Plus (Get (URI_Param, "title")) & """></div>" &
+        "<input type=search name=""title"" value=""" & Decode_Param (Get (URI_Param, "title")) & """></div>" &
         "<div class=""row""><label>Artist </label>" &
-        "<input type=search name=""artist"" value=""" & Decode_Plus (Get (URI_Param, "artist")) & """></div>" &
+        "<input type=search name=""artist"" value=""" & Decode_Param (Get (URI_Param, "artist")) & """></div>" &
         "<div class=""row""><label>Album </label>" &
-        "<input type=search name=""album"" value=""" & Decode_Plus (Get (URI_Param, "album")) & """></div>" &
+        "<input type=search name=""album"" value=""" & Decode_Param (Get (URI_Param, "album")) & """></div>" &
         "<div class=""row""><label>Album Artist</label>" &
-        "<input type=search name=""album_artist"" value=""" & Decode_Plus (Get (URI_Param, "album_artist")) &
+        "<input type=search name=""album_artist"" value=""" & Decode_Param (Get (URI_Param, "album_artist")) &
         """></div>" &
         "<div class=""row""><label>Composer</label>" &
-        "<input type=search name=""composer"" value=""" & Decode_Plus (Get (URI_Param, "composer")) & """></div>" &
+        "<input type=search name=""composer"" value=""" & Decode_Param (Get (URI_Param, "composer")) & """></div>" &
         "<div class=""row""><label>Category </label>" &
-        "<input type=search name=""category"" value=""" & Decode_Plus (Get (URI_Param, "category")) & """></div>" &
+        "<input type=search name=""category"" value=""" & Decode_Param (Get (URI_Param, "category")) & """></div>" &
         "</div><input type=submit value=""Search"">" &
         "</form></div><hr>" & New_Line;
 
@@ -502,7 +502,7 @@ package body SMM.Server is
 
          Title_Row : constant Unbounded_String := +"<tr>" &
            "<td><a href=""/Music/" & HTTP_Encode (I.File_Name) &
-           """>" & Server_Img_Set ("/play_icon", ".png", "play") &
+           """>" & Server_Img_Set ("play_icon", ".png", "play") &
            "</a></td>" &
            "<td class=""text"">" & I.Artist & "</td>" &
            "<td class=""text"">" & I.Composer & "</td>" &
@@ -562,7 +562,7 @@ package body SMM.Server is
                   if To_Lower (Simple_Name (-File)) = "liner_notes.pdf" then
                      Album_Item := Album_Item & SAL.Web_Utils.Local_Href
                        (("Music/" & (-File)), Server_Img_Set
-                          ("/liner_notes_icon", ".png", "liner notes",
+                          ("liner_notes_icon", ".png", "liner notes",
                            Class => "album_art_item"));
                   end if;
                end loop;
@@ -584,7 +584,7 @@ package body SMM.Server is
                   Cur : constant Cursor := Param.Find (-SMM.Database.Field_Image (I));
                begin
                   if Cur /= No_Element then
-                     Result (I) := +Decode_Plus (Element (Cur));
+                     Result (I) := +Decode_Param (Element (Cur));
                   end if;
                end;
             end loop;
@@ -619,7 +619,7 @@ package body SMM.Server is
          begin
             if Exist (URI_Param, "search") then
                --  General search
-               I      := DB.Find_Like (Decode_Plus (Get (URI_Param, "search")), Order_By => (Album, Track));
+               I      := DB.Find_Like (Decode_Param (Get (URI_Param, "search")), Order_By => (Album, Track));
                Button := +"general_search_button";
                Tab    := +"general_search_tab";
             else
@@ -715,7 +715,7 @@ package body SMM.Server is
                elsif Field_Name = -Key_Field then
                   null;
                elsif Field_Name = "ref" then
-                  Ref := +Parameter_Lists.Element (I);
+                  Ref := +HTTP_Decode (Parameter_Lists.Element (I));
                elsif Valid_Field (Field_Name) then
                   null;
                else
@@ -737,7 +737,7 @@ package body SMM.Server is
                Value : constant String := Get (URI_Param, -Field_Image (I)); -- empty string if not present
             begin
                if Value'Length > 0 then
-                  SQL_Param (I) := +Value;
+                  SQL_Param (I) := +Decode_Param (HTTP_Decode (Value));
                end if;
             end;
          end loop;
@@ -846,9 +846,19 @@ package body SMM.Server is
       when POST =>
          declare
             URI_File : constant String := Ada.Directories.Simple_Name (Path);
+            Content_Length : constant Integer := Integer'Value (Ada.Environment_Variables.Value ("CONTENT_LENGTH"));
+            Content : String (1 .. Content_Length);
          begin
+            String'Read (Ada.Text_IO.Text_Streams.Stream (Ada.Text_IO.Standard_Input), Content);
+
+            if Debug then
+               Ada.Text_IO.Put_Line
+                 (Debug_File,
+                  Ada.Calendar.Formatting.Image (Ada.Calendar.Clock) & ": input: '" & Content & "' ");
+            end if;
+
             if URI_File = "update" then
-               return Handle_Update (Parse_Parameters (Query), Query);
+               return Handle_Update (Parse_Parameters (Content), Content);
             else
                return HTML_CGI_Response (S400, "unrecognized POST path '" & URI_File & "'");
             end if;

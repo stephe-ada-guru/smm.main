@@ -37,9 +37,9 @@ function EditCategory(event) {
         if (parent.classList.contains("categories_list")) {
             var el = event.currentTarget; // the <div> containing the category list
 
-            el.innerHTML = "<form action=\"/update\" method=\"post\" class=\"category_edit\">" +
+            el.innerHTML = "<form action=\"/app/smm/update\" method=\"post\" class=\"category_edit\">" +
                 "<input type=hidden name=ref value=\"" +
-                encodeURI(strippedURI + "#" + album.getAttribute("id")) + "\">" +
+                strippedURI + "#" + album.getAttribute("id") + "\">" +
                 "<input type=hidden name=id readonly value=\"" + parent.getAttribute("id") +"\">" +
                 "<input type=text id=\"edit_focus\" name=category value=\"" + parent.innerText + "\"" +
                 " onkeydown=\"EditingKey(event)\">" +
@@ -57,7 +57,7 @@ function EditCategory(event) {
 }
 
 function EditingKey(event) {
-    if (event.keyCode == Escape) {
+    if (event.key === 'Escape') {
         document.getElementById("edit_cancel").click();
     }
 }
