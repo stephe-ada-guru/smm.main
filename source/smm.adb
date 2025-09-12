@@ -102,15 +102,9 @@ package body SMM is
       use Ada.Strings.Unbounded;
    begin
       return
-        (Left.Album_Artist = Null_Unbounded_String or
-           Right.Album_Artist = Null_Unbounded_String or
-           To_Lower (-Left.Album_Artist) = To_Lower (-Right.Album_Artist)) and
-        (Left.Album = Null_Unbounded_String or
-           Right.Album = Null_Unbounded_String or
-           To_Lower (-Left.Album) = To_Lower (-Right.Album)) and
-        (Left.Title = Null_Unbounded_String or
-           Right.Title = Null_Unbounded_String or
-           To_Lower (-Left.Title) = To_Lower (-Right.Title));
+        To_Lower (-Left.Album_Artist) = To_Lower (-Right.Album_Artist) and
+        To_Lower (-Left.Album) = To_Lower (-Right.Album) and
+        To_Lower (-Left.Title) = To_Lower (-Right.Title);
    end "=";
 
    function Is_Null (Item : in Song_Name) return Boolean
@@ -128,18 +122,9 @@ package body SMM is
       use Ada.Characters.Handling;
       use Ada.Strings.Unbounded;
    begin
-      if Left.Album_Artist = Null_Unbounded_String or
-        Right.Album_Artist = Null_Unbounded_String or
-        To_Lower (-Left.Album_Artist) = To_Lower (-Right.Album_Artist)
-      then
-         if Left.Album = Null_Unbounded_String or
-           Right.Album = Null_Unbounded_String or
-           To_Lower (-Left.Album) = To_Lower (-Right.Album)
-         then
-            if Left.Title = Null_Unbounded_String or
-              Right.Title = Null_Unbounded_String or
-              To_Lower (-Left.Title) = To_Lower (-Right.Title)
-            then
+      if To_Lower (-Left.Album_Artist) = To_Lower (-Right.Album_Artist) then
+         if To_Lower (-Left.Album) = To_Lower (-Right.Album) then
+            if To_Lower (-Left.Title) = To_Lower (-Right.Title) then
                return SAL.Equal;
             elsif To_Lower (-Left.Title) < To_Lower (-Right.Title) then
                return SAL.Less;

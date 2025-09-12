@@ -26,11 +26,6 @@ branches:
 (dvc-propagate-one "../smm.work_1" "../smm.main")
 
  current work
-smm.work_1: ~/bin/compare_music.sh
-    running compare_playlist spotify
-    works, except "let it be" is in spotify but not db
-        can't easily buy just that song
-
 http://192.168.188.128/app/smm/search=David+Wilcox
     working.
 

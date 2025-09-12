@@ -224,7 +224,7 @@ begin
          Other_File : constant String := Argument (Next_Arg + 2);
       begin
          if Other_Loc = "spotify" then
-               SMM.Compare_Playlist.Spotify (DB, Category, Spotify_Missing => Other_File);
+               SMM.Compare_Playlist.Spotify (DB, Category, Spotify_Missing_File => Other_File);
          else
             SMM.Compare_Playlist.HTML (DB, Category, HTML_Filename => Other_File);
          end if;

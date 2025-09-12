@@ -40,11 +40,12 @@ package body SMM.Compare_Playlist is
    end DB_Next;
 
    procedure Compare_To_DB
-     (DB        : in SMM.Database.Database;
-      Category  : in String;
-      Tree      : in Song_Name_Trees.Tree;
-      Tree_Name : in String;
-      Missing   : in Song_Name_Trees.Tree)
+     (DB           : in SMM.Database.Database;
+      DB_Missing   : in Song_Name_Trees.Tree;
+      Category     : in String;
+      Tree         : in Song_Name_Trees.Tree;
+      Tree_Name    : in String;
+      Tree_Missing : in Song_Name_Trees.Tree)
    is
       use Song_Name_Trees, SMM.Database, Ada.Text_IO;
       use Ada.Strings.Fixed; --  n * ' '
@@ -95,7 +96,9 @@ package body SMM.Compare_Playlist is
             DB_Next (Next_DB_I, Category);
             Next_Tree_I := Next (Tree_Iterator, Tree_I);
 
-            if Contains (Missing, DB_I.Song_Name) then
+            if Contains (Tree_Missing, DB_I.Song_Name) or
+              Contains (DB_Missing, Element (Tree_I))
+            then
                --  Ignore
                if Verbosity >= 2 then
                   Put_Line ("... known missing");

@@ -24,14 +24,14 @@ with SAL.Gen_Unbounded_Definite_Red_Black_Trees;
 with SMM.Database;
 with Spotify;
 procedure SMM.Compare_Playlist.Spotify
-  (DB              : in out SMM.Database.Database;
-   Category        : in     String;
-   Spotify_Missing : in     String)
---  Category is the DB string identifying the playlist.
---
---  Spotify_Missing is the name of a file containing JSON-encoded list
---  of songs either missing or on a different album or with other
---  differences in the Spotify playlist.
+  (DB                   : in out SMM.Database.Database;
+   Category             : in     String;
+   Spotify_Missing_File : in     String)
+ --  Category is the DB string identifying the playlist.
+ --
+ --  Spotify_Missing_File is the name of a file containing JSON-encoded list
+ --  of songs either missing or on a different album or with other
+ --  differences in the Spotify playlist.
 is
    --  From https://developer.spotify.com/dashboard/5c012586b1214e33b7308648efb228e1/Settings
    --  If get an empty response on start session, visit the Settings URL and see what it wants.
@@ -58,12 +58,6 @@ is
 
    Spotify_Session : Standard.Spotify.Session;
 
-   function Image (Spotify_Session : in Standard.Spotify.Session; Item : in Standard.Spotify.Cursor) return String
-   is begin
-      return Spotify_Session.Album_Artist (Item) & ", " & Spotify_Session.Album (Item) & ", " &
-        Spotify_Session.Title (Item);
-   end Image;
-
    type Missing_Data is record
       DB_Name      : Song_Name;
       Spotify_Name : Song_Name; -- Null_Song_Name if missing
@@ -78,11 +72,12 @@ is
       Key          => Missing_Data_Key,
       Key_Compare  => Song_Name_Compare);
 
-   Rename_Tree  : Missing_Trees.Tree;   --  Only items with non-null Spotify_Name
-   Missing_Tree : Song_Name_Trees.Tree; --  Only items with null Spotify_Name
+   Rename_Tree     : Missing_Trees.Tree;   --  Only items with both DB_Name and Spotify_Name
+   Spotify_Missing : Song_Name_Trees.Tree; --  Only items with null Spotify_Name
+   DB_Missing      : Song_Name_Trees.Tree; --  Only items with null DB_Name
 
    procedure Read_Missing
-   --  Read Spotify_Missing, store in Rename_Tree or Missing_Tree.
+   --  Read Spotify_Missing_File, store in Rename_Tree or *_Missing.
    is
       use Ada.Strings.Unbounded;
       use GNATCOLL.JSON;
@@ -92,7 +87,7 @@ is
       Data      : JSON_Array;
       I         : Positive;
    begin
-      Open (File, In_File, Spotify_Missing);
+      Open (File, In_File, Spotify_Missing_File);
       loop
          exit when End_Of_File (File);
          declare
@@ -107,7 +102,7 @@ is
          end;
       end loop;
 
-      Full_Data := Read (Text, Filename => Spotify_Missing);
+      Full_Data := Read (Text, Filename => Spotify_Missing_File);
       case Full_Data.Kind is
       when JSON_Object_Type =>
          --  Nothing in missing file; Data also defaults to Null
@@ -136,9 +131,11 @@ is
 
             --  We want to ignore case when matching names; that is done in "=" and Compare.
             DB_Name      : constant Song_Name :=
-              (Album_Artist    => Get (DB_Name_Item, "album_artist"),
-               Album           => Get (DB_Name_Item, "album"),
-               Title           => Get (DB_Name_Item, "title"));
+              (if DB_Name_Item.Kind = JSON_Object_Type then
+                 (Album_Artist    => Get (DB_Name_Item, "album_artist"),
+                  Album           => Get (DB_Name_Item, "album"),
+                  Title           => Get (DB_Name_Item, "title"))
+               else Null_Song_Name);
             Spotify_Name : constant Song_Name :=
               (if Spotify_Name_Item.Kind = JSON_Object_Type then
                  (Album_Artist => Get (Spotify_Name_Item, "album_artist"),
@@ -147,7 +144,9 @@ is
                else Null_Song_Name);
          begin
             if Is_Null (Spotify_Name) then
-               Missing_Tree.Insert (DB_Name);
+               Spotify_Missing.Insert (DB_Name);
+            elsif Is_Null (DB_Name) then
+               DB_Missing.Insert (Spotify_Name);
             else
                Rename_Tree.Insert (Missing_Data'(DB_Name, Spotify_Name));
             end if;
@@ -157,7 +156,7 @@ is
       end loop;
    exception
    when Name_Error =>
-      raise Name_Error with "file '" & Spotify_Missing & "' not found";
+      raise Name_Error with "file '" & Spotify_Missing_File & "' not found";
    end Read_Missing;
 
    Spotify_Tree : Song_Name_Trees.Tree;
@@ -173,8 +172,13 @@ begin
          Put_Line ("=> " & Image (Data.Spotify_Name));
       end loop;
       New_Line;
-      Put_Line ("missing tree:");
-      for Song of Missing_Tree loop
+      Put_Line ("spotify_missing:");
+      for Song of Spotify_Missing loop
+         Put_Line (Image (Song));
+      end loop;
+      New_Line;
+      Put_Line ("db_missing:");
+      for Song of DB_Missing loop
          Put_Line (Image (Song));
       end loop;
    end if;
@@ -193,18 +197,6 @@ begin
       use Standard.Spotify;
 
    begin
-      if Verbosity > 1 then
-         Put_Line ("spotify list: ");
-         loop
-            exit when not Spotify_Session.Has_Element (Spotify_I);
-            Put_Line (Image (Spotify_Session, Spotify_I));
-            Spotify_Session.Next (Spotify_I);
-         end loop;
-         New_Line (2);
-
-         Spotify_I := Spotify_Session.First;
-      end if;
-
       Read_Spotify_Tree :
       loop
          if not Spotify_Session.Has_Element (Spotify_I) then
@@ -228,12 +220,18 @@ begin
               (Album_Artist => +Spotify_Session.Album_Artist (Spotify_I),
                Album        => +Spotify_Session.Album (Spotify_I),
                Title        => +Spotify_Session.Title (Spotify_I));
-
-            Rename : constant Missing_Trees.Cursor := Rename_Tree.Find (Spotify_Name);
          begin
-            Spotify_Tree.Insert
-              (if Has_Element (Rename) then Element (Rename).DB_Name
-               else Spotify_Name);
+            if DB_Missing.Contains (Spotify_Name) then
+               null;
+            else
+               declare
+                  Rename : constant Missing_Trees.Cursor := Rename_Tree.Find (Spotify_Name);
+               begin
+                  Spotify_Tree.Insert
+                    (if Has_Element (Rename) then Element (Rename).DB_Name
+                     else Spotify_Name);
+               end;
+            end if;
          exception
          when SAL.Duplicate_Key =>
             Put_Line ("error: duplicate song in Spotify list: " & Image (Spotify_Name));
@@ -243,6 +241,6 @@ begin
       end loop Read_Spotify_Tree;
    end;
 
-   Compare_To_DB (DB, Category, Spotify_Tree, "Spotify", Missing_Tree);
+   Compare_To_DB (DB, DB_Missing, Category, Spotify_Tree, "Spotify", Spotify_Missing);
 
 end SMM.Compare_Playlist.Spotify;

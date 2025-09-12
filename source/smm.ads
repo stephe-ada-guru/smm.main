@@ -55,9 +55,7 @@ package SMM is
    overriding
    function "=" (Left, Right : in Song_Name) return Boolean;
    function Song_Name_Compare (Left, Right : in Song_Name) return SAL.Compare_Result;
-   --  If a field is blank on one side, it is ignored on the other, which
-   --  means we can't use this to compare a Song_Name to Null_Song_Name;
-   --  use Is_Null. Non-null compare is case insensitive.
+   --  Compare is case insensitive.
 
    Null_Song_Name : constant Song_Name := (others => Ada.Strings.Unbounded.Null_Unbounded_String);
 

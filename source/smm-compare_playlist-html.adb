@@ -111,8 +111,9 @@ begin
    Read_HTML_Tree;
    Compare_To_DB
      (DB,
-      Category  => Category,
-      Tree      => HTML_Tree,
-      Tree_Name => "HTML",
-      Missing   => Song_Name_Trees.Empty_Tree);
+      DB_Missing   => Song_Name_Trees.Empty_Tree,
+      Category     => Category,
+      Tree         => HTML_Tree,
+      Tree_Name    => "HTML",
+      Tree_Missing => Song_Name_Trees.Empty_Tree);
 end SMM.Compare_Playlist.HTML;

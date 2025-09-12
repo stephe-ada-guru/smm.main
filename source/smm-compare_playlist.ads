@@ -35,11 +35,12 @@ package SMM.Compare_Playlist is
    function Song_ID_Compare is new SAL.Gen_Compare_Integer (SMM.Database.Song_ID);
 
    procedure Compare_To_DB
-     (DB        : in SMM.Database.Database;
-      Category  : in String;
-      Tree      : in Song_Name_Trees.Tree;
-      Tree_Name : in String;
-      Missing   : in Song_Name_Trees.Tree);
+     (DB           : in SMM.Database.Database;
+      DB_Missing   : in Song_Name_Trees.Tree;
+      Category     : in String;
+      Tree         : in Song_Name_Trees.Tree;
+      Tree_Name    : in String;
+      Tree_Missing : in Song_Name_Trees.Tree);
    --  Report missing/different on standard output.
 
 end SMM.Compare_Playlist;
