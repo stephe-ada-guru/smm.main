@@ -18,6 +18,7 @@
 
 pragma License (GPL);
 
+with Ada.Strings.Fixed;
 with Ada.Text_IO;
 package body SMM.Compare_Playlist is
 
@@ -46,6 +47,7 @@ package body SMM.Compare_Playlist is
       Missing   : in Song_Name_Trees.Tree)
    is
       use Song_Name_Trees, SMM.Database, Ada.Text_IO;
+      use Ada.Strings.Fixed; --  n * ' '
 
       DB_I          : SMM.Database.Cursor    := First_By_Name (DB);
       Tree_Iterator : constant Iterator      := Iterate (Tree);

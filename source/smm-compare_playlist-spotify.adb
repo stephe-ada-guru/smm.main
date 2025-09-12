@@ -234,6 +234,9 @@ begin
             Spotify_Tree.Insert
               (if Has_Element (Rename) then Element (Rename).DB_Name
                else Spotify_Name);
+         exception
+         when SAL.Duplicate_Key =>
+            Put_Line ("error: duplicate song in Spotify list: " & Image (Spotify_Name));
          end;
 
          Spotify_Session.Next (Spotify_I);
