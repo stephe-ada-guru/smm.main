@@ -1,6 +1,6 @@
 --  Abstract :
 --
---  Compare list of best songs in DB and Spotify
+--  See spec.
 --
 --  Copyright (C) 2025 Stephen Leake.  All Rights Reserved.
 --
@@ -18,393 +18,173 @@
 
 pragma License (GPL);
 
-with Ada.Characters.Handling;
-with Ada.Text_IO; use Ada.Text_IO;
-with GNATCOLL.JSON;
-with SAL.Gen_Unbounded_Definite_Red_Black_Trees;
-with SMM.Database;
-with Spotify;
-procedure SMM.Compare_Playlist
-  (DB              : in out SMM.Database.Database;
-   Category        : in     String;
-   Spotify_Missing : in     String)
---  Category is the DB string identifying the playlist.
---
---  Spotify_Missing is the name of a file containing JSON-encoded list
---  of songs either missing or on a different album in the Spotify playlist.
-is
-   --  From https://developer.spotify.com/dashboard/5c012586b1214e33b7308648efb228e1/Settings
-   Client_Id                : constant String := "5c012586b1214e33b7308648efb228e1";
-   Client_Secret            : constant String := "2a4f43acb73443b59dee9aabbbee9ab7";
-
-   --  From https://open.spotify.com/playlist/7nfC9g7RtFQUWDGdsq1GYj
-   Stephes_Best_Playlist_ID : constant String := "7nfC9g7RtFQUWDGdsq1GYj";
-
-   --  From https://open.spotify.com/playlist/36qJfLXS0A9kCio5MESskP
-   Kate_Protest_Playlist_ID : constant String := "36qJfLXS0A9kCio5MESskP";
-
-   --  From https://open.spotify.com/playlist/1rk2PNFo8BlRnq6YmLNjEc
-   Parenthood_Playlist_ID : constant String := "1rk2PNFo8BlRnq6YmLNjEc";
-
-   Spotify_Playlist_ID : constant String :=
-     (if Category = "best"
-      then Stephes_Best_Playlist_ID
-      elsif Category = "protest"
-      then Kate_Protest_Playlist_ID
-      elsif Category = "parenthood"
-      then Parenthood_Playlist_ID
-      else raise SAL.Parameter_Error with "expecting 'best', 'protest', 'parenthood'");
-
-   function "+" (Item : in String) return Ada.Strings.Unbounded.Unbounded_String
-        renames Ada.Strings.Unbounded.To_Unbounded_String;
-
-   function "-" (Item : in Ada.Strings.Unbounded.Unbounded_String) return String
-        renames Ada.Strings.Unbounded.To_String;
-
-   Spotify_Session : Spotify.Session;
-
-   type Song_Names is record
-      Album_Artist : Ada.Strings.Unbounded.Unbounded_String;
-      Album        : Ada.Strings.Unbounded.Unbounded_String;
-      Title        : Ada.Strings.Unbounded.Unbounded_String;
-   end record;
-
-   overriding
-   function "=" (Left, Right : in Song_Names) return Boolean
-   is
-      use all type Ada.Strings.Unbounded.Unbounded_String;
-   begin
-      return
-        Left.Album_Artist = Right.Album_Artist and
-        Left.Album = Right.Album and
-        Left.Title = Right.Title;
-   end "=";
-
-   Null_Song_Names : constant Song_Names := (others => Ada.Strings.Unbounded.Null_Unbounded_String);
-
-   function Image (Item : in Song_Names) return String
-   is begin
-      return -Item.Album_Artist & ", " & (-Item.Album) & ", " & (-Item.Title);
-   end Image;
+with Ada.Strings.Fixed;
+with Ada.Text_IO;
+package body SMM.Compare_Playlist is
 
    function Image (Item : in SMM.Database.Cursor) return String
    is begin
       return Item.Album_Artist & ", " & Item.Album & ", " & Item.Title;
    end Image;
 
-   function Image (Spotify_Session : in Spotify.Session; Item : in Spotify.Cursor) return String
-   is begin
-      return Spotify_Session.Album_Artist (Item) & ", " & Spotify_Session.Album (Item) & ", " &
-        Spotify_Session.Title (Item);
-   end Image;
-
-   function DB_Find (Item : in Song_Names) return SMM.Database.Cursor
+   procedure DB_Next (DB_I : in out SMM.Database.Cursor; Category : in String)
+   --  Increment DB_I to next item containing Category
    is
       use SMM.Database;
-      I : constant Cursor := Find_Like
-        (DB,
-         Param           =>
-           (Album_Artist => Item.Album_Artist,
-            Album        => Item.Album,
-            Title        => Item.Title,
-            others       => Ada.Strings.Unbounded.Null_Unbounded_String),
-         Order_By        => (1 => Album_Artist));
    begin
-      if not I.Has_Element then
-         raise SAL.Not_Found with "'" & Image (Item) & "' not found in DB";
-      end if;
+      loop
+         Next (DB_I);
+         exit when not Has_Element (DB_I);
+         exit when DB_I.Category_Contains (Category);
+      end loop;
+   end DB_Next;
 
-      return I;
-      --  We check for more than one item in I later (which is why we return
-      --  a cursor).
-   end DB_Find;
-
-   type Missing_Data is record
-      ID            : SMM.Database.Song_ID;
-      Spotify_Names : Song_Names; -- Null_Song_Names if missing
-   end record;
-
-   function Missing_Data_Key (Item : in Missing_Data) return SMM.Database.Song_ID
-   is begin
-      return Item.ID;
-   end Missing_Data_Key;
-
-   function Song_ID_Compare is new SAL.Gen_Compare_Integer (SMM.Database.Song_ID);
-
-   package Missing_Trees is new SAL.Gen_Unbounded_Definite_Red_Black_Trees
-     (Element_Type => Missing_Data,
-      Key_Type     => SMM.Database.Song_ID,
-      Key          => Missing_Data_Key,
-      Key_Compare  => Song_ID_Compare);
-
-   Missing_Tree : Missing_Trees.Tree;
-
-   procedure Read_Missing
-   --  Read Spotify_Missing, store in Missing_Tree.
+   procedure Compare_To_DB
+     (DB           : in SMM.Database.Database;
+      DB_Missing   : in Song_Name_Trees.Tree;
+      Category     : in String;
+      Tree         : in Song_Name_Trees.Tree;
+      Tree_Name    : in String;
+      Tree_Missing : in Song_Name_Trees.Tree)
    is
-      use Ada.Strings.Unbounded;
-      use GNATCOLL.JSON;
-      File      : File_Type;
-      Text      : Unbounded_String;
-      Full_Data : JSON_Value;
-      Data      : JSON_Array;
-      I         : Positive;
-   begin
-      Open (File, In_File, Spotify_Missing);
-      loop
-         exit when End_Of_File (File);
-         declare
-            Line : constant String := Get_Line (File);
-         begin
-            if Line'Last >= 2 and then Line (1 .. 2) = "//" then
-               --  skip comment line
-               null;
-            else
-               Text := @ & Line;
-            end if;
-         end;
-      end loop;
+      use Song_Name_Trees, SMM.Database, Ada.Text_IO;
+      use Ada.Strings.Fixed; --  n * ' '
 
-      Full_Data := Read (Text, Filename => Spotify_Missing);
-      case Full_Data.Kind is
-      when JSON_Object_Type =>
-         --  Nothing in missing file; Data also defaults to Null
-         return;
+      DB_I          : SMM.Database.Cursor    := First_By_Name (DB);
+      Tree_Iterator : constant Iterator      := Iterate (Tree);
+      Tree_I        : Song_Name_Trees.Cursor := First (Tree_Iterator);
 
-      when JSON_Array_Type =>
-         Data := Get (Full_Data);
+      Next_DB_I   : SMM.Database.Cursor := First_By_Name (DB); -- Independent of DB_I
+      Next_Tree_I : Song_Name_Trees.Cursor;
 
-      when others =>
-         raise SAL.Programmer_Error with "full_data.kind: " & JSON_Value_Type'Image (Full_Data.Kind);
-      end case;
-
-      if Verbosity > 1 then
-         Put_Line ("missing JSON:");
-         Put_Line (Write (Full_Data));
-         New_Line (2);
-      end if;
-
-      I := Array_First (Data);
-      loop
-         exit when not Array_Has_Element (Data, I);
-         declare
-            use Ada.Characters.Handling;
-
-            Misc_Item          : JSON_Value renames Array_Element (Data, I);
-            DB_Names_Item      : JSON_Value renames Misc_Item.Get ("db");
-            Spotify_Names_Item : JSON_Value renames Misc_Item.Get ("spotify");
-
-            --  DB Find_Like uses SQL search, which is not case sensitive
-            DB_Names           : constant Song_Names :=
-              (Album_Artist    => +To_Lower (Get (DB_Names_Item, "album_artist")),
-               Album           => +To_Lower (Get (DB_Names_Item, "album")),
-               Title           => +To_Lower (Get (DB_Names_Item, "title")));
-            Spotify_Names      : constant Song_Names :=
-              (if Spotify_Names_Item.Kind = JSON_Object_Type then
-                 (Album_Artist => +To_Lower (Get (Spotify_Names_Item, "album_artist")),
-                  Album        => +To_Lower (Get (Spotify_Names_Item, "album")),
-                  Title        => +To_Lower (Get (Spotify_Names_Item, "title")))
-               else Null_Song_Names);
-
-            DB_I : SMM.Database.Cursor := DB_Find (DB_Names);
-         begin
-            Multiple_DB_Match :
-            loop
-               if To_Lower (Image (DB_I)) = Image (DB_Names) then
-                  Missing_Tree.Insert (Element => (DB_I.ID, Spotify_Names));
-                  exit Multiple_DB_Match;
-               else
-                  --  Handle "the babysitter's here intro" vs "the babysitter's here".
-                  DB_I.Next;
-
-                  if not DB_I.Has_Element then
-                     raise SAL.Initialization_Error with Image (DB_Names) & " not found in db";
-                  end if;
-               end if;
-            end loop Multiple_DB_Match;
-         end;
-
-         I := Array_Next (Data, I);
-      end loop;
-   exception
-   when Name_Error =>
-      raise Name_Error with "file '" & Spotify_Missing & "' not found";
-   end Read_Missing;
-
-begin
-   Read_Missing;
-
-   Spotify.Start_Session (Spotify_Session, Client_Id, Client_Secret);
-
-   declare
-      function "=" (Left : in SMM.Database.Cursor; Right : in Spotify.Cursor) return Boolean
-      is
-         use Ada.Characters.Handling;
-
-         DB_Artist : constant String := To_Lower (Left.Album_Artist);
-         DB_Album  : constant String := To_Lower (Left.Album);
-         DB_Title  : constant String := To_Lower (Left.Title);
-
-         Spotify_Artist : constant String := To_Lower (Spotify_Session.Album_Artist (Right));
-         Spotify_Album  : constant String := To_Lower (Spotify_Session.Album (Right));
-         Spotify_Title  : constant String := To_Lower (Spotify_Session.Title (Right));
-      begin
-         return
-           DB_Artist = Spotify_Artist and
-           DB_Album = Spotify_Album and
-           DB_Title = Spotify_Title;
-      end "=";
-
-      DB_I : SMM.Database.Cursor := DB.First_By_ID;
-      --  Iterates in song ID order; playlist is created in that order. We
-      --  need album_artist, album, title to match Spotify playlist entry.
-      --
-      --  We assume songs are marked with Category in DB _before_ being
-      --  added to Spotify list. FIXME: not true; added Superman to spotify best.
-
-      Playlist_Chunk  : constant Spotify.Playlist_Item_Count := Spotify.Playlist_Item_Count'Last;
-      Playlist_Offset : Natural                              := 0;
-
-      Spotify_I : Spotify.Cursor := Spotify_Session.Get_Playlist
-        (Spotify_Playlist_ID,
-         Offset => Playlist_Offset, Count => Playlist_Chunk);
-
-      use SMM.Database;
-      use Spotify;
       Error_Count : Integer := 0;
-      Total_Song_Count : Integer := 0;
-
-      procedure Check_Missing
-      is
-         use Missing_Trees;
-
-         Missing_J : constant Missing_Trees.Cursor := Missing_Tree.Find (DB_I.ID);
-      begin
-         if Has_Element (Missing_J) then
-            declare
-               Different_Names : Song_Names renames Element (Missing_J).Spotify_Names;
-            begin
-               if Different_Names = Null_Song_Names then
-                  if Verbosity > 0 then
-                     Put_Line (Total_Song_Count'Image & " missing ok: " & Image (DB_I));
-                  end if;
-               else
-                  declare
-                     use Ada.Characters.Handling;
-
-                     Spotify_Names : constant Song_Names :=
-                       (+To_Lower (Spotify_Session.Album_Artist (Spotify_I)),
-                        +To_Lower (Spotify_Session.Album (Spotify_I)),
-                        +To_Lower (Spotify_Session.Title (Spotify_I)));
-                  begin
-                     if Verbosity > 1 then
-                        Put_Line ("checking spotify: " & Image (Spotify_Names));
-                     end if;
-                     if Different_Names = Spotify_Names then
-                        if Verbosity > 0 then
-                           Put_Line (Total_Song_Count'Image & " different ok: " & Image (DB_I));
-                        end if;
-
-                        Spotify_Session.Next (Spotify_I);
-                     else
-                        Put_Line ("Spotify missing: '" & Image (DB_I) & "'");
-                        Put_Line ("after            '" & Image (Spotify_Names) & "'");
-                        Put_Line ("marked as        '" & Image (Different_Names) & "'");
-                        Error_Count := @ + 1;
-                     end if;
-                  end;
-               end if;
-            exception
-            when Constraint_Error =>
-               raise Some_Error with Image (DB_I) & " in missing.json but not in Spotify?";
-            end;
-         else
-            Put_Line ("Spotify missing: " & Image (DB_I));
-            if Error_Count = 0 and then Spotify_Session.Has_Element (Spotify_I) then
-               --  Previous errors make this message meaningless.
-               Put_Line ("Spotify at     : " & Image (Spotify_Session, Spotify_I));
-            end if;
-            Error_Count := @ + 1;
-         end if;
-      end Check_Missing;
-
    begin
-      if Verbosity > 1 then
-         Put_Line ("spotify list: ");
+      if Verbosity >= 2 then
+         Put_Line ("db best list, sorted:");
          loop
-            exit when not Spotify_Session.Has_Element (Spotify_I);
-            Put_Line (Image (Spotify_Session, Spotify_I));
-            Spotify_Session.Next (Spotify_I);
+            exit when not Has_Element (DB_I);
+            Put_Line (Image (DB_I.Song_Name));
+            DB_Next (DB_I, Category);
          end loop;
-         New_Line (2);
+         DB_I := First_By_Name (DB);
 
-         Spotify_I := Spotify_Session.First;
+         New_Line;
+         Put_Line (Tree_Name & " best list, sorted:");
+         for Song of Tree loop
+            Put_Line (Image (Song));
+         end loop;
+         New_Line;
       end if;
 
-      Main :
       loop
-         exit Main when not Has_Element (DB_I);
+         exit when not Has_Element (DB_I) or not Has_Element (Tree_I);
+         exit when Max_Errors > 0 and then Error_Count >= Max_Errors;
 
-         if not Spotify_Session.Has_Element (Spotify_I) then
-            --  Try to get more
-            Playlist_Offset := @ + To_Integer (Spotify_I) - 1;
-
-            if Verbosity > 0 then
-               Put_Line ("get more playlist" & Playlist_Offset'Image);
-            end if;
-
-            Spotify_I := Spotify_Session.Get_Playlist
-              (Spotify_Playlist_ID, Offset => Playlist_Offset, Count => Playlist_Chunk);
+         if Verbosity >= 2 then
+            Put_Line ("db at  : " & Image (DB_I.Song_Name));
+            Put_Line (Tree_Name & " at: " & Image (Element (Tree_I)));
          end if;
 
-         if not Spotify_Session.Has_Element (Spotify_I) then
-            --  Past end of Spotify playlist; remaining category items in DB_I are new
-            if Verbosity > 1 then
-               Put_Line ("spotify list done");
-            end if;
-
-            loop
-               if Verbosity > 1 then
-                  Put_Line ("checking db: " & Image (DB_I));
-               end if;
-
-               if DB_I.Category_Contains (Category) then
-                  Total_Song_Count := @ + 1;
-                  Check_Missing;
-               end if;
-               DB_I.Next;
-               exit when not Has_Element (DB_I);
-            end loop;
-            exit Main;
+         if DB_I.Song_Name = Element (Tree_I) then
+            DB_Next (DB_I, Category);
+            DB_Next (Next_DB_I, Category);
+            Tree_I := Next (Tree_Iterator, Tree_I);
          else
-            if Verbosity > 1 then
-               Put_Line ("checking db: " & Image (DB_I));
-            end if;
+            --  Could be new, deleted, or missing on either side. We assume there
+            --  is only one consecutive difference.
 
-            if DB_I.Category_Contains (Category) then
-               Total_Song_Count := @ + 1;
-               if DB_I = Spotify_I then
-                  --  all ok
-                  if Verbosity > 1 then
-                     Put_Line ("checking spotify: " & Image (Spotify_Session, Spotify_I));
-                  end if;
-                  if Verbosity > 0 then
-                     Put_Line (Total_Song_Count'Image & " ok: " & Image (DB_I));
-                  end if;
-                  DB_I.Next;
-                  Spotify_Session.Next (Spotify_I);
-               else
-                  Check_Missing;
-                  DB_I.Next;
+            DB_Next (Next_DB_I, Category);
+            Next_Tree_I := Next (Tree_Iterator, Tree_I);
+
+            if Contains (Tree_Missing, DB_I.Song_Name) or
+              Contains (DB_Missing, Element (Tree_I))
+            then
+               --  Ignore
+               if Verbosity >= 2 then
+                  Put_Line ("... known missing");
                end if;
+
+               DB_Next (DB_I, Category);
+
+            elsif Has_Element (Next_DB_I) and then Next_DB_I.Song_Name = Element (Tree_I) then
+               --  New in DB:
+               --       DB  Tree
+               --  prev A   A
+               --  I    new B
+               --  next B
+               --
+               --  Deleted or missing in Tree:
+               --       DB   Tree
+               --  prev A    A
+               --  I    B    C
+               --  next C
+               if DB_I.Last_Downloaded /= Default_Time_String then
+                  Error_Count := @ + 1;
+                  Put_Line ("error: deleted or missing in " & Tree_Name & ": " & Image (DB_I.Song_Name));
+               else
+                  Error_Count := @ + 1;
+                  Put_Line ("error: either new in db or deleted in " & Tree_Name & ": " & Image (DB_I.Song_Name));
+               end if;
+
+               DB_Next (DB_I, Category);
+
+            elsif Has_Element (Next_Tree_I) and then DB_I.Song_Name = Element (Next_Tree_I) then
+               --  New in Tree:
+               --       DB  Tree
+               --  prev A   A
+               --  I    B   new
+               --  next     B
+               --
+               --  Deleted in DB:
+               --       DB   Tree
+               --  prev A    A
+               --  I    C    B
+               --  next      C
+               Error_Count := @ + 1;
+               Put_Line ("error: either new in " & Tree_Name & " or deleted in db: " & Image (Element (Tree_I)));
+               Tree_I := Next_Tree_I;
             else
-               DB_I.Next;
+               --  Probably just spelled differently:
+               --  db at  : Abby Newton, Castles, Kirks, and Caves, A Hero Never Dies/Willie's Auld Trews
+               --  HTML at: Abby Newton,                          , A Hero Never Dies / Willies Auld Trews
+               Error_Count := @ + 1;
+
+               Put_Line ((Tree_Name'Length - 2) * ' ' & "db at  : " & Image (DB_I.Song_Name));
+               Put_Line (Tree_Name & " at: " & Image (Element (Tree_I)));
+               Put_Line ("error: spelled differently?");
+
+               DB_Next (DB_I, Category);
+               DB_Next (Next_DB_I, Category);
+               Tree_I := Next (Tree_Iterator, Tree_I);
             end if;
          end if;
-      end loop Main;
+      end loop;
 
-      Put_Line
-        ("compare DB Best to Spotify best done: songs/errors " & Total_Song_Count'Image & " /" & Error_Count'Image);
-   end;
+      if Max_Errors > 0 and then Error_Count >= Max_Errors then
+         Put_Line ("stopped at max errors");
+      else
+         if Has_Element (DB_I) then
+            Put_Line ("extra db items:");
+            loop
+               exit when not Has_Element (DB_I);
+               exit when Max_Errors > 0 and then Error_Count >= Max_Errors;
+               Error_Count := @ + 1;
+               Put_Line (Image (DB_I));
+               DB_Next (DB_I, Category);
+            end loop;
+         end if;
+
+         if Has_Element (Tree_I) then
+            Put_Line ("extra " & Tree_Name & " items:");
+            loop
+               exit when not Has_Element (Tree_I);
+               exit when Max_Errors > 0 and then Error_Count >= Max_Errors;
+               Error_Count := @ + 1;
+               Put_Line (Image (Element (Tree_I)));
+               Tree_I := Next (Tree_Iterator, Tree_I);
+            end loop;
+         end if;
+      end if;
+   end Compare_To_DB;
 
 end SMM.Compare_Playlist;

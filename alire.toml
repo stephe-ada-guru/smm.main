@@ -22,10 +22,8 @@ gnatcoll_sqlite = "^23.0.0"
 
 stephes_ada_library = "~3.7.2"
 
-# http client library simpler than AWS. but mingw64 install of libcurl fails. Sigh
-# so we spawn a curl process, via gnat.os_lib
-# FIXME: now we are on Debian; try libcurl again?
-# utilada_curl = "^2.8.0"
+# http client library simpler than AWS
+utilada_curl = "^2.8.0"
 
 # We use Ada 2022 syntax, so need the -gnat2022 switch; introduced in gnat FSF 11, Community 2021. 
 gnat = "(>=11 & <2000) | >=2021"

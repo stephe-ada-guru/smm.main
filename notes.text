@@ -1,4 +1,5 @@
-Alire.make all
+Alire.make
+
 build/Makefile obsolete
 
 see windows org.stephe_leake.music_player_2/notes.text
@@ -12,7 +13,7 @@ branches:
 
 (dvc-state-multiple
     '((xgit . "../org.stephe_leake.sal")
-      (xgit . "../smm.main")))
+      (xgit . "../smm.work_1")))
 
 (dvc-propagate-multiple
  '(("../org.stephe_leake.sal" . "../org.stephe_leake.sal.stephe-1")
@@ -171,12 +172,12 @@ change over-select ratio
 Copy playlist don't copy existing
 
  modify database schema
-Edit create_schema.sql
+Edit source/create_schema.sql
 
 Edit smm-database.ads ,.adb Insert, Update
     do _not_ add new field to Fields, access via Cursor functions yet
 
-Edit modify_schema.adb to copy old fields, add new
+Edit source/modify_schema.adb to copy old fields, add new
 
 make -r modify
 
@@ -191,9 +192,9 @@ make -r all
 
 mv smm_new.db c:/home/stephe/smm/smm.db
 
-make install
+now add new field to DB.Fields, access via Cursor functions, etc.
 
-recompile compare_best_music.exe
+make install
 
  references
 Chrome "refresh" does not reload *.css; clear browsing data

@@ -26,38 +26,11 @@ pragma License (GPL);
 
 with Ada.Exceptions;
 with Ada.Text_IO;
-with GNAT.OS_Lib;
 with SAL.Gen_Trimmed_Image;
+with Util.Http.Clients.Curl;
 package body Spotify is
 
    use GNATCOLL.JSON;
-
-   function Curl (Args : in GNAT.OS_Lib.Argument_List) return String
-   --  Spawn 'curl' with Args, return result.
-   is
-      use GNAT.OS_Lib;
-
-      Output_File_Name : constant String := "curl_output";
-      Success          : Boolean;
-      Return_Code      : Integer;
-   begin
-      Spawn ("curl", Args, Output_File_Name, Success, Return_Code);
-
-      if not Success then
-         raise Some_Error with "spawn curl failed: " & Return_Code'Image;
-      end if;
-
-      declare
-         use Ada.Text_IO;
-         File : File_Type;
-      begin
-         Open (File, In_File, Output_File_Name);
-         return Result : constant String := Get_Line (File) do
-            Delete (File);
-         end return;
-      end;
-
-   end Curl;
 
    function "-" (Item : in Ada.Strings.Unbounded.Unbounded_String) return String
      renames Ada.Strings.Unbounded.To_String;
@@ -67,31 +40,31 @@ package body Spotify is
       Client_ID     : in     String;
       Client_Secret : in     String)
    is
-      Args : GNAT.OS_Lib.String_List_Access :=
-        new GNAT.OS_Lib.String_List'
-          (new String'("-s"),
-           new String'("-X"),
-           new String'("POST"),
-           new String'("https://accounts.spotify.com/api/token"),
-           new String'("-H"),
-           new String'("Content-Type: application/x-www-form-urlencoded"),
-           new String'("-d"),
-           new String'("grant_type=client_credentials&client_id=" & Client_ID & "&client_secret=" & Client_Secret));
-
-      Text : constant String := Curl (Args.all);
+      use Util.Http.Clients;
    begin
+      Util.Http.Clients.Curl.Register;
       declare
-         Temp  : constant JSON_Value := Read (Text);
-         Token : constant JSON_Value := Get (Temp, Field => "access_token");
+         HTTP_Client   : Client;
+         HTTP_Response : Response;
       begin
-         GNAT.OS_Lib.Free (Args);
+         HTTP_Client.Add_Header ("Content-Type", "application/x-www-form-urlencoded");
+         Post
+           (HTTP_Client,
+            URL   => "https://accounts.spotify.com/api/token",
+            Data  => "grant_type=client_credentials&client_id=" & Client_ID & "&client_secret=" & Client_Secret,
+            Reply => HTTP_Response);
 
-         Session.Credentials := Get (Token);
+         declare
+            Text  : constant String     := HTTP_Response.Get_Body;
+            Temp  : constant JSON_Value := Read (Text);
+            Token : constant JSON_Value := Get (Temp, Field => "access_token");
+         begin
+            Session.Credentials := Get (Token);
+         end;
       end;
    exception
    when Invalid_JSON_Stream =>
       Ada.Text_IO.Put_Line ("json parse fail:");
-      Ada.Text_IO.Put_Line (Text);
       raise Some_Error;
    end Start_Session;
 
@@ -109,24 +82,26 @@ package body Spotify is
    is
       function Trimmed_Image is new SAL.Gen_Trimmed_Image (Natural);
 
-      Args : GNAT.OS_Lib.String_List_Access :=
-        new GNAT.OS_Lib.String_List'
-          (new String'("-s"),
-           new String'
-             ("https://api.spotify.com/v1/playlists/" & Playlist_ID  &
-                "/tracks?offset=" & Trimmed_Image (Offset) & "&limit=" & Trimmed_Image (Count)),
-           new String'("-H"),
-           new String'("Authorization: Bearer  " & (-Session.Credentials)));
+      use Util.Http.Clients;
 
-      Data : constant String := Curl (Args.all);
-      Temp : JSON_Value;
+      HTTP_Client   : Client;
+      HTTP_Response : Response;
    begin
+      HTTP_Client.Add_Header ("Authorization", "Bearer  " & (-Session.Credentials));
+      Get
+        (HTTP_Client,
+         URL   => "https://api.spotify.com/v1/playlists/" & Playlist_ID  &
+                "/tracks?offset=" & Trimmed_Image (Offset) & "&limit=" & Trimmed_Image (Count),
+         Reply => HTTP_Response);
+
       declare
          use Ada.Text_IO;
          use Ada.Exceptions;
+         Data : constant String     := HTTP_Response.Get_Body;
+         Temp : constant JSON_Value := Read (Data);
       begin
-         GNAT.OS_Lib.Free (Args);
-         Temp := Read (Data);
+         Session.Playlist := Get (Temp, "items");
+
       exception
       when E : Invalid_JSON_Stream =>
          Put_Line (Standard_Error, "data => ");
@@ -134,13 +109,10 @@ package body Spotify is
          raise Some_Error with Exception_Message (E);
       end;
 
-      Session.Playlist := Get (Temp, "items");
-
       return (Index => Array_First (Session.Playlist));
 
    exception
    when others =>
-      Ada.Text_IO.Put_Line (Write (Temp, Compact => False));
       raise Some_Error;
    end Get_Playlist;
 
