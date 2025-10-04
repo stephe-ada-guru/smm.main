@@ -35,6 +35,9 @@ web search needs sort order
     so search on "protest" matches compare_playlist output
 
 test phone update playlist.
+    /app/smm/get_new_songs_list?API=2&category=instrumental&count=88&new_count=29&over_select_ratio=1.1&record_downloaded=true
+    => 500 status
+    but no entry in apache2 error.log!?
 
 smm check check that .mp3 is not corrupted
     just read id3 headers.
@@ -218,9 +221,10 @@ https://datatracker.ietf.org/doc/rfc9112/ HTTP/1.1:
 
 http://taglib.org/ C ID3 library (simpler than ffmpeg)
 
+/etc/apache2/apache2.conf
 /etc/apache2/ports.conf
 /var/log/apache2/error.log
 /usr/lib/cgi-bin/smm
 http://192.168.188.128/cgi-bin/smm/search
 systemctl restart apache2
-see header comment in smm-server.adb
+see header comment in source/smm-server.adb

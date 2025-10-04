@@ -48,10 +48,7 @@ $(SERVER_DATA)/% : source/%
 	cp $^ $@
 
 /usr/lib/cgi-bin/smm : source/smm
-	cp $^ $@
-
-/usr/lib/cgi-bin/smm-server_driver.exe : $(ALIRE_EXEC_DIR)/smm-server_driver.exe
-	cp $^ $@
+	sudo cp $^ $@
 
 # don't strip, so stack traceback is useful on errors
 $(HOME)/bin/% : $(ALIRE_EXEC_DIR)/%

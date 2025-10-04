@@ -4,18 +4,35 @@
 --
 --  Implement a CGI script.
 --
---  The default config for the Apache web server requires files
---  touched this program to be in directories known to the server.
+--  The Apache web server requires files touched by this program to be
+--  in directories known to the server.
 --
 --  Executables : /usr/lib/cgi-bin.
 --  Music and meta data files (read only): Config.Root
 --  Config, db, notes, log (read/write): Config.Server_Data
 --
 --  Read-only directories must be declared in
---  /etc/apache2/apache2.conf, add a <Directory ... >.
+--  /etc/apache2/apache2.conf; use the default /var/www/ or add a
+--  <Directory ... >.
 --
---  Read-write must be declared there, and the directory must be owned
---  by the user that runs the server: www-data.
+--  Read-write directories must be declared there, and the directory
+--  must be owned by the user that runs the server: www-data.
+--
+--  To use "app/smm" in url instead of "cgi-bin/smm": In
+--  /etc/apache2/conf-available/serve-cgi-bin.conf (inside <IfModule mod_alias.c>:
+--      <IfDefine ENABLE_USR_LIB_CGI_BIN>
+--                ScriptAlias /app/ /usr/lib/cgi-bin/
+--                <Directory "/usr/lib/cgi-bin">
+--                           AllowOverride None
+--                           Options +ExecCGI -MultiViews +SymLinksIfOwnerMatch
+--                           Require all granted
+--                </Directory>
+--      </IfDefine>
+--
+--  Ensure the cgi module is enabled in apache2:
+--  apache2ctl -M | grep cgi
+--  if not:
+--  sudo a2enmod cgid
 --
 --  Copyright (C) 2016 - 2020, 2022, 2023, 2025 Stephen Leake All Rights Reserved.
 --
@@ -776,7 +793,8 @@ package body SMM.Server is
       --  The full URI sent by the client looks like:
       --  https:/<host>/cgi-bin/smm/<path>?<query>
 
-      Path   : constant String         := Ada.Environment_Variables.Value ("PATH_INFO");
+      Path   : constant String         :=
+        (if Ada.Environment_Variables.Value ("PATH_INFO");
       Query  : constant String         := Ada.Environment_Variables.Value ("QUERY_STRING");
       Method : constant Request_Method := Request_Method'Value (Ada.Environment_Variables.Value ("REQUEST_METHOD"));
    begin
