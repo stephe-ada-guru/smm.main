@@ -199,6 +199,9 @@ package body SMM.Database is
       if not DB.Connection.Success then
          raise Ada.IO_Exceptions.Use_Error with File_Name & DB.Connection.Error;
       end if;
+   exception
+   when Ada.IO_Exceptions.Name_Error =>
+      raise Ada.IO_Exceptions.Use_Error with "invalid database file name: '" & File_Name & "'";
    end Open;
 
    procedure Insert

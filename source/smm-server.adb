@@ -48,16 +48,10 @@ with GNAT.Traceback.Symbolic;
 with SAL.Config_Files;
 with SAL.Gen_Definite_Doubly_Linked_Lists;
 with SAL.Time_Conversions;
-with SAL.Web_Utils;
 with SMM.Database;
 with SMM.JPEG;
 with SMM.Song_Lists;
 package body SMM.Server is
-
-   subtype API_Versions is Integer range 1 .. 2;
-   --  1 - API not specified in GET. Client always downloads all songs. 'download' => list of filenames
-   --  2 - API specified in GET. Client only downloads new songs (all others previously downloaded).
-   --      'get_new_songs_list => list of "Album_Artist", "album", "title", "filename"
 
    package String_Lists is new SAL.Gen_Definite_Doubly_Linked_Lists (Ada.Strings.Unbounded.Unbounded_String);
 
@@ -71,8 +65,6 @@ package body SMM.Server is
    --   AllowOverride None
    --   Require all granted
    --  </Directory>
-
-   DB_Filename : Unbounded_String;
 
    Debug          : Boolean         := False;
    Debug_Filename : Ada.Strings.Unbounded.Unbounded_String;
@@ -204,7 +196,7 @@ package body SMM.Server is
          then Boolean'Value (Parameters.Element ("record_downloaded"))
          else False);
 
-      Seed_Param : constant String     := Parameters.Element ("seed"); -- only used in unit tests
+      Seed_Param : constant String     := Get (Parameters, "seed"); -- only used in unit tests; empty if not present
       Seed       : constant Integer    :=
         (if Seed_Param'Length > 0 then Integer'Value (Seed_Param) else 0);
 

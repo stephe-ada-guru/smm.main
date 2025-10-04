@@ -18,6 +18,7 @@
 
 pragma License (GPL);
 
+with Ada.Strings.Fixed;
 with Ada.Text_IO;
 with HTML_Parse;
 with HTML_Utils;
@@ -61,7 +62,7 @@ is
          exit Artist_Loop when Album_Artist_Node = null;
 
          if Verbosity >= 2 then
-            Ada.Text_IO.Put_Line ("album_artist: " & (-Concat_Text (Album_Artist_Node)));
+            Ada.Text_IO.Put_Line ("album_artist: '" & (-Concat_Text (Album_Artist_Node)) & "'");
          end if;
 
          Album_Node := Find_Node
@@ -81,10 +82,12 @@ is
             loop
                exit Title_Loop when Title_Node = null;
                declare
+                  use Ada.Strings, Ada.Strings.Fixed;
+                  --  It is difficult to control trailing space in html, so we trim it here.
                   Song : constant Song_Name :=
-                    (Album_Artist => Concat_Text (Album_Artist_Node),
-                     Album => Concat_Text (Album_Node),
-                     Title => Concat_Text (Title_Node));
+                    (Album_Artist => +Trim (-Concat_Text (Album_Artist_Node), Both),
+                     Album => +Trim (-Concat_Text (Album_Node), Both),
+                     Title => +Trim (-Concat_Text (Title_Node), Both));
                begin
                   if Verbosity >= 2 then
                      Ada.Text_IO.Put_Line ("title: " & (-Concat_Text (Title_Node)));

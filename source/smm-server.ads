@@ -2,7 +2,7 @@
 --
 --  Stephe's Music Manager Server
 --
---  Copyright (C) 2016 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2016, 2025 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -18,8 +18,23 @@
 
 pragma License (GPL);
 
+with Ada.Strings.Unbounded;
+with SAL.Web_Utils;
 package SMM.Server is
 
    procedure Server;
+
+   --  Visible for testing
+   DB_Filename : Ada.Strings.Unbounded.Unbounded_String;
+
+   subtype API_Versions is Integer range 1 .. 2;
+   --  1 - API not specified in GET. Client always downloads all songs. 'download' => list of filenames
+   --  2 - API specified in GET. Client only downloads new songs (all others previously downloaded).
+   --      'get_new_songs_list => list of "Album_Artist", "album", "title", "filename"
+
+   function Handle_Get_New_Songs_List
+     (Parameters : in SAL.Web_Utils.Parameter_Lists.Map;
+      API        : in API_Versions)
+     return String;
 
 end SMM.Server;

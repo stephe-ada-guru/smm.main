@@ -144,9 +144,19 @@ is
                else Null_Song_Name);
          begin
             if Is_Null (Spotify_Name) then
-               Spotify_Missing.Insert (DB_Name);
+               begin
+                  Spotify_Missing.Insert (DB_Name);
+               exception
+               when SAL.Duplicate_Key =>
+                  Put_Line ("error: duplicate song in Spotify list: " & Image (DB_Name));
+               end;
             elsif Is_Null (DB_Name) then
-               DB_Missing.Insert (Spotify_Name);
+               begin
+                  DB_Missing.Insert (Spotify_Name);
+               exception
+               when SAL.Duplicate_Key =>
+                  Put_Line ("error: duplicate song in Spotify list: " & Image (Spotify_Name));
+               end;
             else
                Rename_Tree.Insert (Missing_Data'(DB_Name, Spotify_Name));
             end if;

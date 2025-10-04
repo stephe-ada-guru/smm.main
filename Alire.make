@@ -6,7 +6,7 @@ ALIRE_BUILD_ARGS ?= --development
 # Without -q, the linker is very noisy. But it screws up the error outputs!
 #ALIRE_ARGS ?= -q
 
-ALIRE_EXEC_DIR := build/bin
+ALIRE_EXEC_DIR := $(CURDIR)/build/bin
 
 STEPHES_ADA_LIBRARY_ALIRE_PREFIX ?= $(CURDIR)/../org.stephe_leake.sal
 
@@ -75,7 +75,7 @@ $(ALIRE_EXEC_DIR)/smm.exe : force
 
 t1 : VERBOSITY ?= 0
 t1 : $(ALIRE_EXEC_DIR)/smm.exe
-	$(ALIRE_EXEC_DIR)/smm.exe --verbosity=$(VERBOSITY) --max_errors=6 compare_playlist best html /Projects/web/stephe-leake/best_stuff-music.html
+	cd /Projects/Music; $(ALIRE_EXEC_DIR)/smm.exe --verbosity=$(VERBOSITY) --max_errors=6 compare_phone /tmp/phone.log > /tmp/phone_diff.log
 
 t2 : $(ALIRE_EXEC_DIR)/debug.exe
 	$(ALIRE_EXEC_DIR)/debug.exe

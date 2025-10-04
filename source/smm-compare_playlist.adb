@@ -59,6 +59,11 @@ package body SMM.Compare_Playlist is
 
       Error_Count : Integer := 0;
    begin
+      if not DB_I.Category_Contains (Category) then
+         DB_Next (DB_I, Category);
+         DB_Next (Next_DB_I, Category);
+      end if;
+
       if Verbosity >= 2 then
          Put_Line ("db best list, sorted:");
          loop
@@ -81,7 +86,7 @@ package body SMM.Compare_Playlist is
          exit when Max_Errors > 0 and then Error_Count >= Max_Errors;
 
          if Verbosity >= 2 then
-            Put_Line ("db at  : " & Image (DB_I.Song_Name));
+            Put_Line ((Tree_Name'Length - 2) * ' ' & "db at: " & Image (DB_I.Song_Name));
             Put_Line (Tree_Name & " at: " & Image (Element (Tree_I)));
          end if;
 
@@ -149,7 +154,7 @@ package body SMM.Compare_Playlist is
                --  HTML at: Abby Newton,                          , A Hero Never Dies / Willies Auld Trews
                Error_Count := @ + 1;
 
-               Put_Line ((Tree_Name'Length - 2) * ' ' & "db at  : " & Image (DB_I.Song_Name));
+               Put_Line ((Tree_Name'Length - 2) * ' ' & "db at: " & Image (DB_I.Song_Name));
                Put_Line (Tree_Name & " at: " & Image (Element (Tree_I)));
                Put_Line ("error: spelled differently?");
 

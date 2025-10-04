@@ -26,6 +26,14 @@ branches:
 (dvc-propagate-one "../smm.work_1" "../smm.main")
 
  current work
+command line search
+    what file is Rosalyn Tureck in?
+        compare_playlist spotify thinks a rosalyn song is in db best list
+        but db web search says not!?
+
+web search needs sort order
+    so search on "protest" matches compare_playlist output
+
 test phone update playlist.
 
 smm check check that .mp3 is not corrupted

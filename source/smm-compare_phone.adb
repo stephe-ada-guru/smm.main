@@ -236,12 +236,13 @@ begin
                      Next_Phone : constant Cursor := Next (Phone_Iterator, Phone_Cur);
                      Next_Local : constant Cursor := Next (Local_Iterator, Local_Cur);
                   begin
-                     Put_Line ("next phone:'" & (-Element (Next_Phone).Name) & "'");
-                     Put_Line ("next local:'" & (-Element (Next_Local).Name) & "'");
+                     Put_Line ("current phone:'" & (-Phone.Name) & "'");
+                     Put_Line ("next phone   :'" & (-Element (Next_Phone).Name) & "'");
+                     Put_Line ("next local   :'" & (-Element (Next_Local).Name) & "'");
                   end;
                end if;
 
-               Put_Line ("new file:  '" & (-Local.Name) & "'");
+               Put_Line ("new local file:  '" & (-Local.Name) & "'");
                New_Line;
                Error_Count := @ + 1;
                Local_Cur := Next (Local_Iterator, Local_Cur);
