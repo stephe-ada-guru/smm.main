@@ -18,14 +18,13 @@
 
 pragma License (GPL);
 
-with Ada.Strings.Unbounded;
 with SAL.Web_Utils;
 package SMM.Server is
 
    procedure Server;
 
    --  Visible for testing
-   DB_Filename : Ada.Strings.Unbounded.Unbounded_String;
+   DB_Filename : constant String := "/var/www/html/music_server_data/smm.db";
 
    subtype API_Versions is Integer range 1 .. 2;
    --  1 - API not specified in GET. Client always downloads all songs. 'download' => list of filenames

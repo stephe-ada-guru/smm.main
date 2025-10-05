@@ -19,9 +19,10 @@ all : alire-build install
 
 install : server-data
 install : $(HOME)/bin/smm.exe
-install : /usr/lib/cgi-bin/smm-server_driver.exe
-install : /usr/lib/cgi-bin/smm
-#install : $(HOME)/bin/smm-show_id3.exe
+
+# These require sudo, which emacs compile doesn't handle properly
+# install : /usr/lib/cgi-bin/smm-server_driver.exe
+# install : /usr/lib/cgi-bin/smm
 
 # SERVER_DATA defined in prj-alire.el
 
@@ -74,8 +75,8 @@ t1 : VERBOSITY ?= 0
 t1 : $(ALIRE_EXEC_DIR)/smm.exe
 	cd /Projects/Music; $(ALIRE_EXEC_DIR)/smm.exe --verbosity=$(VERBOSITY) --max_errors=6 compare_phone /tmp/phone.log > /tmp/phone_diff.log
 
-t2 : $(ALIRE_EXEC_DIR)/debug.exe
-	$(ALIRE_EXEC_DIR)/debug.exe
+t2 : $(ALIRE_EXEC_DIR)/debug_web_server.exe
+	$(ALIRE_EXEC_DIR)/debug_web_server.exe
 
 .PHONEY : t1 t2
 

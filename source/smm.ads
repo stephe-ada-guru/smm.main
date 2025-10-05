@@ -77,4 +77,6 @@ package SMM is
       Files      :    out String_Lists.List);
    --  Read playlist File_name, build list of files (lowercase) in it.
 
+   Meta_File_Patterns : constant array (Natural range <>) of Ada.Strings.Unbounded.Unbounded_String :=
+     (+"*.jpg", +"*.png", +"*.webp");
 end SMM;

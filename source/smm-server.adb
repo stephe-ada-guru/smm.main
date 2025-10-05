@@ -11,9 +11,10 @@
 --  Music and meta data files (read only): Config.Root
 --  Config, db, notes, log (read/write): Config.Server_Data
 --
---  Read-only directories must be declared in
---  /etc/apache2/apache2.conf; use the default /var/www/ or add a
---  <Directory ... >.
+--  Read-only directories must be subdirectories of the root declared
+--  in /etc/apache2/apache2.conf Directory and
+--  /etc/apache2/sites-available/000-default.conf DocumentRoot; we
+--  assume the Ubuntu default /var/www/html.
 --
 --  Read-write directories must be declared there, and the directory
 --  must be owned by the user that runs the server: www-data.
@@ -62,7 +63,6 @@ with Ada.Strings.Fixed;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with Ada.Text_IO.Text_Streams;
 with GNAT.Traceback.Symbolic;
-with SAL.Config_Files;
 with SAL.Gen_Definite_Doubly_Linked_Lists;
 with SAL.Time_Conversions;
 with SMM.Database;
@@ -72,24 +72,31 @@ package body SMM.Server is
 
    package String_Lists is new SAL.Gen_Definite_Doubly_Linked_Lists (Ada.Strings.Unbounded.Unbounded_String);
 
-   Source_Root : Unbounded_String; -- Absolute root of music files; does not end in /
-   Server_Data : Unbounded_String;
-   --  Absolute; contains server html, css, js files; does not end in /
-   --  Must be "served" by the web server, not just accesible:
-   --  Alias /music_server_data/ "/Projects/music_server_data/"
-   --  <Directory /Projects/music_server_data>
-   --   Options Indexes FollowSymLinks
-   --   AllowOverride None
-   --   Require all granted
-   --  </Directory>
+   --  Server document root is set in
+   --  /etc/apache2/sites-available/000-default.conf, DocumentRoot
+
+   Music_File_Root : constant String := "/var/www/html/Music";
+   --  Absolute root of music files for direct read-only file access by
+   --  this code.
+
+   Music_Server_Root : constant String := "/Music";
+   --  Web server path to music files, relative to web server document
+   --  root.
+
+   Data_File_Root : constant String := "/var/www/html/music_server_data";
+   --  Absolute data directory for read/write file access by this code,
+   --  contains server html, css, js files
+
+   Data_Server_Root : constant String := "/music_server_data";
+   --  Web server path to data files (relative to server document root).
 
    Debug          : Boolean         := False;
    Debug_Filename : Ada.Strings.Unbounded.Unbounded_String;
    Debug_File     : Ada.Text_IO.File_Type;
 
    function Meta_Files (Source_Dir : in String) return String_Lists.List
-   --  Source_Dir is relative to Source_Root
-   --  Return list of file names (relative to Source_Root) of image and liner_notes files.
+   --  Source_Dir is relative to Music_File_Root
+   --  Return list of file names (relative to File_Root) of image and liner_notes files.
    is
       use Ada.Directories;
 
@@ -97,31 +104,21 @@ package body SMM.Server is
 
       procedure Copy_Aux (Dir_Ent : in Directory_Entry_Type)
       is
-         Path_Name : constant String := Relative_Name (-Source_Root, Normalize (Full_Name (Dir_Ent)));
+         Path_Name : constant String := Relative_Name (Music_File_Root, Normalize (Full_Name (Dir_Ent)));
       begin
          Result.Append (+Path_Name);
       end Copy_Aux;
    begin
-      Search
-        (Directory => -Source_Root & "/" & Source_Dir,
-         Pattern   => "*.jpg",
-         Filter    => (Ordinary_File => True, others => False),
-         Process   => Copy_Aux'Access);
+      for Pat of Meta_File_Patterns loop
+         Search
+           (Directory => Music_File_Root & "/" & Source_Dir,
+            Pattern   => -Pat,
+            Filter    => (Ordinary_File => True, others => False),
+            Process   => Copy_Aux'Access);
+      end loop;
 
       Search
-        (Directory => -Source_Root & "/" & Source_Dir,
-         Pattern   => "*.png",
-         Filter    => (Ordinary_File => True, others => False),
-         Process   => Copy_Aux'Access);
-
-      Search
-        (Directory => -Source_Root & "/" & Source_Dir,
-         Pattern   => "*.webp",
-         Filter    => (Ordinary_File => True, others => False),
-         Process   => Copy_Aux'Access);
-
-      Search
-        (Directory => -Source_Root & "/" & Source_Dir,
+        (Directory => Music_File_Root & "/" & Source_Dir,
          Pattern   => "liner_notes.pdf",
          Filter    => (Ordinary_File => True, others => False),
          Process   => Copy_Aux'Access);
@@ -130,10 +127,10 @@ package body SMM.Server is
    exception
    when Ada.IO_Exceptions.Name_Error =>
       --  GNAT runtime sets message to "(unknown directory "")"; no file name!
-      raise Ada.IO_Exceptions.Name_Error with "unknown directory '" & Source_Dir & "'";
+      raise Ada.IO_Exceptions.Name_Error with "unknown directory '" & Music_File_Root & "/" & Source_Dir & "'";
    end Meta_Files;
 
-   function Server_Img
+   function Server_Music_Img
      (Relative_Resource : in String;
       Label             : in String;
       Width             : in Integer;
@@ -141,22 +138,23 @@ package body SMM.Server is
       Class             : in String)
      return String
    is
-      Size : constant SMM.JPEG.Size_Type := SMM.JPEG.Size (-Source_Root & "/" & Relative_Resource);
+      Size : constant SMM.JPEG.Size_Type := SMM.JPEG.Size (Music_File_Root & "/" & Relative_Resource);
    begin
       if Size.X <= Width and Size.Y <= Height then
-         return "<img src=""/Music/" & Relative_Resource & """ alt=""" & Label & """ class=""" & Class & """>";
+         return "<img src=""" & Music_Server_Root & "/" & Relative_Resource &
+           """ alt=""" & Label & """ class=""" & Class & """>";
       else
          --  The size specified here is overwritten by Scale_Px. It limits the
          --  display size before Scale_Px runs, to avoid large-scale
          --  reformatting as the page loads.
-         return "<img src=""/Music/" & Relative_Resource & """" &
+         return "<img src=""" & Music_Server_Root & "/" & Relative_Resource & """" &
            " onload=""Scale_Px(event," & Integer'Image (Width) & "," & Integer'Image (Height) & ")""" &
            " alt=""" & Label & """ class=""" & Class & """ width=" & Integer'Image (Width) & """ height=" &
            Integer'Image (Height) & """>";
       end if;
-   end Server_Img;
+   end Server_Music_Img;
 
-   function Server_Img_Set
+   function Server_Data_Img_Set
      (Basename : in String;
       Ext      : in String;
       Label    : in String;
@@ -167,11 +165,11 @@ package body SMM.Server is
       Size_Med  : constant String := "tablet";
       Size_High : constant String := "phone";
    begin
-      return "<img src=""/music_server_data/" & Basename & "-" & Size_Low & Ext & """" &
+      return "<img src=""" & Data_Server_Root & "/" & Basename & "-" & Size_Low & Ext & """" &
         " srcset=""/music_server_data/" & Basename & "-" & Size_Med & Ext & " 2x," &
         " /music_server_data/" & Basename & "-" & Size_High & Ext & " 3x""" &
         " alt=""" & Label & """" & (if Class = "" then "" else " class=""" & Class & """") & ">";
-   end Server_Img_Set;
+   end Server_Data_Img_Set;
 
    function Days_Ago (Date : in Database.Time_String) return String
    is
@@ -229,7 +227,7 @@ package body SMM.Server is
 
       Need_Separator : Boolean := False;
    begin
-      DB.Open (-DB_Filename);
+      DB.Open (DB_Filename);
 
       SMM.Song_Lists.Least_Recent_Songs
         (DB, Category, Songs,
@@ -249,7 +247,7 @@ package body SMM.Server is
                   Need_Separator := True;
                end if;
 
-               Response := Response & Normalize (Cur.File_Name);
+               Response := Response & Normalize (Cur.File_Name); -- Cur.File_Name is relative to Music_File_Root
 
                if Record_Downloaded then
                   Cur.Write_Last_Downloaded (DB, SMM.Database.UTC_Image (Ada.Calendar.Clock));
@@ -267,7 +265,8 @@ package body SMM.Server is
    when E : others =>
       return HTML_CGI_Response
         (Status_Code => S500,
-         Content => "exception " & Exception_Name (E) & ": " & Exception_Message (E));
+         Content => "exception " & Exception_Name (E) & ": " & Exception_Message (E) & New_Line &
+           GNAT.Traceback.Symbolic.Symbolic_Traceback (E));
    end Handle_Get_New_Songs_List;
 
    function Handle_Field
@@ -289,7 +288,7 @@ package body SMM.Server is
          return HTML_CGI_Response (S400, "no params; usage field?id=<id>&field=<field_name>");
 
       elsif Exist (Map => URI_Param, Key => "id") and Exist (URI_Param, "field") then
-         DB.Open (-DB_Filename);
+         DB.Open (DB_Filename);
 
          declare
             I          : constant Cursor := Find_ID (DB, Integer'Value (Get (URI_Param, "id")));
@@ -343,7 +342,7 @@ package body SMM.Server is
             return HTML_CGI_Response (S400, "missing 'file' param: '" & Query & "'");
          end if;
 
-         DB.Open (-DB_Filename);
+         DB.Open (DB_Filename);
 
          declare
             File_Name : constant String := Get (URI_Param, "file");
@@ -363,7 +362,7 @@ package body SMM.Server is
       use Ada.Directories;
       use SAL.Web_Utils;
 
-      Source_Dir : constant String := -Source_Root & Path;
+      Source_Dir : constant String := Music_File_Root & "/" & Path;
       Response   : Unbounded_String;
       Min_Size   : File_Size       := 0;
 
@@ -380,16 +379,18 @@ package body SMM.Server is
                Need_Separator := True;
             end if;
             Response := Response &
-              Relative_Name (-Source_Root, Normalize (Full_Name (Dir_Ent)));
+              Relative_Name (Music_File_Root, Normalize (Full_Name (Dir_Ent)));
          end if;
       end Copy_Aux;
    begin
       Min_Size := Min_Jpg_Size;
-      Search
-        (Directory => Source_Dir,
-         Pattern   => "*.jpg",
-         Filter    => (Ordinary_File => True, others => False),
-         Process   => Copy_Aux'Access);
+      for Pat of Meta_File_Patterns loop
+         Search
+           (Directory => Source_Dir,
+            Pattern   => -Pat,
+            Filter    => (Ordinary_File => True, others => False),
+            Process   => Copy_Aux'Access);
+      end loop;
 
       Min_Size := 0;
       Search
@@ -408,29 +409,26 @@ package body SMM.Server is
 
    function Handle_Put_Notes (Data : in String; Path : in String) return String
    is
+      --  Path is <category>.note
+
       use Ada.Directories;
       use Ada.Exceptions;
       use Ada.Strings.Fixed;
       use Ada.Text_IO;
       use SAL.Web_Utils;
 
-      Filename : constant String := (-Server_Data) & Path;
-      Pathname : constant String := Ada.Directories.Containing_Directory (Filename);
+      Filename : constant String := Data_File_Root & "/" & Path;
       First    : Integer         := Data'First;
       Last     : Integer;
       File     : File_Type;
    begin
-      if not Exists (Pathname) then
-         Create_Directory (Pathname);
-      end if;
-
       if Exists (Filename) then
          Open (File, Append_File, Filename);
       else
          Create (File, Out_File, Filename);
       end if;
       loop
-         Last := Index (Source => Data (First .. Data'Last), Pattern => ASCII.CR & ASCII.LF);
+         Last := Index (Source => Data (First .. Data'Last), Pattern => SAL.Web_Utils.New_Line);
          exit when Last < Data'First;
          Put_Line (File, Data (First .. Last - 1));
          First := Last + 2;
@@ -440,7 +438,10 @@ package body SMM.Server is
       return CGI_Response (S200, Content_Text_Plain, "");
    exception
    when E : others =>
-      return HTML_CGI_Response (S400, "exception " & Exception_Name (E) & ": " & Exception_Message (E));
+      return HTML_CGI_Response
+        (Status_Code => S400,
+         Content => "exception " & Exception_Name (E) & ": " & Exception_Message (E) & SAL.Web_Utils.New_Line &
+           GNAT.Traceback.Symbolic.Symbolic_Traceback (E));
    end Handle_Put_Notes;
 
    function Handle_Search
@@ -463,10 +464,9 @@ package body SMM.Server is
         "<html lang=""en"">" &
         "<meta http-equiv=""Content-Type"" content=""text/html; charset=utf-8"">" & New_Line &
         "<head>" & New_Line &
-        "<script src=""" & (-Server_Data) & "/songs.js""></script>" & New_Line &
+        "<script src=""" & Data_Server_Root & "/songs.js""></script>" & New_Line &
         "<title>Stephe's music</title>" &
-        "<link rel=""icon"" type=""image/png"" href=""/music_server_data/app_icon.png"">" &
-        "<link type=""text/css"" rel=""stylesheet"" href=""" & (-Server_Data) & "/songs.css""/>" & New_Line &
+        "<link type=""text/css"" rel=""stylesheet"" href=""" & Data_Server_Root & "/songs.css""/>" & New_Line &
         "</head>";
 
       --  From https://www.w3schools.com/howto/howto_js_tabs.asp
@@ -510,8 +510,8 @@ package body SMM.Server is
          use SMM.Database;
 
          Title_Row : constant Unbounded_String := +"<tr>" &
-           "<td><a href=""/Music/" & HTTP_Encode (I.File_Name) &
-           """>" & Server_Img_Set ("play_icon", ".png", "play") &
+           "<td><a href=""" & Music_Server_Root & "/" & HTTP_Encode (I.File_Name) &
+           """>" & Server_Data_Img_Set ("play_icon", ".png", "play") &
            "</a></td>" &
            "<td class=""text"">" & I.Artist & "</td>" &
            "<td class=""text"">" & I.Composer & "</td>" &
@@ -559,8 +559,9 @@ package body SMM.Server is
                   declare
                      Ext : constant String := To_Lower (Extension (-File));
                   begin
-                     if Ext = "jpg" or Ext = ".png" or Ext = ".webp" then
-                        Album_Item := Album_Item & Server_Img
+                     --  FIXME: Must match Meta_File_Patterns
+                     if Ext = "jpg" or Ext = "png" or Ext = "webp" then
+                        Album_Item := Album_Item & Server_Music_Img
                           (-File, "album art", 100, 100, Class => "album_art_item");
                      end if;
                   end;
@@ -570,7 +571,7 @@ package body SMM.Server is
                for File of Meta loop
                   if To_Lower (Simple_Name (-File)) = "liner_notes.pdf" then
                      Album_Item := Album_Item & SAL.Web_Utils.Local_Href
-                       (("Music/" & (-File)), Server_Img_Set
+                       (("Music/" & (-File)), Server_Data_Img_Set
                           ("liner_notes_icon", ".png", "liner notes",
                            Class => "album_art_item"));
                   end if;
@@ -618,7 +619,7 @@ package body SMM.Server is
         Exist (URI_Param, "title") or Exist (URI_Param, "artist") or Exist (URI_Param, "album") or
         Exist (URI_Param, "album_artist") or Exist (URI_Param, "category")
       then
-         DB.Open (-DB_Filename);
+         DB.Open (DB_Filename);
 
          declare
             use SMM.Database;
@@ -751,7 +752,7 @@ package body SMM.Server is
             end;
          end loop;
 
-         DB.Open (-DB_Filename);
+         DB.Open (DB_Filename);
 
          declare
             I : constant Cursor :=
@@ -794,7 +795,9 @@ package body SMM.Server is
       --  https:/<host>/cgi-bin/smm/<path>?<query>
 
       Path   : constant String         :=
-        (if Ada.Environment_Variables.Value ("PATH_INFO");
+        (if Ada.Environment_Variables.Exists ("PATH_INFO")
+         then Ada.Environment_Variables.Value ("PATH_INFO")
+         else "");
       Query  : constant String         := Ada.Environment_Variables.Value ("QUERY_STRING");
       Method : constant Request_Method := Request_Method'Value (Ada.Environment_Variables.Value ("REQUEST_METHOD"));
    begin
@@ -845,6 +848,7 @@ package body SMM.Server is
          end;
 
       when PUT =>
+         --  From the app
          declare
             Content_Length : constant Integer := Integer'Value (Ada.Environment_Variables.Value ("CONTENT_LENGTH"));
             Content : String (1 .. Content_Length);
@@ -854,6 +858,7 @@ package body SMM.Server is
          end;
 
       when POST =>
+         --  From the search page
          declare
             URI_File : constant String := Ada.Directories.Simple_Name (Path);
             Content_Length : constant Integer := Integer'Value (Ada.Environment_Variables.Value ("CONTENT_LENGTH"));
@@ -890,7 +895,7 @@ package body SMM.Server is
       is
          use Ada.Text_IO;
       begin
-         Put_Line ("usage: smm-server-driver [--debug=<filename>] <server config filename>");
+         Put_Line ("usage: smm-server-driver [--debug=<filename>] ");
          Put_Line ("--debug logs all requests, responses to the file");
          Put_Line ("config file contains absolute paths:");
          Put_Line ("DB_Filename : database ");
@@ -900,19 +905,16 @@ package body SMM.Server is
    begin
       declare
          use Ada.Command_Line;
-         use SAL.Config_Files;
-
-         Config  : SAL.Config_Files.Configuration_Type;
-         Next_Arg : Integer := 1;
       begin
          case Argument_Count is
-         when 1 | 2 =>
+         when 0 =>
+            null;
+
+         when 1 =>
             if Argument (1)(1 .. 7) = "--debug" then
                Debug          := True;
                Debug_Filename := +Argument (1)(9 .. Argument (1)'Last);
-               Next_Arg       := 2;
             end if;
-            Open (Config, Argument (Next_Arg), Missing_File => Raise_Exception);
 
          when others =>
             Usage;
@@ -920,14 +922,6 @@ package body SMM.Server is
             raise SAL.Parameter_Error;
 
          end case;
-         DB_Filename := +Read (Config, "DB_Filename", Missing_Key => Raise_Exception);
-
-         Source_Root := +As_File
-           (Ada.Directories.Full_Name (Read (Config, "Root", Missing_Key => Raise_Exception)));
-
-         Server_Data := +Read (Config, "Server_Data", "server_data");
-
-         Close (Config);
       end;
       if Debug then
          Ada.Text_IO.Open
@@ -958,6 +952,3 @@ package body SMM.Server is
       end if;
    end Server;
 end SMM.Server;
---  Local Variables:
---  ada-indent-comment-gnat: t
---  End:

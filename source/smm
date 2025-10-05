@@ -1,4 +1,4 @@
 #!/usr/bin/sh
-/usr/lib/cgi-bin/smm-server_driver.exe /var/www/music_server_data/smm-server.config
+/usr/lib/cgi-bin/smm-server_driver.exe 
 
 #end of file
