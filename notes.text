@@ -24,7 +24,7 @@ branches:
 (dvc-propagate-one "../smm.work_1" "../smm.main")
 
  current work
-can't open debug log file
+web server can't open debug log file
     gemini crashed, so no help
 
 command line search

@@ -18,7 +18,7 @@ vpath %.svg source
 all : alire-build install
 
 install : server-data
-install : $(HOME)/bin/smm.exe
+install : $(HOME)/.local/bin/smm.exe
 
 # These require sudo, which emacs compile doesn't handle properly
 # install : /usr/lib/cgi-bin/smm-server_driver.exe
@@ -52,11 +52,11 @@ $(SERVER_DATA)/% : source/%
 	sudo cp $^ $@
 
 # don't strip, so stack traceback is useful on errors
-$(HOME)/bin/% : $(ALIRE_EXEC_DIR)/%
+$(HOME)/.local/bin/% : $(ALIRE_EXEC_DIR)/%
 	cp $^ $@
 
 modify : $(ALIRE_EXEC_DIR)/modify_schema.exe smm_new.db
-	$(ALIRE_EXEC_DIR)/modify_schema.exe $(HOME)/smm/smm.db smm_new.db
+	$(ALIRE_EXEC_DIR)/modify_schema.exe /var/www/html/music_server_data/smm.db smm_new.db
 
 smm%.db : source/create_schema.sql
 	sqlite3 -init $< $@ ".quit"

@@ -9,7 +9,7 @@
 -- All times stored in the database are in UTC (Greenwich time zone).
 
 CREATE TABLE Song
-(ID              INTEGER PRIMARY KEY,
+(ID              INTEGER NOT NULL,
  File_Name       TEXT,
  Category        TEXT,
  Artist          TEXT,
@@ -19,10 +19,17 @@ CREATE TABLE Song
  Year            INTEGER,
  Title           TEXT,
  Track           INTEGER,
- Last_Downloaded CHAR[19],
- Prev_Downloaded CHAR[19],
+ 
+ -- We'd prefer CHAR[19] for these two, since they are actually fixed
+ -- length, but Kotlin Room ksp can't handle that in the Android app.
+ -- SQLite maps CHAR[19] to TEXT anyway, so this doesn't lose anything
+ -- in the actual implementation.
+ Last_Downloaded TEXT,
+ Prev_Downloaded TEXT,
+ 
  Play_Before     INTEGER,
- Play_After      INTEGER);
+ Play_After      INTEGER,
+ PRIMARY KEY (ID));
                
 CREATE INDEX File_Name on Song (File_Name);
 CREATE INDEX Artist on Song (Artist);

@@ -85,10 +85,10 @@ package body SMM.Server is
 
    Data_File_Root : constant String := "/var/www/html/music_server_data";
    --  Absolute data directory for read/write file access by this code,
-   --  contains server html, css, js files
+   --  Contains debug log, notes.
 
    Data_Server_Root : constant String := "/music_server_data";
-   --  Web server path to data files (relative to server document root).
+   --  Web server path to html, css, js files.
 
    Debug          : Boolean         := False;
    Debug_Filename : Ada.Strings.Unbounded.Unbounded_String;
@@ -137,21 +137,27 @@ package body SMM.Server is
       Height            : in Integer;
       Class             : in String)
      return String
-   is
-      Size : constant SMM.JPEG.Size_Type := SMM.JPEG.Size (Music_File_Root & "/" & Relative_Resource);
-   begin
-      if Size.X <= Width and Size.Y <= Height then
-         return "<img src=""" & Music_Server_Root & "/" & Relative_Resource &
-           """ alt=""" & Label & """ class=""" & Class & """>";
-      else
-         --  The size specified here is overwritten by Scale_Px. It limits the
-         --  display size before Scale_Px runs, to avoid large-scale
-         --  reformatting as the page loads.
-         return "<img src=""" & Music_Server_Root & "/" & Relative_Resource & """" &
-           " onload=""Scale_Px(event," & Integer'Image (Width) & "," & Integer'Image (Height) & ")""" &
-           " alt=""" & Label & """ class=""" & Class & """ width=" & Integer'Image (Width) & """ height=" &
-           Integer'Image (Height) & """>";
-      end if;
+   is begin
+      declare
+         Size : constant SMM.JPEG.Size_Type := SMM.JPEG.Size (Music_File_Root & "/" & Relative_Resource);
+      begin
+         if Size.X <= Width and Size.Y <= Height then
+            return "<img src=""" & Music_Server_Root & "/" & Relative_Resource &
+              """ alt=""" & Label & """ class=""" & Class & """>";
+         else
+            --  The size specified here is overwritten by Scale_Px. It limits the
+            --  display size before Scale_Px runs, to avoid large-scale
+            --  reformatting as the page loads.
+            return "<img src=""" & Music_Server_Root & "/" & Relative_Resource & """" &
+              " onload=""Scale_Px(event," & Integer'Image (Width) & "," & Integer'Image (Height) & ")""" &
+              " alt=""" & Label & """ class=""" & Class & """ width=" & Integer'Image (Width) & """ height=" &
+              Integer'Image (Height) & """>";
+         end if;
+      end;
+   exception
+   when SAL.Invalid_Format =>
+      --  From SMM.JPEG.Size; file corrupted
+      return "";
    end Server_Music_Img;
 
    function Server_Data_Img_Set
@@ -629,7 +635,8 @@ package body SMM.Server is
          begin
             if Exist (URI_Param, "search") then
                --  General search
-               I      := DB.Find_Like (Decode_Param (Get (URI_Param, "search")), Order_By => (Album, Track));
+               I      := DB.Find_Like
+                 (Decode_Param (Get (URI_Param, "search")), Order_By => (Album_Artist, Album, Title));
                Button := +"general_search_button";
                Tab    := +"general_search_tab";
             else
