@@ -22,18 +22,18 @@ with Ada.Command_Line; use Ada.Command_Line;
 with Ada.Directories;
 with Ada.Exceptions.Traceback;
 with Ada.IO_Exceptions;
-with Ada.Strings.Unbounded;
 with Ada.Text_IO; use Ada.Text_IO;
 with GNAT.Traceback.Symbolic;
 with SAL.Command_Line_IO;
 with SMM.Check;
+with SMM.Compare_Phone;
 with SMM.Compare_Playlist.HTML;
 with SMM.Compare_Playlist.Spotify;
-with SMM.Compare_Phone;
 with SMM.Database;
 with SMM.History;
 with SMM.ID3;
 with SMM.Import;
+with SMM.Search;
 with SMM.Update;
 with SMM.Update_Playlist;
 procedure SMM.Driver
@@ -42,12 +42,11 @@ is
    is begin
       Put_Line ("smm [options] <operation> [arg]...");
       Put_Line ("  options:");
-      Put_Line ("  --db=<db_file> : defaults to $SMM_HOME/smm.db or $HOME/smm/smm.db or $APPDATA/smm/smm.db");
       Put_Line ("  --verbosity=<int>");
       Put_Line ("  --max_errors=<int> : in Compare_Playlist, stop after <int> errors.");
       Put_Line ("  --ignore_id3_flags : ignore ID3 file, frame flag settings that we nominally don't support.");
       New_Line;
-      Put_Line ("  categories: {instrumental | vocal | ...}");
+      Put_Line ("  categories: {instrumental | vocal | best | ...}");
       New_Line;
       Put_Line ("  operations:");
       Put_Line ("  update_playlist <category> <count> <playlist_file> [--replace]");
@@ -80,6 +79,9 @@ is
       New_Line;
       Put_Line ("  compare_phone <phone_ls_file>");
       Put_Line ("    compare dates of local music files against music files on phone; report those changed.");
+      New_Line;
+      Put_Line ("  search <text>");
+      Put_Line ("    general db search; list matching files.");
    end Put_Usage;
 
    procedure Check_Arg (Expected_Count : in Integer)
@@ -89,13 +91,12 @@ is
       end if;
    end Check_Arg;
 
-   Source_Root  : constant String := As_Directory (Ada.Directories.Current_Directory);
-   DB_File_Name : Ada.Strings.Unbounded.String_Access := new String'(Find_DB_Filename);
-   DB           : SMM.Database.Database;
-   Next_Arg     : Integer         := 1;
+   Source_Root : constant String := As_Directory (Ada.Directories.Current_Directory);
+   DB          : SMM.Database.Database;
+   Next_Arg    : Integer         := 1;
 
    type Command_Type is
-     (Update_Playlist, Compare_Phone, Import, Update, Rename, Delete, Check, History, Compare_Playlist);
+     (Update_Playlist, Compare_Phone, Import, Update, Rename, Delete, Check, History, Compare_Playlist, Search);
 
    procedure Get_Command is new SAL.Command_Line_IO.Gen_Get_Discrete_Proc (Command_Type, "command", Next_Arg);
 
@@ -107,13 +108,7 @@ begin
         Argument (Next_Arg)'Length < 2 or else
         Argument (Next_Arg) (1 .. 2) /= "--";
 
-      if Argument (Next_Arg)'Length > 5 and then
-        Argument (Next_Arg)(1 .. 5) = "--db="
-      then
-         DB_File_Name := new String'(Argument (Next_Arg)(6 .. Argument (Next_Arg)'Last));
-         Next_Arg     := Next_Arg + 1;
-
-      elsif Argument (Next_Arg) = "--help" then
+      if Argument (Next_Arg) = "--help" then
          Put_Usage;
          return;
 
@@ -135,7 +130,7 @@ begin
       end if;
    end loop;
 
-   DB.Open (DB_File_Name.all);
+   DB.Open (DB_File_Name);
 
    begin
       Get_Command (Command);
@@ -233,6 +228,10 @@ begin
    when Compare_Phone =>
       Check_Arg (Next_Arg);
       SMM.Compare_Phone (Source_Root, Phone_Filename => Argument (Next_Arg));
+
+   when Search =>
+      Check_Arg (Next_Arg);
+      SMM.Search (Argument (Next_Arg));
    end case;
 
 exception

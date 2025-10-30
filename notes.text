@@ -7,7 +7,7 @@ see windows org.stephe_leake.music_player_2/notes.text
 branches:
     smm.main - installed in Debian
     smm.work - ssh download; terminated
-    smm.work_1 - fix compare playlists
+    smm.work_1 - sync phone db
 
 (dvc-state-multiple
     '((xgit . "../org.stephe_leake.sal")
@@ -24,25 +24,28 @@ branches:
 (dvc-propagate-one "../smm.work_1" "../smm.main")
 
  current work
+compare_phone needs tolerance on date
+    Beth Nielsen Chapman/Beth Nielsen Chapman copied from phone; complains laptop is newer
+
+compare_playlist
+    bogus missing, extra:
+    spotify protest:
+    error: either new in Spotify or deleted in db: Robbie Williams, 1 Giant Leap, My Culture
+
+    spotify parenthood:
+    extra db items:
+    The Four Bitchin' Babes, Hormonal Imbalance...A Mood Swinging Musical Revue, Pass It On
+
+    begin/end iterate errors?
+
 web server can't open debug log file
     gemini crashed, so no help
 
-command line search
-    what file is Rosalyn Tureck in?
-        compare_playlist spotify thinks a rosalyn song is in db best list
-        but db web search says not!?
-
-web search needs sort order
-    so search on "protest" matches compare_playlist output
-
-test phone update playlist.
-    /app/smm/get_new_songs_list?API=2&category=instrumental&count=88&new_count=29&over_select_ratio=1.1&record_downloaded=true
-    => 500 status
-    but no entry in apache2 error.log!?
-
-smm check check that .mp3 is not corrupted
-    just read id3 headers.
-    and check them against db?
+sync db with phone
+    on work_1
+    add Modified, Deleted date fields
+    ~/Projects/org.stephe_leake.books_old/app/src/main/java/org/stephe_leake/books/android/SyncService.java
+    if modification is in metadata, do the right thing
 
 smm check
     reports missing files that are not in fact missing
@@ -51,9 +54,9 @@ smm check
 
     ignore missing album if in album_artist directory?
 
-compare music spotify doesn't check new in spotify (crash test dummies superman).
-
-exception: SAL.INITIALIZATION_ERROR: Andy Stewart w/ Phil Cunningham & Manus Lunny, Fire In The Glen, Young Jimmy In Flanders not found in db
+smm check check that .mp3 is not corrupted
+    just read id3 headers.
+    and check them against db?
 
 APIC header broken somehow; causes stack overflow in id3 read all frames
     use Foobar2000 media player to delete all pictures; right click on file, Tagging | Remove all pictures.
@@ -62,18 +65,6 @@ rename enforce relative to root, check that file exists
 
 need update to null
     pete seeger flowers gone kisses sweeter than wine
-
-smm-song-lists.adb
-    delete Find_Second_Song loop
-
-add download rule; if last downloaded > 1 year, download now
-
-respect aeropex pause button
-    multimedia control?
-
-use ip6 address for faster connect
-    Android tries 3 ipv6 addresses before ipv4
-    aws doesn't support ip6?
 
 web play all search results - best list, album
 

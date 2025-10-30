@@ -233,7 +233,7 @@ package body SMM.Server is
 
       Need_Separator : Boolean := False;
    begin
-      DB.Open (DB_Filename);
+      DB.Open (DB_File_Name);
 
       SMM.Song_Lists.Least_Recent_Songs
         (DB, Category, Songs,
@@ -270,7 +270,7 @@ package body SMM.Server is
    exception
    when E : others =>
       return HTML_CGI_Response
-        (Status_Code => S500,
+        (Status_Code => S501,
          Content => "exception " & Exception_Name (E) & ": " & Exception_Message (E) & New_Line &
            GNAT.Traceback.Symbolic.Symbolic_Traceback (E));
    end Handle_Get_New_Songs_List;
@@ -294,7 +294,7 @@ package body SMM.Server is
          return HTML_CGI_Response (S400, "no params; usage field?id=<id>&field=<field_name>");
 
       elsif Exist (Map => URI_Param, Key => "id") and Exist (URI_Param, "field") then
-         DB.Open (DB_Filename);
+         DB.Open (DB_File_Name);
 
          declare
             I          : constant Cursor := Find_ID (DB, Integer'Value (Get (URI_Param, "id")));
@@ -348,7 +348,7 @@ package body SMM.Server is
             return HTML_CGI_Response (S400, "missing 'file' param: '" & Query & "'");
          end if;
 
-         DB.Open (DB_Filename);
+         DB.Open (DB_File_Name);
 
          declare
             File_Name : constant String := Get (URI_Param, "file");
@@ -445,7 +445,7 @@ package body SMM.Server is
    exception
    when E : others =>
       return HTML_CGI_Response
-        (Status_Code => S400,
+        (Status_Code => S501,
          Content => "exception " & Exception_Name (E) & ": " & Exception_Message (E) & SAL.Web_Utils.New_Line &
            GNAT.Traceback.Symbolic.Symbolic_Traceback (E));
    end Handle_Put_Notes;
@@ -588,6 +588,10 @@ package body SMM.Server is
                return -Result;
             end;
          end if;
+      exception
+      when E : Ada.IO_Exceptions.Name_Error =>
+         --  From Meta_Files; directory deleted
+         return HTML_CGI_Response (S400, Ada.Exceptions.Exception_Message (E));
       end Search_Result;
 
       function To_SQL_Param (Param : in Parameter_Lists.Map) return SMM.Database.Field_Values
@@ -625,7 +629,7 @@ package body SMM.Server is
         Exist (URI_Param, "title") or Exist (URI_Param, "artist") or Exist (URI_Param, "album") or
         Exist (URI_Param, "album_artist") or Exist (URI_Param, "category")
       then
-         DB.Open (DB_Filename);
+         DB.Open (DB_File_Name);
 
          declare
             use SMM.Database;
@@ -641,7 +645,7 @@ package body SMM.Server is
                Tab    := +"general_search_tab";
             else
                --  Detailed search
-               I      := DB.Find_Like (To_SQL_Param (URI_Param), Order_By => (Album, Track));
+               I      := DB.Find_Like (To_SQL_Param (URI_Param), Order_By => (Album_Artist, Album, Title));
                Button := +"detailed_search_button";
                Tab    := +"detailed_search_tab";
             end if;
@@ -759,7 +763,7 @@ package body SMM.Server is
             end;
          end loop;
 
-         DB.Open (DB_Filename);
+         DB.Open (DB_File_Name);
 
          declare
             I : constant Cursor :=
@@ -892,7 +896,7 @@ package body SMM.Server is
    exception
    when E : others =>
       return HTML_CGI_Response
-        (S500, "exception " & Exception_Name (E) & ": " & Exception_Message (E) & New_Line &
+        (S501, "exception " & Exception_Name (E) & ": " & Exception_Message (E) & New_Line &
            GNAT.Traceback.Symbolic.Symbolic_Traceback (E));
    end Handle_Request;
 

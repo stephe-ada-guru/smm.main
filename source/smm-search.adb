@@ -1,8 +1,8 @@
 --  Abstract :
 --
---  Stephe's Music Manager Server
+--  Stephe's Music Manager command line search
 --
---  Copyright (C) 2016, 2025 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2016 - 2020, 2022, 2023, 2025 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -18,19 +18,30 @@
 
 pragma License (GPL);
 
-with SAL.Web_Utils;
-package SMM.Server is
+with SMM.Database;
+with Ada.Text_IO; use Ada.Text_IO;
+procedure SMM.Search (Text : in String)
+is
+   use SMM.Database;
+   DB : SMM.Database.Database;
+   I  : Cursor;
 
-   procedure Server;
+   procedure Search_Result
+   is
+   begin
+      Put_Line (I.ID'Image & ", " & I.File_Name);
+      Put_Line (I.Album_Artist & " | " & I.Album & " | " & I.Title);
+      Put_Line (I.Artist);
+      Put_Line (I.Category);
+      New_Line;
+   end Search_Result;
 
-   subtype API_Versions is Integer range 1 .. 2;
-   --  1 - API not specified in GET. Client always downloads all songs. 'download' => list of filenames
-   --  2 - API specified in GET. Client only downloads new songs (all others previously downloaded).
-   --      'get_new_songs_list => list of "Album_Artist", "album", "title", "filename"
-
-   function Handle_Get_New_Songs_List
-     (Parameters : in SAL.Web_Utils.Parameter_Lists.Map;
-      API        : in API_Versions)
-     return String;
-
-end SMM.Server;
+begin
+   DB.Open (DB_File_Name);
+   I := DB.Find_Like (Text, Order_By => (Album_Artist, Album, Title));
+   loop
+      exit when not I.Has_Element;
+      Search_Result;
+      I.Next;
+   end loop;
+end SMM.Search;

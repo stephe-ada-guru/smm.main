@@ -2,6 +2,11 @@
 --
 --  Compare dates of local music files against those in Phone_Filename.
 --
+--  Design:
+--
+--  phone file has output of:
+--  ssh -p 2222 root@192.168.7.180 "cd /storage/emulated/0/Music/Music; ls -lR" > /tmp/phone_music.log
+--
 --  Copyright (C) 2025 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
@@ -72,6 +77,14 @@ begin
       exit Read_Phone_File when End_Of_File (Phone_File);
       declare
          Line : constant String := Get_Line (Phone_File);
+
+         function Error_Line return String
+         is
+            function Trimmed_Image is new SAL.Gen_Trimmed_Image (Positive_Count);
+         begin
+            return Phone_Filename & ":" & Trimmed_Image (Ada.Text_IO.Line (Phone_File) - 1) & ":";
+         end Error_Line;
+
       begin
          if Line'Length = 0 then
             null;
@@ -123,13 +136,6 @@ begin
                      return Index (Line, Pattern => " ", From => First_Space + 1) - 1;
                   end Find_Date_Last;
 
-                  function Error_Line return String
-                  is
-                     function Trimmed_Image is new SAL.Gen_Trimmed_Image (Positive_Count);
-                  begin
-                     return Phone_Filename & ":" & Trimmed_Image (Ada.Text_IO.Line (Phone_File)) & ":";
-                  end Error_Line;
-
                   Date_First  : constant Integer := Find_Date_First;
                   Date_Last   : constant Integer := Find_Date_Last (Date_First);
                   Date_String : constant String  := Line (Date_First .. Date_Last) &
@@ -151,7 +157,7 @@ begin
                end;
             end if;
          else
-            raise SAL.Programmer_Error;
+            raise SAL.Programmer_Error with Error_Line & " '" & Line & "' ";
          end if;
       end;
    end loop Read_Phone_File;

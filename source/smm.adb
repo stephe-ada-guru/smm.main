@@ -20,25 +20,9 @@ pragma License (GPL);
 
 with Ada.Characters.Handling;
 with Ada.Directories;
-with Ada.Environment_Variables;
 with Ada.IO_Exceptions;
 with Ada.Text_IO;
 package body SMM is
-
-   function Find_DB_Filename return String
-   is
-      use Ada.Environment_Variables;
-   begin
-      if Exists ("SMM_HOME") then
-         return Value ("SMM_HOME") & "/smm.db";
-      elsif Exists ("HOME") then
-         return Value ("HOME") & "/smm/smm.db";
-      elsif Exists ("APPDATA") then
-         return Value ("APPDATA") & "/smm/smm.db";
-      else
-         raise SAL.Not_Found with "no database file found";
-      end if;
-   end Find_DB_Filename;
 
    function Normalize (Path : in String) return String
    is

@@ -32,7 +32,7 @@ package SMM is
    Verbosity  : Integer := 0;
    Max_Errors : Integer := 0;
 
-   function Find_DB_Filename return String;
+   DB_File_Name : constant String := "/var/www/html/music_server_data/smm.db";
 
    function Normalize (Path : in String) return String;
    --  convert '\' to '/'

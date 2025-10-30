@@ -26,7 +26,6 @@ install : $(HOME)/.local/bin/smm.exe
 
 # SERVER_DATA defined in prj-alire.el
 
-server-data : $(SERVER_DATA)/app_icon.png
 server-data : $(SERVER_DATA)/liner_notes_icon-desktop.png
 server-data : $(SERVER_DATA)/liner_notes_icon-tablet.png
 server-data : $(SERVER_DATA)/liner_notes_icon-phone.png
@@ -48,6 +47,7 @@ $(SERVER_DATA)/app_icon.png : app_icon.svg
 $(SERVER_DATA)/% : source/%
 	cp $^ $@
 
+# script used in URLs.
 /usr/lib/cgi-bin/smm : source/smm
 	sudo cp $^ $@
 
@@ -71,12 +71,13 @@ really-clean : clean
 $(ALIRE_EXEC_DIR)/smm.exe : force
 	alr $(ALIRE_ARGS) build $(ALIRE_BUILD_ARGS) -- $(GPRBUILD_ARGS) smm-driver.adb
 
+t1 : export SMM_HOME=/var/www/html/music_server_data
 t1 : VERBOSITY ?= 0
 t1 : $(ALIRE_EXEC_DIR)/smm.exe
-	cd /Projects/Music; $(ALIRE_EXEC_DIR)/smm.exe --verbosity=$(VERBOSITY) --max_errors=6 compare_phone /tmp/phone.log > /tmp/phone_diff.log
+	cd /var/www/html/Music; $(ALIRE_EXEC_DIR)/smm.exe --verbosity=$(VERBOSITY) search "Linda Ronstadt"
 
 t2 : $(ALIRE_EXEC_DIR)/debug_web_server.exe
-	$(ALIRE_EXEC_DIR)/debug_web_server.exe
+	$(ALIRE_EXEC_DIR)/debug_web_server.exe "API=2&category=instrumental&count=80&new_count=26&over_select_ratio=1.1&record_downloaded=true"
 
 .PHONEY : t1 t2
 
