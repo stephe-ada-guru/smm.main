@@ -1,3 +1,5 @@
+# see ~/.gdbinit for common commands
+
 set args --verbosity=2 compare_playlist best html /Projects/web/stephe-leake/best_stuff-music.html
 
 # unbounded_string_object

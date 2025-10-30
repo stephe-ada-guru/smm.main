@@ -27,11 +27,14 @@ with Ada.Calendar.Formatting;
 with Ada.Directories;
 with Ada.Strings.Fixed;
 with Ada.Text_IO; use Ada.Text_IO;
+with SAL.Config_Files;
 with SAL.Gen_Trimmed_Image;
 with SAL.Gen_Unbounded_Definite_Red_Black_Trees;
+with SMM.Database;
 procedure SMM.Compare_Phone
-  (Source_Root    : in String;
-   Phone_Filename : in String)
+  (Source_Root    : in     String;
+   Phone_Filename : in     String;
+   Config         : in out SAL.Config_Files.Configuration_Type)
 is
    function "+" (Item : in String) return Ada.Strings.Unbounded.Unbounded_String
      renames Ada.Strings.Unbounded.To_Unbounded_String;
@@ -69,6 +72,9 @@ is
    Local_Data : String_Trees.Tree;
 
    Current_Dir : Ada.Strings.Unbounded.Unbounded_String;
+
+   Last_Compare_Time_String : constant SMM.Database.Time_String   := SAL.Config_Files.Read (Config, "compare_phone");
+   Last_Compare             : constant Ada.Calendar.Time := Ada.Calendar.Formatting.Value (Last_Compare_Time_String);
 begin
    Open (Phone_File, In_File, Phone_Filename);
 
@@ -217,8 +223,10 @@ begin
       Local_Iterator : constant Iterator := Iterate (Local_Data);
       Local_Cur      : Cursor            := First (Local_Iterator);
       Error_Count    : Integer           := 0;
+
    begin
-      --  We assume all changes occur on the local side.
+      --  We assume changes can occur on either side, which means we compare
+      --  file dates to last time this was run.
       loop
          exit when not Has_Element (Phone_Cur) or not Has_Element (Local_Cur);
          exit when Max_Errors > 0 and then Error_Count >= Max_Errors;
@@ -253,12 +261,20 @@ begin
                Error_Count := @ + 1;
                Local_Cur := Next (Local_Iterator, Local_Cur);
 
-            elsif Phone.Date < Local.Date then
-               Put_Line ("file updated '" & (-Local.Name) & "'");
+            elsif Phone.Date > Last_Compare then
+               Put_Line ("file updated on phone '" & (-Phone.Name) & "'");
                New_Line;
                Phone_Cur := Next (Phone_Iterator, Phone_Cur);
                Local_Cur := Next (Local_Iterator, Local_Cur);
                Error_Count := @ + 1;
+
+            elsif Local.Date > Last_Compare then
+               Put_Line ("file updated on laptop '" & (-Local.Name) & "'");
+               New_Line;
+               Phone_Cur := Next (Phone_Iterator, Phone_Cur);
+               Local_Cur := Next (Local_Iterator, Local_Cur);
+               Error_Count := @ + 1;
+
             else
                Phone_Cur := Next (Phone_Iterator, Phone_Cur);
                Local_Cur := Next (Local_Iterator, Local_Cur);
@@ -286,6 +302,8 @@ begin
             end loop;
          end if;
          Put_Line ("all done");
+         SAL.Config_Files.Write (Config, "compare_phone", Ada.Calendar.Formatting.Image (Ada.Calendar.Clock));
+
       end if;
    end Compare_Trees;
 end SMM.Compare_Phone;

@@ -25,6 +25,7 @@ with Ada.IO_Exceptions;
 with Ada.Text_IO; use Ada.Text_IO;
 with GNAT.Traceback.Symbolic;
 with SAL.Command_Line_IO;
+with SAL.Config_Files;
 with SMM.Check;
 with SMM.Compare_Phone;
 with SMM.Compare_Playlist.HTML;
@@ -225,9 +226,19 @@ begin
          end if;
       end;
 
-   when Compare_Phone =>
-      Check_Arg (Next_Arg);
-      SMM.Compare_Phone (Source_Root, Phone_Filename => Argument (Next_Arg));
+   when Compare_Phone   =>
+      declare
+         use SAL.Config_Files;
+         Config : Configuration_Type;
+      begin
+         Open (Config, "/home/stephe/smm/smm.config", Missing_File => Raise_Exception);
+         Check_Arg (Next_Arg);
+         SMM.Compare_Phone
+           (Source_Root,
+            Phone_Filename => Argument (Next_Arg),
+            Config   => Config);
+         Close (Config);
+      end;
 
    when Search =>
       Check_Arg (Next_Arg);
