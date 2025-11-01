@@ -231,7 +231,7 @@ begin
          use SAL.Config_Files;
          Config : Configuration_Type;
       begin
-         Open (Config, "/home/stephe/smm/smm.config", Missing_File => Raise_Exception);
+         Open (Config, "/home/stephe/smm/smm.config", Read_Only => False, Missing_File => Raise_Exception);
          Check_Arg (Next_Arg);
          SMM.Compare_Phone
            (Source_Root,
