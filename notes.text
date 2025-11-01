@@ -24,9 +24,6 @@ branches:
 (dvc-propagate-one "../smm.work_1" "../smm.main")
 
  current work
-compare_phone needs tolerance on date
-    Beth Nielsen Chapman/Beth Nielsen Chapman copied from phone; complains laptop is newer
-
 compare_playlist
     bogus missing, extra:
     spotify protest:

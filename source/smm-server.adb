@@ -125,7 +125,7 @@ package body SMM.Server is
 
       return Result;
    exception
-   when Ada.IO_Exceptions.Name_Error =>
+   when Ada.IO_Exceptions.Name_Error | Ada.IO_Exceptions.Use_Error =>
       --  GNAT runtime sets message to "(unknown directory "")"; no file name!
       raise Ada.IO_Exceptions.Name_Error with "unknown directory '" & Music_File_Root & "/" & Source_Dir & "'";
    end Meta_Files;
