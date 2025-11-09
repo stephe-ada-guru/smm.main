@@ -33,4 +33,6 @@ package SMM.Server is
       API        : in API_Versions)
      return String;
 
+   function Handle_Request return String;
+
 end SMM.Server;

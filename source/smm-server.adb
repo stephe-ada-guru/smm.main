@@ -351,7 +351,7 @@ package body SMM.Server is
          DB.Open (DB_File_Name);
 
          declare
-            File_Name : constant String := Get (URI_Param, "file");
+            File_Name : constant String := HTTP_Decode (Get (URI_Param, "file"));
             I         : constant Cursor := DB.Find_File_Name (File_Name);
          begin
             if I.Has_Element then
@@ -869,7 +869,7 @@ package body SMM.Server is
          end;
 
       when POST =>
-         --  From the search page
+         --  From the search page or Emacs notes buffer
          declare
             URI_File : constant String := Ada.Directories.Simple_Name (Path);
             Content_Length : constant Integer := Integer'Value (Ada.Environment_Variables.Value ("CONTENT_LENGTH"));
