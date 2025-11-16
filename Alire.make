@@ -75,8 +75,9 @@ t1 : VERBOSITY ?= 0
 t1 : $(ALIRE_EXEC_DIR)/smm.exe
 	cd /var/www/html/Music; $(ALIRE_EXEC_DIR)/smm.exe --verbosity=$(VERBOSITY) --max_errors=5 compare_phone /tmp/phone_music.log
 
+# method file parameters
 t2 : $(ALIRE_EXEC_DIR)/debug_web_server.exe
-	$(ALIRE_EXEC_DIR)/debug_web_server.exe "API=2&category=instrumental&count=80&new_count=26&over_select_ratio=1.1&record_downloaded=true"
+	$(ALIRE_EXEC_DIR)/debug_web_server.exe GET "id" "file=Christine%20Lavin/Happydance%20of%20the%20Zenophobe/01%20The%20Most%20Polite%20City%20in%20the%20World.mp3"
 
 .PHONEY : t1 t2
 
