@@ -27,6 +27,23 @@ package body SMM.Compare_Playlist is
       return Item.Album_Artist & ", " & Item.Album & ", " & Item.Title;
    end Image;
 
+   function DB_First
+     (DB       : in SMM.Database.Database;
+      Category : in String)
+     return SMM.Database.Cursor
+   --  Set DB_I to first item containing Category
+   is
+      use SMM.Database;
+      Result : SMM.Database.Cursor := First_By_Name (DB);
+   begin
+      loop
+         exit when not Has_Element (Result);
+         exit when Result.Category_Contains (Category);
+         Next (Result);
+      end loop;
+      return Result;
+   end DB_First;
+
    procedure DB_Next (DB_I : in out SMM.Database.Cursor; Category : in String)
    --  Increment DB_I to next item containing Category
    is
@@ -50,28 +67,24 @@ package body SMM.Compare_Playlist is
       use Song_Name_Trees, SMM.Database, Ada.Text_IO;
       use Ada.Strings.Fixed; --  n * ' '
 
-      DB_I          : SMM.Database.Cursor    := First_By_Name (DB);
+      DB_I          : SMM.Database.Cursor    := DB_First (DB, Category);
       Tree_Iterator : constant Iterator      := Iterate (Tree);
       Tree_I        : Song_Name_Trees.Cursor := First (Tree_Iterator);
 
-      Next_DB_I   : SMM.Database.Cursor := First_By_Name (DB); -- Independent of DB_I
+      Next_DB_I   : SMM.Database.Cursor := DB_First (DB, Category); -- Independent of DB_I
       Next_Tree_I : Song_Name_Trees.Cursor;
 
       Error_Count : Integer := 0;
    begin
-      if not DB_I.Category_Contains (Category) then
-         DB_Next (DB_I, Category);
-         DB_Next (Next_DB_I, Category);
-      end if;
-
       if Verbosity >= 2 then
+         New_Line;
          Put_Line ("db best list, sorted:");
          loop
             exit when not Has_Element (DB_I);
             Put_Line (Image (DB_I.Song_Name));
             DB_Next (DB_I, Category);
          end loop;
-         DB_I := First_By_Name (DB);
+         DB_I := DB_First (DB, Category);
 
          New_Line;
          Put_Line (Tree_Name & " best list, sorted:");
@@ -168,6 +181,12 @@ package body SMM.Compare_Playlist is
       if Max_Errors > 0 and then Error_Count >= Max_Errors then
          Put_Line ("stopped at max errors");
       else
+         loop
+            exit when not Has_Element (DB_I);
+            exit when not Contains (Tree_Missing, DB_I.Song_Name);
+            DB_Next (DB_I, Category);
+         end loop;
+
          if Has_Element (DB_I) then
             Put_Line ("extra db items:");
             loop
@@ -178,6 +197,12 @@ package body SMM.Compare_Playlist is
                DB_Next (DB_I, Category);
             end loop;
          end if;
+
+         loop
+            exit when not Has_Element (Tree_I);
+            exit when not Contains (DB_Missing, Element (Tree_I));
+            Tree_I := Next (Tree_Iterator, Tree_I);
+         end loop;
 
          if Has_Element (Tree_I) then
             Put_Line ("extra " & Tree_Name & " items:");
