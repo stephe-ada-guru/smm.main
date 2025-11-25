@@ -2,7 +2,7 @@ Alire.make
 
 build/Makefile obsolete
 
-see windows org.stephe_leake.music_player_2/notes.text
+see windows ~/Projects/org.stephe_leake.music_player/notes.text
 
 branches:
     smm.main - installed in Debian
@@ -24,17 +24,6 @@ branches:
 (dvc-propagate-one "../smm.work_1" "../smm.main")
 
  current work
-compare_playlist
-    bogus missing, extra:
-    spotify protest:
-    error: either new in Spotify or deleted in db: Robbie Williams, 1 Giant Leap, My Culture
-
-    spotify parenthood:
-    extra db items:
-    The Four Bitchin' Babes, Hormonal Imbalance...A Mood Swinging Musical Revue, Pass It On
-
-    begin/end iterate errors?
-
 web server can't open debug log file
     gemini crashed, so no help
 

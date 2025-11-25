@@ -934,6 +934,9 @@ package body SMM.Server is
 
          end case;
       end;
+
+      SAL.Web_Utils.Set_Umask (SAL.Web_Utils.UMASK_ALLOW_GROUP_WRITE);
+
       if Debug then
          Ada.Text_IO.Open
            (Debug_File,
