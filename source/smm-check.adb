@@ -22,7 +22,6 @@ with Ada.Command_Line;
 with Ada.Directories;
 with Ada.Exceptions;
 with Ada.IO_Exceptions;
-with Ada.Strings.Fixed;
 with Ada.Text_IO; use Ada.Text_IO;
 with SAL;
 with SMM.Database;
@@ -56,7 +55,7 @@ is
                       Ada.Directories.Extension (File_Name) = "m4a")
             then
                Failed := Failed + 1;
-               Put_Line ("db extension:" & Integer'Image (I.ID) & " '" & Ada.Directories.Extension (File_Name) & "'");
+               Put_Line ("db extension:" & Integer'Image (I.ID) & " '" & File_Name & "'");
             end if;
 
             if not Ada.Directories.Exists (File_Name) then
@@ -137,13 +136,14 @@ is
    is
       use Ada.Directories;
 
-      Found_Mp3         : Boolean := False;
-      Found_Liner_Notes : Boolean := False;
-      Found_AlbumArt    : Boolean := False;
+      --  We don't check for liner_notes.pdf; if we didn't make it when we
+      --  ripped the music, there's not much we can do now.
+      Found_Mp3      : Boolean := False;
+      Found_AlbumArt : Boolean := False;
 
       procedure Process_Dir_Entry (Dir_Entry : in Directory_Entry_Type)
       is
-         use Ada.Strings.Fixed;
+         use Ada.Strings.Unbounded;
          use SMM.Database;
 
          File_Name : constant String := Relative_Name (Source_Root, Normalize (Full_Name (Dir_Entry)));
@@ -179,10 +179,7 @@ is
                   end if;
                end;
 
-            elsif 0 < Index (File_Name, "liner_notes.pdf") then
-               Found_Liner_Notes := True;
-
-            elsif Extension (File_Name) = "jpg" or Extension (File_Name) = "png" then
+            elsif (for some Ext of Albumart_Extensions => Extension (File_Name) = Ext) then
                Found_AlbumArt := True;
             end if;
 
@@ -205,9 +202,6 @@ is
          Process          => Process_Dir_Entry'Access);
 
       if Found_Mp3 and not Ignore_Metadata then
-         if not Found_Liner_Notes then
-            Put_Line ("liner_notes missing  : " & Dir);
-         end if;
          if not Found_AlbumArt then
             Put_Line ("AlbumArt missing: " & Dir);
          end if;

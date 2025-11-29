@@ -35,6 +35,7 @@ with SMM.History;
 with SMM.ID3;
 with SMM.Import;
 with SMM.Search;
+with SMM.Show;
 with SMM.Update;
 with SMM.Update_Playlist;
 procedure SMM.Driver
@@ -83,6 +84,9 @@ is
       New_Line;
       Put_Line ("  search <text>");
       Put_Line ("    general db search; list matching files.");
+      New_Line;
+      Put_Line ("  show <id>");
+      Put_Line ("    Show content of db entry <id>.");
    end Put_Usage;
 
    procedure Check_Arg (Expected_Count : in Integer)
@@ -97,7 +101,7 @@ is
    Next_Arg    : Integer         := 1;
 
    type Command_Type is
-     (Update_Playlist, Compare_Phone, Import, Update, Rename, Delete, Check, History, Compare_Playlist, Search);
+     (Update_Playlist, Compare_Phone, Import, Update, Rename, Delete, Check, History, Compare_Playlist, Search, Show);
 
    procedure Get_Command is new SAL.Command_Line_IO.Gen_Get_Discrete_Proc (Command_Type, "command", Next_Arg);
 
@@ -173,14 +177,20 @@ begin
    when Rename =>
       Check_Arg (Next_Arg + 1);
       declare
+         use Ada.Strings.Unbounded;
+
          Old_Name : constant String := Relative_Name (Source_Root, Argument (Next_Arg));
-         New_Name : constant String := Relative_Name (Source_Root, Argument (Next_Arg + 1));
+         New_Name : Unbounded_String := +Relative_Name (Source_Root, Argument (Next_Arg + 1));
 
          use SMM.Database;
          I : constant Cursor := Find_File_Name (DB, Old_Name);
       begin
+         if Element (New_Name, Length (New_Name)) = '/' then
+            Append (New_Name, Ada.Directories.Base_Name (Old_Name));
+         end if;
+
          if I.Has_Element then
-            DB.Update (I, File_Name => New_Name);
+            DB.Update (I, File_Name => -New_Name);
          else
             raise Ada.IO_Exceptions.Name_Error with "old file name '" & Old_Name & "' not found in db";
          end if;
@@ -243,6 +253,18 @@ begin
    when Search =>
       Check_Arg (Next_Arg);
       SMM.Search (Argument (Next_Arg));
+
+   when Show =>
+      Check_Arg (Next_Arg);
+      declare
+         ID_String : constant String := Argument (Next_Arg);
+      begin
+         SMM.Show (SMM.Database.Song_ID'Value (ID_String));
+      exception
+      when Constraint_Error =>
+         --  From Song_ID'Value
+         Put_Line ("'" & ID_String & "' : invalid song ID");
+      end;
    end case;
 
 exception

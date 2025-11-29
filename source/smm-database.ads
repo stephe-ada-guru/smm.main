@@ -166,7 +166,7 @@ package SMM.Database is
    --  Position is invalid on return.
 
    type Fields is (Artist, Album, Album_Artist, Composer, Title, Year, Category, Track, Play_Before, Play_After);
-   subtype Required_Fields is Fields range Artist .. Track;
+   subtype Required_Fields is Fields range Artist .. Category;
    subtype Min_Required_Fields is Fields range Artist .. Album_Artist;
 
    type Field_Values is array (Fields) of Ada.Strings.Unbounded.Unbounded_String;
