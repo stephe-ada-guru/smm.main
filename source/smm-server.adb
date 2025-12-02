@@ -266,13 +266,13 @@ package body SMM.Server is
          end;
       end loop;
 
-      return CGI_Response (S200, Content_Text_Plain, -Response);
+      return CGI_Success_Response (Content_Text_Plain, -Response);
    exception
    when E : others =>
       return HTML_CGI_Response
         (Status_Code => S501,
-         Content => "exception " & Exception_Name (E) & ": " & Exception_Message (E) & New_Line &
-           GNAT.Traceback.Symbolic.Symbolic_Traceback (E));
+         Status_Reason => "exception " & Exception_Name (E) & ": " & Exception_Message (E),
+         Content => GNAT.Traceback.Symbolic.Symbolic_Traceback (E));
    end Handle_Get_New_Songs_List;
 
    function Handle_Field
@@ -291,7 +291,7 @@ package body SMM.Server is
       --  field?id=<id>&field=<field-name>
 
       if URI_Param.Is_Empty then
-         return HTML_CGI_Response (S400, "no params; usage field?id=<id>&field=<field_name>");
+         return CGI_Status (S400, "no params; usage field?id=<id>&field=<field_name>");
 
       elsif Exist (Map => URI_Param, Key => "id") and Exist (URI_Param, "field") then
          DB.Open (DB_File_Name);
@@ -301,29 +301,29 @@ package body SMM.Server is
             Field_Name : constant String := Get (URI_Param, "field");
          begin
             if not I.Has_Element then
-               return HTML_CGI_Response (S400, "id " & Get (URI_Param, "id") & " not found");
+               return CGI_Status (S400, "id " & Get (URI_Param, "id") & " not found");
             end if;
 
             if Field_Name = "artist" then
-               return CGI_Response (S200, Content_Text_Plain, I.Artist);
+               return CGI_Success_Response (Content_Text_Plain, I.Artist);
             elsif Field_Name = "album" then
-               return CGI_Response (S200, Content_Text_Plain, I.Album);
+               return CGI_Success_Response (Content_Text_Plain, I.Album);
             elsif Field_Name = "category" then
-               return CGI_Response (S200, Content_Text_Plain, I.Category);
+               return CGI_Success_Response (Content_Text_Plain, I.Category);
             elsif Field_Name = "title" then
-               return CGI_Response (S200, Content_Text_Plain, I.Title);
+               return CGI_Success_Response (Content_Text_Plain, I.Title);
             else
-               return HTML_CGI_Response (S400, "id " & Get (URI_Param, "id") & " not found");
+               return CGI_Status (S400, "id " & Get (URI_Param, "id") & " not found");
             end if;
          end; --  Free cursor
 
       else
-         return HTML_CGI_Response (S400, "invalid field query params '" & Query & "'");
+         return CGI_Status (S400, "invalid field query params '" & Query & "'");
       end if;
    exception
    when Constraint_Error =>
       --  from Integer'Value (id)
-      return HTML_CGI_Response (S400, "invalid id '" & Get (URI_Param, "id") & "'");
+      return CGI_Status (S400, "invalid id '" & Get (URI_Param, "id") & "'");
    end Handle_Field;
 
    function Handle_ID
@@ -338,14 +338,14 @@ package body SMM.Server is
       DB : SMM.Database.Database;
    begin
       if URI_Param.Is_Empty then
-         return HTML_CGI_Response (S400, "no params; usage id?file=<file_name>");
+         return CGI_Status (S400, "no params; usage id?file=<file_name>");
 
       else
          --  From Emacs notes buffer page, query looks like
          --  'id?file=<file_name>'
 
          if not Exist (URI_Param, "file") then
-            return HTML_CGI_Response (S400, "missing 'file' param: '" & Query & "'");
+            return CGI_Status (S400, "missing 'file' param: '" & Query & "'");
          end if;
 
          DB.Open (DB_File_Name);
@@ -355,9 +355,9 @@ package body SMM.Server is
             I         : constant Cursor := DB.Find_File_Name (File_Name);
          begin
             if I.Has_Element then
-               return CGI_Response (S200, Content_Text_Plain, Integer'Image (I.ID));
+               return CGI_Success_Response (Content_Text_Plain, Integer'Image (I.ID));
             else
-               return HTML_CGI_Response (S400, "file not in db: '" & File_Name & "'");
+               return CGI_Status (S400, "file not in db: '" & File_Name & "'");
             end if;
          end;
       end if;
@@ -405,7 +405,7 @@ package body SMM.Server is
          Filter    => (Ordinary_File => True, others => False),
          Process   => Copy_Aux'Access);
 
-      return CGI_Response (S200, Content_Text_Plain, -Response);
+      return CGI_Success_Response (Content_Text_Plain, -Response);
    exception
    when Ada.IO_Exceptions.Name_Error =>
       --  GNAT runtime sets message to "(unknown directory "")"; no file name!
@@ -441,13 +441,13 @@ package body SMM.Server is
       end loop;
       Close (File);
 
-      return CGI_Response (S200, Content_Text_Plain, "");
+      return CGI_Status (S200, "");
    exception
    when E : others =>
       return HTML_CGI_Response
-        (Status_Code => S501,
-         Content => "exception " & Exception_Name (E) & ": " & Exception_Message (E) & SAL.Web_Utils.New_Line &
-           GNAT.Traceback.Symbolic.Symbolic_Traceback (E));
+        (Status_Code   => S501,
+         Status_Reason => "exception " & Exception_Name (E) & ": " & Exception_Message (E),
+         Content       =>  GNAT.Traceback.Symbolic.Symbolic_Traceback (E));
    end Handle_Put_Notes;
 
    function Handle_Search
@@ -591,7 +591,7 @@ package body SMM.Server is
       exception
       when E : Ada.IO_Exceptions.Name_Error =>
          --  From Meta_Files; directory deleted
-         return HTML_CGI_Response (S400, Ada.Exceptions.Exception_Message (E));
+         return CGI_Status (S400, Ada.Exceptions.Exception_Message (E));
       end Search_Result;
 
       function To_SQL_Param (Param : in Parameter_Lists.Map) return SMM.Database.Field_Values
@@ -623,7 +623,7 @@ package body SMM.Server is
       if URI_Param.Is_Empty then
          --  Return search page with no results.
          Response := +Response_1 & "<body onload=""InitTabs()"">" & Response_2 & "</body></html>";
-         return CGI_Response (S200, Content_Text_HTML, -Response);
+         return CGI_Success_Response (Content_Text_HTML, -Response);
 
       elsif Exist (URI_Param, "search") or
         Exist (URI_Param, "title") or Exist (URI_Param, "artist") or Exist (URI_Param, "album") or
@@ -656,7 +656,7 @@ package body SMM.Server is
 
             if not I.Has_Element then
                Response := Response  & "<p>no matching entries found</p></body></html>";
-               return CGI_Response (S200, Content_Text_HTML, -Response);
+               return CGI_Success_Response (Content_Text_HTML, -Response);
             end if;
 
             Response := Response & "<div id=""" & Search_Result_ID & """ class=""" & Search_Result_ID & """><ul>";
@@ -674,10 +674,10 @@ package body SMM.Server is
          --  Terminate album list, search result scroll, body, doc.
          Response := Response & "</ul></div></body></html>";
 
-         return CGI_Response (S200, Content_Text_HTML, -Response);
+         return CGI_Success_Response (Content_Text_HTML, -Response);
 
       else
-         return HTML_CGI_Response (S400, "invalid search query params '" & Query & "'");
+         return CGI_Status (S400, "invalid search query params '" & Query & "'");
       end if;
    end Handle_Search;
 
@@ -706,7 +706,7 @@ package body SMM.Server is
       end Redirect_Search;
    begin
       if URI_Param.Is_Empty then
-         return HTML_CGI_Response (S400, "invalid query params: '" & Query & "'");
+         return CGI_Status (S400, "invalid query params: '" & Query & "'");
 
       else
          --  From Emacs notes buffer page, query looks like
@@ -724,7 +724,7 @@ package body SMM.Server is
          elsif Exist (URI_Param, "file") then
             Key_Field := +"file";
          else
-            return HTML_CGI_Response (S400, "missing 'id' or 'file' param: '" & Query & "'");
+            return CGI_Status (S400, "missing 'id' or 'file' param: '" & Query & "'");
          end if;
 
          for I in URI_Param.Iterate loop
@@ -740,14 +740,14 @@ package body SMM.Server is
                elsif Valid_Field (Field_Name) then
                   null;
                else
-                  return HTML_CGI_Response (S400, "bad param name: '" & Field_Name & "'");
+                  return CGI_Status (S400, "bad param name: '" & Field_Name & "'");
                end if;
             end;
          end loop;
 
          if Cancel then
             if Length (Ref) = 0 then
-               return HTML_CGI_Response (S200, "canceled");
+               return CGI_Status (S200, "canceled");
             else
                return Redirect_Search;
             end if;
@@ -774,7 +774,7 @@ package body SMM.Server is
             if I.Has_Element then
                DB.Update (I, SQL_Param);
             else
-               return HTML_CGI_Response
+               return CGI_Status
                  (S400, "not found in db: '" &
                     (if -Key_Field = "id"
                      then Get (URI_Param, "id")
@@ -784,7 +784,7 @@ package body SMM.Server is
          end;
 
          if Length (Ref) = 0 then
-            return HTML_CGI_Response (S200, "updated");
+            return CGI_Status (S200, "updated");
          else
             return Redirect_Search;
          end if;
@@ -854,7 +854,7 @@ package body SMM.Server is
                return Handle_Search (Parameters, Query);
 
             else
-               return HTML_CGI_Response (S400, "invalid GET query '" & URI_File & "'");
+               return CGI_Status (S400, "invalid GET query '" & URI_File & "'");
             end if;
          end;
 
@@ -886,18 +886,19 @@ package body SMM.Server is
             if URI_File = "update" then
                return Handle_Update (Parse_Parameters (Content), Content);
             else
-               return HTML_CGI_Response (S400, "unrecognized POST path '" & URI_File & "'");
+               return CGI_Status (S400, "unrecognized POST path '" & URI_File & "'");
             end if;
          end;
 
       when others =>
-         return HTML_CGI_Response (S400, "unrecognized request " & Request_Method'Image (Method));
+         return CGI_Status (S400, "unrecognized request " & Request_Method'Image (Method));
       end case;
    exception
    when E : others =>
       return HTML_CGI_Response
-        (S501, "exception " & Exception_Name (E) & ": " & Exception_Message (E) & New_Line &
-           GNAT.Traceback.Symbolic.Symbolic_Traceback (E));
+        (S501,
+         Status_Reason => "exception " & Exception_Name (E) & ": " & Exception_Message (E),
+         Content => GNAT.Traceback.Symbolic.Symbolic_Traceback (E));
    end Handle_Request;
 
    procedure Server
