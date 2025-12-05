@@ -4,7 +4,7 @@
 (let*
     ((project
       (create-alire-prj
-       :name "smm main Alire"
+       :name "smm work_1"
        :compile-env
        '("SERVER_DATA=/var/www/html/music_server_data")
        :gpr-file "build/smm_alire.gpr"

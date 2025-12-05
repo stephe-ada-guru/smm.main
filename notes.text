@@ -13,9 +13,7 @@ branches:
     '((xgit . "../org.stephe_leake.sal")
       (xgit . "../smm.main")))
 
-(dvc-propagate-multiple
- '(("../org.stephe_leake.sal" . "../org.stephe_leake.sal.stephe-1")
-   ("../smm.main"             . "../smm.work_1")))
+(dvc-propagate-one "../smm.main" "../smm.work_1")
 
 (dvc-propagate-multiple
  '(("../org.stephe_leake.sal.stephe-1" . "../org.stephe_leake.sal")
@@ -26,7 +24,8 @@ branches:
  current work
 sync db with phone
     on work_1
-    add Modified, Deleted date fields
+    add Modified, Deleted date fields, schema_version - done in smm_new.db
+
     ~/Projects/org.stephe_leake.books_old/app/src/main/java/org/stephe_leake/books/android/SyncService.java
     if modification is in metadata, do the right thing
 

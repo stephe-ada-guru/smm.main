@@ -2,14 +2,34 @@
 
 -- SQLite3 and/or GNATCOLL GPL 2016 has a bug when comparing DATETIME
 -- fields to bound parameters of type Ada.Calendar.Time; it seems to
--- give random results. So we use a CHAR[19] type for *_Downloaded
--- fields, with format "YYYY-MM-DD HH:MM:SS". That also makes it human
--- readable with command line sql tools.
+-- give random results. So we use a TEXT type for Modified, Deleted,
+-- *_Downloaded fields, with format "YYYY-MM-DD HH:MM:SS". That also
+-- makes it human readable with command line sql tools.
 --
--- All times stored in the database are in UTC (Greenwich time zone).
+-- We'd prefer CHAR[19] for time fields, since they are actually fixed
+-- length, but Kotlin Room ksp can't handle that in the Android app.
+-- SQLite maps CHAR[19] to TEXT anyway, so this doesn't lose anything
+-- in the actual implementation.
+--
+-- All times stored in the database are in local time zone.
+
+-- We use a schema version number to guard against operator error in
+-- managing database transitions. PRAGMA user_version would be
+-- simplest, but GNATCOLL.SQL does not provide a way to return the
+-- value from 'pragma user_version'. So we use a table that stores one
+-- value.
+
+CREATE TABLE Schema_Version
+(ID INTEGER PRIMARY KEY,
+ Version INTEGER NOT NULL --  Must match smm-database.ads Schema_Version
+);
+
+INSERT INTO Schema_Version (ID, Version) VALUES (1, 2);
 
 CREATE TABLE Song
 (ID              INTEGER NOT NULL,
+ Modified        TEXT,
+ Deleted         TEXT,
  File_Name       TEXT,
  Category        TEXT,
  Artist          TEXT,
@@ -20,10 +40,6 @@ CREATE TABLE Song
  Title           TEXT,
  Track           INTEGER,
  
- -- We'd prefer CHAR[19] for these two, since they are actually fixed
- -- length, but Kotlin Room ksp can't handle that in the Android app.
- -- SQLite maps CHAR[19] to TEXT anyway, so this doesn't lose anything
- -- in the actual implementation.
  Last_Downloaded TEXT,
  Prev_Downloaded TEXT,
  

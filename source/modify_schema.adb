@@ -46,7 +46,7 @@ begin
          return;
       end if;
 
-      Old_DB.Open (Argument (1));
+      Old_DB.Open (Argument (1), Expected_Schema => 0);
       New_DB.Open (Argument (2));
    end;
 

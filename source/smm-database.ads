@@ -24,16 +24,21 @@ with Ada.Strings.Unbounded;
 with GNATCOLL.SQL.Exec;
 package SMM.Database is
 
-   No_Data     : exception;
-   Null_Field  : exception;
-   Entry_Error : exception; --  User violated some limit or index constraint
+   Schema_Version : constant Integer := 2;
+   --  Increment each time create_schema.sql is changed. Must match
+   --  create_schema.sql Schema_Version.Version.
+
+   Schema_Version_Error : exception;
+   No_Data              : exception;
+   Null_Field           : exception;
+   Entry_Error          : exception; --  User violated some limit or index constraint
 
    subtype Time_String is String (1 .. 19);
    --  UTC time in 'YYYY-MM-DD HH:MM:SS' format
 
    Jan_1_1958 : constant Time_String := "1958-01-01 00:00:00";
-   --  A time before any valid database Modified time, used for a
-   --  default time in various places.
+   --  A time before any valid database time, used for a default time in
+   --  various places.
 
    Default_Time_String : Time_String renames Jan_1_1958;
 
@@ -48,7 +53,9 @@ package SMM.Database is
    overriding procedure Finalize (DB : in out Database);
    --  Disconnect from database.
 
-   procedure Open (DB : in out Database; File_Name : in String);
+   procedure Open (DB : in out Database; File_Name : in String; Expected_Schema : in Integer := Schema_Version);
+   --  Raises Schema_Version_Error with message containing expected,
+   --  found if db Schema_Version.Version is not Expected_Schema.
 
    procedure Insert
      (DB              : in Database;
@@ -66,6 +73,7 @@ package SMM.Database is
       Prev_Downloaded : in Time_String := Default_Time_String;
       Play_Before     : in Song_ID     := Null_ID;
       Play_After      : in Song_ID     := Null_ID);
+   --  Sets Modified to Clock, Deleted to Default_Time_String.
 
    function UTC_Image (Item : in Ada.Calendar.Time) return Time_String;
 
@@ -158,12 +166,16 @@ package SMM.Database is
       Play_After      : in Song_ID     := Null_ID);
    --  Items that are the defaults are not updated.
    --  Cursor must be refetched to reflect changes.
+   --
+   --  Sets Modified to Clock.
 
    procedure Delete
      (DB       : in Database;
       Position : in Cursor'Class);
-   --  Delete item at Position.
-   --  Position is invalid on return.
+   --  Mark item at Position as 'deleted'; Deleted is set to Clock.
+   --
+   --  The only way to actually delete a DB entry is to copy the whole
+   --  DB; see modify_schema.adb.
 
    type Fields is (Artist, Album, Album_Artist, Composer, Title, Year, Category, Track, Play_Before, Play_After);
    subtype Required_Fields is Fields range Artist .. Category;
@@ -196,6 +208,8 @@ package SMM.Database is
       Position : in Cursor'Class;
       Data     : in Field_Values);
    --  Cursor must be refetched to reflect changes.
+   --
+   --  Sets Modified to Clock.
 
    function Find_Like
      (DB       : in Database'Class;
@@ -250,11 +264,16 @@ package SMM.Database is
      (Position : in Cursor;
       DB       : in Database'Class;
       Time     : in Time_String);
+   --  Sets Modified to Time.
 
    procedure Write_Play_Before_After
      (DB        : in Database'Class;
       Before_ID : in Song_ID;
       After_ID  : in Song_ID);
+   --  Sets Modified to Clock.
+
+   function Read_Schema_Version (DB : in Database'Class) return Integer;
+   --  Returns 0 if table Schema_Version does not exist.
 
 private
 

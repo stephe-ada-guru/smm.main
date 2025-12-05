@@ -67,6 +67,7 @@ package body SMM.Database is
      (DB              : in Database;
       Update          : in Boolean;
       ID              : in Integer;
+      Modified        : in Time_String;
       File_Name       : in String      := "";
       Category        : in String      := "";
       Artist          : in String      := "";
@@ -91,7 +92,7 @@ package body SMM.Database is
 
       Values : Unbounded_String := +"VALUES (";
 
-      Params : SQL_Parameters (1 .. 14) := (others => Null_Parameter);
+      Params : SQL_Parameters (1 .. 16) := (others => Null_Parameter);
 
       Need_Comma : Boolean := False;
       Last       : Integer := 0;
@@ -135,6 +136,7 @@ package body SMM.Database is
       end Add_Param;
 
    begin
+      Add_Param ("Modified", Modified, Default_Time_String);
       Add_Param ("File_Name", File_Name, "");
       Add_Param ("Category", Category, "");
       Add_Param ("Artist", Artist, "");
@@ -152,6 +154,7 @@ package body SMM.Database is
       if Update then
          Statement := Statement & " WHERE ID = ?";
       else
+         Add_Param ("Deleted", Default_Time_String, "");
          if Need_Comma then
             Statement := Statement & ", ";
             Need_Comma := True;
@@ -186,7 +189,7 @@ package body SMM.Database is
       Ada.Text_IO.Put_Line ("Database disconnect: exception " & Ada.Exceptions.Exception_Message (E));
    end Finalize;
 
-   procedure Open (DB : in out Database; File_Name : in String)
+   procedure Open (DB : in out Database; File_Name : in String; Expected_Schema : in Integer := Schema_Version)
    is
       use GNATCOLL.SQL.Exec;
    begin
@@ -199,6 +202,14 @@ package body SMM.Database is
       if not DB.Connection.Success then
          raise Ada.IO_Exceptions.Use_Error with File_Name & DB.Connection.Error;
       end if;
+
+      declare
+         Temp : constant Integer := Read_Schema_Version (DB);
+      begin
+         if Temp /= Expected_Schema then
+            raise Schema_Version_Error with "expecting Schema_Version" & Schema_Version'Image & ", found" & Temp'Image;
+         end if;
+      end;
    exception
    when Ada.IO_Exceptions.Name_Error =>
       raise Ada.IO_Exceptions.Use_Error with "invalid database file name: '" & File_Name & "'";
@@ -225,6 +236,7 @@ package body SMM.Database is
         (DB,
          Update          => False,
          ID              => ID,
+         Modified        => UTC_Image (Ada.Calendar.Clock),
          File_Name       => File_Name,
          Category        => Category,
          Artist          => Artist,
@@ -362,6 +374,7 @@ package body SMM.Database is
         (DB,
          Update          => True,
          ID              => Position.ID,
+         Modified        => UTC_Image (Ada.Calendar.Clock),
          File_Name       => File_Name,
          Category        => Category,
          Artist          => Artist,
@@ -385,11 +398,8 @@ package body SMM.Database is
    begin
       Checked_Execute
         (DB,
-         Statement => "DELETE FROM Song WHERE ID = ?",
-         Params => (1 => +Position.ID));
-
-      --  Can't figure out how to make this work
-      --  Position := SMM.Database.Cursor with (Cursor => No_Direct_Element);
+         Statement => "UPDATE Song SET Deleted = ? WHERE ID =?",
+         Params    => (+UTC_Image (Ada.Calendar.Clock), +Position.ID));
    end Delete;
 
    function Image (Item : Field_Values) return String
@@ -451,6 +461,8 @@ package body SMM.Database is
          Params (Last) := +Value;
       end Add_Param;
    begin
+      Add_Param ("Modified", UTC_Image (Ada.Calendar.Clock));
+
       for Field in Fields loop
          if Length (Data (Field)) > 0 then
             Add_Param (-Field_Image (Field), -Data (Field));
@@ -755,8 +767,8 @@ package body SMM.Database is
    begin
       Checked_Execute
         (DB,
-         Statement => "UPDATE Song SET Last_Downloaded = ?, Prev_Downloaded = ? WHERE ID =?",
-         Params    => (+Time, +Position.Last_Downloaded, +Position.ID));
+         Statement => "UPDATE Song SET Modified = ?, Last_Downloaded = ?, Prev_Downloaded = ? WHERE ID =?",
+         Params    => (+Time, +Time, +Position.Last_Downloaded, +Position.ID));
    end Write_Last_Downloaded;
 
    procedure Write_Play_Before_After
@@ -768,13 +780,29 @@ package body SMM.Database is
    begin
       Checked_Execute
         (DB,
-         Statement => "UPDATE Song SET Play_Before = ? WHERE ID =?",
-         Params    => (+After_ID, +Before_ID));
+         Statement => "UPDATE Song SET Modified = ?, Play_Before = ? WHERE ID =?",
+         Params    => (+UTC_Image (Ada.Calendar.Clock), +After_ID, +Before_ID));
 
       Checked_Execute
         (DB,
-         Statement => "UPDATE Song SET Play_After = ? WHERE ID =?",
-         Params    => (+Before_ID, +After_ID));
+         Statement => "UPDATE Song SET Modified = ?, Play_After = ? WHERE ID =?",
+         Params    => (+UTC_Image (Ada.Calendar.Clock), +Before_ID, +After_ID));
    end Write_Play_Before_After;
+
+   function Read_Schema_Version (DB : in Database'Class) return Integer
+   is
+      Table_Cur : constant Cursor := Checked_Fetch
+        (DB, "SELECT name FROM sqlite_master WHERE type='table' AND name='Schema_Version'");
+   begin
+      if Has_Element (Table_Cur) then
+         declare
+            Version_Cur : constant Cursor := Checked_Fetch (DB, "SELECT Version FROM Schema_Version WHERE ID=1");
+         begin
+            return Integer'Value (Version_Cur.Cursor.Value (GNATCOLL.SQL.Exec.Field_Index'First));
+         end;
+      else
+         return 0;
+      end if;
+   end Read_Schema_Version;
 
 end SMM.Database;

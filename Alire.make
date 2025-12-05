@@ -55,8 +55,11 @@ $(SERVER_DATA)/% : source/%
 $(HOME)/.local/bin/% : $(ALIRE_EXEC_DIR)/%
 	cp $^ $@
 
-modify : $(ALIRE_EXEC_DIR)/modify_schema.exe smm_new.db
+modify : $(ALIRE_EXEC_DIR)/modify_schema.exe modify-clean smm_new.db
 	$(ALIRE_EXEC_DIR)/modify_schema.exe /var/www/html/music_server_data/smm.db smm_new.db
+
+modify-clean :
+	rm -rf smm_new.db
 
 smm%.db : source/create_schema.sql
 	sqlite3 -init $< $@ ".quit"
