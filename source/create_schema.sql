@@ -47,7 +47,7 @@ CREATE TABLE Song
  Play_After      INTEGER,
  PRIMARY KEY (ID));
                
-CREATE INDEX File_Name on Song (File_Name);
+CREATE UNIQUE INDEX File_Name on Song (File_Name);
 CREATE INDEX Artist on Song (Artist);
 CREATE INDEX Album  on Song (Album);
 CREATE INDEX Title  on Song (Title);

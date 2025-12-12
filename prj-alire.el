@@ -6,7 +6,9 @@
       (create-alire-prj
        :name "smm work_1"
        :compile-env
-       '("SERVER_DATA=/var/www/html/music_server_data")
+       '("SERVER_DATA=/var/www/html/music_server_data"
+	 "SERVER_IP=127.0.0.1",
+	 "SERVER_PORT=16#9002#") ;; 36866
        :gpr-file "build/smm_alire.gpr"
        ;;  :gpr-file "build/smm_test.gpr"
        :xref-label 'gpr_query)))

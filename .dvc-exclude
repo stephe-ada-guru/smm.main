@@ -1,5 +1,2 @@
 build/.gdbinit
-build/Makefile
-build/prj.el
-build/smm.prj
 Test/test_one_harness.adb

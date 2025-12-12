@@ -2,7 +2,7 @@ Alire.make
 
 build/Makefile obsolete
 
-see windows ~/Projects/org.stephe_leake.music_player/notes.text
+see ~/Projects/org.stephe_leake.music_player/notes.text
 
 branches:
     smm.main - installed in Debian
@@ -23,11 +23,7 @@ branches:
 
  current work
 sync db with phone
-    on work_1
-    add Modified, Deleted date fields, schema_version - done in smm_new.db
-
-    ~/Projects/org.stephe_leake.books_old/app/src/main/java/org/stephe_leake/books/android/SyncService.java
-    if modification is in metadata, do the right thing
+    test_one_harness  compiles, fails
 
 smm check
     reports missing files that are not in fact missing

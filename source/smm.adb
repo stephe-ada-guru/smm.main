@@ -36,6 +36,55 @@ package body SMM is
       return Result;
    end Normalize;
 
+   function Max_ID (List : in ID_Lists.List) return Song_ID
+   is begin
+      return Result : Song_ID := Invalid_Song_ID do
+         for ID of List loop
+            if ID > Result then
+               Result := ID;
+            end if;
+         end loop;
+      end return;
+   end Max_ID;
+
+   function To_JSON (List : in ID_Lists.List) return GNATCOLL.JSON.JSON_Value
+   is
+      use GNATCOLL.JSON;
+      use ID_Lists;
+      Result    : constant JSON_Value := Create_Object;
+      List_JSON : JSON_Array;
+      I         : Cursor   := First (List);
+   begin
+      loop
+         exit when I = No_Element;
+         Append (List_JSON, Create (Element (I)));
+         Next (I);
+      end loop;
+      Set_Field (Result, "List", List_JSON);
+      return Result;
+   end To_JSON;
+
+   function To_List (List : in GNATCOLL.JSON.JSON_Value) return ID_Lists.List
+   is
+      use GNATCOLL.JSON;
+      use ID_Lists;
+      Result : ID_Lists.List;
+   begin
+      if List.Is_Empty then
+         --  Just return Result
+         null;
+      else
+         declare
+            List_JSON : constant JSON_Array := Get (List, "List");
+         begin
+            for I in 1 .. Length (List_JSON) loop
+               Result.Append (Get (Get (List_JSON, I)));
+            end loop;
+         end;
+      end if;
+      return Result;
+   end To_List;
+
    function Relative_Name
      (Root      : in String;
       Full_Name : in String)

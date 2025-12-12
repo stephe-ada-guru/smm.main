@@ -252,6 +252,80 @@ package body SMM.Database is
          Play_After      => Play_After);
    end Insert;
 
+   procedure Insert_JSON (DB : in Database; Value : in GNATCOLL.JSON.JSON_Value)
+   is
+      ID : constant Song_ID := Value.Get ("ID");
+   begin
+      if Value.Has_Field ("Deleted") then
+         --  On the remote, a record was inserted by mistake, then deleted.
+         Insert_Update
+           (DB,
+            Update   => False,
+            ID       => ID,
+            Modified => Default_Time_String);
+
+         DB.Mark_Deleted (DB.Find_ID (ID), Value.Get ("Deleted"));
+      else
+         Insert_Update
+           (DB,
+            ID           => ID,
+            Update       => False,
+            Modified     => Value.Get ("Modified"),
+            File_Name    => Value.Get ("File_Name"),
+            Category     => Value.Get ("Category"),
+            Artist       => (if Value.Has_Field ("Artist") then Value.Get ("Artist") else ""),
+            Album_Artist => Value.Get ("Album_Artist"),
+            Composer     => (if Value.Has_Field ("Composer") then Value.Get ("Composer") else ""),
+            Album        => (if Value.Has_Field ("Album") then Value.Get ("Album") else ""),
+            Year         => (if Value.Has_Field ("Year") then Value.Get ("Year") else No_Year),
+            Title        => Value.Get ("Title"),
+            Track        => (if Value.Has_Field ("Track") then Value.Get ("Track") else No_Track),
+            Last_Downloaded =>
+              (if Value.Has_Field ("Last_Downloaded") then Value.Get ("Last_Downloaded") else Default_Time_String),
+            Prev_Downloaded =>
+              (if Value.Has_Field ("Prev_Downloaded") then Value.Get ("Prev_Downloaded") else Default_Time_String),
+            Play_Before => (if Value.Has_Field ("Play_Before") then Value.Get ("Play_Before") else Null_ID),
+            Play_After => (if Value.Has_Field ("Play_After") then Value.Get ("Play_After") else Null_ID));
+      end if;
+   end Insert_JSON;
+
+   function Get_JSON (DB : in Database; ID : in Song_ID) return GNATCOLL.JSON.JSON_Value
+   is begin
+      return Get_JSON (DB.Find_ID (ID));
+   end Get_JSON;
+
+   function Index_Fields_Equal
+     (DB        : in out Database;
+      ID        : in     Song_ID;
+      New_Value : in     GNATCOLL.JSON.JSON_Value)
+     return Boolean
+   is
+      Cur : constant Cursor := DB.Find_ID (ID);
+   begin
+      --  Fields involved in unique indices are ID, File_Name, Album_Artist, Album, Title
+      if ID = New_Value.Get ("ID") then
+         return True;
+      end if;
+
+      if Cur.File_Name = New_Value.Get ("File_Name") then
+         return True;
+      end if;
+
+      if Cur.Album_Artist = New_Value.Get ("Album_Artist") then
+         if Cur.Album = (if New_Value.Has_Field ("Album") then New_Value.Get ("Album") else "") then
+            if Cur.Title = New_Value.Get ("Title") then
+               return True;
+            else
+               return False;
+            end if;
+         else
+            return False;
+         end if;
+      else
+         return False;
+      end if;
+   end Index_Fields_Equal;
+
    function UTC_Image (Item : in Ada.Calendar.Time) return Time_String
    is
       --  GNAT GPL 2016 Clock returns UTC
@@ -265,7 +339,9 @@ package body SMM.Database is
    --  Field indices; create_schema.sql declaration order
    use all type GNATCOLL.SQL.Exec.Field_Index;
    ID_Field              : constant GNATCOLL.SQL.Exec.Field_Index := GNATCOLL.SQL.Exec.Field_Index'First;
-   File_Name_Field       : constant GNATCOLL.SQL.Exec.Field_Index := ID_Field + 1;
+   Modified_Field        : constant GNATCOLL.SQL.Exec.Field_Index := ID_Field + 1;
+   Deleted_Field         : constant GNATCOLL.SQL.Exec.Field_Index := Modified_Field + 1;
+   File_Name_Field       : constant GNATCOLL.SQL.Exec.Field_Index := Deleted_Field + 1;
    Category_Field        : constant GNATCOLL.SQL.Exec.Field_Index := File_Name_Field + 1;
    Artist_Field          : constant GNATCOLL.SQL.Exec.Field_Index := Category_Field + 1;
    Album_Artist_Field    : constant GNATCOLL.SQL.Exec.Field_Index := Artist_Field + 1;
@@ -300,6 +376,34 @@ package body SMM.Database is
    is begin
       return Position.Cursor.Has_Row;
    end Has_Element;
+
+   function Get_JSON (Position : in Cursor) return GNATCOLL.JSON.JSON_Value
+   is
+      Cur : Cursor renames Position;
+   begin
+      return Result : constant GNATCOLL.JSON.JSON_Value := GNATCOLL.JSON.Create_Object do
+         Result.Set_Field ("ID", Cur.ID);
+         if Cur.Modified /= Default_Time_String then Result.Set_Field ("Modified", Cur.Modified); end if;
+         if Cur.Deleted /= Default_Time_String then Result.Set_Field ("Deleted", Cur.Deleted); end if;
+         Result.Set_Field ("File_Name", Cur.File_Name);
+         Result.Set_Field ("Category", Cur.Category);
+         if Cur.Artist /= "" then Result.Set_Field ("Artist", Cur.Artist); end if;
+         Result.Set_Field ("Album_Artist", Cur.Album_Artist);
+         if Cur.Composer /= "" then Result.Set_Field ("Composer", Cur.Composer); end if;
+         if Cur.Album /= "" then Result.Set_Field ("Album", Cur.Album); end if;
+         if Cur.Year /= No_Year then Result.Set_Field ("Year", Cur.Year); end if;
+         Result.Set_Field ("Title", Cur.Title);
+         if Cur.Track /= No_Track then Result.Set_Field ("Track", Cur.Track); end if;
+         if Cur.Last_Downloaded /= Default_Time_String then
+            Result.Set_Field ("Last_Downloaded", Cur.Last_Downloaded);
+         end if;
+         if Cur.Prev_Downloaded /= Default_Time_String then
+            Result.Set_Field ("Prev_Downloaded", Cur.Prev_Downloaded);
+         end if;
+         if Cur.Play_Before /= Null_ID then Result.Set_Field ("Play_Before", Cur.Play_Before); end if;
+         if Cur.Play_After /= Null_ID then Result.Set_Field ("Play_After", Cur.Play_After); end if;
+      end return;
+   end Get_JSON;
 
    function First_By_ID (DB : in Database'Class) return Cursor
    is
@@ -353,6 +457,53 @@ package body SMM.Database is
       return Checked_Fetch (DB, Statement, Params => (1 => +ID));
    end Find_ID;
 
+   function Last_ID (DB : in Database) return Song_ID
+   is
+      Cur : constant Cursor := Checked_Fetch (DB, "SELECT MAX (ID) FROM Song");
+   begin
+      return Song_ID'Value (Cur.Cursor.Value (ID_Field));
+   end Last_ID;
+
+   function Get_Modified
+     (DB       : in out Database;
+      ID       : in     Song_ID;
+      Modified : in     Time_String)
+     return ID_Lists.List
+   is
+      use GNATCOLL.SQL.Exec;
+      Cur : Cursor := Checked_Fetch (DB, "SELECT ID FROM Song WHERE ID <= ?" &
+           " AND Modified > ? or Deleted > ? ORDER BY ID", (+ID, +Modified, +Modified));
+   begin
+      return Result : ID_Lists.List do
+         loop
+            exit when not Has_Element (Cur);
+            Result.Append (Cur.ID);
+            Next (Cur);
+         end loop;
+      end return;
+   end Get_Modified;
+
+   function Get_New
+     (DB        : in out Database;
+      ID        : in     Song_ID;
+      Max_Count : in     Ada.Containers.Count_Type := Ada.Containers.Count_Type'Last)
+     return ID_Lists.List
+   is
+      use GNATCOLL.SQL.Exec;
+      use type Ada.Containers.Count_Type;
+      Cur : Cursor := Checked_Fetch (DB, "SELECT ID FROM Song WHERE ID > ?" &
+           " AND Deleted is null ORDER BY ID", (1 => +ID));
+   begin
+      return Result : ID_Lists.List do
+         loop
+            exit when not Has_Element (Cur);
+            exit when Result.Length >= Max_Count;
+            Result.Append (Cur.ID);
+            Next (Cur);
+         end loop;
+      end return;
+   end Get_New;
+
    procedure Update
      (DB              : in Database;
       Position        : in Cursor'Class;
@@ -390,17 +541,59 @@ package body SMM.Database is
          Play_After      => Play_After);
    end Update;
 
-   procedure Delete
+   procedure Update_JSON (DB : in Database; Value : in GNATCOLL.JSON.JSON_Value)
+   is
+      ID : constant Song_ID := Value.Get ("ID");
+   begin
+      if Value.Has_Field ("Deleted") then
+         DB.Mark_Deleted (DB.Find_ID (ID), Value.Get ("Deleted"));
+      else
+         Insert_Update
+           (DB,
+            Update       => False,
+            ID           => ID,
+            Modified     => Value.Get ("Modified"),
+            File_Name    => Value.Get ("File_Name"),
+            Category     => Value.Get ("Category"),
+            Artist       => (if Value.Has_Field ("Artist") then Value.Get ("Artist") else ""),
+            Album_Artist => Value.Get ("Album_Artist"),
+            Composer     => (if Value.Has_Field ("Composer") then Value.Get ("Composer") else ""),
+            Album        => (if Value.Has_Field ("Album") then Value.Get ("Album") else ""),
+            Year         => (if Value.Has_Field ("Year") then Value.Get ("Year") else No_Year),
+            Title        => Value.Get ("Title"),
+            Track        => (if Value.Has_Field ("Track") then Value.Get ("Track") else No_Track),
+            Last_Downloaded =>
+              (if Value.Has_Field ("Last_Downloaded") then Value.Get ("Last_Downloaded") else Default_Time_String),
+            Prev_Downloaded =>
+              (if Value.Has_Field ("Prev_Downloaded") then Value.Get ("Prev_Downloaded") else Default_Time_String),
+            Play_Before => (if Value.Has_Field ("Play_Before") then Value.Get ("Play_Before") else Null_ID),
+            Play_After => (if Value.Has_Field ("Play_After") then Value.Get ("Play_After") else Null_ID));
+      end if;
+   end Update_JSON;
+
+   procedure Mark_Deleted
      (DB       : in Database;
-      Position : in Cursor'Class)
+      Position : in Cursor'Class;
+      Deleted  : in Time_String := Default_Time_String)
    is
       use GNATCOLL.SQL.Exec;
    begin
       Checked_Execute
         (DB,
          Statement => "UPDATE Song SET Deleted = ? WHERE ID =?",
-         Params    => (+UTC_Image (Ada.Calendar.Clock), +Position.ID));
-   end Delete;
+         Params    =>
+           (+(if Deleted = Default_Time_String then UTC_Image (Ada.Calendar.Clock) else Deleted),
+            +Position.ID));
+   end Mark_Deleted;
+
+   procedure Really_Delete
+     (DB : in Database;
+      ID : in Song_ID)
+   is
+      use GNATCOLL.SQL.Exec;
+   begin
+      Checked_Execute (DB, "DELETE FROM Song WHERE ID = ?", Params => (1 => +ID));
+   end Really_Delete;
 
    function Image (Item : Field_Values) return String
    is
@@ -610,6 +803,16 @@ package body SMM.Database is
    is begin
       return Position.Cursor.Value (ID_Field);
    end ID_String;
+
+   function Modified (Position : in Cursor) return Time_String
+   is begin
+      return Position.Cursor.Value (Modified_Field);
+   end Modified;
+
+   function Deleted (Position : in Cursor) return Time_String
+   is begin
+      return Position.Cursor.Value (Deleted_Field);
+   end Deleted;
 
    function File_Name (Position : in Cursor) return String
    is begin

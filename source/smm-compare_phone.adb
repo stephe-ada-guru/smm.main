@@ -30,7 +30,6 @@ with Ada.Text_IO; use Ada.Text_IO;
 with SAL.Config_Files;
 with SAL.Gen_Trimmed_Image;
 with SAL.Gen_Unbounded_Definite_Red_Black_Trees;
-with SMM.Database;
 procedure SMM.Compare_Phone
   (Source_Root    : in     String;
    Phone_Filename : in     String;
@@ -73,7 +72,7 @@ is
 
    Current_Dir : Ada.Strings.Unbounded.Unbounded_String;
 
-   Last_Compare_Time_String : constant SMM.Database.Time_String   := SAL.Config_Files.Read (Config, "compare_phone");
+   Last_Compare_Time_String : constant SMM.Time_String   := SAL.Config_Files.Read (Config, "compare_phone");
    Last_Compare             : constant Ada.Calendar.Time := Ada.Calendar.Formatting.Value (Last_Compare_Time_String);
 begin
    Open (Phone_File, In_File, Phone_Filename);

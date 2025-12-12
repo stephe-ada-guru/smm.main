@@ -32,7 +32,7 @@ package SMM.Compare_Playlist is
       Key          => Identity,
       Key_Compare  => Song_Name_Compare);
 
-   function Song_ID_Compare is new SAL.Gen_Compare_Integer (SMM.Database.Song_ID);
+   function Song_ID_Compare is new SAL.Gen_Compare_Integer (SMM.Song_ID);
 
    procedure Compare_To_DB
      (DB           : in SMM.Database.Database;

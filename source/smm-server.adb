@@ -177,7 +177,7 @@ package body SMM.Server is
         " alt=""" & Label & """" & (if Class = "" then "" else " class=""" & Class & """") & ">";
    end Server_Data_Img_Set;
 
-   function Days_Ago (Date : in Database.Time_String) return String
+   function Days_Ago (Date : in Time_String) return String
    is
       use Ada.Calendar;
       use Ada.Calendar.Formatting;
@@ -185,7 +185,7 @@ package body SMM.Server is
       Date_1 : constant Time := Value (Date);
       Today  : constant Time := Ada.Calendar.Clock;
    begin
-      if Date = SMM.Database.Default_Time_String then
+      if Date = SMM.Default_Time_String then
          return "-";
       else
          return Integer'Image (Integer ((Today - Date_1) / Seconds_Per_Day));
