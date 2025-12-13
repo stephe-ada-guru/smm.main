@@ -77,17 +77,16 @@ really-clean : clean
 $(ALIRE_EXEC_DIR)/smm.exe : force
 	alr $(ALIRE_ARGS) build $(ALIRE_BUILD_ARGS) -- $(GPRBUILD_ARGS) smm-driver.adb
 
-# db file name must match release/test.config
-empty_database_test_1 : create_schema.sql
+empty_database_test_1 : source/create_schema.sql
 	rm -f smm_test_1.db smm_test_1.config
-	sqlite3 -echo -init ../source/create_schema.sql smm_test_1.db ".quit"
+	sqlite3 -echo -init source/create_schema.sql smm_test_1.db ".quit"
 	echo "Database_File=smm_test_1.db" > smm_test_1.config
 	echo "Server_IP=$(SERVER_IP)" >> smm_test_1.config
 	echo "Server_Port=$(SERVER_PORT)" >> smm_test_1.config
 
-empty_database_test_2 : create_schema.sql
+empty_database_test_2 : source/create_schema.sql
 	rm -f smm_test_2.db smm_test_2.config
-	sqlite3 -echo -init ../source/create_schema.sql smm_test_2.db ".quit"
+	sqlite3 -echo -init source/create_schema.sql smm_test_2.db ".quit"
 	echo "Database_File=smm_test_2.db" > smm_test_2.config
 	echo "Server_IP=$(SERVER_IP)" >> smm_test_2.config
 	echo "Server_Port=$(SERVER_PORT)" >> smm_test_2.config
@@ -102,7 +101,7 @@ t2 : $(ALIRE_EXEC_DIR)/debug_web_server.exe
 	$(ALIRE_EXEC_DIR)/debug_web_server.exe GET "id" "file=Christine%20Lavin/Happydance%20of%20the%20Zenophobe/01%20The%20Most%20Polite%20City%20in%20the%20World.mp3"
 
 t3 : $(ALIRE_EXEC_DIR)/test_one_harness.exe
-	$(ALIRE_EXEC_DIR)/test_one_harness.exe
+	$(ALIRE_EXEC_DIR)/test_one_harness.exe $(VERBOSITY)
 
 .PHONEY : t1 t2 t3
 

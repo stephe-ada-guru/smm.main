@@ -18,8 +18,9 @@
 
 pragma License (GPL);
 
-with Ada.Text_IO;
 with Ada.Exceptions;
+with Ada.Text_IO;
+with GNAT.Traceback.Symbolic;
 with SAL;
 package body SMM.Database.Diff is
 
@@ -426,6 +427,9 @@ package body SMM.Database.Diff is
             Diff.Local_DB.Apply (Get (Local_Changes, I));
          exception
          when E : others =>
+            if Diff.Verbosity > 1 then
+               Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, GNAT.Traceback.Symbolic.Symbolic_Traceback (E));
+            end if;
             raise SAL.Programmer_Error with
               "Local apply: " & Exception_Name (E) & ": " &
               Exception_Message (E)  & ": " &
@@ -444,6 +448,9 @@ package body SMM.Database.Diff is
             Diff.Remote_DB.Apply (Get (Remote_Changes, I));
          exception
          when E : others =>
+            if Diff.Verbosity > 1 then
+               Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, GNAT.Traceback.Symbolic.Symbolic_Traceback (E));
+            end if;
             raise SAL.Programmer_Error with "Remote apply: " & Exception_Name (E) & ": " & Exception_Message (E);
          end;
       end loop;

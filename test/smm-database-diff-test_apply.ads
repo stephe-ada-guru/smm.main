@@ -19,7 +19,7 @@
 with AUnit.Test_Cases;
 package SMM.Database.Diff.Test_Apply is
 
-   type Test_Case is new AUnit.Test_Cases.Test_Case with null record;
+   type Test_Case (Verbosity : Integer) is new AUnit.Test_Cases.Test_Case with null record;
 
    overriding procedure Register_Tests (T : in out Test_Case);
 

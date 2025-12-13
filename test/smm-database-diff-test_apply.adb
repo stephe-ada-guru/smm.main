@@ -42,7 +42,6 @@ package body SMM.Database.Diff.Test_Apply is
 
    procedure Insert (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
    is
-      pragma Unreferenced (T);
       use GNATCOLL.JSON;
       use AUnit.Checks;
 
@@ -52,25 +51,27 @@ package body SMM.Database.Diff.Test_Apply is
       Song_1 : constant JSON_Value := Read
         ("{""ID"":1, " &
            """Modified"":""2000-01-02 00:00:00"", " &
-           """Data"":{" &
+           """File_Name"":""Arthur/C./Clarke.mp3"", " &
+           """Category"":""vocal"", " &
            """Album_Artist"":""Arthur"", " &
            """Album"":""C."", " &
-           """Title"":""Clarke""}}");
+           """Title"":""Clarke""}");
 
       Song_2 : constant JSON_Value := Read
         ("{""ID"":2, " &
            """Modified"":""2000-01-02 00:00:00"", " &
-           """Data"":{" &
+           """File_Name"":""Isaac/Asimov.mp3"", " &
+           """Category"":""vocal"", " &
            """Album_Artist"":""Isaac"", " &
            --  no album
-           """Title"":""Asimov""}}");
+           """Title"":""Asimov""}");
 
       Diff : Diff_Type :=
         (Local_DB      => Local_DB'Access,
          Remote_DB     => Remote_DB'Access,
          Sync_ID       => Invalid_Song_ID,
          Show_Progress => null,
-         Verbosity     => 0);
+         Verbosity     => Test_Case (T).Verbosity);
 
    begin
       Append (Local_Changes, To_Insert (Song_1));
@@ -94,44 +95,70 @@ package body SMM.Database.Diff.Test_Apply is
 
    procedure Update_Delete (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
    is
-      pragma Unreferenced (T);
       use GNATCOLL.JSON;
 
       Local_Changes  : JSON_Array;
       Remote_Changes : JSON_Array;
 
+      Song_1 : constant JSON_Value := Read
+        ("{""ID"":1, " &
+           """Modified"":""2000-01-02 00:00:00"", " &
+           """File_Name"":""Arthur/C./Clarke.mp3"", " &
+           """Category"":""vocal"", " &
+           """Album_Artist"":""Arthur"", " &
+           """Album"":""C."", " &
+           """Title"":""Clarke""}");
+
+      Song_2 : constant JSON_Value := Read
+        ("{""ID"":2, " &
+           """Modified"":""2000-01-02 00:00:00"", " &
+           """File_Name"":""Isaac/Asimov.mp3"", " &
+           """Category"":""vocal"", " &
+           """Album_Artist"":""Isaac"", " &
+           --  no album
+           """Title"":""Asimov""}");
+
       Song_1_Delete : constant JSON_Value := Read -- delete
         ("{""ID"":1, " &
-           --  FIXME: Why no "Data" group?
            """Deleted"":""2000-01-02 02:00:00""}");
 
-      Song_1_Update : constant JSON_Value := Read -- Change modified, Album_Artist spelling
+      Song_2_Update : constant JSON_Value := Read -- Change modified, Album_Artist spelling
         ("{""ID"":2, " &
            """Modified"":""2000-01-02 01:00:00"", " &
-           """Data"":{" &
-           """Album_Artist"":""Art"", " &
-           """Album"":""C."", " &
-           """Title"":""Clarke""}}");
+           """Album_Artist"":""Is""}");
 
       Diff : Diff_Type :=
         (Local_DB'Access, Remote_DB'Access, Invalid_Song_ID,
          Show_Progress => null,
-         Verbosity     => 0);
+         Verbosity     => Test_Case (T).Verbosity);
    begin
+      Append (Local_Changes, To_Insert (Song_1));
+      Append (Local_Changes, To_Insert (Song_2));
+
+      Append (Remote_Changes, To_Insert (Song_1));
+      Append (Remote_Changes, To_Insert (Song_2));
+
+      Apply (Diff, Local_Changes, Remote_Changes);
+
+      Local_Changes  := Empty_Array;
+      Remote_Changes := Empty_Array;
+      --  Song 1 is deleted in local, updated in remote.
       --  Conflict is detected by Diff.Inc_Diff; tested in
       --  smm-database-diff-test_compute.adb. Here we are just testing
       --  Apply.
 
-      --  Song 1 is deleted in local, updated in remote.
       Append (Local_Changes, To_Update (Song_1_Delete));
 
-      Append (Remote_Changes, To_Update (Song_1_Update));
+      Append (Remote_Changes, To_Update (Song_2_Update));
 
       Apply (Diff, Local_Changes, Remote_Changes);
 
-      Check ("1", Local_DB, 1, Song_1_Delete);
+      Set_Field (Song_1, "Deleted", String'(Song_1_Delete.Get ("Deleted")));
+      Check ("1", Local_DB, 1, Song_1);
 
-      Check ("2", Remote_DB, 1, Song_1_Update);
+      Song_2.Set_Field ("Modified", String'(Song_2_Update.Get ("Modified")));
+      Song_2.Set_Field ("Album_Artist", String'(Song_2_Update.Get ("Album_Artist")));
+      Check ("2", Remote_DB, 2, Song_2);
    end Update_Delete;
 
    ----------

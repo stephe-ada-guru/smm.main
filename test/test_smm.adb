@@ -25,10 +25,14 @@ package body Test_SMM is
    procedure Empty_Database_1
    is
       Make_Args : GNAT.OS_Lib.Argument_List_Access :=
-        GNAT.OS_Lib.Argument_String_To_List ("--silent empty_database_test_1");
+        GNAT.OS_Lib.Argument_String_To_List ("--silent -f Alire.make empty_database_test_1");
       Success : Boolean;
    begin
-      GNAT.OS_Lib.Spawn ("make", Make_Args.all, Success);
+      GNAT.OS_Lib.Spawn
+        ("/usr/bin/make",
+         Make_Args.all,
+         Success => Success);
+
       GNAT.OS_Lib.Free (Make_Args);
 
       AUnit.Assertions.Assert (Success, "make empty_database_1 failed");
@@ -38,10 +42,14 @@ package body Test_SMM is
    procedure Empty_Database_2
    is
       Make_Args : GNAT.OS_Lib.Argument_List_Access :=
-        GNAT.OS_Lib.Argument_String_To_List ("--silent empty_database_test_2");
+        GNAT.OS_Lib.Argument_String_To_List ("--silent -f Alire.make empty_database_test_2");
       Success : Boolean;
    begin
-      GNAT.OS_Lib.Spawn ("make", Make_Args.all, Success);
+      GNAT.OS_Lib.Spawn
+        ("/usr/bin/make",
+         Make_Args.all,
+         Success => Success);
+
       GNAT.OS_Lib.Free (Make_Args);
 
       AUnit.Assertions.Assert (Success, "make empty_database_2 failed");

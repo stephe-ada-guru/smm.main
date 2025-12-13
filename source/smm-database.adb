@@ -43,7 +43,8 @@ package body SMM.Database is
          begin
             GNATCOLL.SQL.Exec.Rollback (DB.Connection);
 
-            raise Entry_Error with Msg;
+            raise Entry_Error with Msg & ": '" & Statement & "'" &
+              GNATCOLL.SQL.Exec.Image (DB.Connection.all, Params);
          end;
       end if;
    end Checked_Execute;
@@ -544,23 +545,30 @@ package body SMM.Database is
    procedure Update_JSON (DB : in Database; Value : in GNATCOLL.JSON.JSON_Value)
    is
       ID : constant Song_ID := Value.Get ("ID");
+      Cur : constant Cursor := DB.Find_ID (ID);
    begin
+      if not Has_Element (Cur) then
+         raise SAL.Not_Found with "ID =" & Song_ID'Image (ID);
+      end if;
+
       if Value.Has_Field ("Deleted") then
-         DB.Mark_Deleted (DB.Find_ID (ID), Value.Get ("Deleted"));
+         DB.Mark_Deleted (Cur, Value.Get ("Deleted"));
       else
+         --  Only values that are changed are in Value; Modified should always
+         --  be there.
          Insert_Update
            (DB,
-            Update       => False,
+            Update       => True,
             ID           => ID,
             Modified     => Value.Get ("Modified"),
-            File_Name    => Value.Get ("File_Name"),
-            Category     => Value.Get ("Category"),
+            File_Name    => (if Value.Has_Field ("File_Name") then Value.Get ("File_Name") else ""),
+            Category     => (if Value.Has_Field ("Category") then Value.Get ("Category") else ""),
             Artist       => (if Value.Has_Field ("Artist") then Value.Get ("Artist") else ""),
-            Album_Artist => Value.Get ("Album_Artist"),
+            Album_Artist => (if Value.Has_Field ("Album_Artist") then Value.Get ("Album_Artist") else ""),
             Composer     => (if Value.Has_Field ("Composer") then Value.Get ("Composer") else ""),
             Album        => (if Value.Has_Field ("Album") then Value.Get ("Album") else ""),
             Year         => (if Value.Has_Field ("Year") then Value.Get ("Year") else No_Year),
-            Title        => Value.Get ("Title"),
+            Title        => (if Value.Has_Field ("Title") then Value.Get ("Title") else ""),
             Track        => (if Value.Has_Field ("Track") then Value.Get ("Track") else No_Track),
             Last_Downloaded =>
               (if Value.Has_Field ("Last_Downloaded") then Value.Get ("Last_Downloaded") else Default_Time_String),
