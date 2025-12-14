@@ -66,8 +66,10 @@ package SMM.Database is
       Last_Downloaded : in Time_String := Default_Time_String;
       Prev_Downloaded : in Time_String := Default_Time_String;
       Play_Before     : in Song_ID     := Null_ID;
-      Play_After      : in Song_ID     := Null_ID);
-   --  Sets Modified to Clock, Deleted to Default_Time_String.
+      Play_After      : in Song_ID     := Null_ID;
+      Modified        : in Time_String := Default_Time_String);
+   --  If Modified = Default_Time_String, sets Modified to Clock. Sets
+   --  Deleted to Default_Time_String.
 
    procedure Insert_JSON (DB : in Database; Value : in GNATCOLL.JSON.JSON_Value);
    --  Calls Insert, getting values from Value.
@@ -275,7 +277,7 @@ package SMM.Database is
    function ID (Position : in Cursor) return Song_ID;
    function ID_String (Position : in Cursor) return String;
    function Modified (Position : in Cursor) return Time_String;
-   function Deleted (Position : in Cursor) return Time_String;
+   function Deleted (Position : in Cursor) return String; -- Empty string if null
    function File_Name (Position : in Cursor) return String;
    function Category (Position : in Cursor) return String;
    function Artist (Position : in Cursor) return String;

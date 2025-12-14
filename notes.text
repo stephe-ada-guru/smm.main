@@ -22,14 +22,16 @@ branches:
 (dvc-propagate-one "../smm.work_1" "../smm.main")
 
  current work
+alire-prj broken
+    simplify or fix
+
 sync db with phone
-    test_one_harness  compiles, fails
+    t3 VERBOSITY="1 smm-database-diff-test_compute.adb Empty_Remote 2"
 
+    Empty_Remote:
+        get_new returns empty list
+        because Deleted field is not null; it's 1958-... = Default_Time_String
 smm check
-    reports missing files that are not in fact missing
-        get a Debian computer
-    recompile with gnat 15?
-
     ignore missing album if in album_artist directory?
 
 smm check check that .mp3 is not corrupted

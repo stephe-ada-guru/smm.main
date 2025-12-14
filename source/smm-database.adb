@@ -155,7 +155,7 @@ package body SMM.Database is
       if Update then
          Statement := Statement & " WHERE ID = ?";
       else
-         Add_Param ("Deleted", Default_Time_String, "");
+         --  We leave Deleted null
          if Need_Comma then
             Statement := Statement & ", ";
             Need_Comma := True;
@@ -231,13 +231,14 @@ package body SMM.Database is
       Last_Downloaded : in Time_String := Default_Time_String;
       Prev_Downloaded : in Time_String := Default_Time_String;
       Play_Before     : in Integer     := Null_ID;
-      Play_After      : in Integer     := Null_ID)
+      Play_After      : in Integer     := Null_ID;
+      Modified        : in Time_String := Default_Time_String)
    is begin
       Insert_Update
         (DB,
          Update          => False,
          ID              => ID,
-         Modified        => UTC_Image (Ada.Calendar.Clock),
+         Modified        => (if Modified = Default_Time_String then UTC_Image (Ada.Calendar.Clock) else Modified),
          File_Name       => File_Name,
          Category        => Category,
          Artist          => Artist,
@@ -817,9 +818,12 @@ package body SMM.Database is
       return Position.Cursor.Value (Modified_Field);
    end Modified;
 
-   function Deleted (Position : in Cursor) return Time_String
+   function Deleted (Position : in Cursor) return String
    is begin
-      return Position.Cursor.Value (Deleted_Field);
+      return
+        (if Position.Cursor.Is_Null (Deleted_Field)
+         then ""
+         else Position.Cursor.Value (Deleted_Field));
    end Deleted;
 
    function File_Name (Position : in Cursor) return String
