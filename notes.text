@@ -22,15 +22,13 @@ branches:
 (dvc-propagate-one "../smm.work_1" "../smm.main")
 
  current work
-alire-prj broken
-    simplify or fix
-
 sync db with phone
     t3 VERBOSITY="1 smm-database-diff-test_compute.adb Empty_Remote 2"
 
-    Empty_Remote:
-        get_new returns empty list
-        because Deleted field is not null; it's 1958-... = Default_Time_String
+    smm-database-diff-test_compute.adb Empty_Remote, Same, New_Stuff pass
+        uncomment, run rest
+
+
 smm check
     ignore missing album if in album_artist directory?
 

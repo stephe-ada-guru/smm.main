@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2018, 2019 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2018, 2019, 2025 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -20,7 +20,6 @@ pragma License (GPL);
 
 with AUnit.Checks;
 with Ada.Directories;
-with SMM.Database;
 with Test_Utils; use Test_Utils;
 package body SMM.Database.Test is
 

@@ -103,7 +103,10 @@ t2 : $(ALIRE_EXEC_DIR)/debug_web_server.exe
 t3 : $(ALIRE_EXEC_DIR)/test_one_harness.exe
 	$(ALIRE_EXEC_DIR)/test_one_harness.exe $(VERBOSITY)
 
-.PHONEY : t1 t2 t3
+t_all : $(ALIRE_EXEC_DIR)/test_all_harness.exe
+	$(ALIRE_EXEC_DIR)/test_all_harness.exe $(VERBOSITY)
+
+.PHONEY : t1 t2 t3 t_all empty_database_test_1 empty_database_test_2
 
 # Local Variables:
 # eval: (unless dvc-doing-ediff-p (load-file "prj-alire.el"))

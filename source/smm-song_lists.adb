@@ -60,15 +60,14 @@ package body SMM.Song_Lists is
 
       Count_Limit  : constant Count_Type := Count_Type (Float (Song_Count) * Over_Select_Ratio);
 
-      DB_I      : SMM.Database.Cursor := SMM.Database.First_By_Last_Downloaded (DB); -- oldest date
-      New_Songs : Song_Lists.List;
-      New_Song_Added_Count : Count_Type := 0;
+      DB_I                 : SMM.Database.Cursor := SMM.Database.First_By_Last_Downloaded (DB); -- oldest date
+      New_Song_Added_Count : Count_Type          := 0;
    begin
       loop
          exit when Songs.Length >= Count_Limit;
 
          if not DB_I.Has_Element then
-            raise SAL.Parameter_Error with "'" & Category & "' doesn't match" &
+            raise SAL.Parameter_Error with "'" & Category & "' doesn't match " &
               (if Songs.Length = 0 then "any" else "enough") & " songs";
          end if;
 
@@ -81,7 +80,7 @@ package body SMM.Song_Lists is
                   if Verbosity >= 2 then
                      Ada.Text_IO.Put_Line ("New:" & DB_I.ID'Image & " " & DB_I.Last_Downloaded);
                   end if;
-                  New_Songs.Append (DB_I.ID);
+                  Songs.Append (DB_I.ID);
                   New_Song_Added_Count := @ + 1;
                end if;
             else

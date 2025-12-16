@@ -141,7 +141,6 @@ package body SMM.Database.Diff.Test_Compute is
    begin
       --  Nothing in DB_Remote; DB_Local has data from Fill_Database. Doing
       --  Init_Remote, in 2 stages.
-
       Set_Expected (Max_Changes => 2);
       Check ("1 expected length", Length (Expected), 2);
       Init_Remote (Diff, Max_Changes => 2, Remote_Changes => Remote_Changes);
@@ -528,7 +527,7 @@ package body SMM.Database.Diff.Test_Compute is
       --  Register_Routine (T, Delete'Access, "Delete");
    end Register_Tests;
 
-   overriding procedure Set_Up_Case (T : in out Test_Case)
+   overriding procedure Set_Up (T : in out Test_Case)
    is begin
       Test_SMM.Empty_Database_1;
       Test_SMM.Empty_Database_2;
@@ -538,14 +537,14 @@ package body SMM.Database.Diff.Test_Compute is
       Fill_Database (DB_1);
 
       Open (DB_2, "smm_test_2.db");
-   end Set_Up_Case;
+   end Set_Up;
 
-   overriding procedure Tear_Down_Case (T : in out Test_Case)
+   overriding procedure Tear_Down (T : in out Test_Case)
    is
       pragma Unreferenced (T);
    begin
       Database_Remote.Free (DB_Remote);
       Database_Remote.Free (DB_Local);
-   end Tear_Down_Case;
+   end Tear_Down;
 
 end SMM.Database.Diff.Test_Compute;

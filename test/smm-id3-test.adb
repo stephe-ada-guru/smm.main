@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2004, 2016, 2017, 2018 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2004, 2016, 2017, 2018, 2025 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -21,7 +21,6 @@ pragma License (GPL);
 with AUnit.Checks;
 with Ada.Streams.Stream_IO;
 with SAL.Interfaces_More.AUnit;
-with SMM.ID3;
 package body SMM.ID3.Test is
 
    procedure Check is new AUnit.Checks.Gen_Check_Discrete (Ada.Streams.Stream_IO.Count);

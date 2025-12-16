@@ -25,8 +25,8 @@ package SMM.Database.Diff.Test_Compute is
 
    overriding function Name (T : Test_Case) return AUnit.Message_String;
 
-   overriding procedure Set_Up_Case (T : in out Test_Case);
+   overriding procedure Set_Up (T : in out Test_Case);
 
-   overriding procedure Tear_Down_Case (T : in out Test_Case);
+   overriding procedure Tear_Down (T : in out Test_Case);
 
 end SMM.Database.Diff.Test_Compute;

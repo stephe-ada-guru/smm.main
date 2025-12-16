@@ -29,17 +29,15 @@ with Ada.Exceptions;
 with Ada.Strings.Unbounded;
 with Ada.Text_IO;
 with GNAT.Traceback.Symbolic;
-with SMM.Database.Diff.Test_Apply;
+with SMM;
+with Test_Least_Recent;
 procedure Test_One_Harness
 is
    --  command line arguments:
-   Usage : constant String := "[<verbose> [test_name [routine_name [debug]]]";
+   Usage : constant String := "[<aunit verbose> [test_name [routine_name [smm/test verbosity]]]";
    --  <verbose> is 1 | 0; 1 lists each enabled test/routine name before running it
    --
    --  test_name, routine_name can be '' to set trace for all routines.
-
-   Debug : Integer;
-   pragma Unreferenced (Debug);
 
    Filter : aliased AUnit.Test_Filters.Verbose.Filter;
 
@@ -73,11 +71,16 @@ begin
          Filter.Routine_Name := Ada.Strings.Unbounded.To_Unbounded_String (Argument (3));
       end case;
 
-      Debug := (if Argument_Count >= 4 then Integer'Value (Argument (4)) else 0);
+      SMM.Verbosity := (if Argument_Count >= 4 then Integer'Value (Argument (4)) else 0);
    end;
 
-   Add_Test (Suite, AUnit.Test_Cases.Test_Case_Access'(new SMM.Database.Diff.Test_Apply.Test_Case));
+   Add_Test (Suite, AUnit.Test_Cases.Test_Case_Access'(new Test_Least_Recent.Test_Case));
 
+   --  When run from Alire.make, current directory is smm.work_1, so the
+   --  'make' commands to create empty dbs should work.
+   --
+   --  Ada.Text_IO.Put_Line ("current directory: " & Ada.Directories.Current_Directory);
+   --  Ada.Directories.Set_Directory ("../..");
    Run (Suite, Options, Result, Status);
 
    AUnit.Reporter.Text.Report (Reporter, Result);

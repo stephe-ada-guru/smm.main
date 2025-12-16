@@ -142,10 +142,6 @@ package body SMM.Database.Diff.Test_Apply is
 
       Local_Changes  := Empty_Array;
       Remote_Changes := Empty_Array;
-      --  Song 1 is deleted in local, updated in remote.
-      --  Conflict is detected by Diff.Inc_Diff; tested in
-      --  smm-database-diff-test_compute.adb. Here we are just testing
-      --  Apply.
 
       Append (Local_Changes, To_Update (Song_1_Delete));
 
@@ -179,7 +175,7 @@ package body SMM.Database.Diff.Test_Apply is
       Register_Routine (T, Update_Delete'Access, "Update_Delete");
    end Register_Tests;
 
-   overriding procedure Set_Up_Case (T : in out Test_Case)
+   overriding procedure Set_Up (T : in out Test_Case)
    is
       pragma Unreferenced (T);
    begin
@@ -188,6 +184,6 @@ package body SMM.Database.Diff.Test_Apply is
 
       Local_Disk_DB.Open ("smm_test_1.db");
       Remote_Disk_DB.Open ("smm_test_2.db");
-   end Set_Up_Case;
+   end Set_Up;
 
 end SMM.Database.Diff.Test_Apply;

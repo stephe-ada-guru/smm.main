@@ -386,7 +386,7 @@ package body SMM.Database is
       return Result : constant GNATCOLL.JSON.JSON_Value := GNATCOLL.JSON.Create_Object do
          Result.Set_Field ("ID", Cur.ID);
          if Cur.Modified /= Default_Time_String then Result.Set_Field ("Modified", Cur.Modified); end if;
-         if Cur.Deleted /= Default_Time_String then Result.Set_Field ("Deleted", Cur.Deleted); end if;
+         if Cur.Deleted /= "" then Result.Set_Field ("Deleted", Cur.Deleted); end if;
          Result.Set_Field ("File_Name", Cur.File_Name);
          Result.Set_Field ("Category", Cur.Category);
          if Cur.Artist /= "" then Result.Set_Field ("Artist", Cur.Artist); end if;

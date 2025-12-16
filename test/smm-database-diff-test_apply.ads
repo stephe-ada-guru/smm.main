@@ -25,6 +25,6 @@ package SMM.Database.Diff.Test_Apply is
 
    overriding function Name (T : Test_Case) return AUnit.Message_String;
 
-   overriding procedure Set_Up_Case (T : in out Test_Case);
+   overriding procedure Set_Up (T : in out Test_Case);
 
 end SMM.Database.Diff.Test_Apply;
