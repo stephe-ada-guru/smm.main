@@ -872,10 +872,15 @@ package body SMM.Server is
          --  From the search page or Emacs notes buffer
          declare
             URI_File : constant String := Ada.Directories.Simple_Name (Path);
-            Content_Length : constant Integer := Integer'Value (Ada.Environment_Variables.Value ("CONTENT_LENGTH"));
+            Content_Length : constant Integer :=
+              (if Ada.Environment_Variables.Exists ("CONTENT_LENGTH")
+               then Integer'Value (Ada.Environment_Variables.Value ("CONTENT_LENGTH"))
+               else 0);
             Content : String (1 .. Content_Length);
          begin
-            String'Read (Ada.Text_IO.Text_Streams.Stream (Ada.Text_IO.Standard_Input), Content);
+            if Content_Length > 0 then
+               String'Read (Ada.Text_IO.Text_Streams.Stream (Ada.Text_IO.Standard_Input), Content);
+            end if;
 
             if Debug then
                Ada.Text_IO.Put_Line
@@ -884,7 +889,8 @@ package body SMM.Server is
             end if;
 
             if URI_File = "update" then
-               return Handle_Update (Parse_Parameters (Content), Content);
+               --  So far no updates require Content.
+               return Handle_Update (Parse_Parameters (Query), Query);
             else
                return CGI_Status (S400, "unrecognized POST path '" & URI_File & "'");
             end if;
