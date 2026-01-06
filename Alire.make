@@ -58,8 +58,8 @@ $(SERVER_DATA)/% : source/%
 $(HOME)/.local/bin/% : $(ALIRE_EXEC_DIR)/%
 	cp $^ $@
 
-modify : $(ALIRE_EXEC_DIR)/modify_schema.exe modify-clean smm_new.db
-	$(ALIRE_EXEC_DIR)/modify_schema.exe /var/www/html/music_server_data/smm.db smm_new.db
+modify : $(ALIRE_EXEC_DIR)/smm-database-modify_schema.exe modify-clean smm_new.db
+	$(ALIRE_EXEC_DIR)/smm-database-modify_schema.exe /var/www/html/music_server_data/smm.db smm_new.db
 
 modify-clean :
 	rm -rf smm_new.db
@@ -100,6 +100,7 @@ t1 : $(ALIRE_EXEC_DIR)/smm.exe
 t2 : $(ALIRE_EXEC_DIR)/debug_web_server.exe
 	$(ALIRE_EXEC_DIR)/debug_web_server.exe GET "id" "file=Christine%20Lavin/Happydance%20of%20the%20Zenophobe/01%20The%20Most%20Polite%20City%20in%20the%20World.mp3"
 
+# VERBOSITY="1 smm-database-diff-test_compute.adb Collisions 2"
 t3 : $(ALIRE_EXEC_DIR)/test_one_harness.exe
 	$(ALIRE_EXEC_DIR)/test_one_harness.exe $(VERBOSITY)
 

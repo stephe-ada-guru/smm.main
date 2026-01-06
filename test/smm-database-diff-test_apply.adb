@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2004, 2016, 2018, 2019, 2025 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2004, 2016, 2018, 2019, 2025, 2026 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -51,20 +51,22 @@ package body SMM.Database.Diff.Test_Apply is
       Song_1 : constant JSON_Value := Read
         ("{""ID"":1, " &
            """Modified"":""2000-01-02 00:00:00"", " &
-           """File_Name"":""Arthur/C./Clarke.mp3"", " &
+           """Data"":" &
+           "{""File_Name"":""Arthur/C./Clarke.mp3"", " &
            """Category"":""vocal"", " &
            """Album_Artist"":""Arthur"", " &
            """Album"":""C."", " &
-           """Title"":""Clarke""}");
+           """Title"":""Clarke""}}");
 
       Song_2 : constant JSON_Value := Read
         ("{""ID"":2, " &
            """Modified"":""2000-01-02 00:00:00"", " &
-           """File_Name"":""Isaac/Asimov.mp3"", " &
+           """Data"":" &
+           "{""File_Name"":""Isaac/Asimov.mp3"", " &
            """Category"":""vocal"", " &
            """Album_Artist"":""Isaac"", " &
            --  no album
-           """Title"":""Asimov""}");
+           """Title"":""Asimov""}}");
 
       Diff : Diff_Type :=
         (Local_DB      => Local_DB'Access,
@@ -103,20 +105,22 @@ package body SMM.Database.Diff.Test_Apply is
       Song_1 : constant JSON_Value := Read
         ("{""ID"":1, " &
            """Modified"":""2000-01-02 00:00:00"", " &
-           """File_Name"":""Arthur/C./Clarke.mp3"", " &
+           """Data"":" &
+           "{""File_Name"":""Arthur/C./Clarke.mp3"", " &
            """Category"":""vocal"", " &
            """Album_Artist"":""Arthur"", " &
            """Album"":""C."", " &
-           """Title"":""Clarke""}");
+           """Title"":""Clarke""}}");
 
       Song_2 : constant JSON_Value := Read
         ("{""ID"":2, " &
            """Modified"":""2000-01-02 00:00:00"", " &
-           """File_Name"":""Isaac/Asimov.mp3"", " &
+           """Data"":" &
+           "{""File_Name"":""Isaac/Asimov.mp3"", " &
            """Category"":""vocal"", " &
            """Album_Artist"":""Isaac"", " &
            --  no album
-           """Title"":""Asimov""}");
+           """Title"":""Asimov""}}");
 
       Song_1_Delete : constant JSON_Value := Read -- delete
         ("{""ID"":1, " &
@@ -125,7 +129,18 @@ package body SMM.Database.Diff.Test_Apply is
       Song_2_Update : constant JSON_Value := Read -- Change modified, Album_Artist spelling
         ("{""ID"":2, " &
            """Modified"":""2000-01-02 01:00:00"", " &
-           """Album_Artist"":""Is""}");
+           """Data"":" &
+           "{""Album_Artist"":""Is""}}");
+
+      Song_2_Expected : constant JSON_Value := Read
+        ("{""ID"":2, " &
+           """Modified"":""2000-01-02 01:00:00"", " &
+           """Data"":" &
+           "{""File_Name"":""Isaac/Asimov.mp3"", " &
+           """Category"":""vocal"", " &
+           """Album_Artist"":""Is"", " &
+           --  no album
+           """Title"":""Asimov""}}");
 
       Diff : Diff_Type :=
         (Local_DB'Access, Remote_DB'Access, Invalid_Song_ID,
@@ -150,11 +165,8 @@ package body SMM.Database.Diff.Test_Apply is
       Apply (Diff, Local_Changes, Remote_Changes);
 
       Set_Field (Song_1, "Deleted", String'(Song_1_Delete.Get ("Deleted")));
-      Check ("1", Local_DB, 1, Song_1);
-
-      Song_2.Set_Field ("Modified", String'(Song_2_Update.Get ("Modified")));
-      Song_2.Set_Field ("Album_Artist", String'(Song_2_Update.Get ("Album_Artist")));
-      Check ("2", Remote_DB, 2, Song_2);
+      Check ("1", Local_DB, 1, Song_1_Delete);
+      Check ("2", Remote_DB, 2, Song_2_Expected);
    end Update_Delete;
 
    ----------

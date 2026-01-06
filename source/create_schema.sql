@@ -28,16 +28,16 @@ INSERT INTO Schema_Version (ID, Version) VALUES (1, 2);
 
 CREATE TABLE Song
 (ID              INTEGER NOT NULL,
- Modified        TEXT,
+ Modified        TEXT NOT NULL,
  Deleted         TEXT,
- File_Name       TEXT,
- Category        TEXT,
+ File_Name       TEXT NOT NULL,
+ Category        TEXT NOT NULL,
  Artist          TEXT,
- Album_Artist    TEXT,
+ Album_Artist    TEXT NOT NULL,
  Composer        TEXT,
  Album           TEXT,
  Year            INTEGER,
- Title           TEXT,
+ Title           TEXT NOT NULL,
  Track           INTEGER,
  
  Last_Downloaded TEXT,

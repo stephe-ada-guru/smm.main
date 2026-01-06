@@ -101,7 +101,7 @@ package SMM.Database_Remote is
       ID : in Song_ID)
      return GNATCOLL.JSON.JSON_Value is abstract;
    --  Get a JSON representation of the data at remote ID.
-   --  See books-database.ads Get_JSON for format.
+   --  See smm-database.ads Get_JSON for format.
    --
    --  Returns Invalid_ID_JSON if ID is invalid.
    --

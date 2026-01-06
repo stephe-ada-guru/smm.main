@@ -19,6 +19,7 @@
 pragma License (GPL);
 
 with AUnit.Assertions;
+with Ada.Text_IO;
 with GNAT.OS_Lib;
 package body Test_SMM is
 
@@ -55,5 +56,10 @@ package body Test_SMM is
       AUnit.Assertions.Assert (Success, "make empty_database_2 failed");
 
    end Empty_Database_2;
+
+   procedure Show_JSON (Value : in GNATCOLL.JSON.JSON_Value)
+   is begin
+      Ada.Text_IO.Put_Line (Value.Write);
+   end Show_JSON;
 
 end Test_SMM;

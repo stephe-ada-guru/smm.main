@@ -18,10 +18,14 @@
 
 pragma License (GPL);
 
+with GNATCOLL.JSON;
 package Test_SMM is
 
    procedure Empty_Database_1;
 
    procedure Empty_Database_2;
+
+   procedure Show_JSON (Value : in GNATCOLL.JSON.JSON_Value);
+   --  Put Value to Ada.Text_IO.Standard_Output; can be called from debugger.
 
 end Test_SMM;

@@ -2,7 +2,7 @@
 --
 --  See spec.
 --
---  Copyright (C) 2018 - 2020, 2025 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2018 - 2020, 2025, 2026 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -268,26 +268,30 @@ package body SMM.Database is
 
          DB.Mark_Deleted (DB.Find_ID (ID), Value.Get ("Deleted"));
       else
-         Insert_Update
-           (DB,
-            ID           => ID,
-            Update       => False,
-            Modified     => Value.Get ("Modified"),
-            File_Name    => Value.Get ("File_Name"),
-            Category     => Value.Get ("Category"),
-            Artist       => (if Value.Has_Field ("Artist") then Value.Get ("Artist") else ""),
-            Album_Artist => Value.Get ("Album_Artist"),
-            Composer     => (if Value.Has_Field ("Composer") then Value.Get ("Composer") else ""),
-            Album        => (if Value.Has_Field ("Album") then Value.Get ("Album") else ""),
-            Year         => (if Value.Has_Field ("Year") then Value.Get ("Year") else No_Year),
-            Title        => Value.Get ("Title"),
-            Track        => (if Value.Has_Field ("Track") then Value.Get ("Track") else No_Track),
-            Last_Downloaded =>
-              (if Value.Has_Field ("Last_Downloaded") then Value.Get ("Last_Downloaded") else Default_Time_String),
-            Prev_Downloaded =>
-              (if Value.Has_Field ("Prev_Downloaded") then Value.Get ("Prev_Downloaded") else Default_Time_String),
-            Play_Before => (if Value.Has_Field ("Play_Before") then Value.Get ("Play_Before") else Null_ID),
-            Play_After => (if Value.Has_Field ("Play_After") then Value.Get ("Play_After") else Null_ID));
+         declare
+            Data : constant GNATCOLL.JSON.JSON_Value := Value.Get ("Data");
+         begin
+            Insert_Update
+              (DB,
+               ID           => ID,
+               Update       => False,
+               Modified     => Value.Get ("Modified"),
+               File_Name    => Data.Get ("File_Name"),
+               Category     => Data.Get ("Category"),
+               Artist       => (if Data.Has_Field ("Artist") then Data.Get ("Artist") else ""),
+               Album_Artist => Data.Get ("Album_Artist"),
+               Composer     => (if Data.Has_Field ("Composer") then Data.Get ("Composer") else ""),
+               Album        => (if Data.Has_Field ("Album") then Data.Get ("Album") else ""),
+               Year         => (if Data.Has_Field ("Year") then Data.Get ("Year") else No_Year),
+               Title        => Data.Get ("Title"),
+               Track        => (if Data.Has_Field ("Track") then Data.Get ("Track") else No_Track),
+               Last_Downloaded =>
+                 (if Data.Has_Field ("Last_Downloaded") then Data.Get ("Last_Downloaded") else Default_Time_String),
+               Prev_Downloaded =>
+                 (if Data.Has_Field ("Prev_Downloaded") then Data.Get ("Prev_Downloaded") else Default_Time_String),
+               Play_Before => (if Data.Has_Field ("Play_Before") then Data.Get ("Play_Before") else Null_ID),
+               Play_After => (if Data.Has_Field ("Play_After") then Data.Get ("Play_After") else Null_ID));
+         end;
       end if;
    end Insert_JSON;
 
@@ -383,28 +387,40 @@ package body SMM.Database is
    is
       Cur : Cursor renames Position;
    begin
-      return Result : constant GNATCOLL.JSON.JSON_Value := GNATCOLL.JSON.Create_Object do
-         Result.Set_Field ("ID", Cur.ID);
-         if Cur.Modified /= Default_Time_String then Result.Set_Field ("Modified", Cur.Modified); end if;
-         if Cur.Deleted /= "" then Result.Set_Field ("Deleted", Cur.Deleted); end if;
-         Result.Set_Field ("File_Name", Cur.File_Name);
-         Result.Set_Field ("Category", Cur.Category);
-         if Cur.Artist /= "" then Result.Set_Field ("Artist", Cur.Artist); end if;
-         Result.Set_Field ("Album_Artist", Cur.Album_Artist);
-         if Cur.Composer /= "" then Result.Set_Field ("Composer", Cur.Composer); end if;
-         if Cur.Album /= "" then Result.Set_Field ("Album", Cur.Album); end if;
-         if Cur.Year /= No_Year then Result.Set_Field ("Year", Cur.Year); end if;
-         Result.Set_Field ("Title", Cur.Title);
-         if Cur.Track /= No_Track then Result.Set_Field ("Track", Cur.Track); end if;
+      if Cur.Deleted /= "" then
+         return Result : constant GNATCOLL.JSON.JSON_Value := GNATCOLL.JSON.Create_Object do
+            Result.Set_Field ("ID", Cur.ID);
+            Result.Set_Field ("Deleted", Cur.Deleted);
+         end return;
+      end if;
+
+      declare
+         Data : constant GNATCOLL.JSON.JSON_Value := GNATCOLL.JSON.Create_Object;
+      begin
+         Data.Set_Field ("File_Name", Cur.File_Name);
+         Data.Set_Field ("Category", Cur.Category);
+         if Cur.Artist /= "" then Data.Set_Field ("Artist", Cur.Artist); end if;
+         Data.Set_Field ("Album_Artist", Cur.Album_Artist);
+         if Cur.Composer /= "" then Data.Set_Field ("Composer", Cur.Composer); end if;
+         if Cur.Album /= "" then Data.Set_Field ("Album", Cur.Album); end if;
+         if Cur.Year /= No_Year then Data.Set_Field ("Year", Cur.Year); end if;
+         Data.Set_Field ("Title", Cur.Title);
+         if Cur.Track /= No_Track then Data.Set_Field ("Track", Cur.Track); end if;
          if Cur.Last_Downloaded /= Default_Time_String then
-            Result.Set_Field ("Last_Downloaded", Cur.Last_Downloaded);
+            Data.Set_Field ("Last_Downloaded", Cur.Last_Downloaded);
          end if;
          if Cur.Prev_Downloaded /= Default_Time_String then
-            Result.Set_Field ("Prev_Downloaded", Cur.Prev_Downloaded);
+            Data.Set_Field ("Prev_Downloaded", Cur.Prev_Downloaded);
          end if;
-         if Cur.Play_Before /= Null_ID then Result.Set_Field ("Play_Before", Cur.Play_Before); end if;
-         if Cur.Play_After /= Null_ID then Result.Set_Field ("Play_After", Cur.Play_After); end if;
-      end return;
+         if Cur.Play_Before /= Null_ID then Data.Set_Field ("Play_Before", Cur.Play_Before); end if;
+         if Cur.Play_After /= Null_ID then Data.Set_Field ("Play_After", Cur.Play_After); end if;
+
+         return Result : constant GNATCOLL.JSON.JSON_Value := GNATCOLL.JSON.Create_Object do
+            Result.Set_Field ("ID", Cur.ID);
+            if Cur.Modified /= Default_Time_String then Result.Set_Field ("Modified", Cur.Modified); end if;
+            Result.Set_Field ("Data", Data);
+         end return;
+      end;
    end Get_JSON;
 
    function First_By_ID (DB : in Database'Class) return Cursor
@@ -474,7 +490,7 @@ package body SMM.Database is
    is
       use GNATCOLL.SQL.Exec;
       Cur : Cursor := Checked_Fetch (DB, "SELECT ID FROM Song WHERE ID <= ?" &
-           " AND Modified > ? or Deleted > ? ORDER BY ID", (+ID, +Modified, +Modified));
+           " AND (Modified > ? or Deleted > ?) ORDER BY ID", (+ID, +Modified, +Modified));
    begin
       return Result : ID_Lists.List do
          loop
@@ -521,13 +537,14 @@ package body SMM.Database is
       Last_Downloaded : in Time_String := Default_Time_String;
       Prev_Downloaded : in Time_String := Default_Time_String;
       Play_Before     : in Integer     := Null_ID;
-      Play_After      : in Integer     := Null_ID)
+      Play_After      : in Integer     := Null_ID;
+      Modified        : in Time_String := Default_Time_String)
    is begin
       Insert_Update
         (DB,
          Update          => True,
          ID              => Position.ID,
-         Modified        => UTC_Image (Ada.Calendar.Clock),
+         Modified        => (if Modified = Default_Time_String then UTC_Image (Ada.Calendar.Clock) else Modified),
          File_Name       => File_Name,
          Category        => Category,
          Artist          => Artist,
@@ -555,28 +572,32 @@ package body SMM.Database is
       if Value.Has_Field ("Deleted") then
          DB.Mark_Deleted (Cur, Value.Get ("Deleted"));
       else
-         --  Only values that are changed are in Value; Modified should always
-         --  be there.
-         Insert_Update
-           (DB,
-            Update       => True,
-            ID           => ID,
-            Modified     => Value.Get ("Modified"),
-            File_Name    => (if Value.Has_Field ("File_Name") then Value.Get ("File_Name") else ""),
-            Category     => (if Value.Has_Field ("Category") then Value.Get ("Category") else ""),
-            Artist       => (if Value.Has_Field ("Artist") then Value.Get ("Artist") else ""),
-            Album_Artist => (if Value.Has_Field ("Album_Artist") then Value.Get ("Album_Artist") else ""),
-            Composer     => (if Value.Has_Field ("Composer") then Value.Get ("Composer") else ""),
-            Album        => (if Value.Has_Field ("Album") then Value.Get ("Album") else ""),
-            Year         => (if Value.Has_Field ("Year") then Value.Get ("Year") else No_Year),
-            Title        => (if Value.Has_Field ("Title") then Value.Get ("Title") else ""),
-            Track        => (if Value.Has_Field ("Track") then Value.Get ("Track") else No_Track),
-            Last_Downloaded =>
-              (if Value.Has_Field ("Last_Downloaded") then Value.Get ("Last_Downloaded") else Default_Time_String),
-            Prev_Downloaded =>
-              (if Value.Has_Field ("Prev_Downloaded") then Value.Get ("Prev_Downloaded") else Default_Time_String),
-            Play_Before => (if Value.Has_Field ("Play_Before") then Value.Get ("Play_Before") else Null_ID),
-            Play_After => (if Value.Has_Field ("Play_After") then Value.Get ("Play_After") else Null_ID));
+         declare
+            Data : constant GNATCOLL.JSON.JSON_Value := Value.Get ("Data");
+         begin
+            --  Only values that are changed are in Data; Value.Modified should always
+            --  be there.
+            Insert_Update
+              (DB,
+               Update       => True,
+               ID           => ID,
+               Modified     => Value.Get ("Modified"),
+               File_Name    => (if Data.Has_Field ("File_Name") then Data.Get ("File_Name") else ""),
+               Category     => (if Data.Has_Field ("Category") then Data.Get ("Category") else ""),
+               Artist       => (if Data.Has_Field ("Artist") then Data.Get ("Artist") else ""),
+               Album_Artist => (if Data.Has_Field ("Album_Artist") then Data.Get ("Album_Artist") else ""),
+               Composer     => (if Data.Has_Field ("Composer") then Data.Get ("Composer") else ""),
+               Album        => (if Data.Has_Field ("Album") then Data.Get ("Album") else ""),
+               Year         => (if Data.Has_Field ("Year") then Data.Get ("Year") else No_Year),
+               Title        => (if Data.Has_Field ("Title") then Data.Get ("Title") else ""),
+               Track        => (if Data.Has_Field ("Track") then Data.Get ("Track") else No_Track),
+               Last_Downloaded =>
+                 (if Data.Has_Field ("Last_Downloaded") then Data.Get ("Last_Downloaded") else Default_Time_String),
+               Prev_Downloaded =>
+                 (if Data.Has_Field ("Prev_Downloaded") then Data.Get ("Prev_Downloaded") else Default_Time_String),
+               Play_Before => (if Data.Has_Field ("Play_Before") then Data.Get ("Play_Before") else Null_ID),
+               Play_After => (if Data.Has_Field ("Play_After") then Data.Get ("Play_After") else Null_ID));
+         end;
       end if;
    end Update_JSON;
 

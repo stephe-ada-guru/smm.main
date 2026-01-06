@@ -2,7 +2,7 @@
 --
 --  Interface to SQLite3 database
 --
---  Copyright (C) 2018 - 2020, 2025 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2018 - 2020, 2025, 2026 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -72,10 +72,13 @@ package SMM.Database is
    --  Deleted to Default_Time_String.
 
    procedure Insert_JSON (DB : in Database; Value : in GNATCOLL.JSON.JSON_Value);
-   --  Calls Insert, getting values from Value.
+   --  Calls Insert, getting values from Value. Value must have structure
+   --  returned by Get_JSON.
 
    function Get_JSON (DB : in Database; ID : in Song_ID) return GNATCOLL.JSON.JSON_Value;
-   --  Return all known data for ID.
+   --  Return all known data for ID. Result structure is either {id,
+   --  deleted} or {id, modified, data: {...}}. This allows
+   --  comparing data without id, modified, deleted.
 
    function Index_Fields_Equal
      (DB        : in out Database;
@@ -142,7 +145,8 @@ package SMM.Database is
    function Has_Element (Position : in Cursor) return Boolean;
 
    function Get_JSON (Position : in Cursor) return GNATCOLL.JSON.JSON_Value;
-   --  Return all known data for Position.
+   --  Return all known data for Position. See Get_JSON (ID) for
+   --  structure of result.
 
    function First_By_ID (DB : in Database'Class) return Cursor;
    --  Increasing ID order.
@@ -198,14 +202,17 @@ package SMM.Database is
       Last_Downloaded : in Time_String := Default_Time_String;
       Prev_Downloaded : in Time_String := Default_Time_String;
       Play_Before     : in Song_ID     := Null_ID;
-      Play_After      : in Song_ID     := Null_ID);
+      Play_After      : in Song_ID     := Null_ID;
+      Modified        : in Time_String := Default_Time_String);
    --  Items that are the defaults are not updated.
    --  Cursor must be refetched to reflect changes.
    --
-   --  Sets Modified to Clock.
+   --  If Modified = Default_Time_String, sets Modified to Clock.
 
    procedure Update_JSON (DB : in Database; Value : in GNATCOLL.JSON.JSON_Value);
-   --  Calls Update, getting values from Value.
+   --  Calls Update, getting values from Value. Value must have structure
+   --  returned by DB.Get_JSON, except any fields other than ID, Modified
+   --  may be empty (not updated).
 
    procedure Mark_Deleted
      (DB       : in Database;
