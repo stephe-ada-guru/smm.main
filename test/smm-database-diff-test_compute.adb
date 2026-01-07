@@ -333,110 +333,75 @@ package body SMM.Database.Diff.Test_Compute is
       Check ("3 Remote", Remote_Changes, Empty_Array);
    end Update;
 
-   --  procedure Delete (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
-   --  is
-   --     pragma Unreferenced (T);
-   --     use Standard.AUnit.Checks;
-   --     use GNATCOLL.JSON;
+   procedure Delete (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
+   is
+      use GNATCOLL.JSON;
 
-   --     Diff                : Diff_Type;
-   --     Local_Changes       : JSON_Array;
-   --     Conflicts           : JSON_Array;
-   --     Remote_Changes      : JSON_Array;
-   --     Conflicts_Expected  : JSON_Array;
-   --     DB_1_Data_Expected  : JSON_Array;
-   --     DB_1_Links_Expected : JSON_Array;
-   --  begin
-   --     --  Delete previously synced records, also update a matching one
-   --     DB_2_Local;
+      Diff               : Diff_Type;
+      Local_Changes      : JSON_Array;
+      Conflicts          : JSON_Array;
+      Remote_Changes     : JSON_Array;
+      Conflicts_Expected : JSON_Array;
+      DB_1_Expected      : JSON_Array;
+   begin
+      --  DB_1 is local, filled on Jan_2
+      Fill_Database (DB_2);
 
-   --     Title_Table.Mark_Deleted (7, Jan_9_2000); -- delete in DB_2 only
-   --     Append
-   --       (DB_1_Data_Expected,
-   --        To_Update (Title, Read ("{""ID"":7, ""Deleted"":""2000-01-09 00:00:00""}")));
+      --  Delete in DB_2 only
+      DB_2.Mark_Deleted (DB_2.Find_ID (3), Jan_3_2000);
+      Append
+        (DB_1_Expected,
+         To_Update (Read ("{""ID"":3, ""Deleted"":""2000-01-03 00:00:00""}")));
 
-   --     Links (Author, Title).Fetch (3); -- Delete in DB_2 only
-   --     Check ("1 link first", Links (Author, Title).ID (Author), 2);
-   --     Check ("1 link last", Links (Author, Title).ID (Title), 7);
-   --     Links (Author, Title).Mark_Deleted (3, Jan_9_2000);
-   --     Append
-   --       (DB_1_Links_Expected,
-   --        To_Update (Author, Title, Read ("{""ID"":3, ""Deleted"":""2000-01-09 00:00:00""}")));
+      --  Delete in DB_1, update in DB_2
+      DB_1.Mark_Deleted (DB_1.Find_ID (1), Jan_3_2000);
 
-   --     Title_Table.Fetch (6); -- delete in DB_1, update in DB_2
-   --     Title_Table.Update ("Foundation and Empire", 1952, True, "a comment", "paperback", Jan_9_2000);
+      DB_2.Update (DB_1.Find_ID (1), Category => "vocal, best", Modified => Jan_3_2000);
 
-   --     DB_1_Local;
+      Append
+        (Conflicts_Expected,
+         To_Conflict
+           (Remote_JSON => DB_2.Get_JSON (1),
+            Local_JSON  => Read ("{""ID"":1, ""Deleted"":""2000-01-03 00:00:00""}")));
 
-   --     Title_Table.Mark_Deleted (6, Jan_9_2000); -- delete in DB_1, update in DB_2
-   --     Append
-   --       (Conflicts_Expected,
-   --        To_Conflict
-   --          (Title,
-   --           Local_JSON  => Read
-   --             ("{""ID"":6, ""Modified"":""2000-01-09 00:00:00"", " &
-   --                """Data"":{" &
-   --                """Title"":""Foundation and Empire"", " &
-   --                """Year"":1952, " &
-   --                """Comment"":""a comment"", " &
-   --                """Location"":""paperback""}}"),
-   --           Remote_JSON => Read ("{""ID"":6, ""Deleted"":""2000-01-09 00:00:00""}")));
+      Diff :=
+        (DB_Local, DB_Remote, Sync_ID => 3,
+         Show_Progress => (if Test_Case (T).Verbosity = 0 then null else SAL.Progress_Text_IO'Access),
+         Verbosity     => Test_Case (T).Verbosity);
 
-   --     DB_2_Local;
+      Inc_Diff (Diff, Jan_2_2000, Local_Changes, Conflicts, Remote_Changes);
 
-   --     Diff :=
-   --       (DB_Local, DB_Remote, Sync_Data_IDs, Sync_Link_IDs,
-   --        Show_Progress => null,
-   --        Verbosity     => 0);
+      Check ("1 Local", Local_Changes, DB_1_Expected);
+      Check ("1 Remote", Remote_Changes, Empty_Array);
+      Check ("1 Conflicts", Conflicts, Conflicts_Expected);
 
-   --     Inc_Diff_Data (Diff, Jan_8_2000, Local_Changes, Conflicts, Remote_Changes);
+      --  Diff in other direction.
+      DB_2_Local;
 
-   --     Check ("1 Local", Local_Changes, Empty_Array);
-   --     Check ("1 Remote", Remote_Changes, DB_1_Data_Expected);
-   --     Check ("1 Conflicts", Conflicts, Conflicts_Expected);
+      Diff :=
+        (DB_Local, DB_Remote, Sync_ID => 3,
+         Show_Progress => (if Test_Case (T).Verbosity = 0 then null else SAL.Progress_Text_IO'Access),
+         Verbosity     => Test_Case (T).Verbosity);
 
-   --     Inc_Diff_Links (Diff, Jan_8_2000, Local_Changes, Remote_Changes);
+      Inc_Diff (Diff, Jan_2_2000, Local_Changes, Conflicts, Remote_Changes);
 
-   --     Check ("1 links Local", Local_Changes, Empty_Array);
-   --     Check ("1 links Remote", Remote_Changes, DB_1_Links_Expected);
+      Conflicts_Expected := Empty_Array;
+      Append
+        (Conflicts_Expected,
+         To_Conflict
+           (Local_JSON  => DB_2.Get_JSON (1),
+            Remote_JSON => Read ("{""ID"":1, ""Deleted"":""2000-01-03 00:00:00""}")));
 
-   --     --  Diff in other direction.
-   --     DB_1_Local;
+      Check ("2 Local", Local_Changes, Empty_Array);
+      Check ("2 Conflicts", Conflicts, Conflicts_Expected);
+      Check ("2 Remote", Remote_Changes, DB_1_Expected);
 
-   --     Diff :=
-   --       (DB_Local, DB_Remote, Sync_Data_IDs, Sync_Link_IDs,
-   --        Show_Progress => null,
-   --        Verbosity     => 0);
-
-   --     Inc_Diff_Data (Diff, Jan_8_2000, Local_Changes, Conflicts, Remote_Changes);
-
-   --     Conflicts_Expected := Empty_Array;
-   --     Append
-   --       (Conflicts_Expected,
-   --        To_Conflict
-   --          (Title,
-   --           Remote_JSON  => Read
-   --             ("{""ID"":6, ""Modified"":""2000-01-09 00:00:00"", " &
-   --                """Data"":{" &
-   --                """Title"":""Foundation and Empire"", " &
-   --                """Year"":1952, " &
-   --                """Comment"":""a comment"", " &
-   --                """Location"":""paperback""}}"),
-   --           Local_JSON => Read ("{""ID"":6, ""Deleted"":""2000-01-09 00:00:00""}")));
-
-   --     Check ("2 Local", Local_Changes, DB_1_Data_Expected);
-   --     Check ("2 Conflicts", Conflicts, Conflicts_Expected);
-   --     Check ("2 Remote", Remote_Changes, Empty_Array);
-
-   --     Inc_Diff_Links (Diff, Jan_8_2000, Local_Changes, Remote_Changes);
-
-   --     Check ("2 links Local", Local_Changes, DB_1_Links_Expected);
-   --     Check ("2 links Remote", Remote_Changes, Empty_Array);
-
-   --     --  get dbs in sync for next test
-   --     Title_Table.Mark_Deleted (7, Jan_9_2000);
-   --     Links (Author, Title).Mark_Deleted (3, Jan_9_2000);
-   --  end Delete;
+      Diff.Apply (Local_Changes, Remote_Changes);
+      Inc_Diff (Diff, Jan_4_2000, Local_Changes, Conflicts, Remote_Changes);
+      Check ("3 Local", Local_Changes, Empty_Array);
+      Check ("3 Conflicts", Conflicts, Empty_Array);
+      Check ("3 Remote", Remote_Changes, Empty_Array);
+   end Delete;
 
    ----------
    --  Public bodies
@@ -457,7 +422,7 @@ package body SMM.Database.Diff.Test_Compute is
       Register_Routine (T, New_Stuff'Access, "New_Stuff");
       Register_Routine (T, Colliding'Access, "Colliding");
       Register_Routine (T, Update'Access, "Update");
-      --  Register_Routine (T, Delete'Access, "Delete");
+      Register_Routine (T, Delete'Access, "Delete");
    end Register_Tests;
 
    overriding procedure Set_Up (T : in out Test_Case)
