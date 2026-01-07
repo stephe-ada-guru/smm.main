@@ -2,7 +2,7 @@
 --
 --  see spec
 --
---  Copyright (C) 2016, 2018 - 2020, 2025  All Rights Reserved.
+--  Copyright (C) 2016, 2018 - 2020, 2025, 2026  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -144,7 +144,6 @@ package body SMM.Database.Diff is
                --
                --  May be recovering from previous modified/modified
                --  conflict. Don't include modified time in compare.
-               Progress.Next;
                declare
                   Local_JSON  : constant JSON_Value := Diff.Local_DB.Get_JSON (Current_ID);
                   Remote_JSON : constant JSON_Value := Diff.Remote_DB.Get_JSON (Current_ID);
@@ -271,7 +270,7 @@ package body SMM.Database.Diff is
 
          if Current_ID = Local_New_ID then
             if Current_ID = Remote_New_ID then
-               --  New in both. We check if the index fields are the
+               --  New in both. We check if the index fields are the FIXME: clean up comment
                --  same to avoid an insertion error in Apply. We could
                --  also check if this could be a simple update, but
                --  that's not likely in practice.

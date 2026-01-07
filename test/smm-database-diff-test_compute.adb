@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2004, 2016, 2018, 2019, 2025 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2004, 2016, 2018, 2019, 2025, 2026 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -19,17 +19,17 @@
 pragma License (GPL);
 
 with AUnit.Checks;
-with SMM.Database_Remote.Disk;
 with GNATCOLL.JSON.AUnit;
+with SAL.Progress_Text_IO;
+with SMM.Database_Remote.Disk;
 with Test_SMM;
 package body SMM.Database.Diff.Test_Compute is
 
-   --  Edit dbs on even days, sync on odd days
-   Jan_1_2000 : aliased constant Time_String := "2000-01-01 00:00:00";
-   Jan_2_2000 : aliased constant Time_String := "2000-01-02 00:00:00";
-   --  Jan_3_2000 : aliased constant Time_String := "2000-01-03 00:00:00";
-   Jan_4_2000 : aliased constant Time_String := "2000-01-04 00:00:00";
-   Jan_5_2000 : aliased constant Time_String := "2000-01-05 00:00:00";
+   Jan_1_2000 : constant Time_String := "2000-01-01 00:00:00";
+   Jan_2_2000 : constant Time_String := "2000-01-02 00:00:00";
+   Jan_3_2000 : constant Time_String := "2000-01-03 00:00:00";
+   Jan_4_2000 : constant Time_String := "2000-01-04 00:00:00";
+   Jan_5_2000 : constant Time_String := "2000-01-05 00:00:00";
    --  Jan_6_2000 : aliased constant Time_String := "2000-01-06 00:00:00";
    --  Jan_7_2000 : aliased constant Time_String := "2000-01-07 00:00:00";
    --  Jan_8_2000 : aliased constant Time_String := "2000-01-08 00:00:00";
@@ -43,8 +43,6 @@ package body SMM.Database.Diff.Test_Compute is
 
    DB_Local  : SMM.Database_Remote.Database_Access;
    DB_Remote : SMM.Database_Remote.Database_Access;
-
-   Sync_ID : Song_ID;
 
    procedure DB_1_Local
    is begin
@@ -96,9 +94,6 @@ package body SMM.Database.Diff.Test_Compute is
       Insert_Song (DB, 3, "Stanley Kubrick/2001.mp3", "Stanley Kubrick", "", "2001", Jan_2_2000);
 
       --  No edits yet.
-
-      --  No sync yet.
-      Sync_ID := Invalid_Song_ID;
    end Fill_Database;
 
    procedure Check
@@ -121,9 +116,10 @@ package body SMM.Database.Diff.Test_Compute is
       List : ID_Lists.List;
 
       Diff : Diff_Type :=
-        (DB_Local, DB_Remote, Sync_ID,
-         Show_Progress  => null,
-         Verbosity      => Test_Case (T).Verbosity);
+        (DB_Local, DB_Remote,
+         Sync_ID       => Invalid_Song_ID,
+         Show_Progress => null,
+         Verbosity     => Test_Case (T).Verbosity);
 
       Remote_Changes : JSON_Array;
       Expected       : JSON_Array;
@@ -195,8 +191,6 @@ package body SMM.Database.Diff.Test_Compute is
       Last_ID : constant Song_ID := DB_1.Last_ID;
    begin
       --  New stuff in local (= DB_1)
-      Sync_ID := Last_ID;
-
       Insert_Song (DB_1, Last_ID + 1, "Isaac Asimov/Pebble in the Sky/Early Earth vs Trantor.mp3",
                    "Isaac Asimov", "Pebble in the Sky", "Early Earth vs Trantor", Jan_4_2000);
       Append (Expected, To_Insert (DB_1.Get_JSON (Last_ID + 1)));
@@ -210,9 +204,10 @@ package body SMM.Database.Diff.Test_Compute is
       Append (Expected, To_Insert (DB_1.Get_JSON (Last_ID + 3)));
 
       Diff :=
-        (DB_Local, DB_Remote, Sync_ID,
-         Show_Progress  => null,
-         Verbosity      => Test_Case (T).Verbosity);
+        (DB_Local, DB_Remote,
+         Sync_ID       => Last_ID,
+         Show_Progress => null,
+         Verbosity     => Test_Case (T).Verbosity);
 
       Inc_Diff (Diff, Jan_5_2000, Local_Changes, Conflicts, Remote_Changes);
 
@@ -221,136 +216,72 @@ package body SMM.Database.Diff.Test_Compute is
       Check ("1 Remote", Remote_Changes, Expected);
    end New_Stuff;
 
-   --  procedure Colliding (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
-   --  is
-   --     pragma Unreferenced (T);
-   --     use GNATCOLL.JSON;
-   --     use Standard.AUnit.Checks;
+   procedure Colliding (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
+   is
+      use GNATCOLL.JSON;
+      use Standard.AUnit.Checks;
 
-   --     Diff               : Diff_Type;
-   --     Local_Changes      : JSON_Array;
-   --     Conflicts          : JSON_Array;
-   --     Remote_Changes     : JSON_Array;
-   --     Expected_Local     : JSON_Array;
-   --     Expected_Remote    : JSON_Array;
-   --     Expected_Conflicts : JSON_Array;
-   --  begin
-   --     --  DB_1 is local
+      Diff               : Diff_Type;
+      Local_Changes      : JSON_Array;
+      Conflicts          : JSON_Array;
+      Remote_Changes     : JSON_Array;
+      Expected_Local     : JSON_Array;
+      Expected_Remote    : JSON_Array;
+      Expected_Conflicts : JSON_Array;
+   begin
+      --  This has the same Song_Name in DB_1 id 1. We then modify both to
+      --  different categories; a modified/modified conflict.
 
-   --     --  This has the same title index as New_Stuff DB_2 7, but lacks the
-   --     --  comment. It could be treated as an update, but this is not likely
-   --     --  in general, so we treat it as a modified/modified conflict.
+      Insert_Song (DB_2, 1, "Arthur/C./Clarke.mp3", "Arthur", "C.", "Clarke", Jan_2_2000);
+      DB_1.Update
+        (Position => (DB_1.Find_ID (1)),
+         Category => "SF",
+         Modified => Jan_3_2000);
+      DB_2.Update
+        (Position => (DB_1.Find_ID (1)),
+         Category => "rama",
+         Modified => Jan_3_2000);
 
-   --     Title_Table.Insert ("Pebble in the Sky", 1950, True, "", "paperback", Jan_4_2000); -- 7
-   --     Append
-   --       (Expected_Conflicts, To_Conflict
-   --          (Title,
-   --           Title_Table.Get_JSON,
-   --           Read
-   --             ("{""ID"":7, ""Modified"":""2000-01-02 00:00:00"", " &
-   --                """Data"":{" &
-   --                """Title"":""Pebble in the Sky"", " &
-   --                """Year"":1950, " &
-   --                """Comment"":""Early Earth vs Trantor"", " &
-   --                """Location"":""paperback""}}")
-   --          ));
+      Append
+        (Expected_Conflicts, To_Conflict
+           (Local_JSON  => DB_1.Get_JSON (1),
+            Remote_JSON => DB_2.Get_JSON (1)));
 
-   --     --  This has the same title index as New_Stuff DB_2 8, but lacks
-   --     --  a comment and has a conflicting location;
-   --     --  modified/modified conflict.
+      --  insert/insert conflict; renumber local, insert remote, insert local
+      Insert_Song
+        (DB_1, 4, "Joni Mitchell/Miles of Aisles/Richard.mp3",
+         "Joni Mitchell", "Miles of Aisles", "Richard", Jan_3_2000);
 
-   --     Title_Table.Insert ("2010", 1982, True, "back to Jupiter", "paperback", Jan_4_2000); -- 8
-   --     Append
-   --       (Expected_Conflicts,
-   --        To_Conflict
-   --          (Title,
-   --           Title_Table.Get_JSON,
-   --           Read
-   --             ("{""ID"":8, ""Modified"":""2000-01-02 00:00:00"", " &
-   --                """Data"":{" &
-   --                """Title"":""2010"", " &
-   --                """Year"":1982, " &
-   --                --  no comment
-   --                """Location"":""hardcover""}}") -- conflicting location
-   --          ));
+      Insert_Song
+        (DB_2, 4, "Joni Mitchell/Miles of Aisles/Circle Game.mp3",
+         "Joni Mitchell", "Miles of Aisles", "Circle Game", Jan_3_2000);
 
-   --     --  Different title index; renumber local, insert remote, insert local
-   --     Title_Table.Insert ("The Hammer of God", 1992, True, "", "", Jan_4_2000); -- 9b
+      Append (Expected_Local, To_Renumber (Old_ID => 4, New_ID => 5));
+      declare
+         Value : constant JSON_Value := DB_1.Get_JSON (4);
+      begin
+         Value.Set_Field ("ID", Song_ID'(5));
+         Append (Expected_Remote, To_Insert (Value));
+      end;
+      Append (Expected_Local, To_Insert (DB_2.Get_JSON (4)));
 
-   --     Append (Expected_Local, To_Renumber (Title, Old_ID => 9, New_ID => 10));
-   --     --  renumbers data 9b to 10, updates link 5b:2-9 to 6:2-10
+      Diff :=
+        (DB_Local, DB_Remote,
+         Sync_ID       => 3,
+         Show_Progress => (if Test_Case (T).Verbosity = 0 then null else SAL.Progress_Text_IO'Access),
+         Verbosity     => Test_Case (T).Verbosity);
 
-   --     Append
-   --       (Expected_Local,
-   --        To_Insert
-   --          (Title,
-   --           Read
-   --             ("{""ID"":9, ""Modified"":""2000-01-02 00:00:00"", " &
-   --                """Data"":{" &
-   --                """Title"":""Rendezvous With Rama"", " &
-   --                """Year"":1973, " &
-   --                """Comment"":""alien ship"", " &
-   --                """Location"":""hardcover""}}")));
-   --     Append
-   --       (Expected_Remote,
-   --        To_Insert
-   --          (Title,
-   --           Read
-   --             ("{""ID"":10, ""Modified"":""2000-01-04 00:00:00"", " &
-   --                """Data"":{" &
-   --                """Title"":""The Hammer of God"", " &
-   --                """Year"":1992}}")));
+      Inc_Diff (Diff, Jan_2_2000, Local_Changes, Conflicts, Remote_Changes);
 
-   --     Links (Author, Title).Insert ((2, 7), Jan_4_2000); -- 3 same
-   --     Links (Author, Title).Insert ((1, 8), Jan_4_2000); -- 4 same
-   --     Links (Author, Title).Insert ((2, 9), Jan_4_2000); -- 5b conflict
+      Check ("1 Local", Local_Changes, Expected_Local);
+      Check ("1 Conflicts", Conflicts, Expected_Conflicts);
+      Check ("1 Remote", Remote_Changes, Expected_Remote);
 
-   --     Diff :=
-   --       (DB_Local, DB_Remote, Sync_Data_IDs, Sync_Link_IDs,
-   --        Show_Progress => null,
-   --        Verbosity     => 0);
+      Diff.Apply (Local_Changes, Remote_Changes);
 
-   --     Inc_Diff_Data (Diff, Jan_3_2000, Local_Changes, Conflicts, Remote_Changes);
-
-   --     Check ("1 Local", Local_Changes, Expected_Local);
-   --     Check ("1 Conflicts", Conflicts, Expected_Conflicts);
-   --     Check ("1 Remote", Remote_Changes, Expected_Remote);
-
-   --     Diff.Apply (Local_Changes, Remote_Changes);
-
-   --     Inc_Diff_Links (Diff, Jan_3_2000, Local_Changes, Remote_Changes);
-
-   --     Append (Expected_Links_Local, To_Renumber (Author, Title, Old_ID => 5, New_ID => 6));
-   --     Append
-   --       (Expected_Links_Local,
-   --        To_Insert
-   --          (Author, Title,
-   --           Read ("{""ID"":5, ""Modified"":""2000-01-02 00:00:00"", ""Data"":{""Author"":1, ""Title"":9}}")));
-   --     Append
-   --       (Expected_Links_Remote,
-   --        To_Insert
-   --          (Author, Title,
-   --           Read ("{""ID"":6, ""Modified"":""2000-01-04 00:00:00"", ""Data"":{""Author"":2, ""Title"":10}}")));
-
-   --     Check ("1 links Local", Local_Changes, Expected_Links_Local);
-   --     Check ("1 links Remote", Remote_Changes, Expected_Links_Remote);
-
-   --     Diff.Apply (Local_Changes, Remote_Changes);
-
-   --     Diff.Update_IDs;
-   --     Sync_Data_IDs := Diff.Sync_Data_IDs;
-   --     Sync_Link_IDs := Diff.Sync_Link_IDs;
-
-   --     Check ("Sync_Data_IDs (Author)", Sync_Data_IDs (Author), 2);
-   --     Check ("Sync_Data_IDs (Title)", Sync_Data_IDs (Title), 10);
-   --     Check ("Sync_Link_IDs (Author, Title)", Sync_Link_IDs (Author, Title), 6);
-
-   --     --  Manually resolve the conflicts
-   --     Title_Table.Fetch (7);
-   --     Title_Table.Update ("Pebble in the Sky", 1950, True, "Early Earth vs Trantor", "paperback", Jan_7_2000);
-   --     Title_Table.Fetch (8);
-   --     Title_Table.Update ("2010", 1982, True, "", "hardcover", Jan_7_2000);
-   --  end Colliding;
+      Diff.Update_Sync_ID;
+      Check ("Sync_ID", Diff.Sync_ID, 5);
+   end Colliding;
 
    --  procedure Update (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
    --  is
@@ -522,7 +453,7 @@ package body SMM.Database.Diff.Test_Compute is
       Register_Routine (T, Empty_Remote'Access, "Empty_Remote");
       Register_Routine (T, Same'Access, "Same");
       Register_Routine (T, New_Stuff'Access, "New_Stuff");
-      --  Register_Routine (T, Colliding'Access, "Colliding");
+      Register_Routine (T, Colliding'Access, "Colliding");
       --  Register_Routine (T, Update'Access, "Update");
       --  Register_Routine (T, Delete'Access, "Delete");
    end Register_Tests;

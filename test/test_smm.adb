@@ -2,7 +2,7 @@
 --
 --  See spec.
 --
---  Copyright (C) 2025  All Rights Reserved.
+--  Copyright (C) 2025, 2026  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -61,5 +61,12 @@ package body Test_SMM is
    is begin
       Ada.Text_IO.Put_Line (Value.Write);
    end Show_JSON;
+
+   procedure Show_JSON_Array (Value : in GNATCOLL.JSON.JSON_Array)
+   is begin
+      for Val of Value loop
+         Ada.Text_IO.Put_Line (Val.Write);
+      end loop;
+   end Show_JSON_Array;
 
 end Test_SMM;

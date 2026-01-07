@@ -2,7 +2,7 @@
 --
 --  see spec.
 --
---  Copyright (C) 2016, 2018 - 2019, 2025  All Rights Reserved.
+--  Copyright (C) 2016, 2018 - 2019, 2025, 2026  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -44,7 +44,7 @@ package body SMM.Database_Remote.Disk is
             --  was used in the remote db. A later op will insert the remote
             --  values for Old_ID.
             DB.DB.Really_Delete (Old_ID);
-            New_Value.Set_Field ("ID", Trimmed_Image (New_ID));
+            New_Value.Set_Field ("ID", New_ID);
             DB.DB.Insert_JSON (New_Value);
 
             if New_Value.Has_Field ("Play_Before") then

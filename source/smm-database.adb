@@ -309,27 +309,31 @@ package body SMM.Database is
       Cur : constant Cursor := DB.Find_ID (ID);
    begin
       --  Fields involved in unique indices are ID, File_Name, Album_Artist, Album, Title
-      if ID = New_Value.Get ("ID") then
-         return True;
-      end if;
-
-      if Cur.File_Name = New_Value.Get ("File_Name") then
-         return True;
-      end if;
-
-      if Cur.Album_Artist = New_Value.Get ("Album_Artist") then
-         if Cur.Album = (if New_Value.Has_Field ("Album") then New_Value.Get ("Album") else "") then
-            if Cur.Title = New_Value.Get ("Title") then
-               return True;
-            else
-               return False;
-            end if;
-         else
-            return False;
-         end if;
-      else
+      if ID /= New_Value.Get ("ID") then
          return False;
       end if;
+
+      declare
+         Data : constant GNATCOLL.JSON.JSON_Value := New_Value.Get ("Data");
+      begin
+         if Cur.File_Name /= Data.Get ("File_Name") then
+            return False;
+         end if;
+
+         if Cur.Album_Artist /= Data.Get ("Album_Artist") then
+            return False;
+         end if;
+
+         if Cur.Album /= (if Data.Has_Field ("Album") then Data.Get ("Album") else "") then
+            return False;
+         end if;
+
+         if Cur.Title /= Data.Get ("Title") then
+            return False;
+         end if;
+
+         return True;
+      end;
    end Index_Fields_Equal;
 
    function UTC_Image (Item : in Ada.Calendar.Time) return Time_String
