@@ -270,10 +270,8 @@ package body SMM.Database.Diff is
 
          if Current_ID = Local_New_ID then
             if Current_ID = Remote_New_ID then
-               --  New in both. We check if the index fields are the FIXME: clean up comment
-               --  same to avoid an insertion error in Apply. We could
-               --  also check if this could be a simple update, but
-               --  that's not likely in practice.
+               --  New in both. We could also check if this could be a simple update,
+               --  but that's not likely in practice.
                declare
                   Local_JSON  : constant JSON_Value := Diff.Local_DB.Get_JSON (Current_ID);
                   Remote_JSON : constant JSON_Value := Diff.Remote_DB.Get_JSON (Current_ID);

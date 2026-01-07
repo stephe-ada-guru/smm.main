@@ -61,7 +61,6 @@ package body SMM.Database.Diff.Test_Compute is
       DB_Local := new SMM.Database_Remote.Disk.Database (DB_2'Access);
       DB_Remote := new SMM.Database_Remote.Disk.Database (DB_1'Access);
    end DB_2_Local;
-   pragma Unreferenced (DB_2_Local);
 
    procedure Insert_Song
      (DB           : in out SMM.Database.Database;
@@ -283,53 +282,56 @@ package body SMM.Database.Diff.Test_Compute is
       Check ("Sync_ID", Diff.Sync_ID, 5);
    end Colliding;
 
-   --  procedure Update (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
-   --  is
-   --     pragma Unreferenced (T);
-   --     use GNATCOLL.JSON;
+   procedure Update (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
+   is
+      use GNATCOLL.JSON;
 
-   --     Diff           : Diff_Type;
-   --     Local_Changes  : JSON_Array;
-   --     Conflicts      : JSON_Array;
-   --     Remote_Changes : JSON_Array;
-   --     Expected       : JSON_Array;
-   --  begin
-   --     --  DB_1 is local
+      Diff           : Diff_Type;
+      Local_Changes  : JSON_Array;
+      Conflicts      : JSON_Array;
+      Remote_Changes : JSON_Array;
+      Expected       : JSON_Array;
+   begin
+      --  DB_1 is local, filled on Jan_2
+      Fill_Database (DB_2);
 
-   --     --  Change comment in a previously synced record (drop "Early")
-   --     Title_Table.Fetch (7);
-   --     Title_Table.Update ("Pebble in the Sky", 1950, True, "Earth vs Trantor", "paperback", Jan_8_2000);
-   --     Append (Expected, To_Update (Title, Title_Table.Get_JSON));
+      --  change a previously synced record
+      DB_1.Update
+        (Position => (DB_1.Find_ID (1)),
+         Category => "SF",
+         Modified => Jan_3_2000);
+      Append (Expected, To_Update (DB_1.Get_JSON (1)));
 
-   --     --  Can't update links, so no test for that.
+      Diff :=
+        (DB_Local, DB_Remote, Sync_ID => 3,
+         Show_Progress => (if Test_Case (T).Verbosity = 0 then null else SAL.Progress_Text_IO'Access),
+         Verbosity     => Test_Case (T).Verbosity);
 
-   --     Diff :=
-   --       (DB_Local, DB_Remote, Sync_Data_IDs, Sync_Link_IDs,
-   --        Show_Progress => null,
-   --        Verbosity     => 0);
+      Inc_Diff (Diff, Jan_2_2000, Local_Changes, Conflicts, Remote_Changes);
 
-   --     Inc_Diff_Data (Diff, Jan_6_2000, Local_Changes, Conflicts, Remote_Changes);
+      Check ("1 Local", Local_Changes, Empty_Array);
+      Check ("1 Conflicts", Conflicts, Empty_Array);
+      Check ("1 Remote", Remote_Changes, Expected);
 
-   --     Check ("1 Local", Local_Changes, Empty_Array);
-   --     Check ("1 Conflicts", Conflicts, Empty_Array);
-   --     Check ("1 Remote", Remote_Changes, Expected);
+      DB_2_Local;
 
-   --     DB_2_Local;
+      Diff :=
+        (DB_Local, DB_Remote, Sync_ID => 3,
+         Show_Progress => (if Test_Case (T).Verbosity = 0 then null else SAL.Progress_Text_IO'Access),
+         Verbosity     => Test_Case (T).Verbosity);
 
-   --     Diff :=
-   --       (DB_Local, DB_Remote, Sync_Data_IDs, Sync_Link_IDs,
-   --        Show_Progress => null,
-   --        Verbosity     => 0);
+      Inc_Diff (Diff, Jan_2_2000, Local_Changes, Conflicts, Remote_Changes);
 
-   --     Inc_Diff_Data (Diff, Jan_6_2000, Local_Changes, Conflicts, Remote_Changes);
+      Check ("2 Local", Local_Changes, Expected);
+      Check ("2 Conflicts", Conflicts, Empty_Array);
+      Check ("2 Remote", Remote_Changes, Empty_Array);
 
-   --     Check ("2 Local", Local_Changes, Expected);
-   --     Check ("2 Conflicts", Conflicts, Empty_Array);
-   --     Check ("2 Remote", Remote_Changes, Empty_Array);
-
-   --     --  get dbs in sync for next test
-   --     Diff.Apply (Local_Changes, Remote_Changes);
-   --  end Update;
+      Diff.Apply (Local_Changes, Remote_Changes);
+      Inc_Diff (Diff, Jan_4_2000, Local_Changes, Conflicts, Remote_Changes);
+      Check ("3 Local", Local_Changes, Empty_Array);
+      Check ("3 Conflicts", Conflicts, Empty_Array);
+      Check ("3 Remote", Remote_Changes, Empty_Array);
+   end Update;
 
    --  procedure Delete (T : in out Standard.AUnit.Test_Cases.Test_Case'Class)
    --  is
@@ -454,7 +456,7 @@ package body SMM.Database.Diff.Test_Compute is
       Register_Routine (T, Same'Access, "Same");
       Register_Routine (T, New_Stuff'Access, "New_Stuff");
       Register_Routine (T, Colliding'Access, "Colliding");
-      --  Register_Routine (T, Update'Access, "Update");
+      Register_Routine (T, Update'Access, "Update");
       --  Register_Routine (T, Delete'Access, "Delete");
    end Register_Tests;
 

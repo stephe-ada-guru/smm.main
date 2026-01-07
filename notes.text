@@ -23,12 +23,11 @@ branches:
 
  current work
 sync db with phone
-    t3 VERBOSITY="1 smm-database-diff-test_compute.adb Collisions 2"
+    t3 VERBOSITY="1 smm-database-diff-test_compute.adb Update 2"
 
-    smm-database-diff-test_compute.adb Empty_Remote, Same, New_Stuff pass
+    smm-database-diff-test_compute.adb thru Update passing
         uncomment, run rest
 
-        collisions failing
 
 smm check
     ignore missing album if in album_artist directory?
