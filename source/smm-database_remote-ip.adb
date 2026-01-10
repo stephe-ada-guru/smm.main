@@ -2,7 +2,7 @@
 --
 --  see spec.
 --
---  Copyright (C) 2016, 2018 - 2020, 2025  All Rights Reserved.
+--  Copyright (C) 2016, 2018 - 2020, 2025, 2026  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -51,6 +51,8 @@ package body SMM.Database_Remote.IP is
    end Check_Ack;
 
    function Check_Ack (DB : in Database) return GNATCOLL.JSON.JSON_Value
+   --  Next message from DB is {Status, Data}. If Status is Ack, return
+   --  Data. Else raise Invalid_Operation.
    is
       use GNATCOLL.JSON;
       Msg : constant String := Get_Object (DB);
@@ -124,7 +126,7 @@ package body SMM.Database_Remote.IP is
       Msg.Set_Field ("ID", ID);
       Msg.Set_Field ("Modified", Modified);
       Send (DB, Msg.Write);
-      return To_List (Check_Ack (DB));
+      return To_List (Get (Check_Ack (DB), "List"));
    end Get_Modified;
 
    overriding function Get_New
@@ -140,7 +142,7 @@ package body SMM.Database_Remote.IP is
       Msg.Set_Field ("ID", ID);
       Msg.Set_Field ("Max_Count", Integer (Max_Count));
       Send (DB, Msg.Write);
-      return To_List (Check_Ack (DB));
+      return To_List (Get (Check_Ack (DB), "List"));
    end Get_New;
 
    overriding function Index_Fields_Equal
@@ -158,7 +160,8 @@ package body SMM.Database_Remote.IP is
      (DB               : in out Database;
       Action           : in     Actions;
       Display_Progress : in     Boolean;
-      Sync_Time        : in     Time_String := Default_Time_String)
+      Last_Sync_Time   : in     Time_String;
+      Last_Sync_ID     : in     Song_ID)
    is
       use GNATCOLL.JSON;
 
@@ -166,9 +169,8 @@ package body SMM.Database_Remote.IP is
    begin
       Msg.Set_Field (Prelude_Messages'Image (Role), Roles'Image (Compute));
       Msg.Set_Field (Prelude_Messages'Image (Database_Remote.Action), Actions'Image (Action));
-      if Sync_Time /= Default_Time_String then
-         Msg.Set_Field (Prelude_Messages'Image (Database_Remote.Sync_Time), Sync_Time);
-      end if;
+      Msg.Set_Field (Prelude_Messages'Image (Database_Remote.Sync_Time), Last_Sync_Time);
+      Msg.Set_Field (Prelude_Messages'Image (Database_Remote.Sync_ID), Last_Sync_ID);
       Msg.Set_Field (Prelude_Messages'Image (Database_Remote.Display_Progress), Boolean'Image (Display_Progress));
       Send (DB, Msg.Write);
 

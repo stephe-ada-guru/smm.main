@@ -5,7 +5,7 @@
 --  All times sent over a network connection are in UTC (Greenwich time zone).
 --
 --
---  Copyright (C) 2016, 2018 - 2019, 2025  All Rights Reserved.
+--  Copyright (C) 2016, 2018 - 2019, 2025, 2026  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -37,7 +37,7 @@ package SMM.Database_Remote is
    --
    --  Remote responds to Operations.
 
-   type Prelude_Messages is (Display_Progress, Role, Action, Sync_Time);
+   type Prelude_Messages is (Display_Progress, Role, Action, Sync_Time, Sync_ID);
 
    type Actions is (Init_Remote, Resume_Init_Remote, Sync_Incremental);
    subtype Init_Actions is Actions range Init_Remote .. Resume_Init_Remote;
@@ -46,7 +46,7 @@ package SMM.Database_Remote is
      (Quit,
       Get,
       Get_Last_ID,
-      Get_Modified,
+      Get_Modified, -- ID, Modified; return ids > ID and modified > Modified
       Get_New,
       Conflict,
       Progress,
@@ -91,10 +91,6 @@ package SMM.Database_Remote is
    type Database is abstract new Ada.Finalization.Limited_Controlled with null record;
    type Database_Access is access all Database'Class;
    procedure Free (Pointer : in out Database_Access);
-
-   --  Initialize should establish a connection to a remote database, or raise an exception.
-   --
-   --  Finalize should disconnect from the remote database.
 
    function Get_JSON
      (DB : in Database;

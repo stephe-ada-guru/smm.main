@@ -325,6 +325,7 @@ package body SMM.Database.Diff is
 
    procedure Init_Remote
      (Diff           : in out Diff_Type;
+      Sync_ID        : in     Song_ID;
       Max_Changes    : in     Ada.Containers.Count_Type;
       Remote_Changes :    out GNATCOLL.JSON.JSON_Array)
    is
@@ -332,22 +333,11 @@ package body SMM.Database.Diff is
       use type Ada.Containers.Count_Type;
 
       Local_New     : ID_Lists.List;
-      Changes_Count : Ada.Containers.Count_Type := 0;
       Remote_New    : ID_Lists.List;
       Conflicts     : GNATCOLL.JSON.JSON_Array;
       Local_Changes : GNATCOLL.JSON.JSON_Array  := Empty_Array;
    begin
-      if Diff.Verbosity > 0 then
-         Ada.Text_IO.Put_Line ("new" & Song_ID'Image (Diff.Sync_ID));
-      end if;
-      Local_New := Diff.Local_DB.Get_New
-        (Diff.Sync_ID, Max_Changes - Changes_Count);
-
-      Changes_Count := Changes_Count + Local_New.Length;
-
-      if Local_New.Length > 0 then
-         Diff.Sync_ID := Max_ID (Local_New);
-      end if;
+      Local_New := Diff.Local_DB.Get_New (Sync_ID, Max_Changes);
 
       Remote_Changes := Empty_Array;
 
@@ -360,7 +350,8 @@ package body SMM.Database.Diff is
 
    procedure Inc_Diff
      (Diff           : in     Diff_Type;
-      Last_Sync_Time : in     Time_String;
+      Sync_Time      : in     Time_String;
+      Sync_ID        : in     Song_ID;
       Local_Changes  :    out GNATCOLL.JSON.JSON_Array;
       Conflicts      :    out GNATCOLL.JSON.JSON_Array;
       Remote_Changes :    out GNATCOLL.JSON.JSON_Array)
@@ -373,10 +364,10 @@ package body SMM.Database.Diff is
       Local_New       : ID_Lists.List;
       Remote_New      : ID_Lists.List;
    begin
-      Local_Modified  := Diff.Local_DB.Get_Modified (Diff.Sync_ID, Last_Sync_Time);
-      Remote_Modified := Diff.Remote_DB.Get_Modified (Diff.Sync_ID, Last_Sync_Time);
-      Local_New       := Diff.Local_DB.Get_New (Diff.Sync_ID);
-      Remote_New      := Diff.Remote_DB.Get_New (Diff.Sync_ID);
+      Local_Modified  := Diff.Local_DB.Get_Modified (Sync_ID, Sync_Time);
+      Remote_Modified := Diff.Remote_DB.Get_Modified (Sync_ID, Sync_Time);
+      Local_New       := Diff.Local_DB.Get_New (Sync_ID);
+      Remote_New      := Diff.Remote_DB.Get_New (Sync_ID);
 
       Local_Changes  := Empty_Array;
       Conflicts      := Empty_Array;
@@ -414,26 +405,28 @@ package body SMM.Database.Diff is
          Intervals => 100,
          Show      => Diff.Show_Progress);
    begin
-      Progress.Label ("Apply local changes");
-      for I in 1 .. Length (Local_Changes) loop
-         begin
-            Progress.Next;
-            if Diff.Verbosity > 1 then
-               Ada.Text_IO.Put_Line (Get (Local_Changes, I).Write);
-            end if;
-            Diff.Local_DB.Apply (Get (Local_Changes, I));
-         exception
-         when E : others =>
-            if Diff.Verbosity > 1 then
-               Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, GNAT.Traceback.Symbolic.Symbolic_Traceback (E));
-            end if;
-            raise SAL.Programmer_Error with
-              "Local apply: " & Exception_Name (E) & ": " &
-              Exception_Message (E)  & ": " &
-              Get (Local_Changes, I).Write;
-         end;
-      end loop;
-      Progress.Complete;
+      if Length (Local_Changes) > 0 then
+         Progress.Label ("Apply local changes");
+         for I in 1 .. Length (Local_Changes) loop
+            begin
+               Progress.Next;
+               if Diff.Verbosity > 1 then
+                  Ada.Text_IO.Put_Line (Get (Local_Changes, I).Write);
+               end if;
+               Diff.Local_DB.Apply (Get (Local_Changes, I));
+            exception
+            when E : others =>
+               if Diff.Verbosity > 1 then
+                  Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, GNAT.Traceback.Symbolic.Symbolic_Traceback (E));
+               end if;
+               raise SAL.Programmer_Error with
+                 "Local apply: " & Exception_Name (E) & ": " &
+                 Exception_Message (E)  & ": " &
+                 Get (Local_Changes, I).Write;
+            end;
+         end loop;
+         Progress.Complete;
+      end if;
 
       Progress.Label ("Apply remote changes");
       for I in 1 .. Length (Remote_Changes) loop
@@ -452,12 +445,6 @@ package body SMM.Database.Diff is
          end;
       end loop;
       Progress.Complete;
-
    end Apply;
-
-   procedure Update_Sync_ID (Diff : in out Diff_Type)
-   is begin
-      Diff.Sync_ID := Diff.Local_DB.Get_Last_ID;
-   end Update_Sync_ID;
 
 end SMM.Database.Diff;

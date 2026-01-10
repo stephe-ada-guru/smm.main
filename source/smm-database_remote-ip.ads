@@ -3,7 +3,7 @@
 --  Access to a remote database via books-remote_server.adb over an
 --  Internet connection.
 --
---  Copyright (C) 2016, 2018 - 2019, 2025  All Rights Reserved.
+--  Copyright (C) 2016, 2018 - 2019, 2025, 2026  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -37,13 +37,12 @@ package SMM.Database_Remote.IP is
      (DB               : in out Database;
       Action           : in     Actions;
       Display_Progress : in     Boolean;
-      Sync_Time        : in     Time_String := Default_Time_String);
+      Last_Sync_Time   : in     Time_String;
+      Last_Sync_ID     : in     Song_ID);
    --  Send setup message for host of DB in Compute role (thus local
    --  in Remote role), wait for acknowledge.
    --
-   --  If Sync_Time is not the default, it is sent to the DB host and
-   --  recorded as the synchronization time; this allows unit tests to
-   --  be repeatable.
+   --  Last_Sync_Time, Last_Sync_ID should be the time, max ID of the last sync.
 
    procedure Init_Remote (DB : in out Database);
    --  Send setup message for host of DB in Remote role (thus local in

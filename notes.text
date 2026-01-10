@@ -23,10 +23,19 @@ branches:
 
  current work
 sync db with phone
-    t3 VERBOSITY="1 smm-database-diff-test_compute.adb Update 2"
+    t3 VERBOSITY="1 smm-database_remote-ip-test.adb Test_sync 1"
 
-    smm-database-diff-test_compute.adb thru Update passing
-        uncomment, run rest
+    smm-database_remote-ip-test
+        handling exception Socket_Error doesn't seem to work; socket library calls kill or something?
+            works ok when not spawning remote manually, but then it doesn't connect.
+                it's acting like the spawned process is on hold?
+                    because gnat.spawn is broken!?
+
+            spawn works for test_sync?
+
+        can run server from bash
+
+        test_sync passes.
 
 
 smm check

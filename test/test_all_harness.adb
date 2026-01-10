@@ -2,7 +2,7 @@
 --
 --  Run all AUnit tests.
 --
---  Copyright (C) 2009, 2011 - 2013, 2015, 2016, 2018, 2020, 2022, 2025 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2009, 2011 - 2013, 2015, 2016, 2018, 2020, 2022, 2025, 2026 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -29,9 +29,10 @@ with Ada.Exceptions;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with Ada.Text_IO;
 with GNAT.Traceback.Symbolic;
-with SMM.Database.Diff.Test_Compute;
 with SMM.Database.Diff.Test_Apply;
+with SMM.Database.Diff.Test_Compute;
 with SMM.Database.Test;
+with SMM.Database_Remote.IP.Test;
 with SMM.ID3.Test;
 with Test_Least_Recent;
 with Test_Play_Before;
@@ -83,6 +84,10 @@ begin
    Add_Test (Suite, Test_Case_Access'(new SMM.Database.Diff.Test_Apply.Test_Case (SMM.Verbosity)));
    Add_Test (Suite, Test_Case_Access'(new SMM.Database.Diff.Test_Compute.Test_Case (SMM.Verbosity)));
    Add_Test (Suite, Test_Case_Access'(new SMM.Database.Test.Test_Case));
+   Add_Test (Suite, Test_Case_Access'(new SMM.Database_Remote.IP.Test.Test_Case
+                                        (Server_IP => "127.0.0.1",
+                                         Port      => 16#9002#,
+                                         Debug     => SMM.Verbosity)));
    Add_Test (Suite, Test_Case_Access'(new SMM.ID3.Test.Test_Case));
    Add_Test (Suite, Test_Case_Access'(new Test_Least_Recent.Test_Case));
    Add_Test (Suite, Test_Case_Access'(new Test_Play_Before.Test_Case));

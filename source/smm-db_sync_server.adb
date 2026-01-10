@@ -4,7 +4,7 @@
 --  SMM.Database.Diff algorithms or respond to
 --  SMM.Database_Remote.Operations.
 --
---  Copyright (C) 2016 - 2020, 2025 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2016 - 2020, 2025, 2026 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -20,7 +20,6 @@
 
 pragma License (GPL);
 
-with Ada.Calendar;
 with Ada.Command_Line;
 with Ada.Exceptions.Traceback;
 with Ada.Strings.Unbounded;
@@ -46,12 +45,9 @@ is
       Put_Line ("Database_File");
       Put_Line ("Server_IP");
       Put_Line ("Server_Port");
-      Put_Line ("<client_host_name>.Sync_Data_IDs");
    end Usage;
 
    Exit_Messages : exception;
-
-   Zero_Sync_Time : constant Time_String := "0000-00-00 00:00:00";
 
    Verbosity : Integer := 0;
 
@@ -70,16 +66,12 @@ is
    Role             : Roles;
    Compute_Action   : Actions;
    Client_Host_Name : Ada.Strings.Unbounded.Unbounded_String;
-   Sync_Time        : Time_String;
-
    Send_Progress : Boolean := False;
 
    Warm_Fuzzy : Integer := 1;
 
-   function Read is new SAL.Config_Files.Read_Integer (Song_ID);
-   procedure Write is new SAL.Config_Files.Write_Integer (Song_ID);
-
    procedure Get_Msg
+   --  Raises Socket_Error or End_Error is socket is closed (by peer).
    is
       Msg_String : constant String := String (Network_String'Input (Stream));
    begin
@@ -205,13 +197,6 @@ begin
                   end if;
                end if;
 
-               if Msg.Has_Field (Prelude_Messages'Image (Database_Remote.Sync_Time)) then
-                  --  Allows specifying Sync_Time in unit tests.
-                  Sync_Time := Msg.Get (Prelude_Messages'Image (Database_Remote.Sync_Time));
-               else
-                  Sync_Time := UTC_Image (Ada.Calendar.Clock);
-               end if;
-
                Send_Progress :=
                  (if Msg.Has_Field (Prelude_Messages'Image (Display_Progress))
                   then Boolean'Value (Msg.Get (Prelude_Messages'Image (Display_Progress)))
@@ -228,9 +213,6 @@ begin
                   --  the data sent successfully then.
 
                   declare
-                     use SMM.Database.Diff;
-                     use SAL.Config_Files;
-
                      Remote_DB : SMM.Database_Remote.IP.Database_Access :=
                        new SMM.Database_Remote.IP.Database (Stream, Verbosity);
 
@@ -241,20 +223,19 @@ begin
                         Remote_DB.Send_Progress (Label, Current, Max);
                      end Do_Send_Progress;
 
+                     Sync_ID : constant Integer := Msg.Get ("Sync_ID");
+
+                     --  We don't use Sync_Time for Init
+
                      Diff : SMM.Database.Diff.Diff_Type :=
                        (Local_DB      => Local_DB'Access,
                         Remote_DB     => Database_Remote.Database_Access (Remote_DB),
-                        Sync_ID =>
-                          (case Init_Actions'(Compute_Action) is
-                           when Init_Remote => Invalid_Song_ID,
-                           when Resume_Init_Remote => Read (Config, -Client_Host_Name & ".Sync_ID")),
                         Show_Progress => (if Send_Progress then Do_Send_Progress'Unrestricted_Access else null),
                         Verbosity     => Verbosity);
 
                      function Get_Count return Integer
                      is
                         Last_ID : constant Integer := Diff.Local_DB.Get_Last_ID;
-                        Sync_ID : constant Integer := Diff.Sync_ID;
                      begin
                         --  ignores deleted
                         if Last_ID = Invalid_Song_ID then
@@ -278,28 +259,17 @@ begin
                      --  client must restart operation; it will resume with the chunk that
                      --  failed.
 
-                     --  Record that init has not yet completed
-                     Write (Config, -Client_Host_Name & ".Sync_Time", Zero_Sync_Time);
-                     Write (Config, -Client_Host_Name & ".Sync_ID", Diff.Sync_ID);
-                     SAL.Config_Files.Flush (Config);
-
                      Progress.Label ("Init");
 
                      loop
-                        Diff.Init_Remote (Init_Chunk_Size, Remote_Changes);
+                        Diff.Init_Remote (Sync_ID, Init_Chunk_Size, Remote_Changes);
 
                         exit when Length (Remote_Changes) = 0;
 
                         Progress.Next (Length (Remote_Changes));
 
                         Diff.Apply (Local_Changes, Remote_Changes);
-
-                        Write (Config, -Client_Host_Name & ".Sync_ID", Diff.Sync_ID);
-                        SAL.Config_Files.Flush (Config);
                      end loop;
-
-                     Write (Config, -Client_Host_Name & ".Sync_Time", Sync_Time);
-                     SAL.Config_Files.Flush (Config);
 
                      Progress.Complete;
                      Remote_DB.Send_Quit;
@@ -309,7 +279,6 @@ begin
                when Sync_Incremental =>
                   declare
                      use SMM.Database.Diff;
-                     use SAL.Config_Files;
 
                      Remote_DB       : SMM.Database_Remote.IP.Database_Access :=
                        new SMM.Database_Remote.IP.Database (Stream, Verbosity);
@@ -322,48 +291,29 @@ begin
                      end Do_Send_Progress;
 
                      Diff : SMM.Database.Diff.Diff_Type :=
-                       (Local_DB  => Local_DB'Access,
-                        Remote_DB => Database_Remote.Database_Access (Remote_DB),
-
-                        --  Sync_ID is a cache of the remote state at end of last sync.
-                        --
-                        --  FIXME: remote IP may change; store remote state on remote, fetch
-                        --  it here! or send sync_ids with action.
-
-                        Sync_ID  => Read (Config, -Client_Host_Name & ".Sync_ID"),
-
+                       (Local_DB      => Local_DB'Access,
+                        Remote_DB     => Database_Remote.Database_Access (Remote_DB),
                         Show_Progress => (if Send_Progress then Do_Send_Progress'Unrestricted_Access else null),
                         Verbosity     => Verbosity);
-
-                     Last_Sync_Time : constant Time_String := Read
-                       (Config, -Client_Host_Name & ".Sync_Time", Default_Time_String);
 
                      Local_Changes  : GNATCOLL.JSON.JSON_Array;
                      Conflicts      : GNATCOLL.JSON.JSON_Array;
                      Remote_Changes : GNATCOLL.JSON.JSON_Array;
-
+                     Sync_ID        : constant Song_ID := Msg.Get (Prelude_Messages'Image (Database_Remote.Sync_ID));
+                     Sync_Time      : constant Time_String :=
+                       Msg.Get (Prelude_Messages'Image (Database_Remote.Sync_Time));
                   begin
-                     if Verbosity > 0 then
-                        Put_Line ("Last_Sync_Time : " & Last_Sync_Time);
-                        Put_Line ("Sync_ID  :" & Diff.Sync_ID'Image);
-                     end if;
-
                      --  No exception handler in these loops or blocks; if the socket dies,
                      --  client must restart operation; it will repeat all compares
-                     Diff.Inc_Diff (Last_Sync_Time, Local_Changes, Conflicts, Remote_Changes);
+                     Diff.Inc_Diff (Sync_Time, Sync_ID, Local_Changes, Conflicts, Remote_Changes);
 
                      if Send_Progress then
-                        --  if remote can display progress, it can display conflicts.
+                        --  We assume if remote can display progress, it can display
+                        --  conflicts.
                         Remote_DB.Send_Messages (Conflicts, Verbosity);
                      end if;
 
                      Diff.Apply (Local_Changes, Remote_Changes);
-
-                     Diff.Update_Sync_ID;
-
-                     Write (Config, -Client_Host_Name & ".Sync_Time", Sync_Time);
-                     Write (Config, -Client_Host_Name & ".Sync_ID", Diff.Sync_ID);
-                     SAL.Config_Files.Flush (Config);
 
                      Remote_DB.Send_Quit;
                      SMM.Database_Remote.IP.Free (Remote_DB);
@@ -373,9 +323,9 @@ begin
                exit Messages;
 
             when Remote =>
-               --  Used for unit testing; actual remote is in Kotlin for Android
                Get_Msg;
 
+               --  Used for unit testing; actual remote is in Kotlin for Android
                declare
                   Conflicts : JSON_Array; -- ignored, since we have no User Interface
                begin
@@ -395,15 +345,21 @@ begin
 
          exception
          when E : Exit_Messages =>
-            Put_Line (Ada.Exceptions.Exception_Message (E)); --  FIXME: need log file
+            if Verbosity > 0 then
+               Put_Line (Ada.Exceptions.Exception_Name (E) & ":" & Ada.Exceptions.Exception_Message (E));
+               --  FIXME: need log file
+            end if;
 
-         when Socket_Error =>
+         when E : End_Error | Socket_Error =>
             --  Peer closed socket
+            if Verbosity > 0 then
+               Put_Line (Ada.Exceptions.Exception_Name (E) & ":" & Ada.Exceptions.Exception_Message (E));
+            end if;
             exit Messages;
 
          when E : SAL.Invalid_Operation =>
             --  Error was detected by remote; it will have reported to the UI
-            Put_Line (Ada.Exceptions.Exception_Message (E));
+            Put_Line (Ada.Exceptions.Exception_Name (E) & ":" & Ada.Exceptions.Exception_Message (E));
             exit Messages;
 
          when E : others =>
@@ -411,12 +367,13 @@ begin
                use Ada.Exceptions;
                Err_Msg : constant String := Exception_Name (E) & ": " & Exception_Message (E);
             begin
-               SMM.Database_Remote.IP.Send_Error (Stream, Err_Msg);
                if Verbosity > 0 then
                   Put_Line (Standard_Error, Err_Msg);
                   Put_Line (Standard_Error,
                             GNAT.Traceback.Symbolic.Symbolic_Traceback (Ada.Exceptions.Traceback.Tracebacks (E)));
                end if;
+
+               SMM.Database_Remote.IP.Send_Error (Stream, Err_Msg);
             exception
             when others =>
                --  Probably "socket reset by peer"; allow retry connection.

@@ -3,7 +3,7 @@
 --  Process one Operation message (assumed from Stream); perform it on
 --  Local_DB, send results on Stream.
 --
---  Copyright (C) 2016, 2019, 2025 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2016, 2019, 2025, 2026 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -62,8 +62,8 @@ begin
            (Result, "List",
             To_JSON
               (Local_DB.Get_Modified
-                 (Msg.Get ("Sync_ID"),
-                  Msg.Get ("Sync_Time"))));
+                 (Msg.Get ("ID"),
+                  Msg.Get ("Modified"))));
          Send_Data (Stream, Result);
       end;
 
@@ -71,7 +71,12 @@ begin
       declare
          Result : constant JSON_Value := Create_Object;
       begin
-         Set_Field (Result, "List", To_JSON (Local_DB.Get_New (Msg.Get ("Sync_ID"))));
+         Set_Field
+           (Result, "List",
+            To_JSON
+              (Local_DB.Get_New
+                 (Msg.Get ("ID"),
+                  Ada.Containers.Count_Type (Integer'(Msg.Get ("Max_Count"))))));
          Send_Data (Stream, Result);
       end;
 

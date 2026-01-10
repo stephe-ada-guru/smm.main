@@ -2,7 +2,7 @@
 --
 --  Root of Stephe's Music Manager packages
 --
---  Copyright (C) 2008 - 2018, 2025 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2018, 2025, 2026 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -55,9 +55,10 @@ package SMM is
 
    function Max_ID (List : in ID_Lists.List) return Song_ID;
 
-   function To_JSON (List : in ID_Lists.List) return GNATCOLL.JSON.JSON_Value;
+   function To_JSON (List : in ID_Lists.List) return GNATCOLL.JSON.JSON_Array;
+   --  Return array containing contents of List.
 
-   function To_List (List : in GNATCOLL.JSON.JSON_Value) return ID_Lists.List;
+   function To_List (List : in GNATCOLL.JSON.JSON_Array) return ID_Lists.List;
 
    function Normalize (Path : in String) return String;
    --  convert '\' to '/'

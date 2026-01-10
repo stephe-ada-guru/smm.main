@@ -101,7 +101,7 @@ t2 : $(ALIRE_EXEC_DIR)/debug_web_server.exe
 	$(ALIRE_EXEC_DIR)/debug_web_server.exe GET "id" "file=Christine%20Lavin/Happydance%20of%20the%20Zenophobe/01%20The%20Most%20Polite%20City%20in%20the%20World.mp3"
 
 # VERBOSITY="1 smm-database-diff-test_compute.adb Collisions 2"
-t3 : $(ALIRE_EXEC_DIR)/test_one_harness.exe
+t3 : $(ALIRE_EXEC_DIR)/test_one_harness.exe $(ALIRE_EXEC_DIR)/smm-db_sync_server.exe
 	$(ALIRE_EXEC_DIR)/test_one_harness.exe $(VERBOSITY)
 
 t_all : $(ALIRE_EXEC_DIR)/test_all_harness.exe

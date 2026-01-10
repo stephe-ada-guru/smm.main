@@ -216,6 +216,23 @@ package body SMM.Database is
       raise Ada.IO_Exceptions.Use_Error with "invalid database file name: '" & File_Name & "'";
    end Open;
 
+   procedure Close (DB : in out Database)
+   is
+      use type GNATCOLL.SQL.Exec.Database_Connection;
+   begin
+      if DB.Connection = null then
+         --  already finalized
+         null;
+      else
+         --  We ignore all errors, since we wouldn't be able to do
+         --  anything about them at this point.
+         GNATCOLL.SQL.Exec.Free (DB.Connection);
+      end if;
+   exception
+   when E : others =>
+      Ada.Text_IO.Put_Line ("Database disconnect: exception " & Ada.Exceptions.Exception_Message (E));
+   end Close;
+
    procedure Insert
      (DB              : in Database;
       ID              : in Integer;

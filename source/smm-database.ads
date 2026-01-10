@@ -49,7 +49,7 @@ package SMM.Database is
    --  Raises Schema_Version_Error with message containing expected,
    --  found if db Schema_Version.Version is not Expected_Schema.
 
-   --  FIXME: Need Close for unit tests?
+   procedure Close (DB : in out Database);
 
    procedure Insert
      (DB              : in Database;

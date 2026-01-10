@@ -2,7 +2,7 @@
 --
 --  see spec
 --
---  Copyright (C) 2008, 2009, 2011 - 2018, 2025 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008, 2009, 2011 - 2018, 2025, 2026 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -47,42 +47,27 @@ package body SMM is
       end return;
    end Max_ID;
 
-   function To_JSON (List : in ID_Lists.List) return GNATCOLL.JSON.JSON_Value
+   function To_JSON (List : in ID_Lists.List) return GNATCOLL.JSON.JSON_Array
    is
       use GNATCOLL.JSON;
-      use ID_Lists;
-      Result    : constant JSON_Value := Create_Object;
-      List_JSON : JSON_Array;
-      I         : Cursor   := First (List);
    begin
-      loop
-         exit when I = No_Element;
-         Append (List_JSON, Create (Element (I)));
-         Next (I);
-      end loop;
-      Set_Field (Result, "List", List_JSON);
-      return Result;
+      return Result : JSON_Array do
+         for ID of List loop
+            Append (Result, Create (ID));
+         end loop;
+      end return;
    end To_JSON;
 
-   function To_List (List : in GNATCOLL.JSON.JSON_Value) return ID_Lists.List
+   function To_List (List : in GNATCOLL.JSON.JSON_Array) return ID_Lists.List
    is
       use GNATCOLL.JSON;
       use ID_Lists;
-      Result : ID_Lists.List;
    begin
-      if List.Is_Empty then
-         --  Just return Result
-         null;
-      else
-         declare
-            List_JSON : constant JSON_Array := Get (List, "List");
-         begin
-            for I in 1 .. Length (List_JSON) loop
-               Result.Append (Get (Get (List_JSON, I)));
-            end loop;
-         end;
-      end if;
-      return Result;
+      return Result : ID_Lists.List do
+         for I in 1 .. Length (List) loop
+            Result.Append (Get (Get (List, I)));
+         end loop;
+      end return;
    end To_List;
 
    function Relative_Name

@@ -2,7 +2,7 @@
 --
 --  Compute difference between two databases, as SQL statements in JSON format.
 --
---  Copyright (C) 2025  All Rights Reserved.
+--  Copyright (C) 2025, 2026  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -26,7 +26,6 @@ package SMM.Database.Diff is
    type Diff_Type is tagged record
       Local_DB      : Database_Remote.Database_Access;
       Remote_DB     : Database_Remote.Database_Access;
-      Sync_ID       : Song_ID;
       Show_Progress : SAL.Progress.Show_Progress_Type;
       Verbosity     : Integer;
    end record;
@@ -41,19 +40,21 @@ package SMM.Database.Diff is
 
    procedure Init_Remote
      (Diff           : in out Diff_Type;
+      Sync_ID        : in     Song_ID;
       Max_Changes    : in     Ada.Containers.Count_Type;
       Remote_Changes :    out GNATCOLL.JSON.JSON_Array);
-   --  Collect Max_Changes records in Diff.DB_Local with ID >
-   --  Diff.Sync_ID as JSON objects in Remote_Changes. The JSON
-   --  objects are produced by To_* below.
+   --  Emulate the phone starting a sync:
    --
-   --  Update Diff.Sync_ID to max id in changes.
+   --  Collect Max_Changes records in Diff.DB_Local with ID >
+   --  Sync_ID as JSON objects in Remote_Changes. The JSON
+   --  objects are produced by To_* below.
    --
    --  Raises GNAT.Sockets.Socket_Error if remote closes socket.
 
    procedure Inc_Diff
      (Diff           : in     Diff_Type;
-      Last_Sync_Time : in     Time_String;
+      Sync_Time      : in     Time_String;
+      Sync_ID        : in     Song_ID;
       Local_Changes  :    out GNATCOLL.JSON.JSON_Array;
       Conflicts      :    out GNATCOLL.JSON.JSON_Array;
       Remote_Changes :    out GNATCOLL.JSON.JSON_Array);
@@ -71,10 +72,6 @@ package SMM.Database.Diff is
       Remote_Changes : in     GNATCOLL.JSON.JSON_Array);
    --  Apply Local_Changes to Diff.Local_DB, Remote_Changes to
    --  Diff.Remote_DB.
-
-   procedure Update_Sync_ID (Diff : in out Diff_Type);
-   --  Set Diff.Sync_Data_IDs, Diff.Sync_Link_IDs to max IDs in
-   --  Diff.Local_DB.
 
    ----------
    --  visible for unit tests
