@@ -101,6 +101,10 @@ is
    end Get_Msg;
 
 begin
+   if System.Default_Bit_Order /= System.Low_Order_First then
+      raise Programmer_Error with "running on Big Endian processor; code assumes Little Endian";
+   end if;
+
    declare
       use Ada.Command_Line;
       use SAL.Config_Files;

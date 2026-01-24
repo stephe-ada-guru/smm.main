@@ -39,10 +39,8 @@ CREATE TABLE Song
  Year            INTEGER,
  Title           TEXT NOT NULL,
  Track           INTEGER,
- 
  Last_Downloaded TEXT,
  Prev_Downloaded TEXT,
- 
  Play_Before     INTEGER,
  Play_After      INTEGER,
  PRIMARY KEY (ID));
