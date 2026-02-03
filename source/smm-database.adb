@@ -531,12 +531,11 @@ package body SMM.Database is
       use GNATCOLL.SQL.Exec;
       use type Ada.Containers.Count_Type;
       Cur : Cursor := Checked_Fetch (DB, "SELECT ID FROM Song WHERE ID > ?" &
-           " AND Deleted is null ORDER BY ID", (1 => +ID));
+           " AND Deleted is null ORDER BY ID LIMIT ?", (+ID, +Max_Count));
    begin
       return Result : ID_Lists.List do
          loop
             exit when not Has_Element (Cur);
-            exit when Result.Length >= Max_Count;
             Result.Append (Cur.ID);
             Next (Cur);
          end loop;
