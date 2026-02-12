@@ -69,7 +69,7 @@ package SMM.Database is
       Play_After      : in Song_ID     := Null_ID;
       Modified        : in Time_String := Default_Time_String);
    --  If Modified = Default_Time_String, sets Modified to Clock. Sets
-   --  Deleted to Default_Time_String.
+   --  Deleted to null.
 
    procedure Insert_JSON (DB : in Database; Value : in GNATCOLL.JSON.JSON_Value);
    --  Calls Insert, getting values from Value. Value must have structure

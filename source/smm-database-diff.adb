@@ -19,6 +19,7 @@
 pragma License (GPL);
 
 with Ada.Exceptions;
+with Ada.IO_Exceptions;
 with Ada.Text_IO;
 with GNAT.Traceback.Symbolic;
 with SAL;
@@ -395,7 +396,8 @@ package body SMM.Database.Diff is
    procedure Apply
      (Diff           : in out Diff_Type;
       Local_Changes  : in     GNATCOLL.JSON.JSON_Array;
-      Remote_Changes : in     GNATCOLL.JSON.JSON_Array)
+      Remote_Changes : in     GNATCOLL.JSON.JSON_Array;
+      Show_Progress  : in     Boolean)
    is
       use Ada.Exceptions;
       use GNATCOLL.JSON;
@@ -406,10 +408,15 @@ package body SMM.Database.Diff is
          Show      => Diff.Show_Progress);
    begin
       if Length (Local_Changes) > 0 then
-         Progress.Label ("Apply local changes");
+         if Show_Progress then
+            Progress.Label ("Apply local changes");
+         end if;
          for I in 1 .. Length (Local_Changes) loop
             begin
-               Progress.Next;
+               if Show_Progress then
+                  Progress.Next;
+               end if;
+
                if Diff.Verbosity > 1 then
                   Ada.Text_IO.Put_Line (Get (Local_Changes, I).Write);
                end if;
@@ -425,18 +432,27 @@ package body SMM.Database.Diff is
                  Get (Local_Changes, I).Write;
             end;
          end loop;
-         Progress.Complete;
+         if Show_Progress then
+            Progress.Complete;
+         end if;
       end if;
 
-      Progress.Label ("Apply remote changes");
+      if Show_Progress then
+         Progress.Label ("Apply remote changes");
+      end if;
       for I in 1 .. Length (Remote_Changes) loop
          begin
-            Progress.Next;
+            if Show_Progress then
+               Progress.Next;
+            end if;
+
             if Diff.Verbosity > 1 then
                Ada.Text_IO.Put_Line (Get (Remote_Changes, I).Write);
             end if;
             Diff.Remote_DB.Apply (Get (Remote_Changes, I));
          exception
+         when Ada.IO_Exceptions.End_Error =>
+            raise;
          when E : others =>
             if Diff.Verbosity > 1 then
                Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, GNAT.Traceback.Symbolic.Symbolic_Traceback (E));
@@ -444,7 +460,9 @@ package body SMM.Database.Diff is
             raise SAL.Programmer_Error with "Remote apply: " & Exception_Name (E) & ": " & Exception_Message (E);
          end;
       end loop;
-      Progress.Complete;
+      if Show_Progress then
+         Progress.Complete;
+      end if;
    end Apply;
 
 end SMM.Database.Diff;

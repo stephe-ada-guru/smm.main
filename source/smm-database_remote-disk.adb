@@ -47,20 +47,8 @@ package body SMM.Database_Remote.Disk is
             New_Value.Set_Field ("ID", New_ID);
             DB.DB.Insert_JSON (New_Value);
 
-            if New_Value.Has_Field ("Play_Before") then
-               declare
-                  Cur : constant SMM.Database.Cursor := SMM.Database.Find_ID (DB.DB.all, New_Value.Get ("Play_Before"));
-               begin
-                  DB.DB.Update (Cur, Play_After => New_ID);
-               end;
-            end if;
-            if New_Value.Has_Field ("Play_After") then
-               declare
-                  Cur : constant SMM.Database.Cursor := SMM.Database.Find_ID (DB.DB.all, New_Value.Get ("Play_After"));
-               begin
-                  DB.DB.Update (Cur, Play_Before => New_ID);
-               end;
-            end if;
+            --  We used to check Play_Before/Play_After here, but those are never
+            --  set in real renumber use cases.
          end;
       end case;
    end Apply;

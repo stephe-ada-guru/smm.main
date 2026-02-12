@@ -28,7 +28,7 @@ INSERT INTO Schema_Version (ID, Version) VALUES (1, 2);
 
 CREATE TABLE Song
 (ID              INTEGER NOT NULL,
- Modified        TEXT NOT NULL,
+ Modified        TEXT NOT NULL, -- Never not set
  Deleted         TEXT,
  File_Name       TEXT NOT NULL,
  Category        TEXT NOT NULL,

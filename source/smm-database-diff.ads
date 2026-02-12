@@ -43,11 +43,9 @@ package SMM.Database.Diff is
       Sync_ID        : in     Song_ID;
       Max_Changes    : in     Ada.Containers.Count_Type;
       Remote_Changes :    out GNATCOLL.JSON.JSON_Array);
-   --  Emulate the phone starting a sync:
-   --
-   --  Collect Max_Changes records in Diff.DB_Local with ID >
-   --  Sync_ID as JSON objects in Remote_Changes. The JSON
-   --  objects are produced by To_* below.
+   --  Collect Max_Changes records from Diff.DB_Local with ID > Sync_ID
+   --  as JSON objects in Remote_Changes. The JSON objects are produced
+   --  by To_* below.
    --
    --  Raises GNAT.Sockets.Socket_Error if remote closes socket.
 
@@ -69,7 +67,8 @@ package SMM.Database.Diff is
    procedure Apply
      (Diff           : in out Diff_Type;
       Local_Changes  : in     GNATCOLL.JSON.JSON_Array;
-      Remote_Changes : in     GNATCOLL.JSON.JSON_Array);
+      Remote_Changes : in     GNATCOLL.JSON.JSON_Array;
+      Show_Progress  : in     Boolean);
    --  Apply Local_Changes to Diff.Local_DB, Remote_Changes to
    --  Diff.Remote_DB.
 

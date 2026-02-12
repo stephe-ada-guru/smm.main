@@ -529,9 +529,8 @@ package body SMM.Database is
      return ID_Lists.List
    is
       use GNATCOLL.SQL.Exec;
-      use type Ada.Containers.Count_Type;
       Cur : Cursor := Checked_Fetch (DB, "SELECT ID FROM Song WHERE ID > ?" &
-           " AND Deleted is null ORDER BY ID LIMIT ?", (+ID, +Max_Count));
+           " AND Deleted is null ORDER BY ID LIMIT ?", (+ID, +(Integer (Max_Count))));
    begin
       return Result : ID_Lists.List do
          loop

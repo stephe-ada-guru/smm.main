@@ -29,10 +29,11 @@ with GNAT.Traceback.Symbolic;
 with GNATCOLL.JSON; use GNATCOLL.JSON;
 with SAL.Config_Files.Port;
 with SAL.Progress;
+with SMM.DB_Sync; use SMM.DB_Sync;
 with SMM.Database.Diff;
 with SMM.Database_Remote.Do_Operation;
 with SMM.Database_Remote.IP;
-with SMM.DB_Sync; use SMM.DB_Sync;
+with System;
 procedure SMM.DB_Sync_Server
 is
    use SMM.Database;
@@ -68,43 +69,19 @@ is
    Client_Host_Name : Ada.Strings.Unbounded.Unbounded_String;
    Send_Progress : Boolean := False;
 
-   Warm_Fuzzy : Integer := 1;
-
    procedure Get_Msg
    --  Raises Socket_Error or End_Error is socket is closed (by peer).
    is
       Msg_String : constant String := String (Network_String'Input (Stream));
    begin
-      if Verbosity > 1 then
-         Put_Line ("Remote: " & Msg_String);
-      end if;
-
       Msg := Read (Msg_String);
 
       if Verbosity > 0 then
-         Warm_Fuzzy := Warm_Fuzzy + 1;
-         declare
-            Char : constant Character := '.';
-         begin
-            if Warm_Fuzzy >= 100 then
-               Warm_Fuzzy := 1;
-               Put_Line ("" & Char);
-            else
-               Put (Char);
-            end if;
-         end;
+         Put_Line ("remote: '" & Msg_String & "'");
       end if;
-   exception
-   when Socket_Error =>
-      --  Peer closed socket
-      raise Exit_Messages;
    end Get_Msg;
 
 begin
-   if System.Default_Bit_Order /= System.Low_Order_First then
-      raise Programmer_Error with "running on Big Endian processor; code assumes Little Endian";
-   end if;
-
    declare
       use Ada.Command_Line;
       use SAL.Config_Files;
@@ -227,9 +204,13 @@ begin
                         Remote_DB.Send_Progress (Label, Current, Max);
                      end Do_Send_Progress;
 
-                     Sync_ID : constant Integer := Msg.Get ("Sync_ID");
+                     --  We don't use Sync_Time or Sync_ID for Init_Remote; we use Sync_ID
+                     --  for Resume_Init_Remote
 
-                     --  We don't use Sync_Time for Init
+                     Sync_ID : Integer :=
+                       (if Compute_Action = Resume_Init_Remote
+                        then Msg.Get (Prelude_Messages'Image (Database_Remote.Sync_ID))
+                        else Null_ID);
 
                      Diff : SMM.Database.Diff.Diff_Type :=
                        (Local_DB      => Local_DB'Access,
@@ -272,7 +253,9 @@ begin
 
                         Progress.Next (Length (Remote_Changes));
 
-                        Diff.Apply (Local_Changes, Remote_Changes);
+                        Diff.Apply (Local_Changes, Remote_Changes, Show_Progress => False);
+
+                        Sync_ID := Diff.Remote_DB.Get_Last_ID;
                      end loop;
 
                      Progress.Complete;
@@ -317,7 +300,7 @@ begin
                         Remote_DB.Send_Messages (Conflicts, Verbosity);
                      end if;
 
-                     Diff.Apply (Local_Changes, Remote_Changes);
+                     Diff.Apply (Local_Changes, Remote_Changes, Show_Progress => True);
 
                      Remote_DB.Send_Quit;
                      SMM.Database_Remote.IP.Free (Remote_DB);
