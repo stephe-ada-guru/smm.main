@@ -35,7 +35,7 @@
 --  if not:
 --  sudo a2enmod cgid
 --
---  Copyright (C) 2016 - 2020, 2022, 2023, 2025 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2016 - 2020, 2022, 2023, 2025, 2026 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -210,8 +210,14 @@ package body SMM.Server is
       use SMM.Song_Lists.Song_Lists;
 
       Category          : constant String     := Parameters.Element ("category");
-      Count             : constant Count_Type := Count_Type'Value (Parameters.Element ("count"));
-      New_Count         : constant Count_Type := Count_Type'Value (Parameters.Element ("new_count"));
+      Count             : constant Count_Type :=
+        (if Exist (Parameters, "count")
+         then Count_Type'Value (Parameters.Element ("count"))
+         else Count_Type'Last);
+      New_Count         : constant Count_Type :=
+        (if Exist (Parameters, "new_count")
+         then Count_Type'Value (Parameters.Element ("new_count"))
+         else Count_Type'Last);
       Record_Downloaded : constant Boolean    :=
         (if API > 1
          then Boolean'Value (Parameters.Element ("record_downloaded"))
