@@ -2,7 +2,7 @@
 --
 --  Run one test
 --
---  Copyright (C) 2007 - 2009, 2013, 2015 - 2016, 2018, 2025 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007 - 2009, 2013, 2015 - 2016, 2018, 2025, 2026 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -20,7 +20,7 @@ pragma License (GPL);
 
 with AUnit.Options;
 with AUnit.Reporter.Text;
-with AUnit.Test_Cases;
+with AUnit.Test_Cases; use AUnit.Test_Cases;
 with AUnit.Test_Filters.Verbose;
 with AUnit.Test_Results;
 with AUnit.Test_Suites; use AUnit.Test_Suites;
@@ -30,7 +30,7 @@ with Ada.Strings.Unbounded;
 with Ada.Text_IO;
 with GNAT.Traceback.Symbolic;
 with SMM;
-with Test_Least_Recent;
+with SMM.Database_Remote.IP.Test;
 procedure Test_One_Harness
 is
    --  command line arguments:
@@ -74,7 +74,10 @@ begin
       SMM.Verbosity := (if Argument_Count >= 4 then Integer'Value (Argument (4)) else 0);
    end;
 
-   Add_Test (Suite, AUnit.Test_Cases.Test_Case_Access'(new Test_Least_Recent.Test_Case));
+   Add_Test (Suite, Test_Case_Access'(new SMM.Database_Remote.IP.Test.Test_Case
+                                        (Server_IP => new String'("127.0.0.1"),
+                                         Port      => 16#9002#,
+                                         Debug     => SMM.Verbosity)));
 
    --  When run from Alire.make, current directory is smm.work_1, so the
    --  'make' commands to create empty dbs should work.
