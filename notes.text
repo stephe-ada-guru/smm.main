@@ -22,6 +22,8 @@ branches:
 (dvc-propagate-one "../smm.work_1" "../smm.main")
 
  current work
+import report error if index fields empty
+
 sync db with phone
     t3 VERBOSITY="1 smm-database_remote-ip-test.adb Test_sync 1"
 

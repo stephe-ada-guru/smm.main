@@ -2,7 +2,7 @@
 --
 --  See spec.
 --
---  Copyright (C) 2018 - 2019, 2025 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2018 - 2019, 2025, 2026 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -58,17 +58,24 @@ package body SMM.Song_Lists is
       use Ada.Containers;
       use Song_Lists;
 
-      Count_Limit  : constant Count_Type := Count_Type (Float (Song_Count) * Over_Select_Ratio);
+      Count_Limit  : constant Count_Type :=
+        (if Song_Count = Count_Type'Last
+         then Song_Count
+         else Count_Type (Float (Song_Count) * Over_Select_Ratio));
 
       DB_I                 : SMM.Database.Cursor := SMM.Database.First_By_Last_Downloaded (DB); -- oldest date
       New_Song_Added_Count : Count_Type          := 0;
    begin
       loop
-         exit when Songs.Length >= Count_Limit;
+         if Count_Limit = Count_Type'Last then
+            exit when not DB_I.Has_Element;
+         else
+            exit when Songs.Length >= Count_Limit;
 
-         if not DB_I.Has_Element then
-            raise SAL.Parameter_Error with "'" & Category & "' doesn't match " &
-              (if Songs.Length = 0 then "any" else "enough") & " songs";
+            if not DB_I.Has_Element then
+               raise SAL.Parameter_Error with "'" & Category & "' doesn't match " &
+                 (if Songs.Length = 0 then "any" else "enough") & " songs";
+            end if;
          end if;
 
          if DB_I.Category_Contains (Category) and

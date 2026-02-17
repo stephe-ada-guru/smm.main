@@ -1,2 +1,6 @@
+Alire.make
+Test/test_one_harness.adb
 build/.gdbinit
 Test/test_one_harness.adb
+build/prj.el
+build/smm.prj
