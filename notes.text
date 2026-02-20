@@ -16,8 +16,8 @@ branches:
 (dvc-propagate-one "../smm.main" "../smm.work_1")
 
 (dvc-propagate-multiple
- '(("../org.stephe_leake.sal.stephe-1" . "../org.stephe_leake.sal")
-   ("../smm.work_1"                    . "../smm.main")))
+ '(("../smm.work_1"                    . "../smm.main")
+   ("../org.stephe_leake.music_player" . "../org.stephe_leake.music_player.work_1")))
 
 (dvc-propagate-one "../smm.work_1" "../smm.main")
 
@@ -25,20 +25,8 @@ branches:
 import report error if index fields empty
 
 sync db with phone
-    t3 VERBOSITY="1 smm-database_remote-ip-test.adb Test_sync 1"
-
-    smm-database_remote-ip-test
-        handling exception Socket_Error doesn't seem to work; socket library calls kill or something?
-            works ok when not spawning remote manually, but then it doesn't connect.
-                it's acting like the spawned process is on hold?
-                    because gnat.spawn is broken!?
-
-            spawn works for test_sync?
-
-        can run server from bash
-
-        test_sync passes.
-
+    deleted should be null, not default_time_string
+        it is null in laptop, but not in phone after "init db"
 
 smm check
     ignore missing album if in album_artist directory?

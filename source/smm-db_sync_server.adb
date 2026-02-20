@@ -33,7 +33,6 @@ with SMM.DB_Sync; use SMM.DB_Sync;
 with SMM.Database.Diff;
 with SMM.Database_Remote.Do_Operation;
 with SMM.Database_Remote.IP;
-with System;
 procedure SMM.DB_Sync_Server
 is
    use SMM.Database;

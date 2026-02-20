@@ -309,16 +309,11 @@ package body SMM.Database.Diff is
             Next (Remote_I);
 
          else
-            raise SAL.Programmer_Error;
+            raise SAL.Programmer_Error with "Diff.Compute_New logic error";
          end if;
 
          Update_IDs;
       end loop;
-   exception
-   when E : others =>
-      raise SAL.Programmer_Error with "diff.compute new: " &
-        Ada.Exceptions.Exception_Name (E) & ": " &
-        Ada.Exceptions.Exception_Message (E);
    end Compute_New;
 
    ----------
