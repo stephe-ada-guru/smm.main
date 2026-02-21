@@ -894,9 +894,15 @@ package body SMM.Server is
                   Ada.Calendar.Formatting.Image (Ada.Calendar.Clock) & ": input: '" & Content & "' ");
             end if;
 
+            --  Sometime before Feb 20 2025, something in Apache changed; now the
+            --  update data from the web page is in Content. However, Emacs still
+            --  sends it in Query.
             if URI_File = "update" then
-               --  So far no updates require Content.
-               return Handle_Update (Parse_Parameters (Query), Query);
+               if Content_Length > 0 then
+                  return Handle_Update (Parse_Parameters (Content), Content);
+               else
+                  return Handle_Update (Parse_Parameters (Query), Query);
+               end if;
             else
                return CGI_Status (S400, "unrecognized POST path '" & URI_File & "'");
             end if;
