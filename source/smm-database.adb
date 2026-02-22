@@ -330,27 +330,31 @@ package body SMM.Database is
          return False;
       end if;
 
-      declare
-         Data : constant GNATCOLL.JSON.JSON_Value := New_Value.Get ("Data");
-      begin
-         if Cur.File_Name /= Data.Get ("File_Name") then
-            return False;
-         end if;
-
-         if Cur.Album_Artist /= Data.Get ("Album_Artist") then
-            return False;
-         end if;
-
-         if Cur.Album /= (if Data.Has_Field ("Album") then Data.Get ("Album") else "") then
-            return False;
-         end if;
-
-         if Cur.Title /= Data.Get ("Title") then
-            return False;
-         end if;
-
+      if New_Value.Has_Field ("Deleted") then
          return True;
-      end;
+      else
+         declare
+            Data : constant GNATCOLL.JSON.JSON_Value := New_Value.Get ("Data");
+         begin
+            if Cur.File_Name /= Data.Get ("File_Name") then
+               return False;
+            end if;
+
+            if Cur.Album_Artist /= Data.Get ("Album_Artist") then
+               return False;
+            end if;
+
+            if Cur.Album /= (if Data.Has_Field ("Album") then Data.Get ("Album") else "") then
+               return False;
+            end if;
+
+            if Cur.Title /= Data.Get ("Title") then
+               return False;
+            end if;
+
+            return True;
+         end;
+      end if;
    end Index_Fields_Equal;
 
    function UTC_Image (Item : in Ada.Calendar.Time) return Time_String
@@ -438,7 +442,7 @@ package body SMM.Database is
 
          return Result : constant GNATCOLL.JSON.JSON_Value := GNATCOLL.JSON.Create_Object do
             Result.Set_Field ("ID", Cur.ID);
-            if Cur.Modified /= Default_Time_String then Result.Set_Field ("Modified", Cur.Modified); end if;
+            Result.Set_Field ("Modified", Cur.Modified);
             Result.Set_Field ("Data", Data);
          end return;
       end;

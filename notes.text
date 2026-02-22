@@ -25,8 +25,7 @@ branches:
 import report error if index fields empty
 
 sync db with phone
-    deleted should be null, not default_time_string
-        it is null in laptop, but not in phone after "init db"
+    see notes in android app
 
 smm check
     ignore missing album if in album_artist directory?
