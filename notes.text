@@ -19,19 +19,13 @@ branches:
    ("../smm.main"             . "../smm.work_1")))
 
 (dvc-propagate-multiple
- '(("../org.stephe_leake.sal.stephe-1" . "../org.stephe_leake.sal")
-   ("../smm.work_1"                    . "../smm.main")))
+ '(("../smm.work_1"                    . "../smm.main")
+   ("../org.stephe_leake.music_player.work_1" . "../org.stephe_leake.music_player")))
 
 (dvc-propagate-one "../smm.work_1" "../smm.main")
 
  current work
 import report error if index fields empty
-
-sync db with phone
-    on work_1
-    add Modified, Deleted date fields
-    ~/Projects/org.stephe_leake.books_old/app/src/main/java/org/stephe_leake/books/android/SyncService.java
-    if modification is in metadata, do the right thing
 
 smm check
     reports missing files that are not in fact missing
