@@ -1,10 +1,13 @@
 # Build smm with Alire
 
 # ALIRE_BUILD_ARGS ?= --release
+# also -gnatdp -gnatdV -gnatdi
 ALIRE_BUILD_ARGS ?= --development
+#-- -v -gnatdi smm-database-diff-test_apply.adb
 
-# Without -q, the linker is very noisy. But it screws up the error outputs!
-#ALIRE_ARGS ?= -q
+#ALIRE_ARGS ?= -v
+
+#GPRBUILD_ARGS = -v
 
 ALIRE_EXEC_DIR := $(CURDIR)/build/bin
 
@@ -12,13 +15,14 @@ STEPHES_ADA_LIBRARY_ALIRE_PREFIX ?= $(CURDIR)/../org.stephe_leake.sal
 
 include $(STEPHES_ADA_LIBRARY_ALIRE_PREFIX)/build/alire_rules.make
 
-vpath %.adb source
+vpath %.adb source test
 vpath %.svg source
 
 all : alire-build install
 
 install : server-data
 install : $(HOME)/.local/bin/smm.exe
+install : $(HOME)/.local/bin/smm-db_sync_server.exe
 
 # These require sudo, which emacs compile doesn't handle properly
 # install : /usr/lib/cgi-bin/smm-server_driver.exe
@@ -55,8 +59,11 @@ $(SERVER_DATA)/% : source/%
 $(HOME)/.local/bin/% : $(ALIRE_EXEC_DIR)/%
 	cp $^ $@
 
-modify : $(ALIRE_EXEC_DIR)/modify_schema.exe smm_new.db
-	$(ALIRE_EXEC_DIR)/modify_schema.exe /var/www/html/music_server_data/smm.db smm_new.db
+modify : $(ALIRE_EXEC_DIR)/smm-database-modify_schema.exe modify-clean smm_new.db
+	$(ALIRE_EXEC_DIR)/smm-database-modify_schema.exe /var/www/html/music_server_data/smm.db smm_new.db
+
+modify-clean :
+	rm -rf smm_new.db
 
 smm%.db : source/create_schema.sql
 	sqlite3 -init $< $@ ".quit"
@@ -71,6 +78,21 @@ really-clean : clean
 $(ALIRE_EXEC_DIR)/smm.exe : force
 	alr $(ALIRE_ARGS) build $(ALIRE_BUILD_ARGS) -- $(GPRBUILD_ARGS) smm-driver.adb
 
+empty_database_test_1 : source/create_schema.sql
+	rm -f smm_test_1.db smm_test_1.config
+	sqlite3 -echo -init source/create_schema.sql smm_test_1.db ".quit"
+	echo "Database_File=smm_test_1.db" > smm_test_1.config
+	echo "Server_IP=$(SERVER_IP)" >> smm_test_1.config
+	echo "Server_Port=$(SERVER_PORT)" >> smm_test_1.config
+
+empty_database_test_2 : source/create_schema.sql
+	rm -f smm_test_2.db smm_test_2.config
+	sqlite3 -echo -init source/create_schema.sql smm_test_2.db ".quit"
+	echo "Database_File=smm_test_2.db" > smm_test_2.config
+	echo "Server_IP=$(SERVER_IP)" >> smm_test_2.config
+	echo "Server_Port=$(SERVER_PORT)" >> smm_test_2.config
+
+
 t1 : VERBOSITY ?= 0
 t1 : $(ALIRE_EXEC_DIR)/smm.exe
 	cd /var/www/html/Music; $(ALIRE_EXEC_DIR)/smm.exe --verbosity=$(VERBOSITY) --max_errors=5 compare_phone /tmp/phone_music.log
@@ -79,7 +101,18 @@ t1 : $(ALIRE_EXEC_DIR)/smm.exe
 t2 : $(ALIRE_EXEC_DIR)/debug_web_server.exe
 	$(ALIRE_EXEC_DIR)/debug_web_server.exe GET "id" "file=Christine%20Lavin/Happydance%20of%20the%20Zenophobe/01%20The%20Most%20Polite%20City%20in%20the%20World.mp3"
 
-.PHONEY : t1 t2
+t3 : VERBOSITY="1 smm-database_remote-ip-test.adb Test_Sync 2"
+t3 : $(ALIRE_EXEC_DIR)/test_one_harness.exe $(ALIRE_EXEC_DIR)/smm-db_sync_server.exe
+	$(ALIRE_EXEC_DIR)/test_one_harness.exe $(VERBOSITY)
+
+t_all : $(ALIRE_EXEC_DIR)/test_all_harness.exe
+	$(ALIRE_EXEC_DIR)/test_all_harness.exe $(VERBOSITY)
+
+t4 : VERBOSITY ?= 1
+t4 : $(ALIRE_EXEC_DIR)/smm-db_sync_server.exe
+	$(ALIRE_EXEC_DIR)/smm-db_sync_server.exe test_db_sync.config $(VERBOSITY)
+
+.PHONEY : t1 t2 t3 t_all empty_database_test_1 empty_database_test_2
 
 # Local Variables:
 # eval: (unless dvc-doing-ediff-p (load-file "prj-alire.el"))

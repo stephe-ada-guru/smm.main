@@ -2,7 +2,7 @@
 --
 --  See spec.
 --
---  Copyright (C) 2018 - 2020, 2025 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2018 - 2020, 2025, 2026 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -43,7 +43,8 @@ package body SMM.Database is
          begin
             GNATCOLL.SQL.Exec.Rollback (DB.Connection);
 
-            raise Entry_Error with Msg;
+            raise Entry_Error with Msg & ": '" & Statement & "'" &
+              GNATCOLL.SQL.Exec.Image (DB.Connection.all, Params);
          end;
       end if;
    end Checked_Execute;
@@ -67,6 +68,7 @@ package body SMM.Database is
      (DB              : in Database;
       Update          : in Boolean;
       ID              : in Integer;
+      Modified        : in Time_String;
       File_Name       : in String      := "";
       Category        : in String      := "";
       Artist          : in String      := "";
@@ -91,7 +93,7 @@ package body SMM.Database is
 
       Values : Unbounded_String := +"VALUES (";
 
-      Params : SQL_Parameters (1 .. 14) := (others => Null_Parameter);
+      Params : SQL_Parameters (1 .. 16) := (others => Null_Parameter);
 
       Need_Comma : Boolean := False;
       Last       : Integer := 0;
@@ -135,6 +137,7 @@ package body SMM.Database is
       end Add_Param;
 
    begin
+      Add_Param ("Modified", Modified, Default_Time_String);
       Add_Param ("File_Name", File_Name, "");
       Add_Param ("Category", Category, "");
       Add_Param ("Artist", Artist, "");
@@ -152,6 +155,7 @@ package body SMM.Database is
       if Update then
          Statement := Statement & " WHERE ID = ?";
       else
+         --  We leave Deleted null
          if Need_Comma then
             Statement := Statement & ", ";
             Need_Comma := True;
@@ -186,7 +190,7 @@ package body SMM.Database is
       Ada.Text_IO.Put_Line ("Database disconnect: exception " & Ada.Exceptions.Exception_Message (E));
    end Finalize;
 
-   procedure Open (DB : in out Database; File_Name : in String)
+   procedure Open (DB : in out Database; File_Name : in String; Expected_Schema : in Integer := Schema_Version)
    is
       use GNATCOLL.SQL.Exec;
    begin
@@ -199,10 +203,35 @@ package body SMM.Database is
       if not DB.Connection.Success then
          raise Ada.IO_Exceptions.Use_Error with File_Name & DB.Connection.Error;
       end if;
+
+      declare
+         Temp : constant Integer := Read_Schema_Version (DB);
+      begin
+         if Temp /= Expected_Schema then
+            raise Schema_Version_Error with "expecting Schema_Version" & Schema_Version'Image & ", found" & Temp'Image;
+         end if;
+      end;
    exception
    when Ada.IO_Exceptions.Name_Error =>
       raise Ada.IO_Exceptions.Use_Error with "invalid database file name: '" & File_Name & "'";
    end Open;
+
+   procedure Close (DB : in out Database)
+   is
+      use type GNATCOLL.SQL.Exec.Database_Connection;
+   begin
+      if DB.Connection = null then
+         --  already finalized
+         null;
+      else
+         --  We ignore all errors, since we wouldn't be able to do
+         --  anything about them at this point.
+         GNATCOLL.SQL.Exec.Free (DB.Connection);
+      end if;
+   exception
+   when E : others =>
+      Ada.Text_IO.Put_Line ("Database disconnect: exception " & Ada.Exceptions.Exception_Message (E));
+   end Close;
 
    procedure Insert
      (DB              : in Database;
@@ -219,12 +248,14 @@ package body SMM.Database is
       Last_Downloaded : in Time_String := Default_Time_String;
       Prev_Downloaded : in Time_String := Default_Time_String;
       Play_Before     : in Integer     := Null_ID;
-      Play_After      : in Integer     := Null_ID)
+      Play_After      : in Integer     := Null_ID;
+      Modified        : in Time_String := Default_Time_String)
    is begin
       Insert_Update
         (DB,
          Update          => False,
          ID              => ID,
+         Modified        => (if Modified = Default_Time_String then UTC_Image (Ada.Calendar.Clock) else Modified),
          File_Name       => File_Name,
          Category        => Category,
          Artist          => Artist,
@@ -339,7 +370,9 @@ package body SMM.Database is
    --  Field indices; create_schema.sql declaration order
    use all type GNATCOLL.SQL.Exec.Field_Index;
    ID_Field              : constant GNATCOLL.SQL.Exec.Field_Index := GNATCOLL.SQL.Exec.Field_Index'First;
-   File_Name_Field       : constant GNATCOLL.SQL.Exec.Field_Index := ID_Field + 1;
+   Modified_Field        : constant GNATCOLL.SQL.Exec.Field_Index := ID_Field + 1;
+   Deleted_Field         : constant GNATCOLL.SQL.Exec.Field_Index := Modified_Field + 1;
+   File_Name_Field       : constant GNATCOLL.SQL.Exec.Field_Index := Deleted_Field + 1;
    Category_Field        : constant GNATCOLL.SQL.Exec.Field_Index := File_Name_Field + 1;
    Artist_Field          : constant GNATCOLL.SQL.Exec.Field_Index := Category_Field + 1;
    Album_Artist_Field    : constant GNATCOLL.SQL.Exec.Field_Index := Artist_Field + 1;
@@ -467,6 +500,51 @@ package body SMM.Database is
       return Checked_Fetch (DB, Statement, Params => (1 => +ID));
    end Find_ID;
 
+   function Last_ID (DB : in Database) return Song_ID
+   is
+      Cur : constant Cursor := Checked_Fetch (DB, "SELECT MAX (ID) FROM Song");
+   begin
+      return Song_ID'Value (Cur.Cursor.Value (ID_Field));
+   end Last_ID;
+
+   function Get_Modified
+     (DB       : in out Database;
+      ID       : in     Song_ID;
+      Modified : in     Time_String)
+     return ID_Lists.List
+   is
+      use GNATCOLL.SQL.Exec;
+      Cur : Cursor := Checked_Fetch (DB, "SELECT ID FROM Song WHERE ID <= ?" &
+           " AND (Modified > ? or Deleted > ?) ORDER BY ID", (+ID, +Modified, +Modified));
+   begin
+      return Result : ID_Lists.List do
+         loop
+            exit when not Has_Element (Cur);
+            Result.Append (Cur.ID);
+            Next (Cur);
+         end loop;
+      end return;
+   end Get_Modified;
+
+   function Get_New
+     (DB        : in out Database;
+      ID        : in     Song_ID;
+      Max_Count : in     Ada.Containers.Count_Type := Ada.Containers.Count_Type'Last)
+     return ID_Lists.List
+   is
+      use GNATCOLL.SQL.Exec;
+      Cur : Cursor := Checked_Fetch (DB, "SELECT ID FROM Song WHERE ID > ?" &
+           " AND Deleted is null ORDER BY ID LIMIT ?", (+ID, +(Integer (Max_Count))));
+   begin
+      return Result : ID_Lists.List do
+         loop
+            exit when not Has_Element (Cur);
+            Result.Append (Cur.ID);
+            Next (Cur);
+         end loop;
+      end return;
+   end Get_New;
+
    procedure Update
      (DB              : in Database;
       Position        : in Cursor'Class;
@@ -482,12 +560,14 @@ package body SMM.Database is
       Last_Downloaded : in Time_String := Default_Time_String;
       Prev_Downloaded : in Time_String := Default_Time_String;
       Play_Before     : in Integer     := Null_ID;
-      Play_After      : in Integer     := Null_ID)
+      Play_After      : in Integer     := Null_ID;
+      Modified        : in Time_String := Default_Time_String)
    is begin
       Insert_Update
         (DB,
          Update          => True,
          ID              => Position.ID,
+         Modified        => (if Modified = Default_Time_String then UTC_Image (Ada.Calendar.Clock) else Modified),
          File_Name       => File_Name,
          Category        => Category,
          Artist          => Artist,
@@ -503,20 +583,70 @@ package body SMM.Database is
          Play_After      => Play_After);
    end Update;
 
-   procedure Delete
+   procedure Update_JSON (DB : in Database; Value : in GNATCOLL.JSON.JSON_Value)
+   is
+      ID : constant Song_ID := Value.Get ("ID");
+      Cur : constant Cursor := DB.Find_ID (ID);
+   begin
+      if not Has_Element (Cur) then
+         raise SAL.Not_Found with "ID =" & Song_ID'Image (ID);
+      end if;
+
+      if Value.Has_Field ("Deleted") then
+         DB.Mark_Deleted (Cur, Value.Get ("Deleted"));
+      else
+         declare
+            Data : constant GNATCOLL.JSON.JSON_Value := Value.Get ("Data");
+         begin
+            --  Only values that are changed are in Data; Value.Modified should always
+            --  be there.
+            Insert_Update
+              (DB,
+               Update       => True,
+               ID           => ID,
+               Modified     => Value.Get ("Modified"),
+               File_Name    => (if Data.Has_Field ("File_Name") then Data.Get ("File_Name") else ""),
+               Category     => (if Data.Has_Field ("Category") then Data.Get ("Category") else ""),
+               Artist       => (if Data.Has_Field ("Artist") then Data.Get ("Artist") else ""),
+               Album_Artist => (if Data.Has_Field ("Album_Artist") then Data.Get ("Album_Artist") else ""),
+               Composer     => (if Data.Has_Field ("Composer") then Data.Get ("Composer") else ""),
+               Album        => (if Data.Has_Field ("Album") then Data.Get ("Album") else ""),
+               Year         => (if Data.Has_Field ("Year") then Data.Get ("Year") else No_Year),
+               Title        => (if Data.Has_Field ("Title") then Data.Get ("Title") else ""),
+               Track        => (if Data.Has_Field ("Track") then Data.Get ("Track") else No_Track),
+               Last_Downloaded =>
+                 (if Data.Has_Field ("Last_Downloaded") then Data.Get ("Last_Downloaded") else Default_Time_String),
+               Prev_Downloaded =>
+                 (if Data.Has_Field ("Prev_Downloaded") then Data.Get ("Prev_Downloaded") else Default_Time_String),
+               Play_Before => (if Data.Has_Field ("Play_Before") then Data.Get ("Play_Before") else Null_ID),
+               Play_After => (if Data.Has_Field ("Play_After") then Data.Get ("Play_After") else Null_ID));
+         end;
+      end if;
+   end Update_JSON;
+
+   procedure Mark_Deleted
      (DB       : in Database;
-      Position : in Cursor'Class)
+      Position : in Cursor'Class;
+      Deleted  : in Time_String := Default_Time_String)
    is
       use GNATCOLL.SQL.Exec;
    begin
       Checked_Execute
         (DB,
-         Statement => "DELETE FROM Song WHERE ID = ?",
-         Params => (1 => +Position.ID));
+         Statement => "UPDATE Song SET Deleted = ? WHERE ID =?",
+         Params    =>
+           (+(if Deleted = Default_Time_String then UTC_Image (Ada.Calendar.Clock) else Deleted),
+            +Position.ID));
+   end Mark_Deleted;
 
-      --  Can't figure out how to make this work
-      --  Position := SMM.Database.Cursor with (Cursor => No_Direct_Element);
-   end Delete;
+   procedure Really_Delete
+     (DB : in Database;
+      ID : in Song_ID)
+   is
+      use GNATCOLL.SQL.Exec;
+   begin
+      Checked_Execute (DB, "DELETE FROM Song WHERE ID = ?", Params => (1 => +ID));
+   end Really_Delete;
 
    function Image (Item : Field_Values) return String
    is
@@ -577,6 +707,8 @@ package body SMM.Database is
          Params (Last) := +Value;
       end Add_Param;
    begin
+      Add_Param ("Modified", UTC_Image (Ada.Calendar.Clock));
+
       for Field in Fields loop
          if Length (Data (Field)) > 0 then
             Add_Param (-Field_Image (Field), -Data (Field));
@@ -724,6 +856,19 @@ package body SMM.Database is
    is begin
       return Position.Cursor.Value (ID_Field);
    end ID_String;
+
+   function Modified (Position : in Cursor) return Time_String
+   is begin
+      return Position.Cursor.Value (Modified_Field);
+   end Modified;
+
+   function Deleted (Position : in Cursor) return String
+   is begin
+      return
+        (if Position.Cursor.Is_Null (Deleted_Field)
+         then ""
+         else Position.Cursor.Value (Deleted_Field));
+   end Deleted;
 
    function File_Name (Position : in Cursor) return String
    is begin
@@ -881,8 +1026,8 @@ package body SMM.Database is
    begin
       Checked_Execute
         (DB,
-         Statement => "UPDATE Song SET Last_Downloaded = ?, Prev_Downloaded = ? WHERE ID =?",
-         Params    => (+Time, +Position.Last_Downloaded, +Position.ID));
+         Statement => "UPDATE Song SET Modified = ?, Last_Downloaded = ?, Prev_Downloaded = ? WHERE ID =?",
+         Params    => (+Time, +Time, +Position.Last_Downloaded, +Position.ID));
    end Write_Last_Downloaded;
 
    procedure Write_Play_Before_After
@@ -894,13 +1039,29 @@ package body SMM.Database is
    begin
       Checked_Execute
         (DB,
-         Statement => "UPDATE Song SET Play_Before = ? WHERE ID =?",
-         Params    => (+After_ID, +Before_ID));
+         Statement => "UPDATE Song SET Modified = ?, Play_Before = ? WHERE ID =?",
+         Params    => (+UTC_Image (Ada.Calendar.Clock), +After_ID, +Before_ID));
 
       Checked_Execute
         (DB,
-         Statement => "UPDATE Song SET Play_After = ? WHERE ID =?",
-         Params    => (+Before_ID, +After_ID));
+         Statement => "UPDATE Song SET Modified = ?, Play_After = ? WHERE ID =?",
+         Params    => (+UTC_Image (Ada.Calendar.Clock), +Before_ID, +After_ID));
    end Write_Play_Before_After;
+
+   function Read_Schema_Version (DB : in Database'Class) return Integer
+   is
+      Table_Cur : constant Cursor := Checked_Fetch
+        (DB, "SELECT name FROM sqlite_master WHERE type='table' AND name='Schema_Version'");
+   begin
+      if Has_Element (Table_Cur) then
+         declare
+            Version_Cur : constant Cursor := Checked_Fetch (DB, "SELECT Version FROM Schema_Version WHERE ID=1");
+         begin
+            return Integer'Value (Version_Cur.Cursor.Value (GNATCOLL.SQL.Exec.Field_Index'First));
+         end;
+      else
+         return 0;
+      end if;
+   end Read_Schema_Version;
 
 end SMM.Database;

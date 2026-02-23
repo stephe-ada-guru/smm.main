@@ -2,7 +2,7 @@
 --
 --  See spec
 --
---  Copyright (C) 2009, 2011, 2012, 2013, 2015, 2018, 2019 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2009, 2011, 2012, 2013, 2015, 2018, 2019, 2025 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -19,7 +19,6 @@
 pragma License (GPL);
 
 with AUnit.Checks;
-with AWS.Log;
 with Ada.Calendar;
 with Ada.Directories;
 with SMM.Database;
@@ -43,6 +42,8 @@ package body Test_Least_Recent is
       Test_Utils.Create_Empty_DB (DB_File_Name);
 
       Open (DB, DB_File_Name);
+
+      --  Last_Downloaded = 0.0 = Default_Time_String = new
 
       Insert (DB, 1, "I1.mp3", 1.0, "instrumental");
       Insert (DB, 2, "I2.mp3", 1.0, "instrumental, dont_play");
@@ -102,7 +103,6 @@ package body Test_Least_Recent is
       DB    : SMM.Database.Database;
       Songs : List;
       I     : Cursor;
-      Log   : AWS.Log.Object;
    begin
       Create_Test_DB (DB);
 
@@ -111,8 +111,7 @@ package body Test_Least_Recent is
          Song_Count        => 2,
          New_Song_Count    => 2,
          Over_Select_Ratio => 2.0,
-         Seed              => 1,
-         Debug_Log         => Log);
+         Seed              => 1);
 
       Check ("song count", Integer (Songs.Length), 2);
 
@@ -132,8 +131,7 @@ package body Test_Least_Recent is
          Song_Count        => 2,
          New_Song_Count    => 4,
          Over_Select_Ratio => 2.0,
-         Seed              => 2,
-         Debug_Log         => Log);
+         Seed              => 2);
 
       Check ("song count", Integer (Songs.Length), 2);
 

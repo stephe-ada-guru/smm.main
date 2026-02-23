@@ -2,7 +2,7 @@
 --
 --  Root of Stephe's Music Manager packages
 --
---  Copyright (C) 2008 - 2018, 2025 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2018, 2025, 2026 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -18,9 +18,11 @@
 
 pragma License (GPL);
 
+with Ada.Containers.Doubly_Linked_Lists;
 with Ada.Containers.Indefinite_Doubly_Linked_Lists;
 with Ada.Strings.Unbounded;
-with SAL;
+with GNATCOLL.JSON;
+with SAL.Gen_Trimmed_Image;
 package SMM is
 
    function "+" (Item : in String) return Ada.Strings.Unbounded.Unbounded_String
@@ -33,6 +35,30 @@ package SMM is
    Max_Errors : Integer := 0;
 
    DB_File_Name : constant String := "/var/www/html/music_server_data/smm.db";
+
+   subtype Time_String is String (1 .. 19);
+   --  UTC time in 'YYYY-MM-DD HH:MM:SS' format
+
+   Jan_1_1958 : constant Time_String := "1958-01-01 00:00:00";
+   --  A time before any valid database time, used for a default time in
+   --  various places.
+
+   Default_Time_String : Time_String renames Jan_1_1958;
+
+   subtype Song_ID is Integer;
+   Invalid_Song_ID : constant Song_ID := -1;
+   Invalid_Song_ID_JSON : constant GNATCOLL.JSON.JSON_Value;
+
+   function Trimmed_Image is new SAL.Gen_Trimmed_Image (Song_ID);
+
+   package ID_Lists is new Ada.Containers.Doubly_Linked_Lists (Song_ID);
+
+   function Max_ID (List : in ID_Lists.List) return Song_ID;
+
+   function To_JSON (List : in ID_Lists.List) return GNATCOLL.JSON.JSON_Array;
+   --  Return array containing contents of List.
+
+   function To_List (List : in GNATCOLL.JSON.JSON_Array) return ID_Lists.List;
 
    function Normalize (Path : in String) return String;
    --  convert '\' to '/'
@@ -82,4 +108,9 @@ package SMM is
 
    Meta_File_Patterns : constant array (Natural range <>) of Ada.Strings.Unbounded.Unbounded_String :=
      (+"*.jpg", +"*.png", +"*.webp");
+
+private
+
+   Invalid_Song_ID_JSON : constant GNATCOLL.JSON.JSON_Value := GNATCOLL.JSON.Read ("{""ID"":-1}");
+
 end SMM;

@@ -2,7 +2,7 @@
 --
 --  Run one test
 --
---  Copyright (C) 2007 - 2009, 2013, 2015 - 2016, 2018 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2007 - 2009, 2013, 2015 - 2016, 2018, 2025, 2026 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -20,25 +20,24 @@ pragma License (GPL);
 
 with AUnit.Options;
 with AUnit.Reporter.Text;
-with AUnit.Run;
-with AUnit.Test_Cases;
+with AUnit.Test_Cases; use AUnit.Test_Cases;
 with AUnit.Test_Filters.Verbose;
+with AUnit.Test_Results;
 with AUnit.Test_Suites; use AUnit.Test_Suites;
 with Ada.Command_Line;
 with Ada.Exceptions;
 with Ada.Strings.Unbounded;
 with Ada.Text_IO;
 with GNAT.Traceback.Symbolic;
-with Test_Server;
+with SMM;
+with SMM.Database_Remote.IP.Test;
 procedure Test_One_Harness
 is
    --  command line arguments:
-   Usage : constant String := "[<verbose> [test_name [routine_name [debug]]]";
+   Usage : constant String := "[<aunit verbose> [test_name [routine_name [smm/test verbosity]]]";
    --  <verbose> is 1 | 0; 1 lists each enabled test/routine name before running it
    --
    --  test_name, routine_name can be '' to set trace for all routines.
-
-   Debug : Integer;
 
    Filter : aliased AUnit.Test_Filters.Verbose.Filter;
 
@@ -51,10 +50,8 @@ is
    Suite    : constant Access_Test_Suite := new Test_Suite;
    Reporter : AUnit.Reporter.Text.Text_Reporter;
 
-   function Return_Suite return AUnit.Test_Suites.Access_Test_Suite
-   is begin
-      return Suite;
-   end Return_Suite;
+   Result   : AUnit.Test_Results.Result;
+   Status   : AUnit.Status;
 
 begin
    declare
@@ -74,22 +71,22 @@ begin
          Filter.Routine_Name := Ada.Strings.Unbounded.To_Unbounded_String (Argument (3));
       end case;
 
-      Debug := (if Argument_Count >= 4 then Integer'Value (Argument (4)) else 0);
+      SMM.Verbosity := (if Argument_Count >= 4 then Integer'Value (Argument (4)) else 0);
    end;
 
-   Add_Test (Suite, AUnit.Test_Cases.Test_Case_Access'(new Test_Server.Test_Case (Debug => Debug, Verbosity => Debug)));
+   Add_Test (Suite, Test_Case_Access'(new SMM.Database_Remote.IP.Test.Test_Case
+                                        (Server_IP => new String'("127.0.0.1"),
+                                         Port      => 16#9002#,
+                                         Debug     => SMM.Verbosity)));
 
-   declare
-      function Runner is new AUnit.Run.Test_Runner_With_Status (Return_Suite);
-      Status : constant AUnit.Status := Runner (Reporter, Options);
-   begin
-      case Status is
-      when AUnit.Success =>
-         Ada.Command_Line.Set_Exit_Status (Ada.Command_Line.Success);
-      when AUnit.Failure =>
-         Ada.Command_Line.Set_Exit_Status (Ada.Command_Line.Failure);
-      end case;
-   end;
+   --  When run from Alire.make, current directory is smm.work_1, so the
+   --  'make' commands to create empty dbs should work.
+   --
+   --  Ada.Text_IO.Put_Line ("current directory: " & Ada.Directories.Current_Directory);
+   --  Ada.Directories.Set_Directory ("../..");
+   Run (Suite, Options, Result, Status);
+
+   AUnit.Reporter.Text.Report (Reporter, Result);
 
 exception
 when E : others =>

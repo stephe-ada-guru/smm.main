@@ -2,7 +2,7 @@
 --
 --  see spec
 --
---  Copyright (C) 2008, 2009, 2011 - 2018, 2025 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008, 2009, 2011 - 2018, 2025, 2026 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -35,6 +35,40 @@ package body SMM is
       end loop;
       return Result;
    end Normalize;
+
+   function Max_ID (List : in ID_Lists.List) return Song_ID
+   is begin
+      return Result : Song_ID := Invalid_Song_ID do
+         for ID of List loop
+            if ID > Result then
+               Result := ID;
+            end if;
+         end loop;
+      end return;
+   end Max_ID;
+
+   function To_JSON (List : in ID_Lists.List) return GNATCOLL.JSON.JSON_Array
+   is
+      use GNATCOLL.JSON;
+   begin
+      return Result : JSON_Array do
+         for ID of List loop
+            Append (Result, Create (ID));
+         end loop;
+      end return;
+   end To_JSON;
+
+   function To_List (List : in GNATCOLL.JSON.JSON_Array) return ID_Lists.List
+   is
+      use GNATCOLL.JSON;
+      use ID_Lists;
+   begin
+      return Result : ID_Lists.List do
+         for I in 1 .. Length (List) loop
+            Result.Append (Get (Get (List, I)));
+         end loop;
+      end return;
+   end To_List;
 
    function Relative_Name
      (Root      : in String;

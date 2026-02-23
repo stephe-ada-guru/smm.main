@@ -43,7 +43,7 @@ package body Test_Utils is
       Success : Boolean;
       Args : constant GNAT.OS_Lib.Argument_List :=
         (1 => new String'("-init"),
-         2 => new String'("../source/create_schema.sql"),
+         2 => new String'("source/create_schema.sql"),
          3 => new String'(DB_File_Name),
          4 => new String'(".quit"));
    begin
@@ -51,7 +51,7 @@ package body Test_Utils is
          Ada.Directories.Delete_File (DB_File_Name);
       end if;
 
-      GNAT.OS_Lib.Spawn ("sqlite3", Args, Success);
+      GNAT.OS_Lib.Spawn ("/usr/bin/sqlite3", Args, Success);
       if not Success then
          raise Program_Error with "sqlite3 failed to create db";
       end if;
@@ -88,7 +88,7 @@ package body Test_Utils is
          Album_Artist    => "none",
          Composer        => "none",
          Year            => 2000,
-         Title           => "none",
+         Title           => File_Name, --  So Song_Name index is unique
          Track           => 1,
          Last_Downloaded => Prefix & Duration'Image (Last_Downloaded) (2 .. 2));
    end Insert;

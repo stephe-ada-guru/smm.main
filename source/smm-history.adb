@@ -135,7 +135,7 @@ is
                Seconds_Per_Year : constant := 31_536_000.0;
 
                Now          : constant Time := Clock;
-               Default_Time : constant Time := Value (SMM.Database.Default_Time_String);
+               Default_Time : constant Time := Value (SMM.Default_Time_String);
 
                Last   : constant Time  := Value (I.Last_Downloaded);
                Prev   : constant Time  := Value (I.Prev_Downloaded);

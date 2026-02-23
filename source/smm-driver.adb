@@ -205,7 +205,7 @@ begin
          I : constant Cursor := Find_File_Name (DB, Name);
       begin
          if I.Has_Element then
-            DB.Delete (I);
+            DB.Mark_Deleted (I);
          else
             raise Ada.IO_Exceptions.Name_Error with "file name '" & Name & "' not found in db";
          end if;
@@ -259,7 +259,7 @@ begin
       declare
          ID_String : constant String := Argument (Next_Arg);
       begin
-         SMM.Show (SMM.Database.Song_ID'Value (ID_String));
+         SMM.Show (SMM.Song_ID'Value (ID_String));
       exception
       when Constraint_Error =>
          --  From Song_ID'Value

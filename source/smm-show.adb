@@ -20,7 +20,7 @@ pragma License (GPL);
 
 with SMM.Database;
 with Ada.Text_IO; use Ada.Text_IO;
-procedure SMM.Show (ID : in SMM.Database.Song_ID)
+procedure SMM.Show (ID : in SMM.Song_ID)
 is
    use SMM.Database;
    DB : SMM.Database.Database;

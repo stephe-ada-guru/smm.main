@@ -2,7 +2,7 @@
 --
 --  Interface to SQLite3 database
 --
---  Copyright (C) 2018 - 2020, 2025 Stephen Leake All Rights Reserved.
+--  Copyright (C) 2018 - 2020, 2025, 2026 Stephen Leake All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -24,31 +24,32 @@ with Ada.Strings.Unbounded;
 with GNATCOLL.SQL.Exec;
 package SMM.Database is
 
-   No_Data     : exception;
-   Null_Field  : exception;
-   Entry_Error : exception; --  User violated some limit or index constraint
+   Schema_Version : constant Integer := 2;
+   --  Increment each time create_schema.sql is changed. Must match
+   --  create_schema.sql Schema_Version.Version.
 
-   subtype Time_String is String (1 .. 19);
-   --  UTC time in 'YYYY-MM-DD HH:MM:SS' format
-
-   Jan_1_1958 : constant Time_String := "1958-01-01 00:00:00";
-   --  A time before any valid database Modified time, used for a
-   --  default time in various places.
-
-   Default_Time_String : Time_String renames Jan_1_1958;
+   Schema_Version_Error : exception;
+   No_Data              : exception;
+   Null_Field           : exception;
+   Entry_Error          : exception; --  User violated some limit or index constraint
 
    Null_ID  : constant Integer := -1;
    No_Track : constant Integer := -1;
    No_Year  : constant Integer := -1;
 
    type Database is new Ada.Finalization.Limited_Controlled with private;
-
-   subtype Song_ID is Integer;
+   type Database_Not_Null_Access is not null access all Database'Class;
 
    overriding procedure Finalize (DB : in out Database);
    --  Disconnect from database.
 
-   procedure Open (DB : in out Database; File_Name : in String);
+   procedure Open (DB : in out Database; File_Name : in String; Expected_Schema : in Integer := Schema_Version);
+   --  If File_Name exists, open it. If not, create it.
+   --
+   --  Raises Schema_Version_Error with message containing expected,
+   --  found if db Schema_Version.Version is not Expected_Schema.
+
+   procedure Close (DB : in out Database);
 
    procedure Insert
      (DB              : in Database;
@@ -65,12 +66,33 @@ package SMM.Database is
       Last_Downloaded : in Time_String := Default_Time_String;
       Prev_Downloaded : in Time_String := Default_Time_String;
       Play_Before     : in Song_ID     := Null_ID;
-      Play_After      : in Song_ID     := Null_ID);
+      Play_After      : in Song_ID     := Null_ID;
+      Modified        : in Time_String := Default_Time_String);
+   --  If Modified = Default_Time_String, sets Modified to Clock. Sets
+   --  Deleted to null.
+
+   procedure Insert_JSON (DB : in Database; Value : in GNATCOLL.JSON.JSON_Value);
+   --  Calls Insert, getting values from Value. Value must have structure
+   --  returned by Get_JSON.
+
+   function Get_JSON (DB : in Database; ID : in Song_ID) return GNATCOLL.JSON.JSON_Value;
+   --  Return all known data for ID. Result structure is either {id,
+   --  deleted} or {id, modified, data: {...}}. This allows
+   --  comparing data without id, modified, deleted.
+
+   function Index_Fields_Equal
+     (DB        : in out Database;
+      ID        : in     Song_ID;
+      New_Value : in     GNATCOLL.JSON.JSON_Value)
+     return Boolean;
+   --  If this returns True, Insert (New_Value) would raise a database
+   --  exception for colliding values. If it returns False, Insert
+   --  will not raise an exception.
 
    function UTC_Image (Item : in Ada.Calendar.Time) return Time_String;
 
    ----------
-   --  Iterate over db contents, in ID order
+   --  Iterate over db contents
 
    type Cursor is tagged private;
    --  We'd like to be able to do:
@@ -122,6 +144,10 @@ package SMM.Database is
 
    function Has_Element (Position : in Cursor) return Boolean;
 
+   function Get_JSON (Position : in Cursor) return GNATCOLL.JSON.JSON_Value;
+   --  Return all known data for Position. See Get_JSON (ID) for
+   --  structure of result.
+
    function First_By_ID (DB : in Database'Class) return Cursor;
    --  Increasing ID order.
 
@@ -140,6 +166,27 @@ package SMM.Database is
    function Find_File_Name (DB : in Database'Class; File_Name : in String) return Cursor;
    function Find_ID (DB : in Database'Class; ID : in Song_ID) return Cursor;
 
+   function Last_ID (DB : in Database) return Song_ID;
+
+   function Get_Modified
+     (DB       : in out Database;
+      ID       : in     Song_ID;
+      Modified : in     Time_String)
+     return ID_Lists.List;
+   --  Get a list of Song IDs with Song.ID <= ID and Song.Modified |
+   --  Song.Deleted > Modified.
+   --
+   --  Result is in ID order.
+
+   function Get_New
+     (DB        : in out Database;
+      ID        : in     Song_ID;
+      Max_Count : in     Ada.Containers.Count_Type := Ada.Containers.Count_Type'Last)
+     return ID_Lists.List;
+   --  Get a list of up to Max_Count Song IDs > ID.
+   --
+   --  Result is in ID order.
+
    procedure Update
      (DB              : in Database;
       Position        : in Cursor'Class;
@@ -155,15 +202,29 @@ package SMM.Database is
       Last_Downloaded : in Time_String := Default_Time_String;
       Prev_Downloaded : in Time_String := Default_Time_String;
       Play_Before     : in Song_ID     := Null_ID;
-      Play_After      : in Song_ID     := Null_ID);
+      Play_After      : in Song_ID     := Null_ID;
+      Modified        : in Time_String := Default_Time_String);
    --  Items that are the defaults are not updated.
    --  Cursor must be refetched to reflect changes.
+   --
+   --  If Modified = Default_Time_String, sets Modified to Clock.
 
-   procedure Delete
+   procedure Update_JSON (DB : in Database; Value : in GNATCOLL.JSON.JSON_Value);
+   --  Calls Update, getting values from Value. Value must have structure
+   --  returned by DB.Get_JSON, except any fields other than ID, Modified
+   --  may be empty (not updated).
+
+   procedure Mark_Deleted
      (DB       : in Database;
-      Position : in Cursor'Class);
-   --  Delete item at Position.
-   --  Position is invalid on return.
+      Position : in Cursor'Class;
+      Deleted : in Time_String := Default_Time_String);
+   --  Mark item at Position as 'deleted'. If Deleted is
+   --  Default_Time_String, set deleted time to Clock.
+
+   procedure Really_Delete
+     (DB : in Database;
+      ID : in Song_ID);
+   --  Actually delete the record; used only to resolve add/add conflicts.
 
    type Fields is (Artist, Album, Album_Artist, Composer, Title, Year, Category, Track, Play_Before, Play_After);
    subtype Required_Fields is Fields range Artist .. Category;
@@ -196,6 +257,8 @@ package SMM.Database is
       Position : in Cursor'Class;
       Data     : in Field_Values);
    --  Cursor must be refetched to reflect changes.
+   --
+   --  Sets Modified to Clock.
 
    function Find_Like
      (DB       : in Database'Class;
@@ -220,6 +283,8 @@ package SMM.Database is
 
    function ID (Position : in Cursor) return Song_ID;
    function ID_String (Position : in Cursor) return String;
+   function Modified (Position : in Cursor) return Time_String;
+   function Deleted (Position : in Cursor) return String; -- Empty string if null
    function File_Name (Position : in Cursor) return String;
    function Category (Position : in Cursor) return String;
    function Artist (Position : in Cursor) return String;
@@ -250,11 +315,16 @@ package SMM.Database is
      (Position : in Cursor;
       DB       : in Database'Class;
       Time     : in Time_String);
+   --  Sets Modified to Time.
 
    procedure Write_Play_Before_After
      (DB        : in Database'Class;
       Before_ID : in Song_ID;
       After_ID  : in Song_ID);
+   --  Sets Modified to Clock.
+
+   function Read_Schema_Version (DB : in Database'Class) return Integer;
+   --  Returns 0 if table Schema_Version does not exist.
 
 private
 

@@ -2,7 +2,7 @@ Alire.make
 
 build/Makefile obsolete
 
-see windows ~/Projects/org.stephe_leake.music_player/notes.text
+see ~/Projects/org.stephe_leake.music_player/notes.text
 
 branches:
     smm.main - installed in Debian

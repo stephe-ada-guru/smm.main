@@ -82,7 +82,7 @@ package body SMM.Song_Lists is
            (not DB_I.Category_Contains ("dont_play")) and
            (not DB_I.Play_After_Is_Present) -- only play this when Play_Before is included.
          then
-            if DB_I.Last_Downloaded = SMM.Database.Default_Time_String then
+            if DB_I.Last_Downloaded = SMM.Default_Time_String then
                if New_Song_Added_Count < New_Song_Count then
                   if Verbosity >= 2 then
                      Ada.Text_IO.Put_Line ("New:" & DB_I.ID'Image & " " & DB_I.Last_Downloaded);

@@ -8,3 +8,4 @@ build/objects/
 build/tmp/
 config/
 *.db
+*.config

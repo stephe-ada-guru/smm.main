@@ -9,11 +9,12 @@ maintainers-logins = ["stephe-ada-guru"]
 
 project-files = ["build/smm_alire.gpr"]
 
-#  We use ".exe" extension even on non-Windows, to simplify the makefiles.
-executables = ["smm.exe"]
-
 [[depends-on]]
+# I tried to put tests in a separate crate, but "alr build --
+# test_one_harness.adb" tried to build that file in the smm crate.
+# So this crate holds the main application and the tests.
 aunit = "^25.0.0"
+aunit_ext = "1.0.0"
 
 # 'gnatcoll' includes json
 gnatcoll        = "^23.0.0"

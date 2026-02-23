@@ -2,7 +2,7 @@
 --
 --  Run all AUnit tests.
 --
---  Copyright (C) 2009, 2011 - 2013, 2015, 2016, 2018, 2020, 2022 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2009, 2011 - 2013, 2015, 2016, 2018, 2020, 2022, 2025, 2026 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -18,9 +18,9 @@
 
 pragma License (GPL);
 
-with AUnit.Test_Cases; use AUnit.Test_Cases;
 with AUnit.Options;
 with AUnit.Reporter.Text;
+with AUnit.Test_Cases; use AUnit.Test_Cases;
 with AUnit.Test_Filters.Verbose;
 with AUnit.Test_Results;
 with AUnit.Test_Suites; use AUnit.Test_Suites;
@@ -29,25 +29,22 @@ with Ada.Exceptions;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with Ada.Text_IO;
 with GNAT.Traceback.Symbolic;
+with SMM.Database.Diff.Test_Apply;
+with SMM.Database.Diff.Test_Compute;
 with SMM.Database.Test;
+with SMM.Database_Remote.IP.Test;
 with SMM.ID3.Test;
-with Test_Copy;
-with Test_Import;
 with Test_Least_Recent;
 with Test_Play_Before;
-with Test_Server;
 procedure Test_All_Harness
 is
    --  command line arguments:
-   Usage : constant String := "[<verbose> [test_name [routine_name [verbosity [debug]]]]";
+   Usage : constant String := "[<verbose> [test_name [routine_name [verbosity]]]";
    --  <verbose> is 1 | 0; 1 lists each enabled test/routine name before running it
    --
    --  test_name, routine_name can be '' to set trace for all routines.
    --
    --  Set_Up_Case for all test_names is run without checking the filter.
-
-   Verbosity : Integer;
-   Debug     : Integer;
 
    Filter : aliased AUnit.Test_Filters.Verbose.Filter;
 
@@ -69,34 +66,31 @@ begin
       Filter.Verbose := Argument_Count > 0 and then Argument (1) = "1";
 
       case Argument_Count is
-      when 0 =>
+      when 0 | 1 =>
          null;
 
-      when 1 =>
+      when 2 =>
          Filter.Test_Name := To_Unbounded_String (Argument (2)); -- test name only
 
-      when 2 .. 5 =>
+      when others =>
          Filter.Test_Name    := To_Unbounded_String (Argument (2));
          Filter.Routine_Name := To_Unbounded_String (Argument (3));
          if Argument_Count >= 4 then
-            Verbosity := Integer'Value (Argument (4));
+            SMM.Verbosity := Integer'Value (Argument (4));
          end if;
-         if Argument_Count >= 5 then
-            Debug     := Integer'Value (Argument (5));
-         end if;
-
-      when others =>
-         raise Constraint_Error with Usage;
       end case;
    end;
 
+   Add_Test (Suite, Test_Case_Access'(new SMM.Database.Diff.Test_Apply.Test_Case (SMM.Verbosity)));
+   Add_Test (Suite, Test_Case_Access'(new SMM.Database.Diff.Test_Compute.Test_Case (SMM.Verbosity)));
    Add_Test (Suite, Test_Case_Access'(new SMM.Database.Test.Test_Case));
+   Add_Test (Suite, Test_Case_Access'(new SMM.Database_Remote.IP.Test.Test_Case
+                                        (Server_IP => "127.0.0.1",
+                                         Port      => 16#9002#,
+                                         Debug     => SMM.Verbosity)));
    Add_Test (Suite, Test_Case_Access'(new SMM.ID3.Test.Test_Case));
-   Add_Test (Suite, Test_Case_Access'(new Test_Copy.Test_Case (Verbosity => Verbosity)));
-   Add_Test (Suite, Test_Case_Access'(new Test_Import.Test_Case));
    Add_Test (Suite, Test_Case_Access'(new Test_Least_Recent.Test_Case));
    Add_Test (Suite, Test_Case_Access'(new Test_Play_Before.Test_Case));
-   Add_Test (Suite, Test_Case_Access'(new Test_Server.Test_Case (Debug => Debug, Verbosity => Verbosity)));
 
    Run (Suite, Options, Result, Status);
 
