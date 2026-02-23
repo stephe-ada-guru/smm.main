@@ -17,7 +17,7 @@ branches:
 
 (dvc-propagate-multiple
  '(("../smm.work_1"                    . "../smm.main")
-   ("../org.stephe_leake.music_player" . "../org.stephe_leake.music_player.work_1")))
+   ("../org.stephe_leake.music_player.work_1" . "../org.stephe_leake.music_player")))
 
 (dvc-propagate-one "../smm.work_1" "../smm.main")
 
