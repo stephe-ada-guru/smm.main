@@ -25,6 +25,9 @@ branches:
 (dvc-propagate-one "../smm.work_1" "../smm.main")
 
  current work
+sort playlist by year
+    spotify: .Get ("album").Get ("release_date")
+
 import report error if index fields empty
 
 smm check
