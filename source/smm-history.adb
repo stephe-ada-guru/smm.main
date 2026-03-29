@@ -174,6 +174,27 @@ is
                         then "play_after - "
                         else "") &
                        I.File_Name);
+
+                  if I.Play_After_Is_Present then
+                     if I.Play_After = Invalid_Song_ID then
+                        Put_Line (" ... before not set");
+                     else
+                        declare
+                           Before : constant SMM.Database.Cursor := DB.Find_ID (I.Play_After);
+                        begin
+                           if not Before.Has_Element then
+                              Put_Line (" ... before (=" & Integer'Image (I.Play_After) & ") not found");
+                           else
+                              Put_Line
+                                (" ... before: " &
+                                   (if Before.Category_Contains ("dont_play")
+                                    then "dont_play"
+                                    else "<not dont_play>!") &
+                                   Integer'Image (Before.ID) & Before.File_Name);
+                           end if;
+                        end;
+                     end if;
+                  end if;
                end if;
             end;
          when False =>
