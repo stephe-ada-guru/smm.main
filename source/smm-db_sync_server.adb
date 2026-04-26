@@ -20,6 +20,7 @@
 
 pragma License (GPL);
 
+with Ada.Calendar;
 with Ada.Command_Line;
 with Ada.Exceptions.Traceback;
 with Ada.Strings.Unbounded;
@@ -258,6 +259,10 @@ begin
                      end loop;
 
                      Progress.Complete;
+                     if Verbosity > 0 then
+                        Ada.Text_IO.Put_Line ("send_quit");
+                     end if;
+
                      Remote_DB.Send_Quit;
                      SMM.Database_Remote.IP.Free (Remote_DB);
                   end;
@@ -301,6 +306,10 @@ begin
 
                      Diff.Apply (Local_Changes, Remote_Changes, Show_Progress => True);
 
+                     if Verbosity > 0 then
+                        Ada.Text_IO.Put_Line ("send_quit");
+                        Ada.Text_IO.Put_Line ("server time " & SMM.Database.UTC_Image (Ada.Calendar.Clock));
+                     end if;
                      Remote_DB.Send_Quit;
                      SMM.Database_Remote.IP.Free (Remote_DB);
                   end;

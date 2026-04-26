@@ -353,7 +353,7 @@ package body SMM.Database.Diff is
       Remote_Changes :    out GNATCOLL.JSON.JSON_Array)
    is
       use GNATCOLL.JSON;
-      use type Ada.Containers.Count_Type;
+      use Ada.Containers;
 
       Local_Modified  : ID_Lists.List;
       Remote_Modified : ID_Lists.List;
@@ -364,6 +364,14 @@ package body SMM.Database.Diff is
       Remote_Modified := Diff.Remote_DB.Get_Modified (Sync_ID, Sync_Time);
       Local_New       := Diff.Local_DB.Get_New (Sync_ID);
       Remote_New      := Diff.Remote_DB.Get_New (Sync_ID);
+
+      if Diff.Verbosity > 0 then
+         Ada.Text_IO.Put_Line
+           ("db diff local_modified" & Count_Type'Image (Local_Modified.Length) &
+              " remote_modified" & Count_Type'Image (Remote_Modified.Length) &
+              " local_new" & Count_Type'Image (Local_New.Length) &
+              " remote_new" & Count_Type'Image (Remote_New.Length));
+      end if;
 
       Local_Changes  := Empty_Array;
       Conflicts      := Empty_Array;
@@ -383,6 +391,12 @@ package body SMM.Database.Diff is
          Compute_New
            (Diff, Local_New, Remote_New,
             Local_Changes, Conflicts, Remote_Changes);
+
+         if Diff.Verbosity > 0 then
+            Ada.Text_IO.Put_Line
+              ("db diff complete. local_changes" & Natural'Image (Length (Local_Changes)) &
+              " remote_changes" & Natural'Image (Length (Remote_Changes)));
+         end if;
 
          Progress.Complete;
       end;
@@ -446,10 +460,13 @@ package body SMM.Database.Diff is
             end if;
             Diff.Remote_DB.Apply (Get (Remote_Changes, I));
          exception
-         when Ada.IO_Exceptions.End_Error =>
+         when E : Ada.IO_Exceptions.End_Error =>
+            if Diff.Verbosity > 0 then
+               Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, GNAT.Traceback.Symbolic.Symbolic_Traceback (E));
+            end if;
             raise;
          when E : others =>
-            if Diff.Verbosity > 1 then
+            if Diff.Verbosity > 0 then
                Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, GNAT.Traceback.Symbolic.Symbolic_Traceback (E));
             end if;
             raise SAL.Programmer_Error with "Remote apply: " & Exception_Name (E) & ": " & Exception_Message (E);
