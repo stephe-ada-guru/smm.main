@@ -172,47 +172,15 @@ package body SMM.Database.Diff is
                Next (Local_J);
                Next (Remote_J);
             else
-               --  Modified | Deleted only in local
-               --
-               --  May be recovering from previous modified/modified
-               --  conflict. Don't include modified time in compare.
-               declare
-                  Local_JSON  : constant JSON_Value := Diff.Local_DB.Get_JSON (Current_ID);
-                  Remote_JSON : constant JSON_Value := Diff.Remote_DB.Get_JSON (Current_ID);
-               begin
-                  if Local_JSON.Has_Field ("Deleted") then
-                     Append (Remote_Changes, To_Update (Local_JSON));
-
-                  elsif JSON_Value'(Local_JSON.Get ("Data")) = JSON_Value'(Remote_JSON.Get ("Data")) then
-                     --  all fields except Modified | Deleted are equal; no action
-                     null;
-                  else
-                     Append (Remote_Changes, To_Update (Local_JSON));
-                  end if;
-               end;
+               --  Modified | Deleted only in local; always propagate.
+               Append (Remote_Changes, To_Update (Diff.Local_DB.Get_JSON (Current_ID)));
                Next (Local_J);
 
             end if;
 
          elsif Current_ID = Remote_Modified_ID then
-            --  Modified | Deleted only in remote
-            --
-            --  May be recovering from previous modified/modified
-            --  conflict. Don't include modified time in compare.
-            declare
-               Local_JSON  : constant JSON_Value := Diff.Local_DB.Get_JSON (Current_ID);
-               Remote_JSON : constant JSON_Value := Diff.Remote_DB.Get_JSON (Current_ID);
-            begin
-               if Remote_JSON.Has_Field ("Deleted") then
-                  Append (Local_Changes, To_Update (Remote_JSON));
-
-               elsif JSON_Value'(Local_JSON.Get ("Data")) = JSON_Value'(Remote_JSON.Get ("Data")) then
-                  --  all fields except Modified | Deleted are equal; no action
-                  null;
-               else
-                  Append (Local_Changes, To_Update (Remote_JSON));
-               end if;
-            end;
+            --  Modified | Deleted only in remote; always propagate.
+            Append (Local_Changes, To_Update (Diff.Remote_DB.Get_JSON (Current_ID)));
             Next (Remote_J);
 
          else

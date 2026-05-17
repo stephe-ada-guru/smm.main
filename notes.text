@@ -25,14 +25,35 @@ branches:
 (dvc-propagate-one "../smm.work_1" "../smm.main")
 
  current work
-sort playlist by year
-    spotify: .Get ("album").Get ("release_date")
+speed up sync
+    try VSS.JSON - not a full JSON implementation, just numbers.
+
+    compile --release  done
+
+    ask claude
+        suggested protocol changes to reduce tcp messages:
+
+  A — Batch Apply (biggest win for Init_Remote, helps Inc_Diff too)
+                Apply currently calls Remote_DB.Apply once per record.
+                Add a new operation (e.g., Apply_Batch) that sends an entire JSON array and expects one Ack.
+                Ada side change is small; Android must accept an array of operations.
+
+  B — Eliminate per-record Get_JSON in Compute_Changes (biggest win for Inc_Diff)
+  - B1: Skip the data-equality check — for "modified only in local", we know something changed,
+        so just always send the update without fetching remote JSON first.
+        This requires no Android changes and removes 1 round-trip per locally-modified record.
+            Done in work_1, running.
+
+  - B2: Get_Modified_With_Data — new operation that returns IDs and their full JSON in one shot,
+        replacing Get_Modified + N × Get_JSON. Reduces N+1 round-trips to 1.
+        Requires Android to support the combined operation.
+
+
 
 import report error if index fields empty
 
 smm check
     reports missing files that are not in fact missing
-        get a Debian computer
     recompile with gnat 15?
 
     ignore missing album if in album_artist directory?
