@@ -129,6 +129,22 @@ package body SMM.Database_Remote.IP is
       return To_List (Get (Check_Ack (DB), "List"));
    end Get_Modified;
 
+   overriding function Get_Modified_With_Data
+     (DB       : in out Database;
+      ID       : in     Song_ID;
+      Modified : in     Time_String)
+     return GNATCOLL.JSON.JSON_Array
+   is
+      use GNATCOLL.JSON;
+      Msg : constant JSON_Value := Create_Object;
+   begin
+      Msg.Set_Field ("Operation", Operations'Image (Get_Modified_With_Data));
+      Msg.Set_Field ("ID", ID);
+      Msg.Set_Field ("Modified", Modified);
+      Send (DB, Msg.Write);
+      return Get (Check_Ack (DB), "List");
+   end Get_Modified_With_Data;
+
    overriding function Get_New
      (DB        : in out Database;
       ID        : in     Song_ID;

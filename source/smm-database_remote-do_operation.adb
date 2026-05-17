@@ -67,6 +67,18 @@ begin
          Send_Data (Stream, Result);
       end;
 
+   when Get_Modified_With_Data =>
+      declare
+         Result : constant JSON_Value := Create_Object;
+      begin
+         Set_Field
+           (Result, "List",
+            Local_DB.Get_Modified_With_Data
+              (Msg.Get ("ID"),
+               Msg.Get ("Modified")));
+         Send_Data (Stream, Result);
+      end;
+
    when Get_New =>
       declare
          Result : constant JSON_Value := Create_Object;

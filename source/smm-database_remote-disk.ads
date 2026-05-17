@@ -40,6 +40,12 @@ package SMM.Database_Remote.Disk is
       Modified : in     Time_String)
      return ID_Lists.List;
 
+   overriding function Get_Modified_With_Data
+     (DB       : in out Database;
+      ID       : in     Song_ID;
+      Modified : in     Time_String)
+     return GNATCOLL.JSON.JSON_Array;
+
    overriding function Get_New
      (DB        : in out Database;
       ID        : in     Song_ID;

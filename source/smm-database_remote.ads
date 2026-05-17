@@ -46,7 +46,8 @@ package SMM.Database_Remote is
      (Quit,
       Get,
       Get_Last_ID,
-      Get_Modified, -- ID, Modified; return ids > ID and modified > Modified
+      Get_Modified,           -- ID, Modified; return ids > ID and modified > Modified
+      Get_Modified_With_Data, -- ID, Modified; return full JSON records (same as Get_JSON) in ID order
       Get_New,
       Conflict,
       Progress,
@@ -115,6 +116,16 @@ package SMM.Database_Remote is
      return ID_Lists.List is abstract;
    --  Get a list of Song IDs with Song.ID <= ID and Song.Modified |
    --  Song.Deleted > Modified.
+   --
+   --  Result is in ID order.
+
+   function Get_Modified_With_Data
+     (DB       : in out Database;
+      ID       : in     Song_ID;
+      Modified : in     Time_String)
+     return GNATCOLL.JSON.JSON_Array is abstract;
+   --  Get full JSON records (same format as Get_JSON) for all songs with
+   --  Song.ID <= ID and Song.Modified | Song.Deleted > Modified.
    --
    --  Result is in ID order.
 

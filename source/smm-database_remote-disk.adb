@@ -81,6 +81,21 @@ package body SMM.Database_Remote.Disk is
       return DB.DB.Get_Modified (ID, Modified);
    end Get_Modified;
 
+   overriding function Get_Modified_With_Data
+     (DB       : in out Database;
+      ID       : in     Song_ID;
+      Modified : in     Time_String)
+     return GNATCOLL.JSON.JSON_Array
+   is
+      use GNATCOLL.JSON;
+      Result : JSON_Array := Empty_Array;
+   begin
+      for I of DB.DB.Get_Modified (ID, Modified) loop
+         Append (Result, DB.Get_JSON (I));
+      end loop;
+      return Result;
+   end Get_Modified_With_Data;
+
    overriding function Get_New
      (DB        : in out Database;
       ID        : in     Song_ID;
