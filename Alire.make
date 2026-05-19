@@ -1,8 +1,8 @@
 # Build smm with Alire
 
-# ALIRE_BUILD_ARGS ?= --release
+ALIRE_BUILD_ARGS ?= --release
 # also -gnatdp -gnatdV -gnatdi
-ALIRE_BUILD_ARGS ?= --development
+#ALIRE_BUILD_ARGS ?= --development
 #-- -v -gnatdi smm-database-diff-test_apply.adb
 
 #ALIRE_ARGS ?= -v
@@ -92,6 +92,8 @@ empty_database_test_2 : source/create_schema.sql
 	echo "Server_IP=$(SERVER_IP)" >> smm_test_2.config
 	echo "Server_Port=$(SERVER_PORT)" >> smm_test_2.config
 
+%.exe : force
+	cd build; alr exec -- gprbuild -p -j8 -P smm_test.gpr $(GPRBUILD_ARGS) $*
 
 t1 : VERBOSITY ?= 0
 t1 : $(ALIRE_EXEC_DIR)/smm.exe
