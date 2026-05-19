@@ -93,18 +93,18 @@ package body SMM.Database.Diff is
    end To_Renumber;
 
    procedure Compute_Changes
-     (Diff            : in     Diff_Type;
-      Local_Modified  : in     ID_Lists.List;
-      Remote_Modified : in     ID_Lists.List;
-      Local_Changes   : in out GNATCOLL.JSON.JSON_Array;
-      Conflicts       : in out GNATCOLL.JSON.JSON_Array;
-      Remote_Changes  : in out GNATCOLL.JSON.JSON_Array;
-      Progress        : in out SAL.Progress.Progress_Type)
+     (Diff                 : in     Diff_Type;
+      Local_Modified       : in     ID_Lists.List;
+      Remote_Modified_Data : in     GNATCOLL.JSON.JSON_Array;
+      Local_Changes        : in out GNATCOLL.JSON.JSON_Array;
+      Conflicts            : in out GNATCOLL.JSON.JSON_Array;
+      Remote_Changes       : in out GNATCOLL.JSON.JSON_Array;
+      Progress             : in out SAL.Progress.Progress_Type)
    is
       use GNATCOLL.JSON;
       use ID_Lists;
       Local_J  : ID_Lists.Cursor := Local_Modified.First;
-      Remote_J : ID_Lists.Cursor := Remote_Modified.First;
+      Remote_J : Integer         := 1;
 
       Local_Modified_ID  : Song_ID;
       Remote_Modified_ID : Song_ID;
@@ -124,7 +124,10 @@ package body SMM.Database.Diff is
 
       begin
          Local_Modified_ID  := (if Local_J = No_Element then Invalid_Song_ID else Element (Local_J));
-         Remote_Modified_ID := (if Remote_J = No_Element then Invalid_Song_ID else Element (Remote_J));
+         Remote_Modified_ID :=
+           (if Remote_J > Length (Remote_Modified_Data)
+            then Invalid_Song_ID
+            else Integer'(Get (Remote_Modified_Data, Remote_J).Get ("ID")));
 
          Current_ID := Invalid_Song_ID;
 
@@ -147,7 +150,7 @@ package body SMM.Database.Diff is
                --  conflict. Don't include modified time in compare.
                declare
                   Local_JSON  : constant JSON_Value := Diff.Local_DB.Get_JSON (Current_ID);
-                  Remote_JSON : constant JSON_Value := Diff.Remote_DB.Get_JSON (Current_ID);
+                  Remote_JSON : constant JSON_Value := Get (Remote_Modified_Data, Remote_J);
                begin
                   if Local_JSON.Has_Field ("Deleted") then
                      if Remote_JSON.Has_Field ("Deleted") then
@@ -155,65 +158,33 @@ package body SMM.Database.Diff is
                         null;
                      else
                         --  Deleted in Local, Modified in Remote
-                        Append (Conflicts, To_Conflict (Diff, Current_ID));
+                        Append (Conflicts, To_Conflict (Local_JSON, Remote_JSON));
                      end if;
                   else
                      --  Modified in local
                      if Remote_JSON.Has_Field ("Deleted") then
-                        Append (Conflicts, To_Conflict (Diff, Current_ID));
+                        Append (Conflicts, To_Conflict (Local_JSON, Remote_JSON));
                      elsif JSON_Value'(Local_JSON.Get ("Data")) = JSON_Value'(Remote_JSON.Get ("Data")) then
                         --  all fields except Modified or Deleted are equal; no action
                         null;
                      else
-                        Append (Conflicts, To_Conflict (Diff, Current_ID));
+                        Append (Conflicts, To_Conflict (Local_JSON, Remote_JSON));
                      end if;
                   end if;
                end;
                Next (Local_J);
-               Next (Remote_J);
+               Remote_J := @ + 1;
             else
-               --  Modified | Deleted only in local
-               --
-               --  May be recovering from previous modified/modified
-               --  conflict. Don't include modified time in compare.
-               declare
-                  Local_JSON  : constant JSON_Value := Diff.Local_DB.Get_JSON (Current_ID);
-                  Remote_JSON : constant JSON_Value := Diff.Remote_DB.Get_JSON (Current_ID);
-               begin
-                  if Local_JSON.Has_Field ("Deleted") then
-                     Append (Remote_Changes, To_Update (Local_JSON));
-
-                  elsif JSON_Value'(Local_JSON.Get ("Data")) = JSON_Value'(Remote_JSON.Get ("Data")) then
-                     --  all fields except Modified | Deleted are equal; no action
-                     null;
-                  else
-                     Append (Remote_Changes, To_Update (Local_JSON));
-                  end if;
-               end;
+               --  Modified | Deleted only in local; always propagate.
+               Append (Remote_Changes, To_Update (Diff.Local_DB.Get_JSON (Current_ID)));
                Next (Local_J);
 
             end if;
 
          elsif Current_ID = Remote_Modified_ID then
-            --  Modified | Deleted only in remote
-            --
-            --  May be recovering from previous modified/modified
-            --  conflict. Don't include modified time in compare.
-            declare
-               Local_JSON  : constant JSON_Value := Diff.Local_DB.Get_JSON (Current_ID);
-               Remote_JSON : constant JSON_Value := Diff.Remote_DB.Get_JSON (Current_ID);
-            begin
-               if Remote_JSON.Has_Field ("Deleted") then
-                  Append (Local_Changes, To_Update (Remote_JSON));
-
-               elsif JSON_Value'(Local_JSON.Get ("Data")) = JSON_Value'(Remote_JSON.Get ("Data")) then
-                  --  all fields except Modified | Deleted are equal; no action
-                  null;
-               else
-                  Append (Local_Changes, To_Update (Remote_JSON));
-               end if;
-            end;
-            Next (Remote_J);
+            --  Modified | Deleted only in remote; always propagate.
+            Append (Local_Changes, To_Update (Get (Remote_Modified_Data, Remote_J)));
+            Remote_J := @ + 1;
 
          else
             raise SAL.Programmer_Error;
@@ -355,20 +326,20 @@ package body SMM.Database.Diff is
       use GNATCOLL.JSON;
       use Ada.Containers;
 
-      Local_Modified  : ID_Lists.List;
-      Remote_Modified : ID_Lists.List;
-      Local_New       : ID_Lists.List;
-      Remote_New      : ID_Lists.List;
+      Local_Modified       : ID_Lists.List;
+      Remote_Modified_Data : GNATCOLL.JSON.JSON_Array;
+      Local_New            : ID_Lists.List;
+      Remote_New           : ID_Lists.List;
    begin
-      Local_Modified  := Diff.Local_DB.Get_Modified (Sync_ID, Sync_Time);
-      Remote_Modified := Diff.Remote_DB.Get_Modified (Sync_ID, Sync_Time);
-      Local_New       := Diff.Local_DB.Get_New (Sync_ID);
-      Remote_New      := Diff.Remote_DB.Get_New (Sync_ID);
+      Local_Modified       := Diff.Local_DB.Get_Modified (Sync_ID, Sync_Time);
+      Remote_Modified_Data := Diff.Remote_DB.Get_Modified_With_Data (Sync_ID, Sync_Time);
+      Local_New            := Diff.Local_DB.Get_New (Sync_ID);
+      Remote_New           := Diff.Remote_DB.Get_New (Sync_ID);
 
       if Diff.Verbosity > 0 then
          Ada.Text_IO.Put_Line
            ("db diff local_modified" & Count_Type'Image (Local_Modified.Length) &
-              " remote_modified" & Count_Type'Image (Remote_Modified.Length) &
+              " remote_modified" & Count_Type'Image (Count_Type (GNATCOLL.JSON.Length (Remote_Modified_Data))) &
               " local_new" & Count_Type'Image (Local_New.Length) &
               " remote_new" & Count_Type'Image (Remote_New.Length));
       end if;
@@ -379,13 +350,14 @@ package body SMM.Database.Diff is
 
       declare
          Progress : SAL.Progress.Progress_Type
-           (Integer (Local_Modified.Length + Remote_Modified.Length + Local_New.Length + Remote_New.Length),
+           (Integer (Local_Modified.Length) + Length (Remote_Modified_Data) +
+              Integer (Local_New.Length + Remote_New.Length),
             Intervals => 100,
             Show      => Diff.Show_Progress);
       begin
          Compute_Changes
            (Diff,
-            Local_Modified, Remote_Modified,
+            Local_Modified, Remote_Modified_Data,
             Local_Changes, Conflicts, Remote_Changes, Progress);
 
          Compute_New
