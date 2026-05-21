@@ -1,6 +1,6 @@
-Alire.make
+Alire.make  don't need?
 
-build/Makefile obsolete
+build/Makefile resurrect; use for testing.
 
 see ~/Projects/org.stephe_leake.music_player/notes.text
 

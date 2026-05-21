@@ -2,7 +2,7 @@
 --
 --  Import new files into SMM db.
 --
---  Copyright (C) 2008 - 2010, 2012, 2014, 2018 - 2019, 2022, 2025 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2010, 2012, 2014, 2018 - 2019, 2022, 2025, 2026 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -19,6 +19,7 @@
 pragma License (GPL);
 
 with Ada.Directories;
+with Ada.Exceptions;
 with Ada.Text_IO;
 with SAL;
 with SMM.Database;
@@ -50,6 +51,8 @@ is
    is
       use Ada.Directories;
       use SMM.Database;
+
+      Abort_Import : exception;
 
       procedure Process_Dir_Entry (Dir_Entry : in Directory_Entry_Type)
       is
@@ -109,6 +112,11 @@ is
                      --  not a recognized music file extension; ignore
                      null;
                   end if;
+               exception
+               when E : SMM.Database.Entry_Error =>
+                  --  Probably missing album_artist.
+                  Ada.Text_IO.Put_Line (Ada.Exceptions.Exception_Message (E));
+                  raise Abort_Import;
                end;
             end if;
 
@@ -134,6 +142,9 @@ is
       else
          Ada.Text_IO.Put_Line (Root & Dir & " does not exist");
       end if;
+   exception
+   when Abort_Import =>
+      null; --  Message already output.
    end Import_Dir;
 
 begin

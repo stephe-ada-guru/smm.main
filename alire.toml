@@ -7,19 +7,19 @@ authors = ["Stephen Leake"]
 maintainers = ["Stephen Leake <stephen_leake@stephe-leake.org>"]
 maintainers-logins = ["stephe-ada-guru"]
 
-project-files = ["build/smm_alire.gpr"]
+project-files = ["build/smm.gpr"]
 
 [[depends-on]]
 # I tried to put tests in a separate crate, but "alr build --
 # test_one_harness.adb" tried to build that file in the smm crate.
 # So this crate holds the main application and the tests.
-aunit = "^25.0.0"
+aunit = "^26.0.0"
 aunit_ext = "1.0.0"
 
 # 'gnatcoll' includes json
-gnatcoll        = "^23.0.0"
-gnatcoll_iconv  = "^23.0.0"
-gnatcoll_sqlite = "^23.0.0"
+gnatcoll        = "^26.0.0"
+gnatcoll_iconv  = "^26.0.0"
+gnatcoll_sqlite = "^26.0.0"
 
 stephes_ada_library = "~3.7.2"
 

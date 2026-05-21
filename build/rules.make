@@ -1,22 +1,28 @@
-# obsolete; move rules to ../Alire.make
+# used by Makefile
 
-all : obj/development/smm.exe
-all : obj/development/smm-server_driver.exe
-all : test_all_harness.diff
-
-tests : test_all_harness.diff
+vpath %.adb source test
+vpath %.svg source
 
 include ../../org.stephe_leake.makerules/common_rules.make
-include ../../org.stephe_leake.makerules/gprbuild_rules.make
-include ../../org.stephe_leake.makerules/texinfo_rules.make
 
-obj/development/% : alr.env force
-	. ./alr.env; gprbuild -P smm.gpr
+# don't strip, so stack traceback is useful on errors
+$(HOME)/.local/bin/% : bin/%
+	cp $^ $@
 
-test_all_harness.out : test_all_harness.exe smm-server_driver.exe smm.exe
+$(SERVER_DATA)/liner_notes_icon-desktop.png $(SERVER_DATA)/liner_notes_icon-tablet.png $(SERVER_DATA)/liner_notes_icon-phone.png : liner_notes_icon.svg
+	rsvg-convert -h 50 -a $< > $@
 
-test_all_harness.exe : GNAT_PROJECT := smm_test.gpr
-test_one_harness.exe : GNAT_PROJECT := smm_test.gpr
+$(SERVER_DATA)/play_icon-desktop.png $(SERVER_DATA)/play_icon-tablet.png $(SERVER_DATA)/play_icon-phone.png : play_icon.svg
+	rsvg-convert -h 10 -a $< > $@
+
+$(SERVER_DATA)/app_icon.png : app_icon.svg
+	rsvg-convert -h 20 -a $< > $@
+
+$(SERVER_DATA)/% : source/%
+	cp $^ $@
+
+test_%.exe :
+	alr exec -- gprbuild -P smm_test.gpr $@.adb
 
 create_test_db :
 	mkdir -p tmp/source
@@ -28,11 +34,5 @@ sqlite-clean :
 
 clean :: sqlite-clean
 	rm -fr tmp
-
-VPATH := ../source
-VPATH += ../test
-
-GNAT_PROJECT := smm.gpr
-GPRBUILD_TARGET := $(shell gcc -dumpmachine)
 
 # end of file

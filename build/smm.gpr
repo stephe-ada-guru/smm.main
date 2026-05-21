@@ -1,33 +1,29 @@
-with "aws";
-with "gnatcoll_sqlite";
-with "gnatcoll_iconv";
-with "sal_devel";
-with "standard_common";
+--  For building smm using Alire.
+
+with "../config/smm_config.gpr"; -- 'with's all depends-on
+with "standard_common_alire";
 project Smm is
    for Source_Dirs use ("../source");
 
-   for Object_Dir use "objects";
-   for Exec_Dir use ".";
+   for Object_Dir use "obj/" & Smm_Config.Build_Profile;
+   for Create_Missing_Dirs use "True";
+   for Exec_Dir use "bin";
 
-   for Main use ("smm-driver", "smm-server_driver");
+   for Main use ("smm-driver", "smm-server_driver", "smm-db_sync_server");
 
    package Compiler is
-      case Standard_Common.Build is
-      when "Debug" =>
-         for Default_Switches ("Ada") use
-           Standard_Common.Compiler'Default_Switches ("Ada") &
-           Standard_Common.Compiler.Debug_Switches &
-           Standard_Common.Compiler.Style_Checks;
-      when "Normal" =>
-         for Default_Switches ("Ada") use
-           Standard_Common.Compiler'Default_Switches ("Ada") &
-           Standard_Common.Compiler.Release_Switches &
-           Standard_Common.Compiler.Style_Checks;
+      case Smm_Config.Build_Profile is
+      when "release" =>
+         for Default_Switches ("Ada") use Standard_Common_Alire.Release_Switches & Standard_Common_Alire.Style_Checks;
+
+      when "validation" | "development" =>
+         for Default_Switches ("Ada") use Standard_Common_Alire.Debug_Switches & Standard_Common_Alire.Style_Checks;
+
       end case;
    end Compiler;
 
    package Binder is
-      for Default_Switches ("Ada") use Standard_Common.Binder'Default_Switches ("Ada");
+      for Switches ("Ada") use ("-Es"); --  Symbolic traceback
    end Binder;
 
    package Builder is

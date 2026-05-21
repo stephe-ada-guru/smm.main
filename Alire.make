@@ -15,49 +15,11 @@ STEPHES_ADA_LIBRARY_ALIRE_PREFIX ?= $(CURDIR)/../org.stephe_leake.sal
 
 include $(STEPHES_ADA_LIBRARY_ALIRE_PREFIX)/build/alire_rules.make
 
-vpath %.adb source test
-vpath %.svg source
-
-all : alire-build install
-
-install : server-data
-install : $(HOME)/.local/bin/smm.exe
-install : $(HOME)/.local/bin/smm-db_sync_server.exe
-
-# These require sudo, which emacs compile doesn't handle properly
-# install : /usr/lib/cgi-bin/smm-server_driver.exe
-# install : /usr/lib/cgi-bin/smm
-
-# SERVER_DATA defined in prj-alire.el
-
-server-data : $(SERVER_DATA)/liner_notes_icon-desktop.png
-server-data : $(SERVER_DATA)/liner_notes_icon-tablet.png
-server-data : $(SERVER_DATA)/liner_notes_icon-phone.png
-server-data : $(SERVER_DATA)/play_icon-desktop.png
-server-data : $(SERVER_DATA)/play_icon-tablet.png
-server-data : $(SERVER_DATA)/play_icon-phone.png
-server-data : $(SERVER_DATA)/songs.css
-server-data : $(SERVER_DATA)/songs.js
-
-$(SERVER_DATA)/liner_notes_icon-desktop.png $(SERVER_DATA)/liner_notes_icon-tablet.png $(SERVER_DATA)/liner_notes_icon-phone.png : liner_notes_icon.svg
-	rsvg-convert -h 50 -a $< > $@
-
-$(SERVER_DATA)/play_icon-desktop.png $(SERVER_DATA)/play_icon-tablet.png $(SERVER_DATA)/play_icon-phone.png : play_icon.svg
-	rsvg-convert -h 10 -a $< > $@
-
-$(SERVER_DATA)/app_icon.png : app_icon.svg
-	rsvg-convert -h 20 -a $< > $@
-
-$(SERVER_DATA)/% : source/%
-	cp $^ $@
+all : alire-build
 
 # script used in URLs.
 /usr/lib/cgi-bin/smm : source/smm
 	sudo cp $^ $@
-
-# don't strip, so stack traceback is useful on errors
-$(HOME)/.local/bin/% : $(ALIRE_EXEC_DIR)/%
-	cp $^ $@
 
 modify : $(ALIRE_EXEC_DIR)/smm-database-modify_schema.exe modify-clean smm_new.db
 	$(ALIRE_EXEC_DIR)/smm-database-modify_schema.exe /var/www/html/music_server_data/smm.db smm_new.db
