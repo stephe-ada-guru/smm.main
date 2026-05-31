@@ -66,6 +66,17 @@ package body SMM.Database.Diff is
       end return;
    end To_Insert;
 
+   function To_Insert_Batch (Item : in GNATCOLL.JSON.JSON_Array) return GNATCOLL.JSON.JSON_Value
+   is
+      use SMM.Database_Remote;
+      use GNATCOLL.JSON;
+   begin
+      return Result : constant JSON_Value := Create_Object do
+         Result.Set_Field ("Operation", Operations'Image (Insert_Batch));
+         Result.Set_Field ("Value", Item);
+      end return;
+   end To_Insert_Batch;
+
    function To_Update (Item : in GNATCOLL.JSON.JSON_Value) return GNATCOLL.JSON.JSON_Value
    is
       use SMM.Database_Remote;
@@ -76,6 +87,17 @@ package body SMM.Database.Diff is
          Result.Set_Field ("Value", Item);
       end return;
    end To_Update;
+
+   function To_Update_Batch (Item : in GNATCOLL.JSON.JSON_Array) return GNATCOLL.JSON.JSON_Value
+   is
+      use SMM.Database_Remote;
+      use GNATCOLL.JSON;
+   begin
+      return Result : constant JSON_Value := Create_Object do
+         Result.Set_Field ("Operation", Operations'Image (Update_Batch));
+         Result.Set_Field ("Value", Item);
+      end return;
+   end To_Update_Batch;
 
    function To_Renumber
      (Old_ID : in Song_ID;
@@ -330,6 +352,9 @@ package body SMM.Database.Diff is
       Remote_Modified_Data : GNATCOLL.JSON.JSON_Array;
       Local_New            : ID_Lists.List;
       Remote_New           : ID_Lists.List;
+
+      Remote_Updates : GNATCOLL.JSON.JSON_Array;
+      Remote_Inserts : GNATCOLL.JSON.JSON_Array;
    begin
       Local_Modified       := Diff.Local_DB.Get_Modified (Sync_ID, Sync_Time);
       Remote_Modified_Data := Diff.Remote_DB.Get_Modified_With_Data (Sync_ID, Sync_Time);
@@ -357,17 +382,30 @@ package body SMM.Database.Diff is
       begin
          Compute_Changes
            (Diff,
-            Local_Modified, Remote_Modified_Data,
-            Local_Changes, Conflicts, Remote_Changes, Progress);
+            Local_Modified,
+            Remote_Modified_Data,
+            Local_Changes,
+            Conflicts,
+            Remote_Updates,
+            Progress);
 
          Compute_New
-           (Diff, Local_New, Remote_New,
-            Local_Changes, Conflicts, Remote_Changes);
+           (Diff,
+            Local_New,
+            Remote_New,
+            Local_Changes,
+            Conflicts,
+            Remote_Inserts);
+
+         Append (Remote_Changes, To_Update_Batch (Remote_Updates));
+         Append (Remote_Changes, To_Insert_Batch (Remote_Inserts));
 
          if Diff.Verbosity > 0 then
             Ada.Text_IO.Put_Line
-              ("db diff complete. local_changes" & Natural'Image (Length (Local_Changes)) &
-              " remote_changes" & Natural'Image (Length (Remote_Changes)));
+              ("db diff complete. local_changes"
+               & Natural'Image (Length (Local_Changes))
+               & " remote_changes"
+               & Natural'Image (Length (Remote_Changes)));
          end if;
 
          Progress.Complete;

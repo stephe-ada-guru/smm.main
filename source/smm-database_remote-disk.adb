@@ -28,28 +28,46 @@ package body SMM.Database_Remote.Disk is
       Operation : constant Apply_Operations := Operations'Value (Get (Msg, "Operation"));
    begin
       case Operation is
-      when Insert =>
-         DB.DB.Insert_JSON (Get (Msg, "Value"));
+         when Insert       =>
+            DB.DB.Insert_JSON (Get (Msg, "Value"));
 
-      when Update =>
-         DB.DB.Update_JSON (Get (Msg, "Value"));
+         when Insert_Batch =>
+            declare
+               Values : constant GNATCOLL.JSON.JSON_Array := Get (Msg, "Value");
+            begin
+               for Value of Values loop
+                  DB.DB.Insert_JSON (Value);
+               end loop;
+            end;
 
-      when Renumber =>
-         declare
-            Old_ID    : constant Song_ID    := Get (Msg, "Old_ID");
-            New_ID    : constant Song_ID    := Get (Msg, "New_ID");
-            New_Value : constant JSON_Value := DB.DB.Get_JSON (Old_ID);
-         begin
-            --  Old_ID should not have been created in the local db, because it
-            --  was used in the remote db. A later op will insert the remote
-            --  values for Old_ID.
-            DB.DB.Really_Delete (Old_ID);
-            New_Value.Set_Field ("ID", New_ID);
-            DB.DB.Insert_JSON (New_Value);
+         when Update       =>
+            DB.DB.Update_JSON (Get (Msg, "Value"));
+
+         when Update_Batch =>
+            declare
+               Values : constant GNATCOLL.JSON.JSON_Array := Get (Msg, "Value");
+            begin
+               for Value of Values loop
+                  DB.DB.Update_JSON (Value);
+               end loop;
+            end;
+
+         when Renumber     =>
+            declare
+               Old_ID    : constant Song_ID := Get (Msg, "Old_ID");
+               New_ID    : constant Song_ID := Get (Msg, "New_ID");
+               New_Value : constant JSON_Value := DB.DB.Get_JSON (Old_ID);
+            begin
+               --  Old_ID should not have been created in the local db, because it
+               --  was used in the remote db. A later op will insert the remote
+               --  values for Old_ID.
+               DB.DB.Really_Delete (Old_ID);
+               New_Value.Set_Field ("ID", New_ID);
+               DB.DB.Insert_JSON (New_Value);
 
             --  We used to check Play_Before/Play_After here, but those are never
             --  set in real renumber use cases.
-         end;
+            end;
       end case;
    end Apply;
 

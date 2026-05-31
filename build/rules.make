@@ -6,7 +6,7 @@ vpath %.svg source
 include ../../org.stephe_leake.makerules/common_rules.make
 
 # don't strip, so stack traceback is useful on errors
-$(HOME)/.local/bin/% : bin/%
+$(HOME)/.local/bin/%.exe : bin/%.exe
 	cp $^ $@
 
 $(SERVER_DATA)/liner_notes_icon-desktop.png $(SERVER_DATA)/liner_notes_icon-tablet.png $(SERVER_DATA)/liner_notes_icon-phone.png : liner_notes_icon.svg
@@ -23,6 +23,9 @@ $(SERVER_DATA)/% : source/%
 
 test_%.exe :
 	alr exec -- gprbuild -P smm_test.gpr $@.adb
+
+bin/%.exe : force
+	alr exec -- gprbuild -P smm.gpr $(*F).adb
 
 create_test_db :
 	mkdir -p tmp/source
