@@ -70,10 +70,23 @@ package body SMM.Database.Diff is
    is
       use SMM.Database_Remote;
       use GNATCOLL.JSON;
+      Values : JSON_Array := Empty_Array;
    begin
+      for I in 1 .. Length (Item) loop
+         declare
+            Element : constant JSON_Value := Get (Item, I);
+            Op      : constant String     := Element.Get ("Operation");
+         begin
+            if Op /= Operations'Image (Insert) then
+               raise SAL.Programmer_Error with
+                 "To_Insert_Batch: expected " & Operations'Image (Insert) & ", got " & Op;
+            end if;
+            Append (Values, Element.Get ("Value"));
+         end;
+      end loop;
       return Result : constant JSON_Value := Create_Object do
          Result.Set_Field ("Operation", Operations'Image (Insert_Batch));
-         Result.Set_Field ("Value", Item);
+         Result.Set_Field ("Value", Values);
       end return;
    end To_Insert_Batch;
 
@@ -92,10 +105,23 @@ package body SMM.Database.Diff is
    is
       use SMM.Database_Remote;
       use GNATCOLL.JSON;
+      Values : JSON_Array := Empty_Array;
    begin
+      for I in 1 .. Length (Item) loop
+         declare
+            Element : constant JSON_Value := Get (Item, I);
+            Op      : constant String     := Element.Get ("Operation");
+         begin
+            if Op /= Operations'Image (Update) then
+               raise SAL.Programmer_Error with
+                 "To_Update_Batch: expected " & Operations'Image (Update) & ", got " & Op;
+            end if;
+            Append (Values, Element.Get ("Value"));
+         end;
+      end loop;
       return Result : constant JSON_Value := Create_Object do
          Result.Set_Field ("Operation", Operations'Image (Update_Batch));
-         Result.Set_Field ("Value", Item);
+         Result.Set_Field ("Value", Values);
       end return;
    end To_Update_Batch;
 
