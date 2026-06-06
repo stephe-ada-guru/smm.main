@@ -78,7 +78,4 @@ t4 : $(ALIRE_EXEC_DIR)/smm-db_sync_server.exe
 
 .PHONEY : t1 t2 t3 t_all empty_database_test_1 empty_database_test_2
 
-# Local Variables:
-# eval: (unless dvc-doing-ediff-p (load-file "prj-alire.el"))
-# End:
 # end of file

@@ -67,7 +67,10 @@ is
    Role             : Roles;
    Compute_Action   : Actions;
    Client_Host_Name : Ada.Strings.Unbounded.Unbounded_String;
-   Send_Progress : Boolean := False;
+
+   Send_Progress            : Boolean := False;
+   Compute_Changes_Interval : Integer := 100;
+   Apply_Changes_Interval   : Integer := 100;
 
    procedure Get_Msg
    --  Raises Socket_Error or End_Error is socket is closed (by peer).
@@ -178,10 +181,15 @@ begin
                   end if;
                end if;
 
-               Send_Progress :=
-                 (if Msg.Has_Field (Prelude_Messages'Image (Display_Progress))
-                  then Boolean'Value (Msg.Get (Prelude_Messages'Image (Display_Progress)))
-                  else False);
+               Send_Progress := Msg.Has_Field (Prelude_Messages'Image (Display_Progress));
+               if Send_Progress then
+                  declare
+                     Data : constant JSON_Value := Msg.Get ("Data");
+                  begin
+                     Compute_Changes_Interval := Data.Get ("Compute_Changes_Interval");
+                     Apply_Changes_Interval := Data.Get ("Apply_Changes_Interval");
+                  end;
+               end if;
 
                SMM.Database_Remote.IP.Send_Ack (Stream);
 
@@ -213,10 +221,15 @@ begin
                         else Null_ID);
 
                      Diff : SMM.Database.Diff.Diff_Type :=
-                       (Local_DB      => Local_DB'Access,
-                        Remote_DB     => Database_Remote.Database_Access (Remote_DB),
-                        Show_Progress => (if Send_Progress then Do_Send_Progress'Unrestricted_Access else null),
-                        Verbosity     => Verbosity);
+                       (Local_DB                 => Local_DB'Access,
+                        Remote_DB                => Database_Remote.Database_Access (Remote_DB),
+                        Show_Progress            =>
+                          (if Send_Progress
+                           then Do_Send_Progress'Unrestricted_Access
+                           else null),
+                        Compute_Changes_Interval => Compute_Changes_Interval,
+                        Apply_Changes_Interval   => Apply_Changes_Interval,
+                        Verbosity                => Verbosity);
 
                      function Get_Count return Integer
                      is
@@ -285,6 +298,8 @@ begin
                        (Local_DB      => Local_DB'Access,
                         Remote_DB     => Database_Remote.Database_Access (Remote_DB),
                         Show_Progress => (if Send_Progress then Do_Send_Progress'Unrestricted_Access else null),
+                        Compute_Changes_Interval => Compute_Changes_Interval,
+                        Apply_Changes_Interval   => Apply_Changes_Interval,
                         Verbosity     => Verbosity);
 
                      Local_Changes  : GNATCOLL.JSON.JSON_Array;

@@ -403,7 +403,7 @@ package body SMM.Database.Diff is
          Progress : SAL.Progress.Progress_Type
            (Integer (Local_Modified.Length) + Length (Remote_Modified_Data) +
               Integer (Local_New.Length + Remote_New.Length),
-            Intervals => 100,
+            Intervals => Diff.Compute_Changes_Interval,
             Show      => Diff.Show_Progress);
       begin
          Compute_Changes
@@ -449,7 +449,7 @@ package body SMM.Database.Diff is
 
       Progress : SAL.Progress.Progress_Type
         (Length (Local_Changes) + Length (Remote_Changes),
-         Intervals => 100,
+         Intervals => Diff.Apply_Changes_Interval,
          Show      => Diff.Show_Progress);
    begin
       if Length (Local_Changes) > 0 then

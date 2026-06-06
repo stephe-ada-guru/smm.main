@@ -27,6 +27,8 @@ package SMM.Database.Diff is
       Local_DB      : Database_Remote.Database_Access;
       Remote_DB     : Database_Remote.Database_Access;
       Show_Progress : SAL.Progress.Show_Progress_Type;
+      Compute_Changes_Interval : Integer;
+      Apply_Changes_Interval : Integer;
       Verbosity     : Integer;
    end record;
    --  Local_DB is nominally of type SMM.Database_Remote.Disk,
