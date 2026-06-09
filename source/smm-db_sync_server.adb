@@ -184,10 +184,20 @@ begin
                Send_Progress := Msg.Has_Field (Prelude_Messages'Image (Display_Progress));
                if Send_Progress then
                   declare
-                     Data : constant JSON_Value := Msg.Get ("Data");
+                     Data : constant JSON_Value := Msg.Get (Prelude_Messages'Image (Display_Progress));
                   begin
                      Compute_Changes_Interval := Data.Get ("Compute_Changes_Interval");
                      Apply_Changes_Interval := Data.Get ("Apply_Changes_Interval");
+
+                     if Compute_Changes_Interval < 1 then
+                        SMM.Database_Remote.IP.Send_Error (Stream, "Compute_Changes_Interval must be >= 1");
+                     end if;
+                     if Apply_Changes_Interval < 1 then
+                        SMM.Database_Remote.IP.Send_Error (Stream, "Apply_Changes_Interval must be >= 1");
+                     end if;
+                     if Compute_Changes_Interval < 1 or Apply_Changes_Interval < 1 then
+                        raise Exit_Messages with "invalid progress interval";
+                     end if;
                   end;
                end if;
 
@@ -247,7 +257,7 @@ begin
 
                      Progress : SAL.Progress.Progress_Type
                        (Max       => Get_Count,
-                        Intervals => 100,
+                        Intervals => 100, -- FIXME: get from phone.
                         Show      => Diff.Show_Progress);
 
                      Local_Changes  : constant GNATCOLL.JSON.JSON_Array := GNATCOLL.JSON.Empty_Array;

@@ -27,6 +27,10 @@ server-data : $(SERVER_DATA)/play_icon-phone.png
 server-data : $(SERVER_DATA)/songs.css
 server-data : $(SERVER_DATA)/songs.js
 
+update-db_sync_server : bin/smm-db_sync_server.exe
+	~/bin/kill-music_db_sync.sh
+	cp bin/smm-db_sync_server.exe $(HOME)/.local/bin/smm-db_sync_server.exe
+	~/bin/music-db_sync_server.sh
 
 tests : test_all_harness.diff
 
