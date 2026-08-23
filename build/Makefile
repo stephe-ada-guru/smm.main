@@ -2,8 +2,10 @@
 
 include rules.make
 
-export ALIRE_BUILD_ARGS ?= --release
-#ALIRE_BUILD_ARGS ?= --development
+# ALIRE_BUILD_PROFILE must be changed in Emacs so gpr_query sees it; see prj.el
+#export ALIRE_BUILD_PROFILE := release
+#export ALIRE_BUILD_PROFILE := development
+ALIRE_BUILD_ARGS := "--"$(ALIRE_BUILD_PROFILE)
 
 ALIRE_EXEC_DIR := $(CURDIR)/bin
 
@@ -49,7 +51,7 @@ one-clean :
 	rm -f smm_config.db
 
 one : build-executables
-	cd ~/Music; $(CURDIR)/smm.exe update "Barry Miles, Eric Claus/Pittsburg 1980/"
+	bin/smm.exe --max_errors=5 compare_playlist best spotify /home/stephe/smm/spotify_missing_best.json
 
 DATE := $(shell date +%Y-%m-%d)
 

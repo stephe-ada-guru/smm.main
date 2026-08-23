@@ -23,6 +23,8 @@ branches:
 (dvc-propagate-one "../smm.work_1" "../smm.main")
 
  current work
+Jason Mraz Yes! breaks web page on some jpeg
+
 mimic wisitoken; run tests from build/makefile, only use Alire.make to build executables.
     maybe even delete alire.make?
 

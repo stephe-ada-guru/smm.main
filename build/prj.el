@@ -1,16 +1,21 @@
 ;; Set up building with Alire -*- no-byte-compile : t -*-
 
+;; to change ALIRE_BUILD_PROFILE: edit below, then (setq wisi-prj--cache nil), then load prj.el
 (require 'wisi-prj)
 (let*
     ((project
       (create-alire-prj
        :name "smm main"
-       :compile-env
-       '("SERVER_DATA=/var/www/html/music_server_data"
-	 "SERVER_IP=127.0.0.1"
-	 "SERVER_PORT=16#9003#")
        :gpr-file "build/smm.gpr"
-       :xref-label 'gpr_query)))
+       :xref-label 'gpr_query
+       :compile-env
+       (list
+	"SERVER_DATA=/var/www/html/music_server_data"
+	"SERVER_IP=127.0.0.1"
+	"SERVER_PORT=16#9003#"
+;;     "ALIRE_BUILD_PROFILE=release"
+	"ALIRE_BUILD_PROFILE=development"
+	 ))))
 
   ;; WORKAROUND: when run from .make, something causes alire to use a
   ;; different version of utilada_curl, and it aborts with an error

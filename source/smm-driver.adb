@@ -2,7 +2,7 @@
 --
 --  main procedure for SMM application
 --
---  Copyright (C) 2008 - 2013, 2015 - 2020, 2022, 2025 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2008 - 2013, 2015 - 2020, 2022, 2025, 2026 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -18,7 +18,10 @@
 
 pragma License (GPL);
 
+with Ada.Characters.Handling;
 with Ada.Command_Line; use Ada.Command_Line;
+with Util.Log.Loggers;
+with Util.Properties;
 with Ada.Directories;
 with Ada.Exceptions.Traceback;
 with Ada.IO_Exceptions;
@@ -45,6 +48,7 @@ is
       Put_Line ("smm [options] <operation> [arg]...");
       Put_Line ("  options:");
       Put_Line ("  --verbosity=<int>");
+      Put_Line ("  --log : enable HTTP request/response logging (for debugging Spotify API)");
       Put_Line ("  --max_errors=<int> : in Compare_Playlist, stop after <int> errors.");
       Put_Line ("  --ignore_id3_flags : ignore ID3 file, frame flag settings that we nominally don't support.");
       New_Line;
@@ -116,6 +120,19 @@ begin
       if Argument (Next_Arg) = "--help" then
          Put_Usage;
          return;
+
+      elsif Argument (Next_Arg) = "--log" then
+         declare
+            Props : Util.Properties.Manager;
+         begin
+            Props.Set ("log4j.rootCategory", "WARN,console");
+            Props.Set ("log4j.appender.console", "Console");
+            Props.Set ("log4j.appender.console.level", "DEBUG");
+            Props.Set ("log4j.appender.console.layout", "level-message");
+            Props.Set ("log4j.logger.Util.Http.Clients.Curl", "DEBUG");
+            Util.Log.Loggers.Initialize (Props);
+         end;
+         Next_Arg := Next_Arg + 1;
 
       elsif Argument (Next_Arg) = "--ignore_id3_flags" then
          SMM.ID3.Ignore_Flags := True;
@@ -225,8 +242,9 @@ begin
    when Compare_Playlist =>
       Check_Arg (Next_Arg + 2);
       declare
+         use Ada.Characters.Handling;
          Category   : constant String := Argument (Next_Arg);
-         Other_Loc  : constant String := Argument (Next_Arg + 1);
+         Other_Loc  : constant String := To_Lower (Argument (Next_Arg + 1));
          Other_File : constant String := Argument (Next_Arg + 2);
       begin
          if Other_Loc = "spotify" then

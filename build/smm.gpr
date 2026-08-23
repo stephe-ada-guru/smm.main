@@ -3,16 +3,24 @@
 with "../config/smm_config.gpr"; -- 'with's all depends-on
 with "standard_common_alire";
 project Smm is
+   --  We don't use smm_config.gpr build_profile_kind, because
+   --  that is hard-coded by the most recent run of "alr build", so we
+   --  can't change it for a specific Makefile run of alr exec. In
+   --  fact, we don't use anything from smm_config except its
+   --  list of "with".
+   type Local_Build_Profile_Kind is ("release", "validation", "development");
+   Local_Build_Profile : Local_Build_Profile_Kind := external ("ALIRE_BUILD_PROFILE", "release");
+
    for Source_Dirs use ("../source");
 
-   for Object_Dir use "obj/" & Smm_Config.Build_Profile;
+   for Object_Dir use "obj/" & Local_Build_Profile;
    for Create_Missing_Dirs use "True";
    for Exec_Dir use "bin";
 
    for Main use ("smm-driver", "smm-server_driver", "smm-db_sync_server");
 
    package Compiler is
-      case Smm_Config.Build_Profile is
+      case Local_Build_Profile is
       when "release" =>
          for Default_Switches ("Ada") use Standard_Common_Alire.Release_Switches & Standard_Common_Alire.Style_Checks;
 

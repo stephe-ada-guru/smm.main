@@ -2,7 +2,7 @@
 --
 --  Compare lists of songs between DB and Spotify
 --
---  Copyright (C) 2025 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2025, 2026 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -33,10 +33,11 @@ procedure SMM.Compare_Playlist.Spotify
  --  of songs either missing or on a different album or with other
  --  differences in the Spotify playlist.
 is
-   --  From https://developer.spotify.com/dashboard/5c012586b1214e33b7308648efb228e1/Settings
-   --  If get an empty response on start session, visit the Settings URL and see what it wants.
-   Client_Id                : constant String := "5c012586b1214e33b7308648efb228e1";
-   Client_Secret            : constant String := "2a4f43acb73443b59dee9aabbbee9ab7";
+   --  From https://developer.spotify.com/dashboard/5c012586b1214e33b7308648efb228e1
+   --  If get an empty or error response on start session, visit the Settings URL and see what it wants.
+   --  To "refresh" the client secret; "rotate" it.
+   Client_Id     : constant String := "5c012586b1214e33b7308648efb228e1";
+   Client_Secret : constant String := "6e4872e203cb4948903e11bb830c674e";
 
    --  From https://open.spotify.com/playlist/7nfC9g7RtFQUWDGdsq1GYj
    Stephes_Best_Playlist_ID : constant String := "7nfC9g7RtFQUWDGdsq1GYj";

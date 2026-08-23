@@ -8,7 +8,7 @@
 --  hard to debug. So we just spawn curl, making it very easy to
 --  debug.
 --
---  Copyright (C) 2025 Stephen Leake.  All Rights Reserved.
+--  Copyright (C) 2025, 2026 Stephen Leake.  All Rights Reserved.
 --
 --  This program is free software; you can redistribute it and/or
 --  modify it under terms of the GNU General Public License as
@@ -87,7 +87,7 @@ package body Spotify is
       HTTP_Client   : Client;
       HTTP_Response : Response;
    begin
-      HTTP_Client.Add_Header ("Authorization", "Bearer  " & (-Session.Credentials));
+      HTTP_Client.Add_Header ("Authorization", "Bearer " & (-Session.Credentials));
       Get
         (HTTP_Client,
          URL   => "https://api.spotify.com/v1/playlists/" & Playlist_ID  &
@@ -100,20 +100,25 @@ package body Spotify is
          Data : constant String     := HTTP_Response.Get_Body;
          Temp : constant JSON_Value := Read (Data);
       begin
+         if Has_Field (Temp, "error") then
+            Put_Line (Get (Get (Temp, "error"), "message"));
+            raise Some_Error;
+         end if;
+
          Session.Playlist := Get (Temp, "items");
 
       exception
       when E : Invalid_JSON_Stream =>
-         Put_Line (Standard_Error, "data => ");
+         Put_Line ("data => ");
          Put_Line (Data);
          raise Some_Error with Exception_Message (E);
+      when Constraint_Error =>
+         --  Temp contains unexpected format
+         Put_Line (Write (Temp));
+         raise;
       end;
 
       return (Index => Array_First (Session.Playlist));
-
-   exception
-   when others =>
-      raise Some_Error;
    end Get_Playlist;
 
    function Has_Element (Session : in Spotify.Session; Position : in Cursor) return Boolean
