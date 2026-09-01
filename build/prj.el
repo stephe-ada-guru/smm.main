@@ -13,8 +13,8 @@
 	"SERVER_DATA=/var/www/html/music_server_data"
 	"SERVER_IP=127.0.0.1"
 	"SERVER_PORT=16#9003#"
-;;     "ALIRE_BUILD_PROFILE=release"
-	"ALIRE_BUILD_PROFILE=development"
+	"ALIRE_BUILD_PROFILE=release"
+;;	"ALIRE_BUILD_PROFILE=development"
 	 ))))
 
   ;; WORKAROUND: when run from .make, something causes alire to use a

@@ -24,6 +24,9 @@ $(SERVER_DATA)/% : source/%
 test_%.exe :
 	alr exec -- gprbuild -P smm_test.gpr $@.adb
 
+bin/smm.exe : force
+	alr exec -- gprbuild -P smm.gpr smm-driver.adb
+
 bin/%.exe : force
 	alr exec -- gprbuild -P smm.gpr $(*F).adb
 
